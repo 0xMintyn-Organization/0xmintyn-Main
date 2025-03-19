@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Activation - Oxymnton</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fb;
+            margin: 0;
+            padding: 0;
+            color: #333333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border: 1px solid #dddddd;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eeeeee;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 26px;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .header img {
+            max-width: 120px;
+            margin-bottom: 15px;
+        }
+
+        .content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #444444;
+        }
+
+        .activation-code {
+            display: block;
+            width: fit-content;
+            margin: 20px auto;
+            padding: 12px 20px;
+            font-size: 20px;
+            color: #ffffff;
+            background-color: #28a745;
+            text-align: center;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #888888;
+            margin-top: 30px;
+            border-top: 1px solid #eeeeee;
+            padding-top: 10px;
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .social-links {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .social-links a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #007bff;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="/assets/logo.png" alt="Oxymnton Logo">
+            <h1>Activate Your Oxymnton Account</h1>
+        </div>
+        <div class="content">
+            <p>Hi <%= user.name %>,</p>
+            <p>Welcome to Oxymnton! We're excited to have you on board. To complete your registration, please use the
+                activation code below:</p>
+            <div class="activation-code">
+                <%= activationCode %>
+            </div>
+            <p>If you didn't register for an account with Oxymnton, please ignore this email.</p>
+            <p>Best regards,<br>
+                The Oxymnton Team</p>
+        </div>
+        <div class="footer">
+            <p>&copy; <%= new Date().getFullYear() %> Oxymnton. All rights reserved.</p>
+            <p>1234 Main St, Anytown, USA</p>
+            <p>For more information, visit our <a href="#">website</a>.</p>
+        </div>
+        <div class="social-links">
+            <p>Follow us on:</p>
+            <a href="https://twitter.com/oxymnton">Twitter</a>
+            <a href="https://facebook.com/oxymnton">Facebook</a>
+            <a href="https://linkedin.com/company/oxymnton">LinkedIn</a>
+        </div>
+    </div>
+</body>
+
+</html>
