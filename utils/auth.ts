@@ -16,6 +16,7 @@ export const isAthenticated = CatchAsyncError(async (req: Request, res: Response
     if(!decoded) {
         return next(new ErrorHandler('Please login to access this resource', 400));
     }
+    console.log(decoded.id);
 
     const user = await redis.get(decoded.id);
     if(!user) {

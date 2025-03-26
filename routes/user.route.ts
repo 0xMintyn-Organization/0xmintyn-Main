@@ -13,7 +13,7 @@ userRouter.post('/login', loginUser);
 
 userRouter.get('/logout' , isAuthenticated, logoutUser);
 
-userRouter.get('/refreshtoken', updateAccessToken);
+userRouter.get('/refreshtoken', isAuthenticated, updateAccessToken);
 
 userRouter.get('/me', updateAccessToken,  isAuthenticated, getUserInfo);
 
