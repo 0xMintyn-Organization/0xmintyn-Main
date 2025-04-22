@@ -5,6 +5,8 @@ import { rateLimit } from 'express-rate-limit';
 import { ErrorMiddleware } from './middleware/error';
 import userRouter from './routes/user.route';
 import path from 'path';
+import ebookRouter from './routes/ebook,route';
+import productRouter from './routes/product.route';
 require('dotenv').config();
 export const app = express();
 
@@ -17,13 +19,13 @@ app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
 
 // express file upload
-app.use("/uploads", express.static(path.join(__dirname, "../uploads"))); // Serve static files
+app.use("/uploads", express.static(path.join(__dirname, "./uploads"))); // Serve static files
 
 
 
 // cors
 app.use(cors({ 
-    origin: [ 'http://localhost:3000'], 
+    origin: ['http://localhost:3000', 'http://localhost:3001' ], 
     credentials: true 
 }));
 
@@ -37,6 +39,8 @@ const limiter = rateLimit({
 
 // routes
 app.use('/api/v1', userRouter);
+app.use('/api/v1/ebook', ebookRouter);
+app.use('/api/v1/product', productRouter);
 
 
 

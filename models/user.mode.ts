@@ -17,6 +17,8 @@ export interface IUser extends Document {
     password: string;
     role: string;
     avatar: string;
+    banner: string;
+    bio: string;
     isVerified: boolean;
     comparePassword: (password: string) => Promise<boolean>;
     SignAccessToken: () => string;
@@ -80,10 +82,19 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    bio : {
+        type: String,
+        default: 'No bio available',
+    },
     avatar : {
         type: String,
         default: 'https://static.vecteezy.com/system/resources/previews/005/129/844/original/profile-user-icon-isolated-on-white-background-eps10-free-vector.jpg',
     },
+    banner : {
+        type: String,
+        default: 'https://static.vecteezy.com/system/resources/previews/005/129/844/original/profile-user-icon-isolated-on-white-background-eps10-free-vector.jpg',
+    },
+    
 }, { timestamps: true });
 
 // Hash password before saving user

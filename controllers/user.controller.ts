@@ -235,11 +235,12 @@ interface IUpdateProfileBody {
     nationality: string;
     age: number;
     contactNumber: string;
+    bio: string;
 }
 
 export const updateProfile = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { firstName, lastName, dateOfBirth, nationality, age, contactNumber }: Partial<IUpdateProfileBody> = req.body;
+        const { firstName, lastName, dateOfBirth, nationality, age, contactNumber , bio }: Partial<IUpdateProfileBody> = req.body;
         const userId = req.user?._id;
 
         const user = await UserModel.findById(userId);
@@ -255,6 +256,7 @@ export const updateProfile = CatchAsyncError(async (req: Request, res: Response,
         if (nationality) user.nationality = nationality;
         if (age) user.age = age;
         if (contactNumber) user.contactNumber = contactNumber;
+        if (bio) user.bio = bio;
 
         await user.save();
 
@@ -308,4 +310,83 @@ export const updateProfilePicture = CatchAsyncError(async (req: Request, res: Re
     }
 });
 
+export const updateBannerPicture = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user?._id;
+        const user = await UserModel.findById(userId);
 
+        if (!user) {
+            return next(new ErrorHandler("User not found", 404));
+        }
+
+        // @ts-ignore
+        if (!req.file) {
+            return next(new ErrorHandler("Please upload an image", 400));
+        }
+
+        const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
+        // @ts-ignore
+        const bannerUrl = `${serverUrl}/uploads/${req.file.filename}`;
+
+        user.banner = bannerUrl;
+        await user.save();
+
+        // Update Redis cache
+        // @ts-ignore
+        await redis.set(userId, JSON.stringify(user));
+
+        res.status(200).json({
+            success: true,
+            user,
+            message: "Banner picture updated successfully",
+        });
+
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const updateUserName = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { username } = req.body;
+        const userId = req.user?._id as string; // @ts-ignore
+
+        const user = await UserModel.findById(userId);
+        if (!user) {    
+            return next(new ErrorHandler("User not found", 404));
+        }
+        const isUsernameExist = await UserModel.findOne({   
+            username,
+        });
+        if (isUsernameExist) {
+            return next(new ErrorHandler('Username already exists', 400));
+        }
+        user.username = username;
+        await user.save();
+
+        // @ts-ignore
+        await redis.set(userId, JSON.stringify(user));
+
+        res.status(200).json({
+            success: true,
+            user,
+            message: "Username updated successfully",
+        });
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+
+export const getAllUsers = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const users = await UserModel.find({}).select('-password -__v').sort({ createdAt: -1 });
+        res.status(200).json({
+            success: true,
+            users,
+            message: "All users fetched successfully",
+        });
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
