@@ -1,19 +1,23 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IProduct extends Document {
-    name: string;
+    title: string;
     description: string;
-    price: number;
-    image: string;
+    amount: number;
+    currency: string;
+    coverImage: string;
+    type: "Service" | "Product";
     createdBy: mongoose.Types.ObjectId;
 }
 
 const productSchema: Schema<IProduct> = new Schema(
     {
-        name: { type: String, required: true },
+        title: { type: String, required: true },
         description: { type: String, required: true },
-        price: { type: Number, required: true },
-        image: { type: String, required: true }, // Image URL
+        amount: { type: Number, required: true },
+        currency: { type: String, required: true, enum: ["USD", "EUR", "GBP", "INR", "AUD"] },
+        coverImage: { type: String, required: true },
+        type: { type: String, required: true, enum: ["Service", "Product"] },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
@@ -24,4 +28,5 @@ const productSchema: Schema<IProduct> = new Schema(
 );
 
 const ProductModel: Model<IProduct> = mongoose.model("Product", productSchema);
+
 export default ProductModel;

@@ -5,7 +5,6 @@ import { rateLimit } from 'express-rate-limit';
 import { ErrorMiddleware } from './middleware/error';
 import userRouter from './routes/user.route';
 import path from 'path';
-import ebookRouter from './routes/ebook,route';
 import productRouter from './routes/product.route';
 require('dotenv').config();
 export const app = express();
@@ -39,7 +38,6 @@ const limiter = rateLimit({
 
 // routes
 app.use('/api/v1', userRouter);
-app.use('/api/v1/ebook', ebookRouter);
 app.use('/api/v1/product', productRouter);
 
 

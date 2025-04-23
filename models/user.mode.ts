@@ -20,6 +20,7 @@ export interface IUser extends Document {
     banner: string;
     bio: string;
     isVerified: boolean;
+    products: mongoose.Types.ObjectId[];
     comparePassword: (password: string) => Promise<boolean>;
     SignAccessToken: () => string;
     SignRefreshToken: () => string;
@@ -95,7 +96,18 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
         default: 'https://static.vecteezy.com/system/resources/previews/005/129/844/original/profile-user-icon-isolated-on-white-background-eps10-free-vector.jpg',
     },
     
+    
 }, { timestamps: true });
+
+userSchema.virtual("products", {
+    ref: "Product",              
+    localField: "_id",           
+    foreignField: "createdBy",  
+});
+
+userSchema.set("toObject", { virtuals: true });
+userSchema.set("toJSON", { virtuals: true });
+
 
 // Hash password before saving user
 userSchema.pre<IUser>('save', async function (next) {

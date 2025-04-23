@@ -34,12 +34,12 @@ export const refreshTokenOptions: ITokenOptions = {
 
 
 
-export const sendToken = (user: IUser , statusCode : number , res : Response) => {
+export const sendToken = ( user: IUser , statusCode : number , res : Response) => {
     const accessToken = user.SignAccessToken();
     const refreshToken = user.SignRefreshToken();
 
     // upload the session to redis
-
+    // @ts-ignore 
     redis.set(user._id , JSON.stringify(user) as any )
     
   

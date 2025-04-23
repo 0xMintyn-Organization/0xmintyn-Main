@@ -4,21 +4,21 @@ import {
     getAllProducts,
     getProductById,
     updateProduct,
+    getAllProductsByUser,
     deleteProduct
 } from '../controllers/product.controller';
-import { isAthenticated as isAuthenticated } from '../utils/auth';
 import upload from '../middleware/multerConfig';
+import { updateAccessToken } from '../controllers/user.controller';
+import { isAthenticated as isAuthenticated } from '../utils/auth';
 
 const productRouter = express.Router();
 
-productRouter.post('/create', isAuthenticated, upload.single('image'), createProduct);
-
+productRouter.post('/create', updateAccessToken, isAuthenticated, upload.single('coverImage'), createProduct);
 productRouter.get('/all', getAllProducts);
-
+productRouter.get('/all/user', updateAccessToken, isAuthenticated, getAllProductsByUser);
 productRouter.get('/:id', getProductById);
+productRouter.put('/:id', updateAccessToken, isAuthenticated, upload.single('coverImage'), updateProduct);
 
-productRouter.put('/:id', isAuthenticated, upload.single('image'), updateProduct);
-
-productRouter.delete('/:id', isAuthenticated, deleteProduct);
+productRouter.delete('/:id', updateAccessToken, isAuthenticated, deleteProduct);
 
 export default productRouter;
