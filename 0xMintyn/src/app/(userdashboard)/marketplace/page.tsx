@@ -1,17 +1,23 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import Categories from "@/components/Marketplace/Categories";
 import CategoryCard from "@/components/Marketplace/CategoryCard";
 import { MarketplacePagination } from "@/components/Marketplace/MarketplacePagination";
 import SortDropdown from "@/components/Marketplace/SortDropdown";
+import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Protected from "@/hooks/useProtected";
 import { useGetAllProductsByPaginationQuery } from "@/redux/features/ebook/ebookApi";
-import { useCreateOrderMutation } from "@/redux/features/order/orderApi";
+import { useCreatePaymentIntentMutation, useGetStripePublishableKeyQuery } from "@/redux/features/order/orderApi";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { loadStripe } from "@stripe/stripe-js"
+import { Elements } from '@stripe/react-stripe-js'
+import PaymentForm from "@/components/Marketplace/PaymentForm";
+import { IoMdCheckmarkCircleOutline, IoMdClose, IoMdCloseCircle } from 'react-icons/io'
 
 function Marketplace() {
   const { toast } = useToast();
@@ -20,6 +26,7 @@ function Marketplace() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSort, setSelectedSort] = useState("newest");
+  const [productId , setProductId] = useState("");
 
 
   const { data, isLoading, isSuccess , refetch } = useGetAllProductsByPaginationQuery({
@@ -35,9 +42,15 @@ function Marketplace() {
     }
 
   );
-  const [createrOrder, { isSuccess: OrderSuccess, error, isLoading: OrderLoading }] = useCreateOrderMutation()
   const [products, setProducts] = useState<any[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+
+  const { data: config } = useGetStripePublishableKeyQuery({})
+  const [createPaymentIntent, { data: paymentIntent }] =
+    useCreatePaymentIntentMutation();
+  const [stripePromise, setStripePromise] = useState<any>(null)
+  const [clientSecret, setClientSecret] = useState("")
+
   console.log("purchased", user?.purchasedProducts)
   console.log("products", products)
 
@@ -49,33 +62,38 @@ function Marketplace() {
 
 
   useEffect(() => {
+    if (config) {
+      setStripePromise(loadStripe(config.pulishableKey));
+    }
+  }, [config]);
+
+  const handlePayment = async (amount: number) => {
+    try {
+      const amountInCents = amount * 100; // Convert to cents if needed
+      const response = await createPaymentIntent(amountInCents ).unwrap();
+      setClientSecret(response.client_secret);
+      toast({ title: 'Success', description: 'Payment initiated', variant: 'default' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Payment failed', variant: 'destructive' });
+    }
+  };
+
+  useEffect(() => {
+    if (paymentIntent) {
+      setClientSecret(paymentIntent?.client_secret)
+    }
+  }, [paymentIntent])
+
+
+  useEffect(() => {
     if (isSuccess) {
       setProducts(data.products);
       setTotalPages(data.totalPages);
     }
 
-    if (OrderSuccess) {
-      toast({
-        title: 'Success',
-        description: 'Order created successfully!',
-        variant: 'default',
-      })
-      refetch();
+   
 
-    }
-
-
-    if (error) {
-      if ('data' in error) {
-        const errorData = error as any;
-        toast({
-          title: "Error",
-          description: errorData?.data?.error || "An error occurred",
-          variant: "destructive",
-        });
-      }
-    }
-  }, [data, isSuccess, OrderSuccess, error, toast, OrderLoading , refetch]);
+  }, [data, isSuccess,  toast, refetch]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -87,15 +105,10 @@ function Marketplace() {
   };
 
 
-  const handleBuyNowClick = async (productId: string) => {
-    await createrOrder({ productId })
-  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <h1 className="text-2xl font-semibold">Loading...</h1>
-      </div>
+      <Spinner />
     );
   }
 
@@ -161,12 +174,18 @@ function Marketplace() {
                 title={product.title}
                 price={product.amount}
                 description={product.description}
-                onBuyNowClick={() => handleBuyNowClick(product._id)}
+                onBuyNowClick={() => {
+                  setProductId(product._id);
+                  handlePayment(product.amount);
+                }}
                 isPurchased={isPurchased(product._id)}
 
 
               />
+
+              
             ))}
+           
           </div>
 
           {/* Pagination */}
@@ -178,6 +197,30 @@ function Marketplace() {
             />
           </div>
         </div>
+        {clientSecret && stripePromise && productId && (
+          <div
+            className='w-full h-screen bg-[#00000036] fixed top-0 left-0 flex items-center justify-center z-50'
+          >
+            <div
+              className='w-[500px] bg-white dark:bg-zinc-800  rounded-xl p-3'
+            >
+              <div className="w-full flex justify-end">
+                <IoMdClose
+                  size={40}
+                  className='cursor-pointer text-black'
+                  onClick={() => {
+                    setClientSecret("");
+                    setProductId("");
+                  }
+                }
+                />
+              </div>
+          <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <PaymentForm clientSecret={clientSecret} productId={productId} setProductId={setProductId} />
+          </Elements>
+          </div>
+          </div>
+        )}
       </div>
     </Protected>
   );

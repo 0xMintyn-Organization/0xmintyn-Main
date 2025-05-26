@@ -1,4 +1,4 @@
-import Image from "next/image"
+import Image from "next/image";
 import { Button } from "../ui/button";
 
 interface CategoryCardType {
@@ -27,7 +27,8 @@ function CategoryCard({
     title,
     price,
     description, 
-    isPurchased = false, // <-- ADD THIS
+    isPurchased = false, 
+   
 }: CategoryCardType) {
     return (
         <div className="dark:text-white rounded-lg overflow-hidden shadow-lg">
@@ -82,6 +83,7 @@ function CategoryCard({
                     </Button>
                 )}
             </div>
+        
         </div>
     )
 }

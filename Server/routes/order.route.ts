@@ -1,15 +1,22 @@
 import express from 'express';
-import { createOrder, getAllOrders } from '../controllers/order.controller';
+import { createOrder, getAllOrders, newPayment, sendStripePublishableKey } from '../controllers/order.controller';
 import { updateAccessToken } from '../controllers/user.controller';
-import { isAthenticated as isAuthenticated } from '../utils/auth';
+import { authorizeRoles, isAthenticated, isAthenticated as isAuthenticated } from '../utils/auth';
 
 const orderRouter = express.Router();
 
-// Create a new order
-orderRouter.post('/create', updateAccessToken, isAuthenticated, createOrder);
 
 // Get all orders for a user (if needed, you can implement this in the controller)
 orderRouter.get('/my_orders', updateAccessToken, isAuthenticated, getAllOrders);
+
+
+orderRouter.post('/create-order', updateAccessToken, isAthenticated, createOrder);
+
+
+orderRouter.get('/payment/stripepublishablekey', sendStripePublishableKey);
+
+orderRouter.post('/payment', isAthenticated, newPayment);
+
 
 
 export default orderRouter;

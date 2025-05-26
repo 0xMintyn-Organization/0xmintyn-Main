@@ -14,7 +14,12 @@ const orderSchema = new Schema<IOrder>({
     userId: {
         type: String,
         required: true
-    },
+    }, 
+    payment_info: {
+        type: Object,
+        // required : true
+    }
+
    
 }, { timestamps: true });
 

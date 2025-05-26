@@ -1,14 +1,29 @@
-import { apiSlice } from "../api/apiSlice";
+import { apiSlice } from "../api/apiSlice"
 
-
-export const orderApi = apiSlice.injectEndpoints({
+const ordersApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        createOrder: builder.mutation({
-            query: (productId) => ({
-                url: `order/create`,
+       
+        getStripePublishableKey: builder.query({
+            query: () => ({
+                url: 'order/payment/stripepublishablekey',
+                method: 'GET',
+                credentials: 'include' as const
+            }),
+        }),
+        createPaymentIntent: builder.mutation({
+            query: (amount) => ({
+                url: 'order/payment',
                 method: 'POST',
-                body: productId,
-                credentials: 'include' as const,
+                body: { amount },
+                credentials: 'include' as const
+            }),
+        }),
+        createOrder: builder.mutation({
+            query: ({ productId, payment_info }) => ({
+                url: 'order/create-order',
+                method: 'POST',
+                body: { productId, payment_info },
+                credentials: 'include' as const
             }),
         }),
         getAllOrders: builder.query({
@@ -18,7 +33,8 @@ export const orderApi = apiSlice.injectEndpoints({
                 credentials: 'include' as const,
             }),
         }),
-      
-    }),
-});
-export const { useCreateOrderMutation , useGetAllOrdersQuery } = orderApi;
+
+    })
+})
+
+export const { useGetAllOrdersQuery, useCreateOrderMutation , useCreatePaymentIntentMutation, useGetStripePublishableKeyQuery } = ordersApi
