@@ -24,7 +24,6 @@ const eduCardDetails = [
         description: "Learn the basics of React.js and start building modern UIs.",
         imagePath: "https://picsum.photos/200/300",
         imageAltText: "React course image",
-        buttonName: "Start Learning",
         category: "Technology",
     },
     {
@@ -32,7 +31,6 @@ const eduCardDetails = [
         description: "Master visual storytelling and design principles.",
         imagePath: "https://picsum.photos/200/300",
         imageAltText: "Design course image",
-        buttonName: "Enroll Now",
         category: "Design",
     },
     {
@@ -40,7 +38,6 @@ const eduCardDetails = [
         description: "Understand how to budget, invest, and manage finances.",
         imagePath: "https://picsum.photos/200/300",
         imageAltText: "Finance course image",
-        buttonName: "Get Started",
         category: "Finance",
     },
     {
@@ -48,7 +45,6 @@ const eduCardDetails = [
         description: "Launch your own business with expert guidance.",
         imagePath: "https://picsum.photos/200/300",
         imageAltText: "Business course image",
-        buttonName: "Explore",
         category: "Business",
     },
     {
@@ -56,7 +52,6 @@ const eduCardDetails = [
         description: "Promote brands and grow audiences on social platforms.",
         imagePath: "https://picsum.photos/200/300",
         imageAltText: "Marketing course image",
-        buttonName: "Start Now",
         category: "Marketing",
     },
     {
@@ -64,7 +59,6 @@ const eduCardDetails = [
         description: "Stay healthy with diet, exercise, and mindfulness tips.",
         imagePath: "https://picsum.photos/200/300",
         imageAltText: "Health course image",
-        buttonName: "Join Free",
         category: "Health",
     },
 ];
