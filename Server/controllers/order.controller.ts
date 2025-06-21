@@ -4,7 +4,6 @@ import ErrorHandler from '../utils/errorHandler';
 import path from 'path';
 import ejs from 'ejs';
 import sendEmail from '../utils/sendMail';
-import { redis } from '../utils/redis';
 import UserModel from '../models/user.mode';
 import ProductModel from '../models/product.model';
 import OrderModel from '../models/order.model';
@@ -48,7 +47,6 @@ export const createOrder = CatchAsyncError(async (req: Request, res: Response, n
 
 
         // @ts-ignore        product.purchasedBy.push({ userId: user._id.toString() });
-        await redis.set(req.user?._id, JSON.stringify(user));
 
 
         const order = await OrderModel.create({

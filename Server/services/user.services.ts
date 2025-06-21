@@ -1,5 +1,4 @@
 import { Response } from "express"
-import { redis } from "../utils/redis"
 import UserModel from "../models/user.mode"
 
 
@@ -7,10 +6,12 @@ import UserModel from "../models/user.mode"
 // get user by id 
 export const getUserById = async (id: string, res: Response) => {
 
-    const userJson = await redis.get(id)
+    const userJson = await UserModel.findById(id)
+
+    const user = userJson ? JSON.parse(JSON.stringify(userJson)) : null
 
     if (userJson) {
-        const user = JSON.parse(userJson)
+
         res.status(201).json({
             success: true,
             user
@@ -20,7 +21,7 @@ export const getUserById = async (id: string, res: Response) => {
 
 // Get All Users
 export const getAllUsersService = async (res: Response) => {
-   const users = await UserModel.find().sort({ createdAt: -1 })
+    const users = await UserModel.find().sort({ createdAt: -1 })
     res.status(201).json({
         success: true,
         users
@@ -36,5 +37,5 @@ export const updateUserRoleService = async (res: Response, email: string, role: 
     res.status(201).json({
         success: true,
         user
-    })
+    })  
 }

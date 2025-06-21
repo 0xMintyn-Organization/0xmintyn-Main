@@ -7,7 +7,6 @@ import { CatchAsyncError } from '../middleware/catchAsyncError';
 import UserModel, { IUser } from '../models/user.mode';
 import ErrorHandler from '../utils/errorHandler';
 import { accessTokenOptions, refreshTokenOptions, sendToken } from '../utils/jwt';
-import { redis } from '../utils/redis';
 import sendEmail from '../utils/sendMail';
 import { getUserById } from '../services/user.services';
 
@@ -159,7 +158,6 @@ export const logoutUser = CatchAsyncError(async (req: Request, res: Response, ne
         res.cookie('access_token', "", { maxAge: 1 });
         res.cookie('refresh_token', "", { maxAge: 1 });
         const UserId = req.user?._id || ''; // @ts-ignore 
-        redis.del(UserId);
         res.status(200).json({
             success: true,
             message: 'Logged out successfully',
@@ -181,12 +179,13 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
         if (!decoded) {
             return next(new ErrorHandler(message, 400));
         }
+        const session = await UserModel.findById(decoded.id).select("+password");
 
-        const session = await redis.get(decoded.id);
         if (!session) {
-            return next(new ErrorHandler("please login to accesss this resources", 400));
+            return next(new ErrorHandler("Please login to access this resource", 400));
         }
-        const user = JSON.parse(session);
+
+        const user = session.toJSON();
 
         const accessToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN as string, { expiresIn: '5m' });
 
@@ -198,7 +197,6 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
         res.cookie('access_token', accessToken, accessTokenOptions);
         res.cookie('refresh_token', refreshToken, refreshTokenOptions);
 
-        await redis.set(user._id, JSON.stringify(user), 'EX', 604800); // 7 days 
 
         // res.status(200).json({
         //     success: true,
@@ -260,8 +258,6 @@ export const updateProfile = CatchAsyncError(async (req: Request, res: Response,
 
         await user.save();
 
-        // @ts-ignore
-        await redis.set(userId, JSON.stringify(user));
 
         res.status(200).json({
             success: true,
@@ -295,9 +291,6 @@ export const updateProfilePicture = CatchAsyncError(async (req: Request, res: Re
         user.avatar = avatarUrl; 
         await user.save();
 
-        // Update Redis cache
-        // @ts-ignore
-        await redis.set(userId, JSON.stringify(user));
 
         res.status(200).json({
             success: true,
@@ -331,10 +324,6 @@ export const updateBannerPicture = CatchAsyncError(async (req: Request, res: Res
         user.banner = bannerUrl;
         await user.save();
 
-        // Update Redis cache
-        // @ts-ignore
-        await redis.set(userId, JSON.stringify(user));
-
         res.status(200).json({
             success: true,
             user,
@@ -364,8 +353,6 @@ export const updateUserName = CatchAsyncError(async (req: Request, res: Response
         user.username = username;
         await user.save();
 
-        // @ts-ignore
-        await redis.set(userId, JSON.stringify(user));
 
         res.status(200).json({
             success: true,
@@ -419,8 +406,6 @@ export const updatePassword = CatchAsyncError(async (req: Request, res: Response
         }
         user.password = newPassword;
         await user.save();
-        // @ts-ignore 
-        await redis.set(user?._id, JSON.stringify(user));
         res.status(200).json({
             success: true,
             message: 'Password updated successfully',
