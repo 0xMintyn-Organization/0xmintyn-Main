@@ -2,3 +2,5 @@
 node_modules
 *.local
 .vercel
+
+package-lock.json
