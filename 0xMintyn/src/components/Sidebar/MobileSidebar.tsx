@@ -1,22 +1,45 @@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
 import SidebarContent from "./SidebarContent";
+import { Button } from "@/components/ui/button";
 
 export default function MobileSidebar() {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Sheet>
-      {/* Button to open sidebar */}
-      <SheetTrigger className="p-2 bg-white dark:bg-zinc-800 text-green-900 dark:text-gray-300 lg:hidden">
-        <Menu className="w-6 h-6" />
+    <Sheet open={open} onOpenChange={setOpen}>
+      {/* Animated Menu Button */}
+      <SheetTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="relative p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl shadow-md lg:hidden"
+        >
+          <div className="relative">
+            <Menu className={`w-6 h-6 transition-all duration-300 ${open ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100'}`} />
+            <X className={`w-6 h-6 absolute top-0 left-0 transition-all duration-300 ${open ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0'}`} />
+          </div>
+          
+          {/* Notification Dot */}
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        </Button>
       </SheetTrigger>
 
-      {/* Sidebar Drawer */}
-      <SheetContent side="left" className="w-64 p-4">
-        {/* title and description for screen readers */}
-        <SheetHeader>
-            <SheetTitle>Community Hub Menu</SheetTitle>
-            <SheetDescription>Navigation Menu for Oxmintyn Community Hub</SheetDescription>
+      {/* Enhanced Sidebar Drawer */}
+      <SheetContent 
+        side="left" 
+        className="w-72 p-0 border-r border-gray-200 dark:border-gray-700"
+      >
+        {/* Hidden header for accessibility */}
+        <SheetHeader className="sr-only">
+          <SheetTitle>Community Hub Menu</SheetTitle>
+          <SheetDescription>Navigation Menu for 0xMintyn Community Hub</SheetDescription>
         </SheetHeader>
+        
+        {/* Gradient overlay at top */}
+        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-green-600/10 to-transparent pointer-events-none" />
+        
         <SidebarContent />
       </SheetContent>
     </Sheet>

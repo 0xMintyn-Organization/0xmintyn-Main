@@ -101,7 +101,13 @@ function LoginPage() {
                 <Button
                     type="button"
                     variant="outline"
-                    onClick={() => signIn("google")}
+                     onClick={() =>
+                        toast({
+                            title: "Coming Soon",
+                            description: "Google login is coming soon!",
+                            variant: "neutral",
+                        })
+                    }
                     className="w-full flex items-center justify-center gap-2 border-gray-300"
                 >
                     <FcGoogle className="text-xl" />

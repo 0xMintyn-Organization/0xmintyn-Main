@@ -177,7 +177,7 @@ export const proposalCard: ProposalCardType[] = [
   {
       title: "Partnership with DeFi Platform", 
       proStatus: "active", 
-      description: "Establish a strategic partnership with a leading DeFi platform to expland Oxmintyn ecosystem.",
+      description: "Establish a strategic partnership with a leading DeFi platform to expland 0xMintyn ecosystem.",
       yesVal: 4200,
       noVal: 800,
   },
@@ -191,7 +191,7 @@ export const proposalCard: ProposalCardType[] = [
   {
       title: "Launch Community Grant Program", 
       proStatus: "active", 
-      description: "Create a community grant program to fund innovative projects built on the Oxmintyn platform.",
+      description: "Create a community grant program to fund innovative projects built on the 0xMintyn platform.",
       yesVal: 3800,
       noVal: 1100,
   },

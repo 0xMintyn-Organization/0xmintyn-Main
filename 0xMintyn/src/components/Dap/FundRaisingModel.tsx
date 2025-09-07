@@ -33,7 +33,7 @@ function FundRaisingModel() {
         <div className="space-y-2 dark:bg-zinc-800 p-5 rounded-xl mt-6">
             <h2 className="text-heading font-semibold">DAP Fundraising Model</h2>
             <p className="text-xs">
-                OxMintyn&apos;s DAP fundraising model empowers communities through DAO 
+                0xMintyn&apos;s DAP fundraising model empowers communities through DAO 
                 governance and impact innvesting supporting UBI-driven projects that
                 address critical societal challenges. By participating, individuals
                 join a transformative movement, fostering collaboration, transparency,

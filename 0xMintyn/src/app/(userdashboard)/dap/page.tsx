@@ -13,7 +13,7 @@ function Dap() {
         <div className="flex flex-col mx-auto space-y-4 py-6 px-4">
             <Card>
                 <CardHeader className="text-heading font-semibold">
-                    <CardTitle>Oxmintyn Governance</CardTitle>
+                    <CardTitle>0xMintyn Governance</CardTitle>
                     
                 </CardHeader>
                 <CardContent className="px-4">

@@ -124,7 +124,7 @@ function Marketplace() {
 
         <div className="w-full lg:ml-[14%] p-5 dark:bg-zinc-800 rounded-xl">
           <div className="space-y-4 mb-4">
-            <h2 className="text-heading font-semibold">Oxmintyn Marketplace</h2>
+            <h2 className="text-heading font-semibold">0xMintyn Marketplace</h2>
             <Button className="text-white bg-green-900 hover:bg-green-800 font-semibold w-full">
               Create New Listing
             </Button>

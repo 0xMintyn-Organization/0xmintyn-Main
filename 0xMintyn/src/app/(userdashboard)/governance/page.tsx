@@ -67,7 +67,7 @@ function Governance() {
             {/* Create New Proposal */}
             <Card>
                 <CardHeader className="text-heading font-semibold">
-                    <CardTitle>Oxmintyn Governance</CardTitle>
+                    <CardTitle>0xMintyn Governance</CardTitle>
                     
                 </CardHeader>
                 <CardContent className="px-4">
@@ -108,7 +108,7 @@ function Governance() {
 
             <Card>
                 <CardHeader className="text-heading font-semibold">
-                    <CardTitle>Oxmintyn Governance</CardTitle>
+                    <CardTitle>0xMintyn Governance</CardTitle>
                     
                 </CardHeader>
                 <CardContent className="px-4">

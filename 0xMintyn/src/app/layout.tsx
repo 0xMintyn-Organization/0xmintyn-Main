@@ -1,22 +1,18 @@
 "use client";
 
+import SocialAuthProvider from "@/components/SocialAuth/SocialAuth";
 import { Toaster } from "@/components/ui/toaster";
 import ThemeProviderWrapper from "@/contexts/ThemeProviderWrapper";
-import { Geist, Geist_Mono } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./Provider";
-import SocialAuthProvider from "@/components/SocialAuth/SocialAuth";
-import { SessionProvider } from "next-auth/react";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const inter = Inter({ 
+  subsets: ['latin'], 
+  variable: '--font-inter' 
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 
 export default function RootLayout({
@@ -27,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased dark:text-white bg-gray-100 dark:bg-zinc-900`}
+        className={`${inter.className} antialiased dark:text-white bg-gray-100 dark:bg-zinc-900`}
       >
         <ThemeProviderWrapper>
           <Providers>
