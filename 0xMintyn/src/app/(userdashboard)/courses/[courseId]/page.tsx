@@ -294,12 +294,13 @@ export default function CoursePlayerPage() {
                         {/* Video Player */}
                         {currentLecture.type === 'video' && (
                             <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6">
-                                <iframe
-                                    className="w-full h-full"
-                                    src={currentLecture.videoUrl}
-                                    title={currentLecture.title}
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
+                                <video
+                                    key={"video-player"} 
+                                    src={"http://localhost:8000/api/v1/stream/video-1757442695314-10712736.mp4"}
+                                    controls
+                                    preload="metadata"
+                                    className="w-full h-full object-cover"
+                                   
                                 />
                             </div>
                         )}
