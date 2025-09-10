@@ -1,22 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import CourseInfoForm from "./CourseInfoForm";
-import CoursePricingForm from "./CoursePricingForm";
 import CourseBenefitsForm from "./CourseBenefitsForm";
 import CourseContentForm from "./CourseContentForm";
-import CourseFormTabs from "./CourseFormTabs";
 import CourseFormFooter from "./CourseFormFooter";
+import CourseFormTabs from "./CourseFormTabs";
+import CourseInfoForm from "./CourseInfoForm";
+import CoursePricingForm from "./CoursePricingForm";
 import { CourseData } from "./types";
-
-// Icons
 import {
   BookOpen,
   DollarSign,
-  Target,
   Layers,
+  Target,
 } from "lucide-react";
-
+import { toast } from "@/hooks/use-toast";
+import { redirect, useRouter } from "next/navigation";
 const tabs = [
   { id: 1, name: "Course Info", icon: BookOpen },
   { id: 2, name: "Pricing", icon: DollarSign },
@@ -25,9 +24,9 @@ const tabs = [
 ];
 
 export default function CreateCoursePage() {
+  const router = useRouter();
   const [currentTab, setCurrentTab] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
   const [courseData, setCourseData] = useState<CourseData>({
     name: "",
     description: "",
@@ -124,20 +123,76 @@ export default function CreateCoursePage() {
     }
   };
 
-  const handleSubmit = () => {
-    const allValid = [1, 2, 3, 4].every(validateTab);
-    if (allValid) {
-      console.log("🎉 Course Data Submitted:", courseData);
-      // Submit to API or perform any action here
-    } else {
-      for (let i = 1; i <= 4; i++) {
-        if (!validateTab(i)) {
-          setCurrentTab(i);
-          break;
-        }
+  const handleSubmit = async () => {
+  const isValid = [1, 2, 3, 4].every(validateTab);
+  if (!isValid) {
+    for (let i = 1; i <= 4; i++) {
+      if (!validateTab(i)) {
+        setCurrentTab(i);
+        break;
       }
     }
-  };
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+
+    // Basic Fields
+    formData.append("name", courseData.name);
+    formData.append("description", courseData.description);
+    formData.append("categories", courseData.categories);
+    formData.append("level", courseData.level);
+    formData.append("price", courseData.price.toString());
+    formData.append("estimatedPrice", courseData.estimatedPrice.toString());
+    
+    // Uploading files
+    if (courseData.thumbnail) {
+      formData.append("thumbnail", courseData.thumbnail);
+    }
+
+    if (typeof courseData.demoUrl === "string") {
+  formData.append("demoUrl", courseData.demoUrl); 
+}
+
+    // JSON-encoded arrays
+    formData.append("tags", JSON.stringify(courseData.tags));
+    formData.append("benefits", JSON.stringify(courseData.benefits));
+    formData.append("prerequisites", JSON.stringify(courseData.prerequisites));
+    formData.append("courseData", JSON.stringify(courseData.courseData));
+
+    const res = await fetch("http://localhost:8000/api/v1/course/create", {
+      method: "POST",
+      body: formData,
+      credentials: "include", // to send cookies for auth
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+       toast({
+                title: "Success",
+                description: "Course created successfully!",
+            });
+      // Redirect or reset form
+      // redirect 
+      router.push('/instructor/courses');
+    } else {
+      toast({
+        title: "Error",
+        description: data.message || "Failed to create course",
+        variant: "destructive",
+      });
+    }
+  } catch (error) {
+    console.error("Course Creation Error:", error);
+    toast({
+      title: "Error",
+      description: "An unexpected error occurred. Please try again.",
+      variant: "destructive",
+    });
+  }
+};
 
   const renderTabContent = () => {
     switch (currentTab) {

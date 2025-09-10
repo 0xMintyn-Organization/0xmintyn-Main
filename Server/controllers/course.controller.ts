@@ -65,16 +65,41 @@ export const createCourse = CatchAsyncError(async (req: Request, res: Response, 
 
 
 // Get all courses (public)
-export const getAllCourses = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-  const courses = await CourseModel.find()
-    .populate("createdBy", "username avatar")
-    .sort({ createdAt: -1 });
+export const getAllCourses = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const courses = await CourseModel.find()
+      .sort({ createdAt: -1 })
+      .select(
+        "name description thumbnail categories level price estimatedPrice averageRating totalReviews createdBy"
+      )
+      .populate("createdBy", "username avatar");
 
-  res.status(200).json({
-    success: true,
-    message: "All courses fetched successfully",
-    courses,
-  });
-});
+    // Transform to match frontend expectations
+    const formattedCourses = courses.map((course) => ({
+      id: course._id,
+      title: course.name,
+      description: course.description,
+      imagePath: course.thumbnail,
+      imageAltText: `${course.name} course image`,  // Optional
+      category: course.categories,
+      price: course.price,
+      originalPrice: course.estimatedPrice,
+      rating: course.averageRating,
+      students: course.totalReviews, // or actual enrollment if stored
+      level: course.level,
+      instructor: course.createdBy?.username || "Unknown Instructor",
+      authorAvatar: course.createdBy?.avatar || null,
+      duration: "5 hours", // You can replace this with dynamic value if you store real durations
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Courses preview fetched successfully",
+      courses: formattedCourses,
+    });
+  }
+);
+
+
 
 

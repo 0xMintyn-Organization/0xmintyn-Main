@@ -68,28 +68,25 @@ export default function CourseInfoForm({
     return;
   }
 
-  if (field === "demoUrl") {
-    try {
-      setDemoUploadProgress(0); // Start progress
-      const { url } = await uploadFileToBackend(file, (progress) =>
-        setDemoUploadProgress(progress)
-      );
+ if (field === "demoUrl") {
+  try {
+    setDemoUploadProgress(0); // Start progress
+    const { url } = await uploadFileToBackend(file, setDemoUploadProgress);
 
-      setCourseData((prev:any) => ({
-        ...prev,
-        demoUrl: file,
-        demoUrlPreview: url,
-      }));
-      setErrors((prev:any) => ({ ...prev, demoUrl: "" }));
-    } catch (err) {
-      console.error(err);
-      setErrors((prev:any) => ({ ...prev, demoUrl: "Failed to upload demo video" }));
-    } finally {
-      setDemoUploadProgress(null); // End progress
-    }
-
-    return;
+    setCourseData((prev: any) => ({
+      ...prev,
+      demoUrl: url, // ✅ FINAL FIX - set URL
+      demoUrlPreview: url,
+    }));
+    setErrors((prev: any) => ({ ...prev, demoUrl: "" }));
+  } catch (err) {
+    console.error(err);
+    setErrors((prev: any) => ({ ...prev, demoUrl: "Failed to upload demo video" }));
+  } finally {
+    setDemoUploadProgress(null); // End progress
   }
+  return;
+}
 
   // Thumbnail only local preview
   if (field === "thumbnail") {
@@ -216,19 +213,7 @@ export default function CourseInfoForm({
                 onChange={(e) => handleFileUpload(e, 'thumbnail')}
                 className="hidden"
               />
-              {demoUploadProgress !== null && (
-  <div className="mt-2">
-    <div className="h-2 bg-gray-200 rounded">
-      <div
-        className="h-2 bg-green-500 rounded"
-        style={{ width: `${demoUploadProgress}%` }}
-      />
-    </div>
-    <p className="text-xs text-gray-500 mt-1">
-      Uploading: {demoUploadProgress}%
-    </p>
-  </div>
-)}
+              
             </label>
           )}
         </div>
@@ -261,6 +246,19 @@ export default function CourseInfoForm({
                 onChange={(e) => handleFileUpload(e, 'demoUrl')}
                 className="hidden"
               />
+              {demoUploadProgress !== null && (
+  <div className="mt-2">
+    <div className="h-2 bg-gray-200 rounded">
+      <div
+        className="h-2 bg-green-500 rounded"
+        style={{ width: `${demoUploadProgress}%` }}
+      />
+    </div>
+    <p className="text-xs text-gray-500 mt-1">
+      Uploading: {demoUploadProgress}%
+    </p>
+  </div>
+)}
             </label>
           )}
         </div>

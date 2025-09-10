@@ -170,7 +170,7 @@ function EnhancedEducationCard({ course }: { course: any }) {
                     {course.level}
                 </div>
             </div>
-            
+        
             <div className="p-4 space-y-3">
                 <div className="flex items-start justify-between">
                     <h3 className="font-semibold text-lg text-zinc-900 dark:text-white line-clamp-2">
@@ -280,7 +280,7 @@ function EducationHub() {
                                 <Button
                                     variant="outline"
                                     className="border-green-900 text-green-900 hover:bg-green-50 dark:border-green-400 dark:text-green-400"
-                                    onClick={() => router.push("/my-courses")}
+                                    onClick={() => router.push("/instructor/courses")}
                                 >
                                     <BookOpen className="w-4 h-4 mr-2" />
                                     My Courses

@@ -65,7 +65,6 @@ export default function CoursePricingForm({
             }
             placeholder="0.00"
             className={`pl-10 ${errors.price ? "border-red-500" : ""}`}
-            step="0.01"
             min="0"
           />
         </div>
@@ -93,7 +92,6 @@ export default function CoursePricingForm({
             className={`pl-10 ${
               errors.estimatedPrice ? "border-red-500" : ""
             }`}
-            step="0.01"
             min="0"
           />
         </div>

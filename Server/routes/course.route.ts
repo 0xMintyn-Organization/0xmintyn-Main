@@ -2,6 +2,7 @@ import express from "express";
 import { createCourse, getAllCourses } from "../controllers/course.controller";
 import { isAthenticated } from "../utils/auth";
 import upload from "../middleware/multerConfig";
+import { updateAccessToken } from "../controllers/user.controller";
 
 const router = express.Router();
 
@@ -9,6 +10,7 @@ const router = express.Router();
 router.post(
   "/create",
   isAthenticated,
+  updateAccessToken,
   upload.single("thumbnail"),
   createCourse
 );
