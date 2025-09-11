@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "../globals.css";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import LayoutContent from "./LayoutContent.client";
+import Protected from "@/hooks/useProtected";
 
 export const metadata: Metadata = {
   title: "0xMintyn",
@@ -16,9 +17,11 @@ export default function UserDasboardLayout({
 }>) {
   return (
     <ThemeProviderWrapper>
-      <SidebarProvider>
-        <LayoutContent>{children}</LayoutContent>
-      </SidebarProvider>
+      <Protected>
+        <SidebarProvider>
+          <LayoutContent>{children}</LayoutContent>
+        </SidebarProvider>
+      </Protected>
     </ThemeProviderWrapper>
   );
 }

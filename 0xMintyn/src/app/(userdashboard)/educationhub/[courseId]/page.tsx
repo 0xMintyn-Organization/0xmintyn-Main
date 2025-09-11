@@ -1,439 +1,311 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import MuxPlayer  from '@mux/mux-player-react';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import {
-    Play,
-    Clock,
-    Users,
-    Star,
-    Award,
-    BookOpen,
-    Video,
-    FileText,
-    Download,
-    Globe,
-    Calendar,
-    CheckCircle,
-    Lock,
-    ShoppingCart,
-    Heart,
-    Share2,
-    BarChart,
-    Target,
-    Zap,
-    Shield,
-    RefreshCw,
-    ChevronDown
+  Play, Clock, Users, Star, Award, BookOpen, Video, FileText, Download, Globe,
+  Calendar, CheckCircle, Lock, ShoppingCart, Heart, Share2, BarChart, Target, Shield,
+  ChevronDown
 } from "lucide-react";
 
-interface CourseSection {
-    id: number;
-    title: string;
-    duration: string;
-    lectures: {
-        id: number;
-        title: string;
-        duration: string;
-        isPreview: boolean;
-        type: 'video' | 'article' | 'quiz';
-    }[];
-}
-
-const courseSections: CourseSection[] = [
-    {
-        id: 1,
-        title: "Introduction to React",
-        duration: "45 min",
-        lectures: [
-            { id: 1, title: "Welcome to the Course", duration: "5:30", isPreview: true, type: 'video' },
-            { id: 2, title: "What is React?", duration: "12:45", isPreview: true, type: 'video' },
-            { id: 3, title: "Setting Up Development Environment", duration: "15:20", isPreview: false, type: 'video' },
-            { id: 4, title: "Your First React App", duration: "11:30", isPreview: false, type: 'video' }
-        ]
-    },
-    {
-        id: 2,
-        title: "React Fundamentals",
-        duration: "2h 15min",
-        lectures: [
-            { id: 5, title: "Components and Props", duration: "18:45", isPreview: false, type: 'video' },
-            { id: 6, title: "State Management", duration: "22:30", isPreview: false, type: 'video' },
-            { id: 7, title: "Handling Events", duration: "15:10", isPreview: false, type: 'video' },
-            { id: 8, title: "Practice Exercise", duration: "30 min", isPreview: false, type: 'quiz' }
-        ]
-    },
-    {
-        id: 3,
-        title: "Advanced Concepts",
-        duration: "3h 30min",
-        lectures: [
-            { id: 9, title: "React Hooks Deep Dive", duration: "45:00", isPreview: false, type: 'video' },
-            { id: 10, title: "Context API", duration: "35:20", isPreview: false, type: 'video' },
-            { id: 11, title: "Performance Optimization", duration: "28:15", isPreview: false, type: 'video' },
-            { id: 12, title: "Best Practices Guide", duration: "15 min", isPreview: false, type: 'article' }
-        ]
-    }
-];
-
 export default function CoursePreviewPage() {
-    const [isWishlisted, setIsWishlisted] = useState(false);
-    const [expandedSections, setExpandedSections] = useState<number[]>([1]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [course, setCourse] = useState<any>(null);
+  const [expandedSections, setExpandedSections] = useState<number[]>([]);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const params = useParams();
+  const courseId = params ? params["courseId"] : undefined;
 
-    const toggleSection = (sectionId: number) => {
-        setExpandedSections(prev =>
-            prev.includes(sectionId)
-                ? prev.filter(id => id !== sectionId)
-                : [...prev, sectionId]
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}course/${courseId}`,
+          { withCredentials: true }
         );
+        const result = res.data;
+
+        if (result.success) {
+          const data = result.course;
+
+          // Patch paths
+          data.demoUrl = `http://localhost:8000/api/v1/stream/${data.demoUrl?.split("uploads/videos/")[1]}`;
+          data.thumbnail = data.thumbnail?.replace("http://localhost:8000", process.env.NEXT_PUBLIC_SERVER_URI || "");
+          data.courseData = data.courseData?.map((section: any) => ({
+            ...section,
+            videos: section.videos?.map((video: any) => ({
+              ...video,
+              videoUrl: `http://localhost:8000/api/v1/stream/${video.videoUrl.split("uploads/videos/")[1]}`
+            }))
+          }));
+
+          setCourse(data);
+          setExpandedSections(data.courseData?.map((_: any, idx: number) => idx) || []);
+          setError("");
+          console.log(data);
+        } else {
+          setError("Unable to fetch course details.");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("An error occurred while fetching course details.");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    return (
-        <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
-            {/* Hero Section */}
-            <div className="bg-zinc-900 text-white">
-                <div className="max-w-7xl mx-auto px-4 py-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Course Info - Left Side */}
-                        <div className="lg:col-span-2 space-y-6">
-                            {/* Breadcrumb */}
-                            <div className="flex items-center gap-2 text-sm text-gray-400">
-                                <span>Development</span>
-                                <span>/</span>
-                                <span>Web Development</span>
-                                <span>/</span>
-                                <span>React</span>
-                            </div>
+    if (courseId) fetchCourse();
+  }, [courseId]);
 
-                            <div>
-                                <h1 className="text-4xl font-bold mb-4">
-                                    Complete React Developer Course 2024
-                                </h1>
-                                <p className="text-xl text-gray-300 mb-6">
-                                    Master React 18 with Redux, Hooks, and Context API. Build 10+ real projects including e-commerce platform.
-                                </p>
-                            </div>
+  const toggleSection = (sectionId: number) => {
+    setExpandedSections(prev =>
+      prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId]
+    );
+  };
 
-                            <div className="flex items-center gap-6 flex-wrap">
-                                <Badge className="bg-yellow-500 text-black px-3 py-1">Bestseller</Badge>
-                                <div className="flex items-center gap-1">
-                                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                                    <span className="font-semibold">4.8</span>
-                                    <span className="text-gray-400">(2,345 ratings)</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Users className="w-5 h-5" />
-                                    <span>12,456 students</span>
-                                </div>
-                            </div>
+  const formatDuration = (mins: number) => {
+    const hours = Math.floor(mins / 60);
+    const minutes = mins % 60;
+    return `${hours > 0 ? hours + "h " : ""}${minutes} mins`;
+  };
 
-                            <div className="flex items-center gap-6 text-sm">
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4" />
-                                    <span>Last updated 11/2024</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Globe className="w-4 h-4" />
-                                    <span>English</span>
-                                </div>
-                            </div>
+  if (loading) return <div className="p-10 text-center text-gray-600">Loading course...</div>;
+  if (error) return <div className="p-10 text-center text-red-600">{error}</div>;
 
-                            <div className="flex items-center gap-4">
-                                <Avatar className="w-12 h-12">
-                                    <AvatarImage src="https://github.com/shadcn.png" />
-                                    <AvatarFallback>JD</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-semibold">Created by John Doe</p>
-                                    <p className="text-sm text-gray-400">Senior React Developer at Tech Corp</p>
-                                </div>
-                            </div>
-                        </div>
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
+      {/* Hero Section */}
+      <div className="bg-zinc-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <span>{course?.categories}</span>
+                <span>/</span>
+                <span>{course?.level}</span>
+              </div>
 
-                        {/* Course Card - Right Side */}
-                        <div className="lg:col-span-1">
-                            <Card className="sticky top-4 bg-white dark:bg-zinc-800 shadow-xl">
-                                <CardContent className="p-0">
-                                    {/* Video Preview */}
-                                    <div className="relative aspect-video">
-                                        <iframe
-                                            className="w-full h-full rounded-t-lg"
-                                            src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                                            title="Course Preview"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                            allowFullScreen
-                                        />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-t-lg">
-                                            <Button size="lg" className="bg-white text-black hover:bg-gray-100">
-                                                <Play className="w-6 h-6 mr-2" />
-                                                Preview Course
-                                            </Button>
-                                        </div>
-                                    </div>
+              <h1 className="text-4xl font-bold">{course?.name}</h1>
+              <p className="text-lg text-gray-300">{course?.description}</p>
 
-                                    <div className="p-6 space-y-4">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-3xl font-bold text-green-700 dark:text-green-400">
-                                                $49.99
-                                            </span>
-                                            <span className="text-xl text-gray-500 line-through">$199.99</span>
-                                            <Badge className="bg-green-100 text-green-800">75% OFF</Badge>
-                                        </div>
-
-                                        <div className="text-red-600 text-sm font-semibold">
-                                            ⏰ 2 days left at this price!
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Button className="w-full bg-green-900 hover:bg-green-800 text-white" size="lg">
-                                                <ShoppingCart className="w-5 h-5 mr-2" />
-                                                Add to Cart
-                                            </Button>
-                                            <Button 
-                                                variant="outline" 
-                                                className="w-full border-green-900 text-green-900 hover:bg-green-50"
-                                                size="lg"
-                                            >
-                                                Buy Now
-                                            </Button>
-                                        </div>
-
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="flex-1"
-                                                onClick={() => setIsWishlisted(!isWishlisted)}
-                                            >
-                                                <Heart className={`w-4 h-4 mr-1 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
-                                                Wishlist
-                                            </Button>
-                                            <Button variant="outline" size="sm" className="flex-1">
-                                                <Share2 className="w-4 h-4 mr-1" />
-                                                Share
-                                            </Button>
-                                        </div>
-
-                                        <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-                                            30-Day Money-Back Guarantee
-                                        </div>
-
-                                        <div className="space-y-3 pt-4 border-t">
-                                            <h4 className="font-semibold">This course includes:</h4>
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex items-center gap-3">
-                                                    <Video className="w-4 h-4 text-gray-500" />
-                                                    <span>22 hours on-demand video</span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <FileText className="w-4 h-4 text-gray-500" />
-                                                    <span>15 articles</span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <Download className="w-4 h-4 text-gray-500" />
-                                                    <span>85 downloadable resources</span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <Shield className="w-4 h-4 text-gray-500" />
-                                                    <span>Full lifetime access</span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <Award className="w-4 h-4 text-gray-500" />
-                                                    <span>Certificate of completion</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
+              <div className="flex items-center gap-4 flex-wrap">
+                <Badge className="bg-yellow-500 text-black">Bestseller</Badge>
+                <div className="flex items-center gap-1">
+                  <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                  {course?.averageRating || 0}
+                  <span className="text-gray-400">({course?.totalReviews} reviews)</span>
                 </div>
+                <div className="flex items-center gap-1">
+                  <Users className="w-5 h-5" />
+                  {course?.students || 0} students
+                </div>
+              </div>
+
+              <div className="flex gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>Updated {new Date(course.createdAt).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  <span>English</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 mt-4">
+                <Avatar className="w-12 h-12">
+                  <AvatarImage src={course?.createdBy?.avatar} />
+                  <AvatarFallback>
+                    {course?.createdBy?.firstName?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold">
+                    {course?.createdBy?.firstName} {course?.createdBy?.lastName}
+                  </p>
+                  <p className="text-sm text-gray-400">{course?.createdBy?.email}</p>
+                </div>
+              </div>
             </div>
 
-            {/* Course Content Section */}
-            <div className="max-w-7xl mx-auto px-4 py-12">
-                <Tabs defaultValue="overview" className="space-y-8">
-                    <TabsList className="grid grid-cols-4 w-full max-w-2xl">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
-                        <TabsTrigger value="instructor">Instructor</TabsTrigger>
-                        <TabsTrigger value="reviews">Reviews</TabsTrigger>
-                    </TabsList>
+            {/* Pricing + Preview */}
+            <div>
+              <Card className="sticky top-4 bg-white dark:bg-zinc-800">
+               <MuxPlayer
+  src={course?.demoUrl}
+  streamType="on-demand"
+  metadata={{
+    video_id: courseId,
+    video_title: course?.name,
+  }}
+  autoPlay={false}
+  className="w-full aspect-video rounded-lg"
+/>
 
-                    <TabsContent value="overview" className="space-y-8">
-                        {/* What you'll learn */}
-                        <Card>
-                            <CardContent className="p-6">
-                                <h2 className="text-2xl font-bold mb-6">What you'll learn</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {[
-                                        "Build 10+ real world React applications",
-                                        "Master React Hooks and functional components",
-                                        "Implement Redux for state management",
-                                        "Deploy React apps to production",
-                                        "Work with REST APIs and GraphQL",
-                                        "Implement authentication and authorization",
-                                        "Write clean, maintainable code",
-                                        "Master modern JavaScript ES6+"
-                                    ].map((item, index) => (
-                                        <div key={index} className="flex items-start gap-3">
-                                            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                                            <span>{item}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
+                <CardContent className="p-6 space-y-4">
+                  {/* Price */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl font-bold text-green-700 dark:text-green-400">${course?.price}</span>
+                    <span className="text-xl text-gray-500 line-through">${course?.estimatedPrice}</span>
+                    <Badge className="bg-green-100 text-green-800">
+                      {Math.round(((course?.estimatedPrice - course?.price) / course?.estimatedPrice) * 100)}% OFF
+                    </Badge>
+                  </div>
 
-                        {/* Requirements */}
-                        <Card>
-                            <CardContent className="p-6">
-                                <h2 className="text-2xl font-bold mb-6">Requirements</h2>
-                                <ul className="space-y-2">
-                                    <li className="flex items-start gap-3">
-                                        <Target className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
-                                        <span>Basic understanding of HTML, CSS, and JavaScript</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <Target className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
-                                        <span>A computer with internet access</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <Target className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
-                                        <span>Willingness to learn and practice</span>
-                                    </li>
-                                </ul>
-                            </CardContent>
-                        </Card>
+                  <div className="space-y-2">
+                    <Button size="lg" className="w-full bg-green-900 text-white">Enroll Now</Button>
+                    <Button variant="outline" size="lg" className="w-full border-green-900 text-green-900">Buy Now</Button>
+                  </div>
 
-                        {/* Description */}
-                        <Card>
-                            <CardContent className="p-6">
-                                <h2 className="text-2xl font-bold mb-6">Description</h2>
-                                <div className="prose dark:prose-invert max-w-none">
-                                    <p>
-                                        Welcome to the most comprehensive React course on the platform! This course has been designed 
-                                        to take you from a complete beginner to a professional React developer.
-                                    </p>
-                                    <p>
-                                                                        Throughout this course, you'll build 10+ real-world projects including a full-featured e-commerce 
-                                        platform, a social media dashboard, and a project management tool. Each project has been carefully 
-                                        selected to teach you the skills that employers are looking for.
-                                    </p>
-                                    <h3 className="text-xl font-semibold mt-4">Why This Course?</h3>
-                                    <ul>
-                                        <li>Up-to-date with React 18 and all the latest features</li>
-                                        <li>Practical, hands-on learning with real projects</li>
-                                        <li>Clear explanations of complex concepts</li>
-                                        <li>Active Q&A support from the instructor</li>
-                                        <li>Regular updates and new content</li>
-                                    </ul>
-                                </div>
-                            </CardContent>
-                        </Card>
+                  {/* Wishlist & Share */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setIsWishlisted(!isWishlisted)}
+                    >
+                      <Heart className={`w-4 h-4 mr-1 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+                      Wishlist
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <Share2 className="w-4 h-4 mr-1" />
+                      Share
+                    </Button>
+                  </div>
 
-                        {/* Who this course is for */}
-                        <Card>
-                            <CardContent className="p-6">
-                                <h2 className="text-2xl font-bold mb-6">Who this course is for</h2>
-                                <ul className="space-y-3">
-                                    <li className="flex items-start gap-3">
-                                        <Users className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                                        <span>Developers who want to learn React from scratch</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <Users className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                                        <span>JavaScript developers looking to expand their skillset</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <Users className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                                        <span>Anyone interested in modern web development</span>
-                                    </li>
-                                </ul>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                  {/* Features list */}
+                  <div className="pt-4 border-t text-sm space-y-3">
+                    <h4 className="font-semibold">This course includes:</h4>
+                    <div className="flex items-center gap-2">
+                      <Video className="w-4 h-4 text-gray-600" />
+                      <span>On-demand HD video</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Download className="w-4 h-4 text-gray-600" />
+                      <span>Downloadable resources</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-gray-600" />
+                      <span>Full lifetime access</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Award className="w-4 h-4 text-gray-600" />
+                      <span>Certificate of completion</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                    <TabsContent value="curriculum" className="space-y-4">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h2 className="text-2xl font-bold">Course Content</h2>
-                                <p className="text-gray-600 dark:text-gray-400 mt-1">
-                                    12 sections • 67 lectures • 22h 15m total length
-                                </p>
-                            </div>
-                            <Button variant="outline" size="sm">
-                                Expand All Sections
-                            </Button>
+      {/* Tabs Section */}
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <Tabs defaultValue="overview" className="space-y-12">
+          <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+            <TabsTrigger value="instructor">Instructor</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
+          </TabsList>
+
+          {/* Overview */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* What you'll learn */}
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="text-xl font-semibold mb-4">What you&apos;ll learn</h2>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {course?.benefits?.map((item: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Requirements */}
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Requirements</h2>
+                <ul className="space-y-2">
+                  {course?.prerequisites?.map((item: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <Target className="w-5 h-5 text-gray-600" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Curriculum */}
+          <TabsContent value="curriculum" className="space-y-4">
+            {course?.courseData?.map((section: any, i: number) => (
+              <Card key={i}>
+                <CardContent className="p-0">
+                  <button
+                    onClick={() => toggleSection(i)}
+                    className="flex justify-between w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-zinc-800"
+                  >
+                    <div>
+                      <h3 className="font-semibold">{section.title}</h3>
+                      <p className="text-sm text-gray-500">{section.videos?.length} lectures</p>
+                    </div>
+                    <ChevronDown
+                      className={`w-5 h-5 transition-transform ${expandedSections.includes(i) ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {expandedSections.includes(i) && (
+                    <div className="border-t">
+                      {section.videos?.map((video: any, index: number) => (
+                        <div key={index} className="flex justify-between items-center p-4 hover:bg-gray-50 dark:hover:bg-zinc-800">
+                          <div className="flex items-center gap-3">
+                            <Video className="w-4 h-4 text-gray-600" />
+                            <span>{video.title}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-500">{formatDuration(video.videoLength)}</span>
+                            <Lock className="w-4 h-4 text-gray-400" />
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
 
-                        {courseSections.map((section) => (
-                            <Card key={section.id}>
-                                <CardContent className="p-0">
-                                    <button
-                                        onClick={() => toggleSection(section.id)}
-                                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <BookOpen className="w-5 h-5 text-gray-500" />
-                                            <div className="text-left">
-                                                <h3 className="font-semibold">{section.title}</h3>
-                                                <p className="text-sm text-gray-500">
-                                                    {section.lectures.length} lectures • {section.duration}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <ChevronDown className={`w-5 h-5 transition-transform ${
-                                            expandedSections.includes(section.id) ? 'rotate-180' : ''
-                                        }`} />
-                                    </button>
-
-                                    {expandedSections.includes(section.id) && (
-                                        <div className="border-t">
-                                            {section.lectures.map((lecture) => (
-                                                <div
-                                                    key={lecture.id}
-                                                    className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-zinc-800"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        {lecture.type === 'video' && <Video className="w-4 h-4 text-gray-500" />}
-                                                        {lecture.type === 'article' && <FileText className="w-4 h-4 text-gray-500" />}
-                                                        {lecture.type === 'quiz' && <BarChart className="w-4 h-4 text-gray-500" />}
-                                                        <span className="text-sm">{lecture.title}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        {lecture.isPreview && (
-                                                            <Button variant="ghost" size="sm" className="text-green-600">
-                                                                Preview
-                                                            </Button>
-                                                        )}
-                                                        <span className="text-sm text-gray-500">{lecture.duration}</span>
-                                                        {!lecture.isPreview && <Lock className="w-4 h-4 text-gray-400" />}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </TabsContent>
-
+         
+          
                     <TabsContent value="instructor" className="space-y-6">
                         <Card>
                             <CardContent className="p-6">
                                 <div className="flex items-start gap-6">
                                     <Avatar className="w-24 h-24">
-                                        <AvatarImage src="https://github.com/shadcn.png" />
+                                        <AvatarImage src={course.createdBy?.avatar} />
                                         <AvatarFallback>JD</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1">
-                                        <h2 className="text-2xl font-bold mb-2">John Doe</h2>
+                                        <h2 className="text-2xl font-bold mb-2">{course.createdBy?.firstName} {course.createdBy?.lastName}</h2>
                                         <p className="text-gray-600 dark:text-gray-400 mb-4">
                                             Senior React Developer & Instructor
                                         </p>
@@ -468,8 +340,8 @@ export default function CoursePreviewPage() {
                                             </div>
                                         </div>
                                         <p className="text-zinc-700 dark:text-gray-300">
-                                            I'm a passionate developer with over 10 years of experience in web development. 
-                                            I've worked with companies like Google, Facebook, and Microsoft, and now I'm 
+                                            I&apos;m a passionate developer with over 10 years of experience in web development. 
+                                            I&apos;ve worked with companies like Google, Facebook, and Microsoft, and now I&apos;m 
                                             dedicated to teaching the next generation of developers.
                                         </p>
                                     </div>
@@ -478,7 +350,7 @@ export default function CoursePreviewPage() {
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="reviews" className="space-y-6">
+               <TabsContent value="reviews" className="space-y-6">
                         <Card>
                             <CardContent className="p-6">
                                 <h2 className="text-2xl font-bold mb-6">Student Reviews</h2>
@@ -553,8 +425,8 @@ export default function CoursePreviewPage() {
                             </CardContent>
                         </Card>
                     </TabsContent>
-                </Tabs>
-            </div>
-        </div>
-    );
+        </Tabs>
+      </div>
+    </div>
+  );
 }

@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios"; 
 import Protected from "@/hooks/useProtected";
-import EducationCard from "@/components/EducationHub/EducationCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -149,6 +150,8 @@ const eduCardDetails = [
 
 // Enhanced Education Card Component
 function EnhancedEducationCard({ course }: { course: any }) {
+    const router = useRouter();
+    
     const discountPercentage = Math.round(
         ((course.originalPrice - course.price) / course.originalPrice) * 100
     );
@@ -219,6 +222,14 @@ function EnhancedEducationCard({ course }: { course: any }) {
                             ? "bg-gray-500 hover:bg-gray-600" 
                             : "bg-green-900 hover:bg-green-800 text-white"
                         }
+                        onClick={() => {
+                            if (!course.isPurchased) {
+                                // Handle enrollment logic
+                                router.push(`/educationhub/${course.id}`);
+                            } else {
+                                // Navigate to course content
+                                router.push(`/courses/${course.id}`);
+                            }}}
                     >
                         {course.isPurchased ? "View Course" : "Enroll Now"}
                     </Button>
@@ -234,15 +245,61 @@ function EducationHub() {
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [sortBy, setSortBy] = useState("popular");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+    const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const filteredCourses = eduCardDetails.filter((course) => {
+useEffect(() => {
+    const fetchCourses = async () => {
+        try {
+            setLoading(true);
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}course`,
+                {
+                    withCredentials: true
+                }
+            );
+            
+            if (res.data.success) {
+                const courseData = res.data.courses.map((course: any) => ({
+                    id: course.id,
+                    title: course.title,
+                    description: course.description,
+                    imagePath: course.imagePath,
+                    imageAltText: course.imageAltText,
+                    category: course.category,
+                    price: course.price,
+                    originalPrice: course.originalPrice,
+                    rating: course.rating,
+                    students: course.students,
+                    duration: course.duration,
+                    level: course.level,
+                    instructor: course.instructor,
+                    isPurchased: false, // default, update based on backend user state
+                }));
+
+                setCourses(courseData);
+                setError("");
+            } else {
+                setError("Failed to fetch courses");
+            }
+        } catch (err: any) {
+            console.error(err);
+            setError("Something went wrong while fetching courses.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchCourses();
+}, []);
+
+    const filteredCourses = courses.filter((course) => {
         const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             course.description.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === "All" || course.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
 
-    // Sort courses based on selected option
     const sortedCourses = [...filteredCourses].sort((a, b) => {
         switch (sortBy) {
             case "newest":
@@ -471,6 +528,15 @@ function EducationHub() {
                                                                 ? "bg-gray-500 hover:bg-gray-600" 
                                                                 : "bg-green-900 hover:bg-green-800 text-white"
                                                             }
+                                                            onClick={() => {
+                                                                if (!course.isPurchased) {
+                                                                    // Handle enrollment logic
+                                                                    router.push(`/educationhub/${course.id}`);
+                                                                } else {
+                                                                    // Navigate to course content
+                                                                    router.push(`/courses/${course.id}`);
+                                                                }
+                                                            }}
                                                         >
                                                             {course.isPurchased ? "View Course" : "Enroll Now"}
                                                         </Button>

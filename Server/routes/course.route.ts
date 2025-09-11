@@ -1,5 +1,5 @@
 import express from "express";
-import { createCourse, getAllCourses } from "../controllers/course.controller";
+import { createCourse, getAllCourses, getCourseById } from "../controllers/course.controller";
 import { isAthenticated } from "../utils/auth";
 import upload from "../middleware/multerConfig";
 import { updateAccessToken } from "../controllers/user.controller";
@@ -16,5 +16,7 @@ router.post(
 );
 
 router.get("/", isAthenticated, getAllCourses);
+
+router.get("/:id", isAthenticated, getCourseById);
 
 export default router;
