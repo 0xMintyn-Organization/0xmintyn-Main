@@ -17,6 +17,7 @@ import {
   Calendar, CheckCircle, Lock, ShoppingCart, Heart, Share2, BarChart, Target, Shield,
   ChevronDown
 } from "lucide-react";
+import Spinner from "@/components/Spinner";
 
 export default function CoursePreviewPage() {
   const [loading, setLoading] = useState(true);
@@ -41,15 +42,9 @@ export default function CoursePreviewPage() {
           const data = result.course;
 
           // Patch paths
-          data.demoUrl = `http://localhost:8000/api/v1/stream/${data.demoUrl?.split("uploads/videos/")[1]}`;
-          data.thumbnail = data.thumbnail?.replace("http://localhost:8000", process.env.NEXT_PUBLIC_SERVER_URI || "");
-          data.courseData = data.courseData?.map((section: any) => ({
-            ...section,
-            videos: section.videos?.map((video: any) => ({
-              ...video,
-              videoUrl: `http://localhost:8000/api/v1/stream/${video.videoUrl.split("uploads/videos/")[1]}`
-            }))
-          }));
+          data.demoUrl = `https://appbackend.0xmintyn.com/api/v1/stream/${data.demoUrl?.split("uploads/videos/")[1]}`;
+          data.thumbnail = data.thumbnail?.replace("https://appbackend.0xmintyn.com", process.env.NEXT_PUBLIC_SERVER_URI || "");
+         
 
           setCourse(data);
           setExpandedSections(data.courseData?.map((_: any, idx: number) => idx) || []);
@@ -81,7 +76,7 @@ export default function CoursePreviewPage() {
     return `${hours > 0 ? hours + "h " : ""}${minutes} mins`;
   };
 
-  if (loading) return <div className="p-10 text-center text-gray-600">Loading course...</div>;
+  if (loading) return <Spinner />;
   if (error) return <div className="p-10 text-center text-red-600">{error}</div>;
 
   return (
@@ -135,7 +130,7 @@ export default function CoursePreviewPage() {
                   <p className="font-semibold">
                     {course?.createdBy?.firstName} {course?.createdBy?.lastName}
                   </p>
-                  <p className="text-sm text-gray-400">{course?.createdBy?.email}</p>
+                  <p className="text-sm text-gray-400">{course?.createdBy?.username}</p>
                 </div>
               </div>
             </div>

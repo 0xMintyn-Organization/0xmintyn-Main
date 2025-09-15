@@ -161,7 +161,7 @@ export default function CreateCoursePage() {
     formData.append("prerequisites", JSON.stringify(courseData.prerequisites));
     formData.append("courseData", JSON.stringify(courseData.courseData));
 
-    const res = await fetch("http://localhost:8000/api/v1/course/create", {
+    const res = await fetch("https://appbackend.0xmintyn.com/api/v1/course/create", {
       method: "POST",
       body: formData,
       credentials: "include", // to send cookies for auth

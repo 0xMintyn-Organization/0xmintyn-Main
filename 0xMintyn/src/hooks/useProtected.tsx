@@ -1,28 +1,24 @@
-'use client';
+"use client";
+
 import { redirect } from "next/navigation";
 import React from "react";
-import useUserAuth from "./userAuth";
 import Spinner from "@/components/Spinner";
+import useAuth from "./userAuth";
 
 interface ProtectedProps {
     children: React.ReactNode;
 }
 
 export default function Protected({ children }: ProtectedProps) {
-    const { isLoading, isAuthenticated } = useUserAuth();
+    const { isLoading, isAuthenticated } = useAuth();
 
     if (isLoading) {
-        return (
-            <>
-            <Spinner />;
-            
-            </>
-    );
+        return <Spinner />;
     }
 
-   
+    if (!isAuthenticated) {
+        redirect("/login"); // 👈 Redirect unauthenticated users
+    }
 
-    return <>{
-        isAuthenticated ? children : redirect("/login")
-    }</>;
+    return <>{children}</>;
 }

@@ -31,7 +31,7 @@ export const createCourse = CatchAsyncError(async (req: Request, res: Response, 
     return next(new ErrorHandler("Please upload a course thumbnail image", 400));
   }
 
-  const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
+  const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
   const thumbnail = `${serverUrl}/uploads/${req.file.filename}`;
 
   // Parse JSON body fields for arrays
@@ -100,23 +100,64 @@ export const getAllCourses = CatchAsyncError(
   }
 );
 
+// course single details (public)
 export const getCourseById = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     const courseId = req.params.id;
+
     const course = await CourseModel.findById(courseId).populate("createdBy");
 
     if (!course) {
       return next(new ErrorHandler("Course not found", 404));
     }
+
+    // Safe clone
+    const courseObj = course.toObject();
+
+    // Remove 'videoUrl', 'links', 'suggestion', 'questions' from courseData.videos
+    if (Array.isArray(courseObj.courseData)) {
+      courseObj.courseData = courseObj.courseData.map((section: any) => ({
+        ...section,
+        videos: section.videos?.map((video: any) => {
+          const {
+            videoUrl, // ❌ remove
+            links,    // ❌ remove
+            suggestion, // ❌ if present
+            questions,  // ❌ if present
+            ...rest
+          } = video;
+          return rest;
+        })
+      }));
+    }
+
     res.status(200).json({
       success: true,
       message: "Course details fetched successfully",
-      course,
+      course: courseObj,
     });
   }
 );
 
 
+// single get course purchased (private for enrolled users)
+export const getPurchasedCourseById = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = req.params.id;
+    const userId = req.user?._id;
+
+    const course = await CourseModel.findById(courseId).populate("createdBy");
+    if (!course) {
+      return next(new ErrorHandler("Course not found", 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Purchased course details fetched successfully",
+      course,
+    });
+  } 
+);
 
 
 

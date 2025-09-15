@@ -5,7 +5,7 @@ export const initSocketServer = (server: http.Server) => {
     const io = new SocketIOServer(server,
         {
             cors: {
-                origin: ['https://advanced-lms-client.vercel.app', 'http://localhost:3000'],
+                origin: ['https://advanced-lms-client.vercel.app', 'https://app.0xmintyn.com/'],
                 credentials: true,
                 methods: ["GET", "POST"]
             }

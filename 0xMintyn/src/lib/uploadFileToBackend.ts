@@ -13,7 +13,7 @@ export const uploadFileToBackend = (
     const formData = new FormData();
     formData.append("file", file);
 
-    xhr.open("POST", "http://localhost:8000/api/v1/upload/upload", true);
+    xhr.open("POST", "https://appbackend.0xmintyn.com/api/v1/upload/upload", true);
 
     // Track upload progress
     xhr.upload.onprogress = (event) => {

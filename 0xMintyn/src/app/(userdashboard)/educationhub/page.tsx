@@ -27,6 +27,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
+import Spinner from "@/components/Spinner";
 
 // Enhanced course categories
 const courseCategories = [
@@ -48,105 +49,7 @@ const sortOptions = [
     { label: "Highest Rated", value: "rating" },
 ];
 
-// Enhanced dummy course data
-const eduCardDetails = [
-    {
-        id: 1,
-        title: "React for Beginners",
-        description: "Learn the basics of React.js and start building modern UIs.",
-        imagePath: "https://picsum.photos/400/300?random=1",
-        imageAltText: "React course image",
-        category: "Technology",
-        price: 49.99,
-        originalPrice: 99.99,
-        rating: 4.8,
-        students: 1234,
-        duration: "8 hours",
-        level: "Beginner",
-        instructor: "John Doe",
-        isPurchased: false,
-    },
-    {
-        id: 2,
-        title: "Graphic Design Fundamentals",
-        description: "Master visual storytelling and design principles.",
-        imagePath: "https://picsum.photos/400/300?random=2",
-        imageAltText: "Design course image",
-        category: "Design",
-        price: 79.99,
-        originalPrice: 149.99,
-        rating: 4.9,
-        students: 892,
-        duration: "12 hours",
-        level: "Intermediate",
-        instructor: "Jane Smith",
-        isPurchased: true,
-    },
-    {
-        id: 3,
-        title: "Financial Literacy 101",
-        description: "Understand how to budget, invest, and manage finances.",
-        imagePath: "https://picsum.photos/400/300?random=3",
-        imageAltText: "Finance course image",
-        category: "Finance",
-        price: 39.99,
-        originalPrice: 79.99,
-        rating: 4.7,
-        students: 567,
-        duration: "6 hours",
-        level: "Beginner",
-        instructor: "Mike Johnson",
-        isPurchased: false,
-    },
-    {
-        id: 4,
-        title: "Startup Basics",
-        description: "Launch your own business with expert guidance.",
-        imagePath: "https://picsum.photos/400/300?random=4",
-        imageAltText: "Business course image",
-        category: "Business",
-        price: 89.99,
-        originalPrice: 179.99,
-        rating: 4.6,
-        students: 2341,
-        duration: "15 hours",
-        level: "Advanced",
-        instructor: "Sarah Williams",
-        isPurchased: false,
-    },
-    {
-        id: 5,
-        title: "Social Media Marketing",
-        description: "Promote brands and grow audiences on social platforms.",
-        imagePath: "https://picsum.photos/400/300?random=5",
-        imageAltText: "Marketing course image",
-        category: "Marketing",
-        price: 59.99,
-        originalPrice: 119.99,
-        rating: 4.5,
-        students: 1876,
-        duration: "10 hours",
-        level: "Intermediate",
-        instructor: "Alex Brown",
-        isPurchased: true,
-    },
-    {
-        id: 6,
-        title: "Wellness and Nutrition",
-        description: "Stay healthy with diet, exercise, and mindfulness tips.",
-        imagePath: "https://picsum.photos/400/300?random=6",
-        imageAltText: "Health course image",
-        category: "Health",
-        price: 29.99,
-        originalPrice: 59.99,
-        rating: 4.9,
-        students: 3210,
-        duration: "5 hours",
-        level: "Beginner",
-        instructor: "Dr. Emily Davis",
-        isPurchased: false,
-    },
-];
+
 
 // Enhanced Education Card Component
 function EnhancedEducationCard({ course }: { course: any }) {
@@ -293,7 +196,7 @@ useEffect(() => {
     fetchCourses();
 }, []);
 
-    const filteredCourses = courses.filter((course) => {
+    const filteredCourses = courses.filter((course:any) => {
         const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             course.description.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === "All" || course.category === selectedCategory;
@@ -318,6 +221,11 @@ useEffect(() => {
 
     return (
         <Protected>
+            {loading ? (
+            <>
+                    <Spinner />
+
+            </> ):(
             <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
                 {/* Header Section */}
                 <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
@@ -602,7 +510,7 @@ useEffect(() => {
                         </div>
                     )}
                 </div>
-            </div>
+            </div>)}
         </Protected>
     );
 }
