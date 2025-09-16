@@ -79,9 +79,21 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Edit,
+  Trash2,
+  Plus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/Spinner";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Types
 interface AnalyticsData {
@@ -219,42 +231,49 @@ const COLORS = [
 
 function InstructorAnalytics() {
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(
-    null
-  );
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [courses, setCourses] = useState<any[]>([]);
   const [timeRange, setTimeRange] = useState("last30days");
   const [selectedCourse, setSelectedCourse] = useState("all");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<any>(null);
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        // Simulating API call
-        setTimeout(() => {
+        
+        // Fetch analytics data
+        const analyticsRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}/analytics/instructor`, {
+          params: { timeRange, courseId: selectedCourse },
+          withCredentials: true
+        });
+        
+        // Fetch instructor's courses
+        const coursesRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}/course/instructor/my-courses`, {
+          withCredentials: true
+        });
+        
+        if (analyticsRes.data.success) {
+          setAnalyticsData(analyticsRes.data.analytics);
+        } else {
           setAnalyticsData(dummyAnalyticsData);
-          setLoading(false);
-        }, 1000);
-
-        // Actual API call (commented out)
-        /*
-                const res = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}instructor/analytics`, {
-                    params: { timeRange, courseId: selectedCourse },
-                    withCredentials: true
-                });
-                
-                if (res.data.success) {
-                    setAnalyticsData(res.data.analytics);
-                }
-                */
+        }
+        
+        if (coursesRes.data.success) {
+          setCourses(coursesRes.data.courses);
+        }
       } catch (err) {
-        console.error("Error fetching analytics:", err);
+        console.error("Error fetching data:", err);
+        setAnalyticsData(dummyAnalyticsData);
       } finally {
-        // setLoading(false);
+        setLoading(false);
       }
     };
 
-    fetchAnalytics();
+    fetchData();
   }, [timeRange, selectedCourse]);
 
   const calculatePercentageChange = (current: number, previous: number) => {
@@ -263,6 +282,67 @@ function InstructorAnalytics() {
       value: Math.abs(change).toFixed(1),
       isPositive: change >= 0,
     };
+  };
+
+  // Course management functions
+  const handleViewCourse = (courseId: string) => {
+    router.push(`/instructor/courses/${courseId}`);
+  };
+
+  const handleEditCourse = (courseId: string) => {
+    router.push(`/instructor/courses/${courseId}/edit`);
+  };
+
+  const handleDeleteCourse = (course: any) => {
+    setCourseToDelete(course);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteCourse = async () => {
+    if (!courseToDelete) return;
+
+    try {
+      const response = await axios.delete(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}/course/${courseToDelete._id}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        toast({
+          title: "Success",
+          description: "Course deleted successfully!",
+        });
+        
+        // Remove course from local state
+        setCourses(courses.filter(course => course._id !== courseToDelete._id));
+        
+        // Refresh analytics data
+        const analyticsRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}/analytics/instructor`, {
+          params: { timeRange, courseId: selectedCourse },
+          withCredentials: true
+        });
+        
+        if (analyticsRes.data.success) {
+          setAnalyticsData(analyticsRes.data.analytics);
+        }
+      } else {
+        throw new Error(response.data.message || "Failed to delete course");
+      }
+    } catch (error: any) {
+      console.error("Error deleting course:", error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to delete course",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setCourseToDelete(null);
+    }
+  };
+
+  const handleCreateCourse = () => {
+    router.push("/instructor/courses/create");
   };
 
   const formatCurrency = (value: number) => {
@@ -420,6 +500,13 @@ function InstructorAnalytics() {
 
           {/* Charts Section */}
           <Tabs defaultValue="revenue" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="revenue">Revenue</TabsTrigger>
+              <TabsTrigger value="students">Students</TabsTrigger>
+              <TabsTrigger value="courses">Courses</TabsTrigger>
+              <TabsTrigger value="my-courses">My Courses</TabsTrigger>
+            </TabsList>
+            
             <TabsContent value="revenue" className="space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
                 <Card className="lg:col-span-2">
@@ -515,9 +602,134 @@ function InstructorAnalytics() {
                 </Card>
               </div>
             </TabsContent>
+
+            <TabsContent value="my-courses" className="space-y-4">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold">My Courses</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Manage and view your course performance
+                  </p>
+                </div>
+                <Button onClick={handleCreateCourse} className="bg-green-900 hover:bg-green-800">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New Course
+                </Button>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Course Management</CardTitle>
+                  <CardDescription>
+                    View, edit, and manage your courses
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {courses.length === 0 ? (
+                    <div className="text-center py-8">
+                      <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                        No courses yet
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        Create your first course to get started
+                      </p>
+                      <Button onClick={handleCreateCourse} className="bg-green-900 hover:bg-green-800">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Course
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {courses.map((course) => (
+                        <div
+                          key={course._id}
+                          className="flex items-center justify-between p-4 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-700 rounded-lg flex items-center justify-center">
+                              <BookOpen className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900 dark:text-white">
+                                {course.name}
+                              </h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {course.categories} • {course.level}
+                              </p>
+                              <div className="flex items-center space-x-4 mt-1">
+                                <span className="text-sm text-gray-500">
+                                  {course.averageRating} ⭐ ({course.totalReviews} reviews)
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  ${course.price}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewCourse(course._id)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditCourse(course._id)}
+                            >
+                              <Edit className="w-4 h-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteCourse(course)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
             
           </Tabs>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Course</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{courseToDelete?.name}"? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDeleteCourse}
+              >
+                Delete Course
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Protected>
   );

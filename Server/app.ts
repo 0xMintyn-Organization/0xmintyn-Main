@@ -10,6 +10,7 @@ import orderRouter from './routes/order.route';
 import uploadRoutes from './routes/upload.route';
 import streamRoutes from './routes/stream.route';
 import coursesRoutes from './routes/course.route';
+import analyticsRoutes from './routes/analytics.route';
 require('dotenv').config();
 export const app = express();
 
@@ -26,7 +27,7 @@ app.use(cookieParser());
 
 // cors
 app.use(cors({ 
-    origin: ['https://app.0xmintyn.com', 'http://localhost:3001', 'http://209.74.89.249:3000' ], 
+    origin: ['https://app.0xmintyn.com', 'http://localhost:3001', 'http://209.74.89.249:3000' , "http://localhost:3000" ], 
     credentials: true 
 }));
 
@@ -50,6 +51,7 @@ app.use('/api/v1/order', orderRouter);
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/stream", streamRoutes);
 app.use('/api/v1/course', coursesRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
 
 
 

@@ -8,12 +8,14 @@ interface Props {
   currentTab: number;
   handleTabChange: (tabId: number) => void;
   handleSubmit: () => void;
+  mode?: "create" | "edit";
 }
 
 export default function CourseFormFooter({
   currentTab,
   handleTabChange,
   handleSubmit,
+  mode = "create",
 }: Props) {
   return (
     <div className="border-t border-gray-200 dark:border-zinc-700 p-6">
@@ -33,7 +35,7 @@ export default function CourseFormFooter({
             onClick={handleSubmit}
             className="bg-green-900 hover:bg-green-800 text-white"
           >
-            Create Course
+            {mode === "create" ? "Create Course" : "Update Course"}
           </Button>
         ) : (
           <Button

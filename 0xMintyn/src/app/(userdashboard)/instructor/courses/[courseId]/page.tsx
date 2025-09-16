@@ -87,7 +87,7 @@ export default function CourseDetailPage() {
       try {
         setLoading(true);
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URI}/course/${courseId}`,
+          `${process.env.NEXT_PUBLIC_SERVER_URI}course/${courseId}`,
           {
             credentials: "include",
           }

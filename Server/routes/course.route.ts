@@ -1,5 +1,5 @@
 import express from "express";
-import { createCourse, getAllCourses, getCourseById, getPurchasedCourseById, updateCourse, deleteCourse, getInstructorCourses } from "../controllers/course.controller";
+import { createCourse, getAllCourses, getCourseById, getPurchasedCourseById, updateCourse, deleteCourse, getInstructorCourses, createTempProfessionalCourse } from "../controllers/course.controller";
 import { isAthenticated } from "../utils/auth";
 import upload from "../middleware/multerConfig";
 import { updateAccessToken } from "../controllers/user.controller";
@@ -25,5 +25,8 @@ router.get("/enrolled-course/:id", isAthenticated, getPurchasedCourseById);
 router.get("/instructor/my-courses", updateAccessToken, isAthenticated, getInstructorCourses);
 router.put("/:id", updateAccessToken, isAthenticated, upload.single("thumbnail"), updateCourse);
 router.delete("/:id", updateAccessToken, isAthenticated, deleteCourse);
+
+// Temporary API to create professional course (for testing)
+router.post("/create-professional", createTempProfessionalCourse);
 
 export default router;

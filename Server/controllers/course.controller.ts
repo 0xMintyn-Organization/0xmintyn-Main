@@ -261,5 +261,217 @@ export const getInstructorCourses = CatchAsyncError(
   }
 );
 
+// Temporary API to create a professional course (for testing)
+export const createTempProfessionalCourse = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // Professional course data with enhanced details
+    const professionalCourseData = {
+      name: "Complete Data Science Masterclass: From Zero to Hero",
+      description: `Master the art of data science with this comprehensive course designed for both beginners and intermediate learners. 
+
+This course covers everything you need to know to become a proficient data scientist, including:
+
+🔍 **Data Analysis Fundamentals**
+- Statistical analysis and probability theory
+- Data visualization techniques with Python and R
+- Exploratory data analysis (EDA) best practices
+
+🤖 **Machine Learning Mastery**
+- Supervised and unsupervised learning algorithms
+- Deep learning with TensorFlow and PyTorch
+- Model evaluation and optimization techniques
+
+📊 **Real-World Applications**
+- Business intelligence and analytics
+- Predictive modeling for various industries
+- Data-driven decision making strategies
+
+🛠️ **Tools & Technologies**
+- Python programming for data science
+- SQL for database management
+- Jupyter notebooks and data science workflows
+- Cloud platforms (AWS, Google Cloud, Azure)
+
+By the end of this course, you'll have the skills to:
+- Analyze complex datasets and extract meaningful insights
+- Build and deploy machine learning models
+- Create compelling data visualizations
+- Make data-driven business decisions
+- Land a job as a data scientist or analyst
+
+Perfect for aspiring data scientists, business analysts, and anyone looking to leverage data for better decision-making.`,
+      categories: "Data Science",
+      level: "Intermediate",
+      price: 199,
+      estimatedPrice: 299,
+      tags: ["Data Science", "Machine Learning", "Python", "Statistics", "Analytics", "Business Intelligence"],
+      benefits: [
+        "Master Python programming for data science",
+        "Learn statistical analysis and probability",
+        "Build and deploy machine learning models",
+        "Create compelling data visualizations",
+        "Understand business intelligence concepts",
+        "Gain hands-on experience with real datasets",
+        "Learn to use industry-standard tools",
+        "Develop a professional data science portfolio"
+      ],
+      prerequisites: [
+        "Basic understanding of mathematics (algebra, statistics)",
+        "Familiarity with any programming language (Python preferred)",
+        "Basic computer skills and file management",
+        "Willingness to learn and practice regularly",
+        "Access to a computer with internet connection"
+      ],
+      thumbnail: "http://localhost:8000/uploads/thumbnail-1757601951839.png",
+      demoUrl: "http://localhost:8000/uploads/videos/video-1757601919817-772207092.mp4",
+      courseData: [
+        {
+          title: "Introduction to Data Science",
+          description: "Get started with the fundamentals of data science and understand the role of a data scientist in today's world.",
+          videoSection: "Module 1: Foundations",
+          videos: [
+            {
+              title: "What is Data Science?",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 15,
+              description: "Introduction to data science concepts and applications",
+              links: [
+                {
+                  title: "Data Science Roadmap",
+                  url: "https://example.com/roadmap"
+                },
+                {
+                  title: "Recommended Books",
+                  url: "https://example.com/books"
+                }
+              ]
+            },
+            {
+              title: "The Data Science Process",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 20,
+              description: "Understanding the CRISP-DM methodology and data science workflow",
+              links: []
+            }
+          ]
+        },
+        {
+          title: "Python for Data Science",
+          description: "Learn Python programming specifically for data science applications.",
+          videoSection: "Module 2: Programming",
+          videos: [
+            {
+              title: "Python Basics for Data Science",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 25,
+              description: "Essential Python concepts for data manipulation and analysis",
+              links: [
+                {
+                  title: "Python Documentation",
+                  url: "https://docs.python.org"
+                }
+              ]
+            },
+            {
+              title: "NumPy and Pandas",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 30,
+              description: "Master the essential libraries for data manipulation",
+              links: []
+            }
+          ]
+        },
+        {
+          title: "Statistical Analysis",
+          description: "Deep dive into statistical concepts and their applications in data science.",
+          videoSection: "Module 3: Statistics",
+          videos: [
+            {
+              title: "Descriptive Statistics",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 22,
+              description: "Understanding mean, median, mode, and distribution analysis",
+              links: []
+            },
+            {
+              title: "Inferential Statistics",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 28,
+              description: "Hypothesis testing and confidence intervals",
+              links: []
+            }
+          ]
+        },
+        {
+          title: "Machine Learning Fundamentals",
+          description: "Introduction to machine learning algorithms and their practical applications.",
+          videoSection: "Module 4: Machine Learning",
+          videos: [
+            {
+              title: "Introduction to Machine Learning",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 18,
+              description: "Types of machine learning and when to use each approach",
+              links: []
+            },
+            {
+              title: "Linear Regression",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 35,
+              description: "Building and evaluating linear regression models",
+              links: []
+            },
+            {
+              title: "Classification Algorithms",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 40,
+              description: "Logistic regression, decision trees, and ensemble methods",
+              links: []
+            }
+          ]
+        },
+        {
+          title: "Data Visualization",
+          description: "Create compelling visualizations to communicate your findings effectively.",
+          videoSection: "Module 5: Visualization",
+          videos: [
+            {
+              title: "Matplotlib and Seaborn",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 32,
+              description: "Creating static and interactive visualizations",
+              links: []
+            },
+            {
+              title: "Advanced Visualization Techniques",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoLength: 28,
+              description: "Dashboard creation and storytelling with data",
+              links: []
+            }
+          ]
+        }
+      ],
+      createdBy: "68b991b193729d70cd4ced5e", // Using the same instructor ID from your data
+      averageRating: 0,
+      totalReviews: 0,
+      reviews: []
+    };
+
+    try {
+      const course = await CourseModel.create(professionalCourseData);
+
+      res.status(201).json({
+        success: true,
+        message: "Professional course created successfully!",
+        course,
+      });
+    } catch (error: any) {
+      console.error("Error creating professional course:", error);
+      return next(new ErrorHandler("Failed to create professional course", 500));
+    }
+  }
+);
+
 
 
