@@ -26,7 +26,7 @@ app.use(cookieParser());
 
 // cors
 app.use(cors({ 
-    origin: ['https://app.0xmintyn.com/', 'http://localhost:3001', 'http://209.74.89.249:3000', "https://app.0xmintyn.com/" ], 
+    origin: ['https://app.0xmintyn.com', 'http://localhost:3001', 'http://209.74.89.249:3000' ], 
     credentials: true 
 }));
 
@@ -39,6 +39,9 @@ const limiter = rateLimit({
     standardHeaders: 'draft-8',
     legacyHeaders: false, 
 })
+
+// Apply rate limiter before routes
+app.use(limiter);
 
 // routes
 app.use('/api/v1', userRouter);
@@ -63,9 +66,6 @@ app.all('*', (req: Request, res: Response, next: NextFunction) => {
     next(err);
 }
 );
-
-// Rate limiter
-app.use(limiter);
-
+ 
 // Error Middleware
 app.use(ErrorMiddleware);

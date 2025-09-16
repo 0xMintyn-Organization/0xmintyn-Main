@@ -159,5 +159,107 @@ export const getPurchasedCourseById = CatchAsyncError(
   } 
 );
 
+// Update course (Instructor)
+export const updateCourse = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = req.params.id;
+    const {
+      name,
+      description,
+      categories,
+      level,
+      price,
+      estimatedPrice,
+      tags,
+      benefits,
+      prerequisites,
+      courseData,
+    } = req.body;
+
+    const course = await CourseModel.findById(courseId);
+    if (!course) {
+      return next(new ErrorHandler("Course not found", 404));
+    }
+
+    // Check if user owns the course
+    if (course.createdBy.toString() !== req.user?._id.toString()) {
+      return next(new ErrorHandler("You are not authorized to update this course", 403));
+    }
+
+    // Parse JSON fields if they are strings
+    const parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
+    const parsedBenefits = typeof benefits === "string" ? JSON.parse(benefits) : benefits;
+    const parsedPrerequisites = typeof prerequisites === "string" ? JSON.parse(prerequisites) : prerequisites;
+    const parsedCourseData = typeof courseData === "string" ? JSON.parse(courseData) : courseData;
+
+    // Update fields
+    if (name) course.name = name;
+    if (description) course.description = description;
+    if (categories) course.categories = categories;
+    if (level) course.level = level;
+    if (price) course.price = price;
+    if (estimatedPrice) course.estimatedPrice = estimatedPrice;
+    if (parsedTags) course.tags = parsedTags;
+    if (parsedBenefits) course.benefits = parsedBenefits;
+    if (parsedPrerequisites) course.prerequisites = parsedPrerequisites;
+    if (parsedCourseData) course.courseData = parsedCourseData;
+
+    // Handle thumbnail update if provided
+    if (req.file) {
+      const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
+      course.thumbnail = `${serverUrl}/uploads/${req.file.filename}`;
+    }
+
+    await course.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Course updated successfully",
+      course,
+    });
+  }
+);
+
+// Delete course (Instructor)
+export const deleteCourse = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = req.params.id;
+
+    const course = await CourseModel.findById(courseId);
+    if (!course) {
+      return next(new ErrorHandler("Course not found", 404));
+    }
+
+    // Check if user owns the course
+    if (course.createdBy.toString() !== req.user?._id.toString()) {
+      return next(new ErrorHandler("You are not authorized to delete this course", 403));
+    }
+
+    await course.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Course deleted successfully",
+    });
+  }
+);
+
+// Get instructor's courses
+export const getInstructorCourses = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const instructorId = req.user?._id;
+
+    const courses = await CourseModel.find({ createdBy: instructorId })
+      .sort({ createdAt: -1 })
+      .populate("createdBy", "username avatar");
+
+    res.status(200).json({
+      success: true,
+      message: "Instructor courses fetched successfully",
+      courses,
+    });
+  }
+);
+
 
 

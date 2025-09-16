@@ -1,5 +1,5 @@
 import express from "express";
-import { createCourse, getAllCourses, getCourseById, getPurchasedCourseById } from "../controllers/course.controller";
+import { createCourse, getAllCourses, getCourseById, getPurchasedCourseById, updateCourse, deleteCourse, getInstructorCourses } from "../controllers/course.controller";
 import { isAthenticated } from "../utils/auth";
 import upload from "../middleware/multerConfig";
 import { updateAccessToken } from "../controllers/user.controller";
@@ -15,10 +15,15 @@ router.post(
   createCourse
 );
 
-router.get("/", isAthenticated, getAllCourses);
+router.get("/", getAllCourses);
 
-router.get("/:id", isAthenticated, getCourseById);
+router.get("/:id", getCourseById);
 
 router.get("/enrolled-course/:id", isAthenticated, getPurchasedCourseById);
+
+// Instructor course management
+router.get("/instructor/my-courses", updateAccessToken, isAthenticated, getInstructorCourses);
+router.put("/:id", updateAccessToken, isAthenticated, upload.single("thumbnail"), updateCourse);
+router.delete("/:id", updateAccessToken, isAthenticated, deleteCourse);
 
 export default router;
