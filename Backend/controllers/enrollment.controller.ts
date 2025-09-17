@@ -46,7 +46,7 @@ export const enrollInCourse = CatchAsyncError(
         coursePrice: course.price,
         courseThumbnail: course.thumbnail,
         instructorId: course.createdBy._id.toString(),
-        instructorName: `${course.createdBy.firstName} ${course.createdBy.lastName}`,
+        instructorName: `${(course.createdBy as any).firstName} ${(course.createdBy as any).lastName}`,
         status: 'completed', // For now, auto-complete enrollment (payment will be handled later)
         payment_info: {
           paymentMethod: 'free_enrollment', // Temporary for free courses
@@ -155,6 +155,82 @@ export const checkEnrollment = CatchAsyncError(
     } catch (error: any) {
       console.error("Check Enrollment Error:", error);
       return next(new ErrorHandler("Failed to check enrollment", 500));
+    }
+  }
+);
+
+// Check course access (instructor, admin, or enrolled student)
+export const checkCourseAccess = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { courseId } = req.params;
+      const userId = req.user?._id;
+      const userRole = req.user?.role;
+
+      if (!userId) {
+        return next(new ErrorHandler("User not authenticated", 401));
+      }
+
+      // Check if course exists
+      const course = await CourseModel.findById(courseId).populate("createdBy", "firstName lastName username");
+      if (!course) {
+        return next(new ErrorHandler("Course not found", 404));
+      }
+
+      // Check if user is admin
+      const isAdmin = userRole === 'admin';
+      
+      // Check if user is the course instructor
+      const isInstructor = course.createdBy._id.toString() === userId.toString();
+      
+      // Check if user is enrolled
+      const enrollment = await OrderModel.findOne({
+        courseId: courseId,
+        userId: userId,
+        status: { $in: ['completed'] }
+      });
+      const isEnrolled = !!enrollment;
+
+      // Determine access level
+      let accessLevel = 'none';
+      let hasAccess = false;
+
+      if (isAdmin) {
+        accessLevel = 'admin';
+        hasAccess = true;
+      } else if (isInstructor) {
+        accessLevel = 'instructor';
+        hasAccess = true;
+      } else if (isEnrolled) {
+        accessLevel = 'student';
+        hasAccess = true;
+      }
+
+      res.status(200).json({
+        success: true,
+        hasAccess,
+        accessLevel,
+        isAdmin,
+        isInstructor,
+        isEnrolled,
+        course: {
+          _id: course._id,
+          name: course.name,
+          description: course.description,
+          thumbnail: course.thumbnail,
+          price: course.price,
+          level: course.level,
+          createdBy: course.createdBy
+        },
+        enrollment: enrollment ? {
+          orderId: enrollment._id,
+          enrolledAt: enrollment.enrolledAt,
+          status: enrollment.status
+        } : null
+      });
+    } catch (error: any) {
+      console.error("Check Course Access Error:", error);
+      return next(new ErrorHandler("Failed to check course access", 500));
     }
   }
 );

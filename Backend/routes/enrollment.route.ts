@@ -3,6 +3,7 @@ import {
   enrollInCourse, 
   getUserEnrolledCourses, 
   checkEnrollment, 
+  checkCourseAccess,
   getAllOrders, 
   getOrderDetails, 
   updateOrderStatus 
@@ -17,6 +18,7 @@ const router = express.Router();
 router.post("/enroll/:courseId", updateAccessToken, isAthenticated, enrollInCourse);
 router.get("/my-courses", updateAccessToken, isAthenticated, getUserEnrolledCourses);
 router.get("/check/:courseId", updateAccessToken, isAthenticated, checkEnrollment);
+router.get("/access/:courseId", updateAccessToken, isAthenticated, checkCourseAccess);
 
 // Order management routes (Admin only)
 router.get("/orders", updateAccessToken, isAthenticated, requireAdmin, getAllOrders);

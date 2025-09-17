@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Protected from "@/hooks/useProtected";
+import CourseAccessGuard from "@/components/CourseAccessGuard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -166,7 +167,8 @@ export default function CourseDetailPage() {
 
   return (
     <Protected>
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
+      <CourseAccessGuard requiredAccess={['instructor', 'admin']}>
+        <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
         {/* Header */}
         <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
           <div className="max-w-7xl mx-auto px-4 py-6">
@@ -425,7 +427,8 @@ export default function CourseDetailPage() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </CourseAccessGuard>
     </Protected>
   );
 }

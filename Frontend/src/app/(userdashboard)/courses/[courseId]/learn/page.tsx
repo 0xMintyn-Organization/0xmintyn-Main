@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import Protected from "@/hooks/useProtected";
-import { useRole } from "@/hooks/useRole";
+import CourseAccessGuard from "@/components/CourseAccessGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,6 @@ function CourseLearningPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useRole();
   const [loading, setLoading] = useState(true);
   const [courseData, setCourseData] = useState<CourseLearningData | null>(null);
   const courseId = params.courseId as string;
@@ -46,25 +45,9 @@ function CourseLearningPage() {
     try {
       setLoading(true);
       
-      // Check if user is enrolled
-      const enrollmentResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/check/${courseId}`,
-        { withCredentials: true }
-      );
-
-      if (!enrollmentResponse.data.success || !enrollmentResponse.data.isEnrolled) {
-        toast({
-          title: "Access Denied",
-          description: "You are not enrolled in this course",
-          variant: "destructive",
-        });
-        router.push(`/educationhub/${courseId}`);
-        return;
-      }
-
-      // Fetch course details
+      // Fetch course details (access is already checked by CourseAccessGuard)
       const courseResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/course/${courseId}`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}course/${courseId}`,
         { withCredentials: true }
       );
 
@@ -134,6 +117,7 @@ function CourseLearningPage() {
 
   return (
     <Protected>
+      <CourseAccessGuard requiredAccess={['student']}>
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -281,6 +265,7 @@ function CourseLearningPage() {
             </div>
           </div>
         </div>
+      </CourseAccessGuard>
     </Protected>
   );
 }

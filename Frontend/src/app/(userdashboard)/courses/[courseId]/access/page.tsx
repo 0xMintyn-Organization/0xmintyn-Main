@@ -54,48 +54,24 @@ function CourseAccessPage() {
     try {
       setLoading(true);
       
-      // Fetch course details
-      const courseResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}course/${courseId}`,
+      // Use the new comprehensive access check API
+      const accessResponse = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/access/${courseId}`,
         { withCredentials: true }
       );
 
-      if (!courseResponse.data.success) {
-        throw new Error("Course not found");
+      if (!accessResponse.data.success) {
+        throw new Error("Failed to check course access");
       }
 
-      const course = courseResponse.data.course;
+      const accessData = accessResponse.data;
       
-      // Check enrollment status
-      let enrollmentResponse;
-      try {
-        enrollmentResponse = await axios.get(
-          `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/check/${courseId}`,
-          { withCredentials: true }
-        );
-      } catch (error) {
-        enrollmentResponse = { data: { success: false, isEnrolled: false } };
-      }
-
-      const isEnrolled = enrollmentResponse.data.success && enrollmentResponse.data.isEnrolled;
-      const isInstructor = course.createdBy._id === user?._id;
-      const isAdminAccess = isAdmin();
-
-      let accessLevel: 'none' | 'student' | 'instructor' | 'admin' = 'none';
-      if (isAdminAccess) {
-        accessLevel = 'admin';
-      } else if (isInstructor) {
-        accessLevel = 'instructor';
-      } else if (isEnrolled) {
-        accessLevel = 'student';
-      }
-
       setAccessData({
-        course,
-        isEnrolled,
-        isInstructor,
-        enrollment: enrollmentResponse.data.enrollment,
-        accessLevel
+        course: accessData.course,
+        isEnrolled: accessData.isEnrolled,
+        isInstructor: accessData.isInstructor,
+        enrollment: accessData.enrollment,
+        accessLevel: accessData.accessLevel
       });
 
     } catch (error: any) {
