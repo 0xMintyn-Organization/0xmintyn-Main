@@ -46,32 +46,35 @@ function DesktopSidebar() {
           transition-all duration-300 ease-in-out
           ${isCollapsed ? 'w-20' : 'w-72'}
           h-screen
+          overflow-visible
         `}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Collapse Toggle Button */}
-       <div className="relative">
-  <Button
-    variant="ghost"
-    size="icon"
-    onClick={() => setIsCollapsed(!isCollapsed)}
-    className={`
-      absolute right-[-14px] top-8 z-50 
-      w-7 h-7 rounded-full 
-      bg-white dark:bg-gray-800 
-      border border-gray-200 dark:border-gray-700
-      shadow-md hover:shadow-lg
-      transition-all duration-300
-      ${isCollapsed ? 'rotate-180' : ''}
-    `}
-    style={{
-      overflow: 'visible',
-    }}
-  >
-    <ChevronLeft className="w-4 h-4 text-gray-700 dark:text-white" />
-  </Button>
-</div>
+        <div className="relative mr-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className={`
+              absolute -right-3 top-8 z-50 
+              w-8 h-8 rounded-full 
+              bg-white dark:bg-gray-800 
+              border-2 border-gray-300 dark:border-gray-600
+              shadow-lg hover:shadow-xl
+              transition-all duration-300
+              hover:scale-110
+              hover:bg-gray-50 dark:hover:bg-gray-700
+              ${isCollapsed ? 'rotate-180' : ''}
+            `}
+            style={{
+              overflow: 'visible',
+            }}
+          >
+            <ChevronLeft className="w-4 h-4 text-gray-800 dark:text-gray-200" />
+          </Button>
+        </div>
         {/* Sidebar Content with Collapse Animation */}
         <div className={`
           h-full overflow-hidden
