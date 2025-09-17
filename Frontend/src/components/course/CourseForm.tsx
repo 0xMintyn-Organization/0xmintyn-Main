@@ -77,7 +77,7 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
         try {
           setLoading(true);
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_SERVER_URI}/course/enrolled-course/${courseId}`,
+            `${process.env.NEXT_PUBLIC_SERVER_URI}course/enrolled-course/${courseId}`,
             {
               credentials: "include",
             }
@@ -263,8 +263,8 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
       formData.append("courseData", JSON.stringify(courseData.courseData));
 
       const url = mode === "create" 
-        ? `${process.env.NEXT_PUBLIC_SERVER_URI}/course/create`
-        : `${process.env.NEXT_PUBLIC_SERVER_URI}/course/${courseId}`;
+        ? `${process.env.NEXT_PUBLIC_SERVER_URI}course/create`
+        : `${process.env.NEXT_PUBLIC_SERVER_URI}course/${courseId}`;
       
       const method = mode === "create" ? "POST" : "PUT";
 

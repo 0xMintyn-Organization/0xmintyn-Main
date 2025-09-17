@@ -79,7 +79,7 @@ function MyCoursesPage() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/course/instructor/my-courses`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}course/instructor/my-courses`,
         { withCredentials: true }
       );
 
@@ -118,7 +118,7 @@ function MyCoursesPage() {
 
     try {
       const response = await axios.delete(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/course/${courseToDelete._id}`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}course/${courseToDelete._id}`,
         { withCredentials: true }
       );
 
@@ -147,7 +147,7 @@ function MyCoursesPage() {
   };
 
   const handleCreateCourse = () => {
-    router.push("/instructor/courses/create");
+    router.push("/create-course");
   };
 
   const formatDate = (dateString: string) => {
@@ -389,7 +389,7 @@ function MyCoursesPage() {
               <DialogHeader>
                 <DialogTitle>Delete Course</DialogTitle>
                 <DialogDescription>
-                  Are you sure you want to delete "{courseToDelete?.name}"? This action cannot be undone.
+                  Are you sure you want to delete &quot;{courseToDelete?.name}&quot;? This action cannot be undone.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>

@@ -250,9 +250,9 @@ function Analytics() {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analyticsData.overview.totalCourses}</div>
+                <div className="text-2xl font-bold">{analyticsData?.overview?.totalCourses || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  +{analyticsData.overview.newCoursesThisPeriod} this period
+                  +{analyticsData?.overview?.newCoursesThisPeriod || 0} this period
                 </p>
               </CardContent>
             </Card>
@@ -263,9 +263,9 @@ function Analytics() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analyticsData.overview.totalUsers}</div>
+                <div className="text-2xl font-bold">{analyticsData?.overview?.totalUsers || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  +{analyticsData.overview.newUsersThisPeriod} this period
+                  +{analyticsData?.overview?.newUsersThisPeriod || 0} this period
                 </p>
               </CardContent>
             </Card>
@@ -276,9 +276,9 @@ function Analytics() {
                 <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analyticsData.overview.averageRating}</div>
+                <div className="text-2xl font-bold">{analyticsData?.overview?.averageRating || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  {analyticsData.overview.totalReviews} total reviews
+                  {analyticsData?.overview?.totalReviews || 0} total reviews
                 </p>
               </CardContent>
             </Card>
@@ -289,9 +289,9 @@ function Analytics() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analyticsData.overview.totalWatchHours.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{analyticsData?.overview?.totalWatchHours?.toLocaleString() || '0'}</div>
                 <p className="text-xs text-muted-foreground">
-                  {analyticsData.overview.averageWatchTime.toFixed(1)}h avg per user
+                  {analyticsData?.overview?.averageWatchTime?.toFixed(1) || '0'}h avg per user
                 </p>
               </CardContent>
             </Card>
@@ -316,7 +316,7 @@ function Analytics() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                      <AreaChart data={analyticsData.growthMetrics.userGrowth}>
+                      <AreaChart data={analyticsData?.growthMetrics?.userGrowth || []}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
                         <YAxis />
@@ -345,7 +345,7 @@ function Analytics() {
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
-                          data={analyticsData.categoryDistribution}
+                          data={analyticsData?.categoryDistribution || []}
                           cx="50%"
                           cy="50%"
                           labelLine={false}
@@ -354,7 +354,7 @@ function Analytics() {
                           fill="#8884d8"
                           dataKey="courses"
                         >
-                          {analyticsData.categoryDistribution.map((entry, index) => (
+                          {(analyticsData?.categoryDistribution || []).map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -376,7 +376,7 @@ function Analytics() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {analyticsData.coursePerformance.slice(0, 5).map((course, index) => (
+                      {(analyticsData?.coursePerformance || []).slice(0, 5).map((course, index) => (
                         <div key={course.id} className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
@@ -407,7 +407,7 @@ function Analytics() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={analyticsData.levelDistribution}>
+                      <BarChart data={analyticsData?.levelDistribution || []}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="level" />
                         <YAxis />
@@ -430,7 +430,7 @@ function Analytics() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {analyticsData.userDemographics.slice(0, 8).map((demo, index) => (
+                      {(analyticsData?.userDemographics || []).slice(0, 8).map((demo, index) => (
                         <div key={demo.country} className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
@@ -461,7 +461,7 @@ function Analytics() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={analyticsData.growthMetrics.userGrowth}>
+                      <LineChart data={analyticsData?.growthMetrics?.userGrowth || []}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
                         <YAxis />
@@ -487,7 +487,7 @@ function Analytics() {
                     <CardDescription>Per user session</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{analyticsData.engagementMetrics.averageWatchTime.toFixed(1)}h</div>
+                    <div className="text-3xl font-bold">{analyticsData?.engagementMetrics?.averageWatchTime?.toFixed(1) || '0'}h</div>
                     <p className="text-sm text-gray-500">per user</p>
                   </CardContent>
                 </Card>
@@ -498,7 +498,7 @@ function Analytics() {
                     <CardDescription>All time</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{analyticsData.engagementMetrics.totalWatchHours.toLocaleString()}</div>
+                    <div className="text-3xl font-bold">{analyticsData?.engagementMetrics?.totalWatchHours?.toLocaleString() || '0'}</div>
                     <p className="text-sm text-gray-500">hours</p>
                   </CardContent>
                 </Card>
@@ -509,7 +509,7 @@ function Analytics() {
                     <CardDescription>Course completion time</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{analyticsData.engagementMetrics.averageCompletionTime.toFixed(1)}h</div>
+                    <div className="text-3xl font-bold">{analyticsData?.engagementMetrics?.averageCompletionTime?.toFixed(1) || '0'}h</div>
                     <p className="text-sm text-gray-500">per course</p>
                   </CardContent>
                 </Card>

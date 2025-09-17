@@ -29,6 +29,6 @@ router.put("/:id", updateAccessToken, isAthenticated, requireInstructorOrAdmin, 
 router.delete("/:id", updateAccessToken, isAthenticated, requireInstructorOrAdmin, deleteCourse);
 
 // Temporary API to create professional course (for testing)
-router.post("/create-professional", createTempProfessionalCourse);
+router.post("/create-professional",isAthenticated, createTempProfessionalCourse);
 
 export default router;

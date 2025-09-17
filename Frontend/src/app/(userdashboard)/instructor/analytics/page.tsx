@@ -233,7 +233,7 @@ function InstructorAnalytics() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(dummyAnalyticsData);
   const [courses, setCourses] = useState<any[]>([]);
   const [timeRange, setTimeRange] = useState("last30days");
   const [selectedCourse, setSelectedCourse] = useState("all");
@@ -246,17 +246,17 @@ function InstructorAnalytics() {
         setLoading(true);
         
         // Fetch analytics data
-        const analyticsRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}/analytics/instructor`, {
+        const analyticsRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}analytics/instructor`, {
           params: { timeRange, courseId: selectedCourse },
           withCredentials: true
         });
         
         // Fetch instructor's courses
-        const coursesRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}/course/instructor/my-courses`, {
+        const coursesRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}course/instructor/my-courses`, {
           withCredentials: true
         });
         
-        if (analyticsRes.data.success) {
+        if (analyticsRes.data.success && analyticsRes.data.analytics) {
           setAnalyticsData(analyticsRes.data.analytics);
         } else {
           setAnalyticsData(dummyAnalyticsData);
@@ -303,7 +303,7 @@ function InstructorAnalytics() {
 
     try {
       const response = await axios.delete(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/course/${courseToDelete._id}`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}course/${courseToDelete._id}`,
         { withCredentials: true }
       );
 
@@ -317,12 +317,12 @@ function InstructorAnalytics() {
         setCourses(courses.filter(course => course._id !== courseToDelete._id));
         
         // Refresh analytics data
-        const analyticsRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}/analytics/instructor`, {
+          const analyticsRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}analytics/instructor`, {
           params: { timeRange, courseId: selectedCourse },
           withCredentials: true
         });
         
-        if (analyticsRes.data.success) {
+        if (analyticsRes.data.success && analyticsRes.data.analytics) {
           setAnalyticsData(analyticsRes.data.analytics);
         }
       } else {
@@ -423,7 +423,7 @@ function InstructorAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(analyticsData.overview.totalRevenue)}
+                  {formatCurrency(analyticsData?.overview?.totalRevenue || 0)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center">
                   <TrendingUp className="w-3 h-3 mr-1 text-green-600" />
@@ -441,7 +441,7 @@ function InstructorAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {analyticsData.overview.totalStudents.toLocaleString()}
+                  {analyticsData?.overview?.totalStudents?.toLocaleString() || '0'}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center">
                   <TrendingUp className="w-3 h-3 mr-1 text-green-600" />
@@ -459,21 +459,21 @@ function InstructorAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {analyticsData.overview.averageRating}
+                  {analyticsData?.overview?.averageRating || 0}
                 </div>
                 <div className="flex items-center mt-1">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
                       className={`w-3 h-3 ${
-                        i < Math.floor(analyticsData.overview.averageRating)
+                        i < Math.floor(analyticsData?.overview?.averageRating || 0)
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-gray-300"
                       }`}
                     />
                   ))}
                   <span className="text-xs text-muted-foreground ml-2">
-                    ({analyticsData.overview.totalCourses} courses)
+                    ({analyticsData?.overview?.totalCourses || 0} courses)
                   </span>
                 </div>
               </CardContent>
@@ -488,10 +488,10 @@ function InstructorAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {analyticsData.overview.completionRate}%
+                  {analyticsData?.overview?.completionRate || 0}%
                 </div>
                 <Progress
-                  value={analyticsData.overview.completionRate}
+                  value={analyticsData?.overview?.completionRate || 0}
                   className="mt-2"
                 />
               </CardContent>
@@ -518,7 +518,7 @@ function InstructorAnalytics() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                      <AreaChart data={analyticsData.revenueData}>
+                      <AreaChart data={analyticsData?.revenueData || []}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis yAxisId="left" />
@@ -560,7 +560,7 @@ function InstructorAnalytics() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">$89.45</div>
+                    <div className="text-2xl font-bold">${analyticsData?.overview?.totalRevenue || 0}</div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center">
                       <TrendingUp className="w-3 h-3 mr-1 text-green-600" />
                       <span className="text-green-600">+5.2%</span> from last
@@ -576,7 +576,7 @@ function InstructorAnalytics() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">$267.89</div>
+                    <div className="text-2xl font-bold">${analyticsData?.overview?.totalRevenue || 0}</div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center">
                       <TrendingUp className="w-3 h-3 mr-1 text-green-600" />
                       <span className="text-green-600">+12.8%</span> from last
@@ -592,7 +592,7 @@ function InstructorAnalytics() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">2.3%</div>
+                    <div className="text-2xl font-bold">{analyticsData?.overview?.refundRate || 0}%</div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center">
                       <TrendingDown className="w-3 h-3 mr-1 text-green-600" />
                       <span className="text-green-600">-0.5%</span> from last
@@ -711,7 +711,7 @@ function InstructorAnalytics() {
             <DialogHeader>
               <DialogTitle>Delete Course</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete "{courseToDelete?.name}"? This action cannot be undone.
+                Are you sure you want to delete &quot;{courseToDelete?.name}&quot;? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

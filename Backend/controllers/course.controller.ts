@@ -452,7 +452,7 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           ]
         }
       ],
-      createdBy: "68b991b193729d70cd4ced5e", // Using the same instructor ID from your data
+      createdBy: req.user?._id, // Using the same instructor ID from your data
       averageRating: 0,
       totalReviews: 0,
       reviews: []

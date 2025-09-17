@@ -113,7 +113,7 @@ const getNavItems = (userRole: string) => {
     },
     { 
       name: "My Courses", 
-      href: "/instructor/my-courses", 
+      href: "/instructor/my_courses", 
       icon: BookOpen,
       badge: null,
       description: "Manage Courses"

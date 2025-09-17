@@ -27,7 +27,7 @@ export const roleService = {
   // Update user role (Admin only)
   updateUserRole: async (userId: string, role: string) => {
     const response = await axios.put(
-      `${API_BASE_URL}role/users/${userId}role`,
+      `${API_BASE_URL}/role/users/${userId}/role`,
       { role },
       { withCredentials: true }
     );
