@@ -12,6 +12,7 @@ import Spinner from "@/components/Spinner";
 import { useToast } from "@/hooks/use-toast";
 import { useLoginMutation } from "@/redux/features/auth/authApi";
 import useAuth from "@/hooks/userAuth";
+import { useRouter } from "next/navigation";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -21,6 +22,7 @@ const loginSchema = z.object({
 export default function LoginPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [login, { data, error, isSuccess }] = useLoginMutation();
@@ -36,9 +38,9 @@ export default function LoginPage() {
   // 🧠 Redirect if already logged in
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      redirect("/dashboard");
+      router.push("/dashboard");
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, router]);
 
   // ✅ Handle login result
   useEffect(() => {
@@ -47,7 +49,10 @@ export default function LoginPage() {
         title: "Success",
         description: data?.message || "Logged in successfully",
       });
-      redirect("/dashboard");
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 100);
     }
 
     if (error && "data" in error) {
@@ -74,7 +79,20 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md mt-16">
-      <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
+      {/* Logo Section */}
+      <div className="flex flex-col items-center mb-6">
+        <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden mb-3">
+          <img 
+            src="/logo.png" 
+            alt="0xMintyn Logo" 
+            className="w-full h-full object-contain"
+          />
+        </div>
+        <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+          0xMintyn
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Community Hub</p>
+      </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

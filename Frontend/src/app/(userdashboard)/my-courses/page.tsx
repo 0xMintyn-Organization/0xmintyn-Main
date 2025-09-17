@@ -68,7 +68,7 @@ function MyCoursesPage() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/enrollment/my-courses`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/my-courses`,
         { withCredentials: true }
       );
 

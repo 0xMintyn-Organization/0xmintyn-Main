@@ -2,6 +2,7 @@
 import { store } from "@/redux/store";
 import React, { ReactNode, useEffect } from "react";
 import { Provider } from "react-redux";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 interface Props {
     children: ReactNode;
@@ -17,5 +18,11 @@ export const Providers = ({ children }: Props) => {
         }
     }, []);
 
-    return <Provider store={store}>{children}</Provider>;
+    return (
+        <Provider store={store}>
+            <AuthProvider>
+                {children}
+            </AuthProvider>
+        </Provider>
+    );
 };

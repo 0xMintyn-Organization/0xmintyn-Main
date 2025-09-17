@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import axiosInstance from "@/utils/axiosInstance";
 import Protected from "@/hooks/useProtected";
 import { Button } from "@/components/ui/button";
 import {
@@ -140,10 +140,7 @@ function AdminDashboard() {
         params.append("search", searchTerm);
       }
   
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}role/users?${params}`,
-        { withCredentials: true }
-      );
+      const response = await axiosInstance.get(`/role/users?${params}`);
   
       if (response.data.success) {
         setUsers(response.data.users);
@@ -174,10 +171,7 @@ function AdminDashboard() {
       }
 
       console.log("Fetching orders from:", `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/orders?${params}`);
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/orders?${params}`,
-        { withCredentials: true }
-      );
+      const response = await axiosInstance.get(`/enrollment/orders?${params}`);
 
       console.log("Orders response:", response.data);
       if (response.data.success) {
@@ -206,10 +200,9 @@ function AdminDashboard() {
     if (!selectedUser) return;
 
     try {
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}role/users/${selectedUser._id}/role`,
-        { role: newRole },
-        { withCredentials: true }
+      const response = await axiosInstance.put(
+        `/role/users/${selectedUser._id}/role`,
+        { role: newRole }
       );
 
       if (response.data.success) {
@@ -241,10 +234,7 @@ function AdminDashboard() {
     if (!selectedUser) return;
 
     try {
-      const response = await axios.delete(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}role/users/${selectedUser._id}`,
-        { withCredentials: true }
-      );
+      const response = await axiosInstance.delete(`/role/users/${selectedUser._id}`);
 
       if (response.data.success) {
         toast({

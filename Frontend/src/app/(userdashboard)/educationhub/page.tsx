@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/Spinner";
+import { useAuth } from "@/contexts/AuthContext";
+import InstructorApplicationModal from "@/components/InstructorApplicationModal";
 
 // Enhanced course categories
 const courseCategories = [
@@ -144,6 +146,16 @@ function EnhancedEducationCard({ course }: { course: any }) {
 
 function EducationHub() {
     const router = useRouter();
+    const { user, isAuthenticated } = useAuth();
+    
+    // Check user role from AuthContext
+    const isInstructor = user?.role === 'instructor';
+    const isAdmin = user?.role === 'admin';
+    
+    // Force re-render when user role changes
+    useEffect(() => {
+        // User role changed, component will re-render
+    }, [user?.role]);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [sortBy, setSortBy] = useState("popular");
@@ -151,6 +163,7 @@ function EducationHub() {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [showInstructorModal, setShowInstructorModal] = useState(false);
 
 useEffect(() => {
     const fetchCourses = async () => {
@@ -241,22 +254,35 @@ useEffect(() => {
                             </div>
                             
                             {/* Action Buttons */}
-                            <div className="flex gap-3">
-                                <Button
-                                    variant="outline"
-                                    className="border-green-900 text-green-900 hover:bg-green-50 dark:border-green-400 dark:text-green-400"
-                                    onClick={() => router.push("/instructor/courses")}
-                                >
-                                    <BookOpen className="w-4 h-4 mr-2" />
-                                    My Courses
-                                </Button>
-                                <Button
-                                    className="bg-green-900 hover:bg-green-800 text-white"
-                                    onClick={() => router.push("/create-course")}
-                                >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Create Course
-                                </Button>
+                            <div key={user?.role} className="flex gap-3">
+                                
+                                {isInstructor || isAdmin ? (
+                                    <>
+                                        <Button
+                                            variant="outline"
+                                            className="border-green-900 text-green-900 hover:bg-green-50 dark:border-green-400 dark:text-green-400"
+                                            onClick={() => router.push("/instructor/courses")}
+                                        >
+                                            <BookOpen className="w-4 h-4 mr-2" />
+                                            My Courses
+                                        </Button>
+                                        <Button
+                                            className="bg-green-900 hover:bg-green-800 text-white"
+                                            onClick={() => router.push("/create-course")}
+                                        >
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Create Course
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button
+                                        className="bg-green-900 hover:bg-green-800 text-white"
+                                        onClick={() => setShowInstructorModal(true)}
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Become Instructor
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -511,6 +537,12 @@ useEffect(() => {
                     )}
                 </div>
             </div>)}
+            
+            {/* Instructor Application Modal */}
+            <InstructorApplicationModal
+                isOpen={showInstructorModal}
+                onClose={() => setShowInstructorModal(false)}
+            />
         </Protected>
     );
 }

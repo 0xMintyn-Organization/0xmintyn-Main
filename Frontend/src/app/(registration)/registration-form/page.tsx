@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
 import { useRegisterMutation } from "@/redux/features/auth/authApi";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -31,6 +31,7 @@ import { z } from "zod";
 function UserRegistartionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
   const [register, { data, error, isSuccess }] = useRegisterMutation();
     const { data: userData} = useLoadUserQuery(undefined, {})
   
@@ -38,7 +39,7 @@ function UserRegistartionForm() {
         if (userData){
             const user = userData?.user;
             if (user) {
-                redirect("/dashboard"); 
+                router.push("/dashboard"); 
             }
         }
 
@@ -51,7 +52,7 @@ function UserRegistartionForm() {
         description: message,
         variant: "default",
       });
-      redirect('/verification'); 
+      router.push('/verification'); 
     }
 
     if (error) {
@@ -143,7 +144,21 @@ function UserRegistartionForm() {
 
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md my-16">
-      <h2 className="text-2xl font-bold mb-6 text-center">Register Account</h2>
+      {/* Logo Section */}
+      <div className="flex flex-col items-center mb-6">
+        <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden mb-3">
+          <img 
+            src="/logo.png" 
+            alt="0xMintyn Logo" 
+            className="w-full h-full object-contain"
+          />
+        </div>
+        <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+          0xMintyn
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Community Hub</p>
+        <p className="text-lg font-semibold mt-2 text-center">Register Account</p>
+      </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

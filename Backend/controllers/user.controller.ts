@@ -167,7 +167,7 @@
         }
     });
 
-    // update access token 
+    // update access token (as route handler for /refreshtoken)
     export const updateAccessToken = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
         try {
             const refresh_token = req.cookies.refresh_token as string;
@@ -187,21 +187,61 @@
 
             const user = session.toJSON();
 
-            const accessToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN as string, { expiresIn: '5m' });
+            const accessToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN as string, { expiresIn: '1h' });
 
             const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN as string, { expiresIn: '3d' });
-
-            req.user = user;
-
 
             res.cookie('access_token', accessToken, accessTokenOptions);
             res.cookie('refresh_token', refreshToken, refreshTokenOptions);
 
+            res.status(200).json({
+                success: true,
+                accessToken,
+                user: {
+                    _id: user._id,
+                    name: user.firstName + ' ' + user.lastName,
+                    email: user.email,
+                    role: user.role,
+                    avatar: user.avatar,
+                    isVerified: user.isVerified
+                }
+            });
 
-            // res.status(200).json({
-            //     success: true,
-            //     accessToken,
-            // });
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+
+        }
+    });
+
+    // update access token (as middleware)
+    export const updateAccessTokenMiddleware = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const refresh_token = req.cookies.refresh_token as string;
+            if (!refresh_token) {
+                return next(new ErrorHandler('Please login to access this resource', 400));
+            }
+            const decoded = jwt.verify(refresh_token, process.env.REFRESH_TOKEN as string) as JwtPayload;
+            const message = 'Could not update access token';
+            if (!decoded) {
+                return next(new ErrorHandler(message, 400));
+            }
+            const session = await UserModel.findById(decoded.id).select("+password");
+
+            if (!session) {
+                return next(new ErrorHandler("Please login to access this resource", 400));
+            }
+
+            const user = session.toJSON();
+
+            const accessToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN as string, { expiresIn: '1h' });
+
+            const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN as string, { expiresIn: '3d' });
+
+            res.cookie('access_token', accessToken, accessTokenOptions);
+            res.cookie('refresh_token', refreshToken, refreshTokenOptions);
+
+            // Set user in request and continue to next middleware
+            req.user = user;
             next();
 
         } catch (error: any) {
@@ -445,5 +485,72 @@
         } catch (error: any) {
             return next(new ErrorHandler(error.message, 400));
 
+        }
+    });
+
+    // Apply to become an instructor
+    interface IInstructorApplication {
+        headline: string;
+        bio: string;
+    }
+
+    export const applyForInstructor = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { headline, bio }: IInstructorApplication = req.body;
+            const userId = req.user?._id;
+
+            if (!userId) {
+                return next(new ErrorHandler('User not found', 400));
+            }
+
+            // Validate input
+            if (!headline || !bio) {
+                return next(new ErrorHandler('Headline and bio are required', 400));
+            }
+
+            if (headline.length < 10 || headline.length > 100) {
+                return next(new ErrorHandler('Headline must be between 10 and 100 characters', 400));
+            }
+
+            if (bio.length < 50 || bio.length > 500) {
+                return next(new ErrorHandler('Bio must be between 50 and 500 characters', 400));
+            }
+
+            // Update user with instructor application data
+            const user = await UserModel.findByIdAndUpdate(
+                userId,
+                {
+                    instructorHeadline: headline,
+                    instructorBio: bio,
+                    instructorStatus: 'approved', // Auto-approve for now
+                    role: 'instructor' // Automatically promote to instructor
+                },
+                { new: true }
+            );
+
+            if (!user) {
+                return next(new ErrorHandler('User not found', 400));
+            }
+
+            // Generate new access token with updated role
+            const accessToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN as string, { expiresIn: '1h' });
+            
+            res.status(200).json({
+                success: true,
+                message: 'Congratulations! You are now an instructor. You can create and manage courses.',
+                accessToken,
+                user: {
+                    _id: user._id,
+                    name: user.firstName + ' ' + user.lastName,
+                    email: user.email,
+                    role: user.role,
+                    instructorHeadline: user.instructorHeadline,
+                    instructorBio: user.instructorBio,
+                    instructorStatus: user.instructorStatus
+                }
+            });
+
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
         }
     });

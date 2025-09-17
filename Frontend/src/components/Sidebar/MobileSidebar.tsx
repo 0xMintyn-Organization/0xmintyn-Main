@@ -14,7 +14,7 @@ export default function MobileSidebar() {
         <Button 
           variant="ghost" 
           size="icon"
-          className="relative p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl shadow-md lg:hidden"
+          className="relative p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl shadow-md lg:hidden transition-all duration-200 hover:scale-105"
         >
           <div className="relative">
             <Menu className={`w-6 h-6 transition-all duration-300 ${open ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100'}`} />
@@ -29,7 +29,7 @@ export default function MobileSidebar() {
       {/* Enhanced Sidebar Drawer */}
       <SheetContent 
         side="left" 
-        className="w-72 p-0 border-r border-gray-200 dark:border-gray-700"
+        className="w-72 p-0 border-r border-gray-200 dark:border-gray-700 overflow-hidden"
       >
         {/* Hidden header for accessibility */}
         <SheetHeader className="sr-only">

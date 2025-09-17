@@ -1,34 +1,22 @@
-import axios from "axios";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URI;
+import axiosInstance from "@/utils/axiosInstance";
 
 // Enrollment API service
 export const enrollmentService = {
   // Enroll in a course
   enrollInCourse: async (courseId: string) => {
-    const response = await axios.post(
-      `${API_BASE_URL}enrollment/enroll/${courseId}`,
-      {},
-      { withCredentials: true }
-    );
+    const response = await axiosInstance.post(`/enrollment/enroll/${courseId}`);
     return response.data;
   },
 
   // Get user's enrolled courses
   getUserEnrolledCourses: async () => {
-    const response = await axios.get(
-      `${API_BASE_URL}enrollment/my-courses`,
-      { withCredentials: true }
-    );
+    const response = await axiosInstance.get('/enrollment/my-courses');
     return response.data;
   },
 
   // Check if user is enrolled in a course
   checkEnrollment: async (courseId: string) => {
-    const response = await axios.get(
-      `${API_BASE_URL}enrollment/check/${courseId}`,
-      { withCredentials: true }
-    );
+    const response = await axiosInstance.get(`/enrollment/check/${courseId}`);
     return response.data;
   },
 
@@ -47,28 +35,21 @@ export const enrollmentService = {
     if (params.courseId) queryParams.append("courseId", params.courseId);
     if (params.userId) queryParams.append("userId", params.userId);
 
-    const response = await axios.get(
-      `${API_BASE_URL}enrollment/orders?${queryParams}`,
-      { withCredentials: true }
-    );
+    const response = await axiosInstance.get(`/enrollment/orders?${queryParams}`);
     return response.data;
   },
 
   // Get order details
   getOrderDetails: async (orderId: string) => {
-    const response = await axios.get(
-      `${API_BASE_URL}enrollment/orders/${orderId}`,
-      { withCredentials: true }
-    );
+    const response = await axiosInstance.get(`/enrollment/orders/${orderId}`);
     return response.data;
   },
 
   // Update order status (Admin only)
   updateOrderStatus: async (orderId: string, status: string) => {
-    const response = await axios.put(
-      `${API_BASE_URL}enrollment/orders/${orderId}/status`,
-      { status },
-      { withCredentials: true }
+    const response = await axiosInstance.put(
+      `/enrollment/orders/${orderId}/status`,
+      { status }
     );
     return response.data;
   },

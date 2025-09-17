@@ -1,5 +1,5 @@
 import express from 'express';
-import { activateUserAccount, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName } from '../controllers/user.controller';
+import { activateUserAccount, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor } from '../controllers/user.controller';
 import { isAthenticated as isAuthenticated } from '../utils/auth';
 import upload from '../middleware/multerConfig';
 
@@ -15,24 +15,23 @@ userRouter.get('/logout' , isAuthenticated, logoutUser);
 
 userRouter.get('/users', getAllUsers);
 
-userRouter.get('/refreshtoken', isAuthenticated, updateAccessToken);
+userRouter.get('/refreshtoken', updateAccessToken);
 
-userRouter.get('/me', updateAccessToken,  isAuthenticated, getUserInfo);
+userRouter.get('/me', updateAccessTokenMiddleware,  isAuthenticated, getUserInfo);
 
-userRouter.put('/update-user-info', updateAccessToken, isAuthenticated, updateProfile);
+userRouter.put('/update-user-info', updateAccessTokenMiddleware, isAuthenticated, updateProfile);
 
-userRouter.put('/update-username', updateAccessToken, isAuthenticated, updateUserName);
+userRouter.put('/update-username', updateAccessTokenMiddleware, isAuthenticated, updateUserName);
 
-userRouter.put('/change-password', updateAccessToken, isAuthenticated, updatePassword);
+userRouter.put('/change-password', updateAccessTokenMiddleware, isAuthenticated, updatePassword);
 
 userRouter.post('/social-auth', socialAuth);
 
-userRouter.put("/update-user-avatar", updateAccessToken, isAuthenticated, upload.single("avatar"), updateProfilePicture);
+userRouter.put("/update-user-avatar", updateAccessTokenMiddleware, isAuthenticated, upload.single("avatar"), updateProfilePicture);
 
-userRouter.put("/update-user-banner", updateAccessToken, isAuthenticated, upload.single("banner"), updateBannerPicture);
+userRouter.put("/update-user-banner", updateAccessTokenMiddleware, isAuthenticated, upload.single("banner"), updateBannerPicture);
 
-
-
+userRouter.post("/apply-instructor", updateAccessTokenMiddleware, isAuthenticated, applyForInstructor);
 
 
 

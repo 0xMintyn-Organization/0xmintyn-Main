@@ -211,8 +211,12 @@ export default function Sidebar() {
       {/* Logo Section */}
       <div className="p-6 border-b border-zinc-200 dark:border-zinc-700">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
-            <Sparkles className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+            <img 
+              src="/logo.png" 
+              alt="0xMintyn Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <h2 className="text-xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
@@ -260,7 +264,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto p-4 space-y-1 sidebar-scroll">
         {navItems.map(({ name, href, icon: Icon, badge, badgeColor, description }) => {
           const isActive = pathname === href;
           

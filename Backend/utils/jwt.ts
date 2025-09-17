@@ -12,8 +12,8 @@ interface ITokenOptions {
 
 }
 
-// Access token (short lifespan, e.g. 5 minutes)
-const accessTokenExpire = parseInt(process.env.ACCESS_TOKEN_EXPIRE || '300', 10); 
+// Access token (1 hour lifespan for better UX)
+const accessTokenExpire = parseInt(process.env.ACCESS_TOKEN_EXPIRE || '60', 10); 
 
 // Refresh token (long lifespan, e.g. 5 days)
 const refreshTokenExpire = parseInt(process.env.REFRESH_TOKEN_EXPIRE || '432000', 10);

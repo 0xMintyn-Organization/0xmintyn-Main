@@ -18,6 +18,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/Spinner";
+import { useTokenRefresh } from "@/utils/tokenRefresh";
 
 const tabs = [
   { id: 1, name: "Course Info", icon: BookOpen },
@@ -34,6 +35,7 @@ interface CourseFormProps {
 
 export default function CourseForm({ mode, courseId, initialData }: CourseFormProps) {
   const router = useRouter();
+  const { startRefresh, stopRefresh, refreshIfNeeded } = useTokenRefresh();
   const [currentTab, setCurrentTab] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(mode === "edit" && !initialData);
@@ -161,6 +163,20 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
     }
   }, [mode, courseId, initialData, toast, router]);
 
+  // Start token refresh for long operations
+  useEffect(() => {
+    // Start automatic token refresh every 30 minutes
+    startRefresh(30);
+    
+    // Also refresh token proactively if needed
+    refreshIfNeeded();
+
+    // Cleanup on unmount
+    return () => {
+      stopRefresh();
+    };
+  }, [startRefresh, stopRefresh, refreshIfNeeded]);
+
   const sharedProps = {
     courseData,
     setCourseData,
@@ -225,6 +241,9 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
   };
 
   const handleSubmit = async () => {
+    // Refresh token before submission to ensure it's valid
+    await refreshIfNeeded();
+    
     const isValid = [1, 2, 3, 4].every(validateTab);
     if (!isValid) {
       for (let i = 1; i <= 4; i++) {

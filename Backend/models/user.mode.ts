@@ -22,6 +22,9 @@ export interface IUser extends Document {
     avatar: string;
     banner: string;
     bio: string;
+    instructorHeadline: string;
+    instructorBio: string;
+    instructorStatus: string;
     isVerified: boolean;
     products: mongoose.Types.ObjectId[];
     comparePassword: (password: string) => Promise<boolean>;
@@ -90,6 +93,19 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
         type: String,
         default: 'No bio available',
     },
+    instructorHeadline: {
+        type: String,
+        default: '',
+    },
+    instructorBio: {
+        type: String,
+        default: '',
+    },
+    instructorStatus: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending',
+    },
     avatar : {
         type: String,
         default: 'https://static.vecteezy.com/system/resources/previews/005/129/844/original/profile-user-icon-isolated-on-white-background-eps10-free-vector.jpg',
@@ -127,7 +143,7 @@ userSchema.pre<IUser>('save', async function (next) {
 
 // Sign JWT access token
 userSchema.methods.SignAccessToken = function (): string {
-    return jwt.sign({ id: this._id }, process.env.ACCESS_TOKEN || "", { expiresIn: '5m' });
+    return jwt.sign({ id: this._id }, process.env.ACCESS_TOKEN || "", { expiresIn: '1h' });
 };
 
 

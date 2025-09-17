@@ -27,9 +27,18 @@ function Header() {
         <header className="flex justify-between items-center px-4 sm:px-8 py-2 w-full">
             <div className="flex items-center gap-4">
                 <MobileSidebar />
-                <Link href="/registration-form" className="font-bold text-xl">
-                    <span className="hidden lg:inline">0xMintyn Community Hub</span>
-                    <span className="lg:hidden">OXM Community Hub</span>
+                <Link href="/dashboard" className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+                        <img 
+                            src="/logo.png" 
+                            alt="0xMintyn Logo" 
+                            className="w-full h-full object-contain"
+                        />
+                    </div>
+                    <div className="font-bold text-xl">
+                        <span className="hidden lg:inline">0xMintyn Community Hub</span>
+                        <span className="lg:hidden">OXM Community Hub</span>
+                    </div>
                 </Link>
             </div>
 

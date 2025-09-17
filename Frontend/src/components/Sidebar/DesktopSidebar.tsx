@@ -47,18 +47,18 @@ function DesktopSidebar() {
           ${isCollapsed ? 'w-20' : 'w-72'}
           h-screen
           overflow-visible
+          pr-2
         `}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Collapse Toggle Button */}
-        <div className="relative mr-2">
+        <div className="absolute -right-1 top-8 z-50">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={`
-              absolute -right-3 top-8 z-50 
               w-8 h-8 rounded-full 
               bg-white dark:bg-gray-800 
               border-2 border-gray-300 dark:border-gray-600
@@ -87,8 +87,12 @@ function DesktopSidebar() {
         {/* Collapsed State Icons */}
         {isCollapsed && (
           <div className="absolute inset-0 flex flex-col items-center py-6 space-y-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
+              <img 
+                src="/logo.png" 
+                alt="0xMintyn Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             
             {/* Collapsed Nav Icons */}
