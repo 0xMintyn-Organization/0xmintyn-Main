@@ -33,6 +33,8 @@ export default function CoursePreviewPage() {
   const [enrolling, setEnrolling] = useState(false);
   const [enrollmentChecked, setEnrollmentChecked] = useState(false);
   const [isCourseInstructor, setIsCourseInstructor] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -81,6 +83,7 @@ export default function CoursePreviewPage() {
     if (courseId) {
       fetchCourse();
       checkEnrollment();
+      checkBookmarkStatus();
     }
   }, [courseId]);
 
@@ -128,6 +131,73 @@ export default function CoursePreviewPage() {
       });
     } finally {
       setEnrolling(false);
+    }
+  };
+
+  const checkBookmarkStatus = async () => {
+    if (!courseId) return;
+    
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}bookmark/status/${courseId}`,
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        setIsBookmarked(response.data.isBookmarked);
+      }
+    } catch (error: any) {
+      console.error("Error checking bookmark status:", error);
+    }
+  };
+
+  const toggleBookmark = async () => {
+    if (!courseId || bookmarkLoading) return;
+    
+    setBookmarkLoading(true);
+    
+    try {
+      if (isBookmarked) {
+        // Remove bookmark
+        const response = await axios.delete(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}bookmark/remove/${courseId}`,
+          { withCredentials: true }
+        );
+        
+        if (response.data.success) {
+          setIsBookmarked(false);
+          toast({
+            title: "Bookmark Removed",
+            description: "Course removed from your bookmarks.",
+            variant: "default",
+          });
+        }
+      } else {
+        // Add bookmark
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}bookmark/add`,
+          { courseId: courseId },
+          { withCredentials: true }
+        );
+        
+        if (response.data.success) {
+          setIsBookmarked(true);
+          toast({
+            title: "Bookmark Added",
+            description: "Course added to your bookmarks.",
+            variant: "default",
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error("Error toggling bookmark:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update bookmark. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setBookmarkLoading(false);
     }
   };
 
@@ -277,6 +347,22 @@ export default function CoursePreviewPage() {
                         Buy Now
                       </Button>
                     )}
+
+                    {/* Bookmark Button */}
+                    <Button 
+                      variant="outline" 
+                      size="lg" 
+                      className={`w-full ${
+                        isBookmarked 
+                          ? "border-blue-500 text-blue-500 bg-blue-50" 
+                          : "border-gray-300 text-gray-600"
+                      }`}
+                      onClick={toggleBookmark}
+                      disabled={bookmarkLoading}
+                    >
+                      <Heart className={`w-4 h-4 mr-2 ${isBookmarked ? "fill-current" : ""}`} />
+                      {bookmarkLoading ? "Loading..." : isBookmarked ? "Bookmarked" : "Bookmark"}
+                    </Button>
                   </div>
 
                   {/* Wishlist & Share */}

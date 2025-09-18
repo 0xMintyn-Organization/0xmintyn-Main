@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSelector } from "react-redux";
+import { useBookmarkCount } from "@/hooks/useBookmarkCount";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -106,6 +107,7 @@ const navigation: NavItem[] = [
         href: "/bookmarks",
         icon: Heart,
         roles: ["user"],
+        badge: "0", // Will be updated dynamically
       },
     ],
   },
@@ -239,12 +241,27 @@ export default function AdvancedSidebar({ className }: AdvancedSidebarProps) {
   const { user } = useSelector((state: any) => state.auth);
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { bookmarkCount } = useBookmarkCount();
 
   if (!user) return null;
 
-  const filteredNavigation = navigation.filter((item) =>
-    item.roles.includes(user.role)
-  );
+  const filteredNavigation = navigation.map((item) => {
+    if (item.name === "My Learning" && item.children) {
+      return {
+        ...item,
+        children: item.children.map((child) => {
+          if (child.name === "Bookmarks") {
+            return {
+              ...child,
+              badge: bookmarkCount > 0 ? bookmarkCount.toString() : undefined
+            };
+          }
+          return child;
+        })
+      };
+    }
+    return item;
+  }).filter((item) => item.roles.includes(user.role));
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev =>

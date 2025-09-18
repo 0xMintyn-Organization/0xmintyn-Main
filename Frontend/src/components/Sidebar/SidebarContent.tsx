@@ -28,9 +28,10 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRole } from "@/hooks/useRole";
+import { useBookmarkCount } from "@/hooks/useBookmarkCount";
 
 // Role-based navigation items
-const getNavItems = (userRole: string) => {
+const getNavItems = (userRole: string, bookmarkCount: number) => {
   const publicItems = [
     { 
       name: "Dashboard", 
@@ -83,7 +84,8 @@ const getNavItems = (userRole: string) => {
       name: "Bookmarks", 
       href: "/bookmarks", 
       icon: Bookmark,
-      badge: null,
+      badge: bookmarkCount > 0 ? bookmarkCount.toString() : null,
+      badgeColor: bookmarkCount > 0 ? "bg-blue-100 text-blue-800" : null,
       description: "Saved Content"
     }
   ];
@@ -197,7 +199,8 @@ const getNavItems = (userRole: string) => {
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useRole();
-  const navItems = getNavItems(user?.role || 'user');
+  const { bookmarkCount } = useBookmarkCount();
+  const navItems = getNavItems(user?.role || 'user', bookmarkCount);
 
   return (
     <div className="fixed left-0 w-72 h-screen bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-900 dark:to-zinc-800 border-r border-zinc-200 dark:border-zinc-700 flex flex-col">

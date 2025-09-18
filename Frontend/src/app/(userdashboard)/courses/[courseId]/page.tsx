@@ -61,6 +61,7 @@ export default function CoursePlayerPage() {
   const [completedLectures, setCompletedLectures] = useState<string[]>([]);
   const [progress, setProgress] = useState({ totalLectures: 0, completedLectures: 0, progressPercentage: 0 });
   const [certificateEligible, setCertificateEligible] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev =>
@@ -147,6 +148,73 @@ export default function CoursePlayerPage() {
         description: error.response?.data?.message || "Failed to download certificate",
         variant: "destructive",
       });
+    }
+  };
+
+  const checkBookmarkStatus = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}bookmark/status/${id}`,
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        setIsBookmarked(response.data.isBookmarked);
+      }
+    } catch (error: any) {
+      console.error("Error checking bookmark status:", error);
+    }
+  }, [id]);
+
+  const toggleBookmark = async () => {
+    if (!id || bookmarkLoading) return;
+    
+    setBookmarkLoading(true);
+    
+    try {
+      if (isBookmarked) {
+        // Remove bookmark
+        const response = await axios.delete(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}bookmark/remove/${id}`,
+          { withCredentials: true }
+        );
+        
+        if (response.data.success) {
+          setIsBookmarked(false);
+          toast({
+            title: "Bookmark Removed",
+            description: "Course removed from your bookmarks.",
+            variant: "default",
+          });
+        }
+      } else {
+        // Add bookmark
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}bookmark/add`,
+          { courseId: id },
+          { withCredentials: true }
+        );
+        
+        if (response.data.success) {
+          setIsBookmarked(true);
+          toast({
+            title: "Bookmark Added",
+            description: "Course added to your bookmarks.",
+            variant: "default",
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error("Error toggling bookmark:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update bookmark. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setBookmarkLoading(false);
     }
   };
 
@@ -272,8 +340,9 @@ export default function CoursePlayerPage() {
     if (id) {
       fetchCourseProgress();
       checkCertificateEligibility();
+      checkBookmarkStatus();
     }
-  }, [id, fetchCourseProgress, checkCertificateEligibility]);
+  }, [id, fetchCourseProgress, checkCertificateEligibility, checkBookmarkStatus]);
 
   // Fetch course data after progress is loaded
   useEffect(() => {
@@ -306,6 +375,22 @@ export default function CoursePlayerPage() {
                 </div>
               </div>
               
+              {/* Bookmark Button */}
+              <div className="mt-4">
+                <Button 
+                  onClick={toggleBookmark}
+                  disabled={bookmarkLoading}
+                  className={`w-full ${
+                    isBookmarked 
+                      ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white" 
+                      : "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white"
+                  } font-semibold`}
+                >
+                  <Bookmark className={`w-4 h-4 mr-2 ${isBookmarked ? "fill-current" : ""}`} />
+                  {bookmarkLoading ? "Loading..." : isBookmarked ? "Bookmarked" : "Bookmark Course"}
+                </Button>
+              </div>
+
               {/* Certificate Download Button */}
               {certificateEligible && (
                 <div className="mt-4">
