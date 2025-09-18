@@ -112,7 +112,7 @@ export default function CourseAccessGuard({
         router.push(`/instructor/courses/${courseId}`);
         break;
       case 'student':
-        router.push(`/courses/${courseId}/learn`);
+        router.push(`/courses/${courseId}`);
         break;
       default:
         router.push(`/educationhub/${courseId}`);

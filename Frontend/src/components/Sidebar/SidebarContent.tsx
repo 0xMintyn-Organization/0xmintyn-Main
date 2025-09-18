@@ -81,13 +81,6 @@ const getNavItems = (userRole: string) => {
       description: "Continue Learning"
     },
     { 
-      name: "Learning Path", 
-      href: "/learning-path", 
-      icon: Target,
-      badge: null,
-      description: "Track Progress"
-    },
-    { 
       name: "Certificates", 
       href: "/certificates", 
       icon: Award,

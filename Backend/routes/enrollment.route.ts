@@ -6,7 +6,9 @@ import {
   checkCourseAccess,
   getAllOrders, 
   getOrderDetails, 
-  updateOrderStatus 
+  updateOrderStatus,
+  markLectureComplete,
+  getCourseProgress
 } from "../controllers/enrollment.controller";
 import { isAthenticated } from "../utils/auth";
 import { updateAccessTokenMiddleware } from "../controllers/user.controller";
@@ -24,5 +26,9 @@ router.get("/access/:courseId", updateAccessTokenMiddleware, isAthenticated, che
 router.get("/orders", updateAccessTokenMiddleware, isAthenticated, requireAdmin, getAllOrders);
 router.get("/orders/:orderId", updateAccessTokenMiddleware, isAthenticated, getOrderDetails);
 router.put("/orders/:orderId/status", updateAccessTokenMiddleware, isAthenticated, requireAdmin, updateOrderStatus);
+
+// Progress tracking routes
+router.post("/progress/:courseId/:lectureId/complete", updateAccessTokenMiddleware, isAthenticated, markLectureComplete);
+router.get("/progress/:courseId", updateAccessTokenMiddleware, isAthenticated, getCourseProgress);
 
 export default router;

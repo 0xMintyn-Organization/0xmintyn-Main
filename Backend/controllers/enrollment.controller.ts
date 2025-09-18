@@ -384,3 +384,115 @@ export const updateOrderStatus = CatchAsyncError(
     }
   }
 );
+
+// Mark lecture as completed
+export const markLectureComplete = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { courseId, lectureId } = req.params;
+      const userId = req.user?._id;
+
+      if (!userId) {
+        return next(new ErrorHandler("User not authenticated", 401));
+      }
+
+      // Check if user is enrolled in the course
+      const enrollment = await OrderModel.findOne({
+        courseId: courseId,
+        userId: userId,
+        status: 'completed'
+      });
+
+      if (!enrollment) {
+        return next(new ErrorHandler("You are not enrolled in this course", 403));
+      }
+
+      // Check if lecture exists in the course
+      const course = await CourseModel.findById(courseId);
+      if (!course) {
+        return next(new ErrorHandler("Course not found", 404));
+      }
+
+      const lectureExists = course.courseData
+        .flatMap(section => section.videos)
+        .some(video => video._id.toString() === lectureId);
+
+      if (!lectureExists) {
+        return next(new ErrorHandler("Lecture not found", 404));
+      }
+
+      // Add lecture to completed lectures if not already there
+      if (!enrollment.completedLectures) {
+        enrollment.completedLectures = [];
+      }
+
+      if (!enrollment.completedLectures.includes(lectureId)) {
+        enrollment.completedLectures.push(lectureId);
+        await enrollment.save();
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Lecture marked as completed",
+        completedLectures: enrollment.completedLectures
+      });
+
+    } catch (error: any) {
+      console.error("Mark Lecture Complete Error:", error);
+      return next(new ErrorHandler("Failed to mark lecture as complete", 500));
+    }
+  }
+);
+
+// Get course progress
+export const getCourseProgress = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { courseId } = req.params;
+      const userId = req.user?._id;
+
+      if (!userId) {
+        return next(new ErrorHandler("User not authenticated", 401));
+      }
+
+      // Check if user is enrolled in the course
+      const enrollment = await OrderModel.findOne({
+        courseId: courseId,
+        userId: userId,
+        status: 'completed'
+      });
+
+      if (!enrollment) {
+        return next(new ErrorHandler("You are not enrolled in this course", 403));
+      }
+
+      // Get course details
+      const course = await CourseModel.findById(courseId);
+      if (!course) {
+        return next(new ErrorHandler("Course not found", 404));
+      }
+
+      // Calculate progress
+      const totalLectures = course.courseData
+        .flatMap(section => section.videos)
+        .length;
+
+      const completedLectures = enrollment.completedLectures?.length || 0;
+      const progressPercentage = totalLectures > 0 ? (completedLectures / totalLectures) * 100 : 0;
+
+      res.status(200).json({
+        success: true,
+        progress: {
+          totalLectures,
+          completedLectures,
+          progressPercentage: Math.round(progressPercentage),
+          completedLectureIds: enrollment.completedLectures || []
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Get Course Progress Error:", error);
+      return next(new ErrorHandler("Failed to get course progress", 500));
+    }
+  }
+);

@@ -18,7 +18,8 @@ export interface IOrder extends Document {
         currency?: string
     },
     enrolledAt?: Date,
-    completedAt?: Date
+    completedAt?: Date,
+    completedLectures?: string[]
 }
 
 const orderSchema = new Schema<IOrder>({
@@ -70,7 +71,10 @@ const orderSchema = new Schema<IOrder>({
         type: Date,
         default: Date.now
     },
-    completedAt: Date
+    completedAt: Date,
+    completedLectures: [{
+        type: String
+    }]
 }, { timestamps: true });
 
 const OrderModel: Model<IOrder> = mongoose.model("Order", orderSchema);

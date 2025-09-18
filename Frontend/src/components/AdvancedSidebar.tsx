@@ -103,12 +103,6 @@ const navigation: NavItem[] = [
         roles: ["user"],
       },
       {
-        name: "Learning Path",
-        href: "/learning-path",
-        icon: Target,
-        roles: ["user"],
-      },
-      {
         name: "Certificates",
         href: "/certificates",
         icon: Award,

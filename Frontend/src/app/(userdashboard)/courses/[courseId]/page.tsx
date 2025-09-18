@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 interface Lecture {
   id: string;
@@ -51,6 +52,7 @@ interface Section {
 export default function CoursePlayerPage() {
  const params = useParams();
   const id = params ? params["courseId"] : undefined;
+  const { toast } = useToast();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sections, setSections] = useState<Section[]>([]);
@@ -61,6 +63,8 @@ export default function CoursePlayerPage() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [courseName, setCourseName] = useState("");
   const [instructorName, setInstructorName] = useState("");
+  const [completedLectures, setCompletedLectures] = useState<string[]>([]);
+  const [progress, setProgress] = useState({ totalLectures: 0, completedLectures: 0, progressPercentage: 0 });
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev =>
@@ -69,13 +73,84 @@ export default function CoursePlayerPage() {
   };
 
   const calculateProgress = () => {
-    const totalLectures = sections.reduce((acc, sec) => acc + sec.lectures.length, 0);
-    const completedLectures = sections.reduce((acc, sec) => acc + sec.lectures.filter(l => l.isCompleted).length, 0);
-    return totalLectures ? (completedLectures / totalLectures) * 100 : 0;
+    return progress.progressPercentage || 0;
   };
 
   const handleLectureClick = (lecture: Lecture) => {
     setCurrentLecture(lecture);
+  };
+
+  const fetchCourseProgress = async () => {
+    if (!id) return;
+    
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/progress/${id}`,
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        const progressData = response.data.progress;
+        setProgress(progressData);
+        setCompletedLectures(progressData.completedLectureIds || []);
+      }
+    } catch (error: any) {
+      console.error("Error fetching course progress:", error);
+      // Don't show toast for progress fetch errors as it's not critical
+    }
+  };
+
+  const markLectureAsComplete = async (lectureId: string) => {
+    if (!id) return;
+    
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/progress/${id}/${lectureId}/complete`,
+        {},
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        // Update local state
+        setCompletedLectures(prev => [...prev, lectureId]);
+        
+        // Update sections to reflect completion
+        setSections(prevSections => 
+          prevSections.map(section => ({
+            ...section,
+            lectures: section.lectures.map(lecture => 
+              lecture.id === lectureId 
+                ? { ...lecture, isCompleted: true }
+                : lecture
+            )
+          }))
+        );
+        
+        // Update current lecture if it's the one being marked complete
+        if (currentLecture?.id === lectureId) {
+          setCurrentLecture(prev => prev ? { ...prev, isCompleted: true } : null);
+        }
+        
+        // Refresh progress
+        fetchCourseProgress();
+        
+        // Show success toast
+        toast({
+          title: "Lecture Completed!",
+          description: "Great job! This lecture has been marked as complete.",
+          variant: "default",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error marking lecture as complete:", error);
+      
+      // Show error toast
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to mark lecture as complete",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleNextLecture = () => {
@@ -101,49 +176,58 @@ export default function CoursePlayerPage() {
     }
   };
 
+  const fetchData = async () => {
+    if (!id) return;
+    
+    try {
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}course/enrolled-course/${id}`,
+        { withCredentials: true }
+      );
+
+      const courseData = res.data.course;
+
+      setCourseName(courseData.name);
+      setInstructorName(`${courseData.createdBy.firstName} ${courseData.createdBy.lastName}`);
+
+      const formattedSections: Section[] = courseData.courseData.map((section: any, secIdx: number) => ({
+        id: section._id,
+        title: section.title,
+        lectures: section.videos.map((video: any, vidIdx: number) => ({
+          id: video._id,
+          title: video.title,
+          videoUrl: video.videoUrl,
+          type: "video",
+          isCompleted: completedLectures.includes(video._id),
+          duration: "10:30",
+          description: video.description || "",
+        }))
+      }));
+
+      setSections(formattedSections);
+      setExpandedSections(formattedSections.map(sec => sec.id)); // expand all
+      if (formattedSections[0]?.lectures[0]) {
+        setCurrentLecture(formattedSections[0].lectures[0]);
+      }
+
+    } catch (err) {
+      console.error("Error fetching course:", err);
+    }
+  };
+
   // ✅ Fetch course data
   useEffect(() => {
-    if (!id) return;
-
-    async function fetchData() {
-      try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_SERVER_URI}course/enrolled-course/${id}`,
-          { withCredentials: true }
-        );
-
-        const courseData = res.data.course;
-
-        setCourseName(courseData.name);
-        setInstructorName(`${courseData.createdBy.firstName} ${courseData.createdBy.lastName}`);
-
-        const formattedSections: Section[] = courseData.courseData.map((section: any, secIdx: number) => ({
-          id: section._id,
-          title: section.title,
-          lectures: section.videos.map((video: any, vidIdx: number) => ({
-            id: video._id,
-            title: video.title,
-            videoUrl: video.videoUrl,
-            type: "video",
-            isCompleted: false, // Optional: replace with real progress
-            duration: "N/A",
-            description: video.description || "",
-          }))
-        }));
-
-        setSections(formattedSections);
-        setExpandedSections(formattedSections.map(sec => sec.id)); // expand all
-        if (formattedSections[0]?.lectures[0]) {
-          setCurrentLecture(formattedSections[0].lectures[0]);
-        }
-
-      } catch (err) {
-        console.error("Error fetching course:", err);
-      }
+    if (id) {
+      fetchCourseProgress();
     }
-
-    fetchData();
   }, [id]);
+
+  // Fetch course data after progress is loaded
+  useEffect(() => {
+    if (id && completedLectures.length >= 0) {
+      fetchData();
+    }
+  }, [id, completedLectures]);
 
   return (
     <CourseAccessGuard requiredAccess={['student', 'instructor', 'admin']}>
@@ -158,13 +242,16 @@ export default function CoursePlayerPage() {
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Your Progress</span>
-                <span className="font-semibold text-green-600">{Math.round(calculateProgress())}%</span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Your Progress</span>
+                  <span className="font-semibold text-green-600">{progress.progressPercentage}%</span>
+                </div>
+                <Progress value={progress.progressPercentage} className="h-2" />
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {progress.completedLectures} of {progress.totalLectures} lectures completed
+                </div>
               </div>
-              <Progress value={calculateProgress()} className="h-2" />
-            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -251,7 +338,39 @@ export default function CoursePlayerPage() {
                   viewer_user_id: "user-123"
                 }}
                 autoPlay={false}
+                onEnded={() => {
+                  console.log("Video ended for:", currentLecture?.title);
+                  if (currentLecture && !currentLecture.isCompleted) {
+                    console.log("Auto-marking lecture as complete:", currentLecture.id);
+                    markLectureAsComplete(currentLecture.id);
+                  } else {
+                    console.log("Lecture already completed or no current lecture");
+                  }
+                }}
               />
+            </div>
+          )}
+
+          {/* Manual Mark as Complete Button */}
+          {currentLecture && !currentLecture.isCompleted && (
+            <div className="mb-6">
+              <Button 
+                onClick={() => markLectureAsComplete(currentLecture.id)}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Mark as Complete
+              </Button>
+            </div>
+          )}
+
+          {/* Completion Status */}
+          {currentLecture && currentLecture.isCompleted && (
+            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                <CheckCircle className="w-5 h-5" />
+                <span className="font-medium">This lecture is completed!</span>
+              </div>
             </div>
           )}
 
@@ -261,7 +380,6 @@ export default function CoursePlayerPage() {
               <ChevronLeft className="w-4 h-4 mr-2" />
               Previous Lecture
             </Button>
-            <Button className="bg-green-900 text-white">Mark as Complete</Button>
             <Button onClick={handleNextLecture} variant="outline">
               Next Lecture
               <ChevronRight className="w-4 h-4 ml-2" />
