@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import axios from "axios";
 import MuxPlayer from "@mux/mux-player-react";
 import CourseAccessGuard from "@/components/CourseAccessGuard";
@@ -13,8 +13,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Play,
-  FileText,
-  HelpCircle,
   Menu,
   X,
   Award,
@@ -22,8 +20,6 @@ import {
   Share2,
   Settings,
   Download,
-  SkipBack,
-  SkipForward
 } from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
@@ -62,9 +58,9 @@ export default function CoursePlayerPage() {
   const [notes, setNotes] = useState("");
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [courseName, setCourseName] = useState("");
-  const [instructorName, setInstructorName] = useState("");
   const [completedLectures, setCompletedLectures] = useState<string[]>([]);
   const [progress, setProgress] = useState({ totalLectures: 0, completedLectures: 0, progressPercentage: 0 });
+  const [certificateEligible, setCertificateEligible] = useState(false);
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev =>
@@ -80,7 +76,7 @@ export default function CoursePlayerPage() {
     setCurrentLecture(lecture);
   };
 
-  const fetchCourseProgress = async () => {
+  const fetchCourseProgress = useCallback(async () => {
     if (!id) return;
     
     try {
@@ -97,6 +93,60 @@ export default function CoursePlayerPage() {
     } catch (error: any) {
       console.error("Error fetching course progress:", error);
       // Don't show toast for progress fetch errors as it's not critical
+    }
+  }, [id]);
+
+  const checkCertificateEligibility = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}certificate/eligibility/${id}`,
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        setCertificateEligible(response.data.eligible);
+      }
+    } catch (error: any) {
+      console.error("Error checking certificate eligibility:", error);
+    }
+  }, [id]);
+
+  const downloadCertificate = async () => {
+    if (!id) return;
+    
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}certificate/generate/${id}`,
+        { 
+          withCredentials: true,
+          responseType: 'blob'
+        }
+      );
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `0xMintyn-Certificate-${courseName.replace(/[^a-zA-Z0-9]/g, '-')}.png`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Certificate Downloaded!",
+        description: "Your certificate has been downloaded successfully.",
+        variant: "default",
+      });
+    } catch (error: any) {
+      console.error("Error downloading certificate:", error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to download certificate",
+        variant: "destructive",
+      });
     }
   };
 
@@ -133,6 +183,9 @@ export default function CoursePlayerPage() {
         
         // Refresh progress
         fetchCourseProgress();
+        
+        // Check certificate eligibility
+        checkCertificateEligibility();
         
         // Show success toast
         toast({
@@ -176,7 +229,7 @@ export default function CoursePlayerPage() {
     }
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!id) return;
     
     try {
@@ -188,12 +241,11 @@ export default function CoursePlayerPage() {
       const courseData = res.data.course;
 
       setCourseName(courseData.name);
-      setInstructorName(`${courseData.createdBy.firstName} ${courseData.createdBy.lastName}`);
 
-      const formattedSections: Section[] = courseData.courseData.map((section: any, secIdx: number) => ({
+      const formattedSections: Section[] = courseData.courseData.map((section: any) => ({
         id: section._id,
         title: section.title,
-        lectures: section.videos.map((video: any, vidIdx: number) => ({
+        lectures: section.videos.map((video: any) => ({
           id: video._id,
           title: video.title,
           videoUrl: video.videoUrl,
@@ -213,21 +265,22 @@ export default function CoursePlayerPage() {
     } catch (err) {
       console.error("Error fetching course:", err);
     }
-  };
+  }, [id, completedLectures]);
 
   // ✅ Fetch course data
   useEffect(() => {
     if (id) {
       fetchCourseProgress();
+      checkCertificateEligibility();
     }
-  }, [id]);
+  }, [id, fetchCourseProgress, checkCertificateEligibility]);
 
   // Fetch course data after progress is loaded
   useEffect(() => {
     if (id && completedLectures.length >= 0) {
       fetchData();
     }
-  }, [id, completedLectures]);
+  }, [id, completedLectures, fetchData]);
 
   return (
     <CourseAccessGuard requiredAccess={['student', 'instructor', 'admin']}>
@@ -252,6 +305,19 @@ export default function CoursePlayerPage() {
                   {progress.completedLectures} of {progress.totalLectures} lectures completed
                 </div>
               </div>
+              
+              {/* Certificate Download Button */}
+              {certificateEligible && (
+                <div className="mt-4">
+                  <Button 
+                    onClick={downloadCertificate}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-semibold"
+                  >
+                    <Award className="w-4 h-4 mr-2" />
+                    Download Certificate
+                  </Button>
+                </div>
+              )}
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -370,6 +436,28 @@ export default function CoursePlayerPage() {
               <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">This lecture is completed!</span>
+              </div>
+            </div>
+          )}
+
+          {/* Course Completion Certificate */}
+          {certificateEligible && (
+            <div className="mb-6 p-6 bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+              <div className="text-center">
+                <Award className="w-16 h-16 text-yellow-600 dark:text-yellow-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-yellow-800 dark:text-yellow-200 mb-2">
+                  🎉 Congratulations!
+                </h3>
+                <p className="text-yellow-700 dark:text-yellow-300 mb-4">
+                  You have successfully completed this course! Download your certificate to showcase your achievement.
+                </p>
+                <Button 
+                  onClick={downloadCertificate}
+                  className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-semibold px-8 py-3"
+                >
+                  <Award className="w-5 h-5 mr-2" />
+                  Download Your Certificate
+                </Button>
               </div>
             </div>
           )}

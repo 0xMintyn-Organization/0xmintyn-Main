@@ -81,13 +81,6 @@ const getNavItems = (userRole: string) => {
       description: "Continue Learning"
     },
     { 
-      name: "Certificates", 
-      href: "/certificates", 
-      icon: Award,
-      badge: null,
-      description: "My Achievements"
-    },
-    { 
       name: "Bookmarks", 
       href: "/bookmarks", 
       icon: Bookmark,
