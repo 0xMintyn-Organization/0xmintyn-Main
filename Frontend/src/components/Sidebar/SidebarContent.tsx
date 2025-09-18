@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Settings,
   ShoppingBag,
+  ShoppingCart,
   Sparkles,
   User,
   Vote,
@@ -117,6 +118,13 @@ const getNavItems = (userRole: string) => {
       icon: BookOpen,
       badge: null,
       description: "Manage Courses"
+    },
+    { 
+      name: "My Purchased Courses", 
+      href: "/instructor/purchased-courses", 
+      icon: ShoppingCart,
+      badge: null,
+      description: "Courses I Bought"
     },
     { 
       name: "Create Course", 

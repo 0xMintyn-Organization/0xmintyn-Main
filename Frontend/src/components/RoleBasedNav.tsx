@@ -13,6 +13,7 @@ import {
   GraduationCap,
   User,
   Home,
+  ShoppingCart,
   Plus,
   List,
 } from "lucide-react";
@@ -47,6 +48,12 @@ const navigation: NavItem[] = [
     name: "My Courses",
     href: "/instructor/my_courses",
     icon: BookOpen,
+    roles: ["instructor"],
+  },
+  {
+    name: "My Purchased Courses",
+    href: "/instructor/purchased-courses",
+    icon: ShoppingCart,
     roles: ["instructor"],
   },
   {

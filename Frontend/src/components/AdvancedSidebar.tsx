@@ -18,6 +18,7 @@ import {
   List,
   ChevronDown,
   ChevronRight,
+  ShoppingCart,
   Shield,
   DollarSign,
   FileText,
@@ -133,6 +134,12 @@ const navigation: NavItem[] = [
         name: "My Courses",
         href: "/instructor/my_courses",
         icon: BookOpen,
+        roles: ["instructor", "admin"],
+      },
+      {
+        name: "My Purchased Courses",
+        href: "/instructor/purchased-courses",
+        icon: ShoppingCart,
         roles: ["instructor", "admin"],
       },
       {

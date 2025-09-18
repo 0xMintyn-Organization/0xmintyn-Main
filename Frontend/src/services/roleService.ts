@@ -165,6 +165,7 @@ export const roleNavigation = {
   instructor: [
     { name: "Dashboard", href: "/dashboard", icon: "home" },
     { name: "My Courses", href: "/instructor/my_courses", icon: "book-open" },
+    { name: "My Purchased Courses", href: "/instructor/purchased-courses", icon: "shopping-cart" },
     { name: "Create Course", href: "/instructor/courses/create", icon: "plus" },
     { name: "Analytics", href: "/instructor/analytics", icon: "bar-chart-3" },
     { name: "Profile", href: "/profile", icon: "user" },
