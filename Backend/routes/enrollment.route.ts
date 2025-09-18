@@ -9,20 +9,20 @@ import {
   updateOrderStatus 
 } from "../controllers/enrollment.controller";
 import { isAthenticated } from "../utils/auth";
-import { updateAccessToken } from "../controllers/user.controller";
+import { updateAccessTokenMiddleware } from "../controllers/user.controller";
 import { requireAdmin } from "../middleware/roleAuth";
 
 const router = express.Router();
 
 // Course enrollment routes
-router.post("/enroll/:courseId", updateAccessToken, isAthenticated, enrollInCourse);
-router.get("/my-courses", updateAccessToken, isAthenticated, getUserEnrolledCourses);
-router.get("/check/:courseId", updateAccessToken, isAthenticated, checkEnrollment);
-router.get("/access/:courseId", updateAccessToken, isAthenticated, checkCourseAccess);
+router.post("/enroll/:courseId", updateAccessTokenMiddleware, isAthenticated, enrollInCourse);
+router.get("/my-courses", updateAccessTokenMiddleware, isAthenticated, getUserEnrolledCourses);
+router.get("/check/:courseId", updateAccessTokenMiddleware, isAthenticated, checkEnrollment);
+router.get("/access/:courseId", updateAccessTokenMiddleware, isAthenticated, checkCourseAccess);
 
 // Order management routes (Admin only)
-router.get("/orders", updateAccessToken, isAthenticated, requireAdmin, getAllOrders);
-router.get("/orders/:orderId", updateAccessToken, isAthenticated, getOrderDetails);
-router.put("/orders/:orderId/status", updateAccessToken, isAthenticated, requireAdmin, updateOrderStatus);
+router.get("/orders", updateAccessTokenMiddleware, isAthenticated, requireAdmin, getAllOrders);
+router.get("/orders/:orderId", updateAccessTokenMiddleware, isAthenticated, getOrderDetails);
+router.put("/orders/:orderId/status", updateAccessTokenMiddleware, isAthenticated, requireAdmin, updateOrderStatus);
 
 export default router;
