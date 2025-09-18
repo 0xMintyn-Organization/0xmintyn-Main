@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import MuxPlayer from "@mux/mux-player-react";
+import CourseAccessGuard from "@/components/CourseAccessGuard";
 
 import {
   BookOpen,
@@ -145,7 +146,8 @@ export default function CoursePlayerPage() {
   }, [id]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex">
+    <CourseAccessGuard requiredAccess={['student', 'instructor', 'admin']}>
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex">
       {/* Sidebar */}
       <div className={`${sidebarOpen ? "w-96" : "w-0"} transition-all duration-300 bg-white dark:bg-zinc-800 border-r border-gray-200 dark:border-zinc-700 overflow-hidden`}>
         <div className="h-full flex flex-col">
@@ -338,5 +340,6 @@ export default function CoursePlayerPage() {
         </div>
       </div>
     </div>
+    </CourseAccessGuard>
   );
 }

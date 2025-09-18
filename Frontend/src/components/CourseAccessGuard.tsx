@@ -88,23 +88,14 @@ export default function CourseAccessGuard({
 
       // Check if user has required access
       if (!accessData.hasAccess || !requiredAccess.includes(accessData.accessLevel)) {
-        toast({
-          title: "Access Denied",
-          description: "You don't have permission to access this course",
-          variant: "destructive",
-        });
-        router.push(fallbackPath);
+        // Don't redirect, just show access denied message
         return;
       }
 
     } catch (error: any) {
       console.error("Error checking course access:", error);
-      toast({
-        title: "Error",
-        description: "Failed to verify course access",
-        variant: "destructive",
-      });
-      router.push(fallbackPath);
+      // Don't redirect on error, just show error state
+      setAccessData(null);
     } finally {
       setLoading(false);
     }
@@ -232,18 +223,12 @@ export default function CourseAccessGuard({
             </div>
             <CardTitle className="text-xl">Access Denied</CardTitle>
             <CardDescription>
-              You don't have permission to access this course content.
+              You don't have permission to access this course content. Only course instructors, enrolled students, and administrators can view this course.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {accessData && (
               <div className="space-y-4">
-                <div className="text-center">
-                  <h3 className="font-semibold text-lg">{accessData.course.name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {accessData.course.description}
-                  </p>
-                </div>
                 
                 <div className="flex items-center justify-center">
                   {getAccessStatus()}
@@ -255,15 +240,35 @@ export default function CourseAccessGuard({
               </div>
             )}
             
-            <div className="text-center">
-              <Button
-                variant="outline"
-                onClick={() => router.push(fallbackPath)}
-                className="w-full"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Courses
-              </Button>
+            <div className="text-center space-y-3">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <p>To access this course, you need to:</p>
+                <ul className="text-left mt-2 space-y-1">
+                  <li>• Be enrolled in this course</li>
+                  <li>• Be the course instructor</li>
+                  <li>• Have administrator privileges</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-2">
+                <Button
+                  variant="default"
+                  onClick={() => router.push(`/educationhub/${courseId}`)}
+                  className="w-full"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  View Course Details
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(fallbackPath)}
+                  className="w-full"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Courses
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
