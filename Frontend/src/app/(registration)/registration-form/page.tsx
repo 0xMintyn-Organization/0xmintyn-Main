@@ -339,7 +339,7 @@ function UserRegistartionForm() {
             Already have an account?{" "}
             <span
               className="text-[#2190ff] cursor-pointer"
-              onClick={() => redirect("/login")}
+              onClick={() => router.push("/login")}
             >
               Login
             </span>
