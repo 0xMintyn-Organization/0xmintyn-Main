@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev --respawn --transpile-only server.ts",
+    "dev": "cross-env NODE_ENV=development ts-node-dev --respawn --transpile-only server.ts",
     "start": "node build/server.js",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false",
     "build": "tsc"
@@ -50,6 +50,7 @@
   "devDependencies": {
     "@types/node": "^20.14.10",
     "@vercel/node": "^5.1.14",
+    "cross-env": "^10.0.0",
     "typescript": "^5.8.2"
   }
 }

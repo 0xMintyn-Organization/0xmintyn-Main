@@ -37,14 +37,41 @@ app.use("/uploads", express.static(path.join(__dirname, "./uploads"))); // Serve
 
 // Rate limiter
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, 
-    limit: 100, 
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 1000, // Increased from 100 to 1000 requests per window
     standardHeaders: 'draft-8',
-    legacyHeaders: false, 
+    legacyHeaders: false,
+    message: {
+        error: "Too many requests from this IP, please try again later.",
+        retryAfter: "15 minutes"
+    },
+    // Skip rate limiting in development
+    skip: (req) => {
+        return process.env.NODE_ENV === 'development';
+    }
 })
 
 // Apply rate limiter before routes
 app.use(limiter);
+
+// More lenient rate limiter for authentication endpoints
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 200, // 200 requests per window for auth endpoints
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: {
+        error: "Too many authentication requests, please try again later.",
+        retryAfter: "15 minutes"
+    },
+    // Skip rate limiting in development
+    skip: (req) => {
+        return process.env.NODE_ENV === 'development';
+    }
+});
+
+// Apply auth rate limiter to user routes
+app.use('/api/v1/user', authLimiter);
 
 // routes
 app.use('/api/v1', userRouter);
