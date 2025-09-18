@@ -22,7 +22,6 @@ import {
   Shield,
   DollarSign,
   FileText,
-  Award,
   Calendar,
   MessageSquare,
   Globe,
@@ -100,12 +99,6 @@ const navigation: NavItem[] = [
         name: "My Courses",
         href: "/my-courses",
         icon: BookOpen,
-        roles: ["user"],
-      },
-      {
-        name: "Certificates",
-        href: "/certificates",
-        icon: Award,
         roles: ["user"],
       },
       {

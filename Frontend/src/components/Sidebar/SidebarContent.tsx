@@ -17,7 +17,6 @@ import {
   Users,
   BarChart3,
   Plus,
-  Award,
   Bookmark,
   Target,
   DollarSign,
