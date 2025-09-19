@@ -190,6 +190,7 @@ function AdminDashboard() {
   };
 
   const handleRoleChange = (user: User) => {
+    console.log("Opening role change dialog for user:", user);
     setSelectedUser(user);
     setNewRole(user.role);
     setRoleDialogOpen(true);
@@ -199,10 +200,15 @@ function AdminDashboard() {
     if (!selectedUser) return;
 
     try {
+      console.log("Updating role for user:", selectedUser._id, "to role:", newRole);
+      console.log("API URL:", `/role/users/${selectedUser._id}/role`);
+      
       const response = await axiosInstance.put(
         `/role/users/${selectedUser._id}/role`,
         { role: newRole }
       );
+
+      console.log("Role update response:", response.data);
 
       if (response.data.success) {
         toast({
@@ -213,6 +219,7 @@ function AdminDashboard() {
       }
     } catch (error: any) {
       console.error("Error updating role:", error);
+      console.error("Error response:", error.response?.data);
       toast({
         title: "Error",
         description: error.response?.data?.message || "Failed to update role",

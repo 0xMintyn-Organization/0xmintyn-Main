@@ -18,7 +18,7 @@ router.get("/dashboard", updateAccessTokenMiddleware, isAthenticated, getRoleDas
 
 // User management (Admin only)
 router.get("/users", updateAccessTokenMiddleware, isAthenticated, requireAdmin, getAllUsers);
-router.put("/users/:userIdrole", updateAccessTokenMiddleware, isAthenticated, requireAdmin, updateUserRole);
+router.put("/users/:userId/role", updateAccessTokenMiddleware, isAthenticated, requireAdmin, updateUserRole);
 router.delete("/users/:userId", updateAccessTokenMiddleware, isAthenticated, requireAdmin, deleteUser);
 
 // User profile management

@@ -73,6 +73,8 @@ export const updateUserRole = CatchAsyncError(
     try {
       const { userId } = req.params;
       const { role } = req.body;
+      
+      console.log("Role update request:", { userId, role, user: req.user?._id });
 
       if (!['user', 'instructor', 'admin'].includes(role)) {
         return next(new ErrorHandler("Invalid role", 400));
