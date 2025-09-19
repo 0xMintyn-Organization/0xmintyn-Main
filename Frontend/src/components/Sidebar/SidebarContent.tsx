@@ -121,13 +121,6 @@ const getNavItems = (userRole: string, bookmarkCount: number) => {
       description: "New Course"
     },
     { 
-      name: "Analytics", 
-      href: "/instructor/analytics", 
-      icon: BarChart3,
-      badge: null,
-      description: "Course Performance"
-    },
-    { 
       name: "Students", 
       href: "/instructor/students", 
       icon: Users,
@@ -139,7 +132,14 @@ const getNavItems = (userRole: string, bookmarkCount: number) => {
       href: "/instructor/earnings", 
       icon: DollarSign,
       badge: null,
-      description: "Revenue Tracking"
+      description: "Revenue & Payouts"
+    },
+    { 
+      name: "Analytics", 
+      href: "/instructor/analytics", 
+      icon: BarChart3,
+      badge: null,
+      description: "Course Performance"
     }
   ];
 

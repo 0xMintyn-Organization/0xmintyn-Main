@@ -17,6 +17,7 @@ import certificateRoutes from './routes/certificate.route';
 import bookmarkRoutes from './routes/bookmark.route';
 import reviewRoutes from './routes/review.route';
 import noteRoutes from './routes/note.route';
+import instructorRoutes from './routes/instructor.route';
 require('dotenv').config();
 export const app = express();
 
@@ -91,6 +92,7 @@ app.use('/api/v1/certificate', certificateRoutes);
 app.use('/api/v1/bookmark', bookmarkRoutes);
 app.use('/api/v1/review', reviewRoutes);
 app.use('/api/v1/note', noteRoutes);
+app.use('/api/v1', instructorRoutes);
 
 
 

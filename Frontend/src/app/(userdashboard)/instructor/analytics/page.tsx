@@ -82,6 +82,7 @@ import {
   Edit,
   Trash2,
   Plus,
+  RefreshCw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/Spinner";
@@ -246,7 +247,7 @@ function InstructorAnalytics() {
         setLoading(true);
         
         // Fetch analytics data
-        const analyticsRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}analytics/instructor`, {
+        const analyticsRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}instructor/analytics`, {
           params: { timeRange, courseId: selectedCourse },
           withCredentials: true
         });
@@ -265,9 +266,17 @@ function InstructorAnalytics() {
         if (coursesRes.data.success) {
           setCourses(coursesRes.data.courses);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching data:", err);
+        
+        // Use dummy data as fallback to prevent crashes
         setAnalyticsData(dummyAnalyticsData);
+        
+        toast({
+          title: "Warning",
+          description: err.response?.data?.message || "Using sample data. Some information may be outdated.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -317,7 +326,7 @@ function InstructorAnalytics() {
         setCourses(courses.filter(course => course._id !== courseToDelete._id));
         
         // Refresh analytics data
-          const analyticsRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}analytics/instructor`, {
+          const analyticsRes = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}instructor/analytics`, {
           params: { timeRange, courseId: selectedCourse },
           withCredentials: true
         });
@@ -360,11 +369,31 @@ function InstructorAnalytics() {
   };
 
   if (loading) {
-    return <Spinner />;
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
   }
 
   if (!analyticsData) {
-    return <div>Error loading analytics data</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Unable to load analytics
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            There was an error loading your analytics data.
+          </p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -517,34 +546,43 @@ function InstructorAnalytics() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <AreaChart data={analyticsData?.revenueData || []}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis yAxisId="left" />
-                        <YAxis yAxisId="right" orientation="right" />
-                        <Tooltip />
-                        <Legend />
-                        <Area
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="revenue"
-                          stroke="#10b981"
-                          fill="#10b981"
-                          fillOpacity={0.3}
-                          name="Revenue ($)"
-                        />
-                        <Area
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="students"
-                          stroke="#3b82f6"
-                          fill="#3b82f6"
-                          fillOpacity={0.3}
-                          name="Students"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    {analyticsData?.revenueData && analyticsData.revenueData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart data={analyticsData.revenueData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis yAxisId="left" />
+                          <YAxis yAxisId="right" orientation="right" />
+                          <Tooltip />
+                          <Legend />
+                          <Area
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="revenue"
+                            stroke="#10b981"
+                            fill="#10b981"
+                            fillOpacity={0.3}
+                            name="Revenue ($)"
+                          />
+                          <Area
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="students"
+                            stroke="#3b82f6"
+                            fill="#3b82f6"
+                            fillOpacity={0.3}
+                            name="Students"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-[300px] text-gray-500">
+                        <div className="text-center">
+                          <BarChart className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                          <p>No revenue data available for the selected period</p>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
