@@ -251,6 +251,98 @@ export const canUserReview = CatchAsyncError(
   }
 );
 
+// Admin: Get all reviews with course information
+export const getAdminReviews = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = (page - 1) * limit;
+      const courseId = req.query.courseId as string;
+      const search = req.query.search as string;
+
+      // Build filter
+      const filter: any = {};
+      if (courseId) {
+        filter.courseId = courseId;
+      }
+      if (search) {
+        filter.$or = [
+          { comment: { $regex: search, $options: 'i' } },
+          { userName: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      // Get reviews with course information
+      const reviews = await ReviewModel.find(filter)
+        .populate('courseId', 'name thumbnail')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      // Get total count
+      const totalReviews = await ReviewModel.countDocuments(filter);
+
+      // Get unique courses for filter dropdown
+      const courses = await ReviewModel.aggregate([
+        { $group: { _id: "$courseId" } },
+        { $lookup: { from: "courses", localField: "_id", foreignField: "_id", as: "course" } },
+        { $unwind: "$course" },
+        { $project: { _id: "$course._id", name: "$course.name" } }
+      ]);
+
+      res.status(200).json({
+        success: true,
+        reviews,
+        courses,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalReviews / limit),
+          totalReviews,
+          hasNextPage: page < Math.ceil(totalReviews / limit),
+          hasPrevPage: page > 1
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Get Admin Reviews Error:", error);
+      return next(new ErrorHandler(error.message || "Failed to fetch reviews", 500));
+    }
+  }
+);
+
+// Admin: Delete any review
+export const deleteReviewAdmin = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { reviewId } = req.params;
+
+      // Find the review
+      const review = await ReviewModel.findById(reviewId);
+      if (!review) {
+        return next(new ErrorHandler("Review not found", 404));
+      }
+
+      const courseId = review.courseId;
+
+      // Delete the review
+      await ReviewModel.findByIdAndDelete(reviewId);
+
+      // Update course rating statistics
+      await updateCourseRatingStats(courseId);
+
+      res.status(200).json({
+        success: true,
+        message: "Review deleted successfully"
+      });
+
+    } catch (error: any) {
+      console.error("Delete Review Admin Error:", error);
+      return next(new ErrorHandler(error.message || "Failed to delete review", 500));
+    }
+  }
+);
+
 // Helper function to update course rating statistics
 async function updateCourseRatingStats(courseId: string) {
   try {

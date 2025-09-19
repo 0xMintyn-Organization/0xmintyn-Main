@@ -28,6 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import NotesSection from "@/components/NotesSection";
 
 interface Lecture {
   id: string;
@@ -55,7 +56,6 @@ export default function CoursePlayerPage() {
   const [currentLecture, setCurrentLecture] = useState<Lecture | null>(null);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
-  const [notes, setNotes] = useState("");
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [courseName, setCourseName] = useState("");
   const [completedLectures, setCompletedLectures] = useState<string[]>([]);
@@ -584,21 +584,7 @@ export default function CoursePlayerPage() {
 
             {/* Tab: Notes */}
             <TabsContent value="notes" className="mt-6">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Your Notes</h3>
-                  <Textarea
-                    placeholder="Type your notes here..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="min-h-[200px] mb-4"
-                  />
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>Auto-saving...</span>
-                    <Button className="bg-green-900 text-white">Save Notes</Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <NotesSection />
             </TabsContent>
 
             {/* Tab: Resources */}

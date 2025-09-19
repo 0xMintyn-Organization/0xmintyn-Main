@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import Spinner from "@/components/Spinner";
 import { useToast } from "@/hooks/use-toast";
+import ReviewSection from "@/components/ReviewSection";
 
 interface CourseData {
   _id: string;
@@ -253,9 +254,10 @@ export default function CourseDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="sections" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                       <TabsTrigger value="sections">Sections</TabsTrigger>
                       <TabsTrigger value="overview">Overview</TabsTrigger>
+                      <TabsTrigger value="reviews">Reviews</TabsTrigger>
                     </TabsList>
                     <TabsContent value="sections" className="space-y-4">
                       {course.courseData.map((section, sectionIndex) => (
@@ -316,6 +318,9 @@ export default function CourseDetailPage() {
                           </ul>
                         </div>
                       </div>
+                    </TabsContent>
+                    <TabsContent value="reviews" className="space-y-4">
+                      <ReviewSection />
                     </TabsContent>
                   </Tabs>
                 </CardContent>

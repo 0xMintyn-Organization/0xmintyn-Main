@@ -4,10 +4,13 @@ import {
   createReview, 
   updateReview, 
   deleteReview, 
-  canUserReview 
+  canUserReview,
+  getAdminReviews,
+  deleteReviewAdmin
 } from "../controllers/review.controller";
 import { isAthenticated } from "../utils/auth";
 import { updateAccessTokenMiddleware } from "../controllers/user.controller";
+import { requireAdmin } from "../middleware/roleAuth";
 
 const router = express.Router();
 
@@ -25,5 +28,12 @@ router.put("/:reviewId", updateAccessTokenMiddleware, isAthenticated, updateRevi
 
 // Delete a review (authenticated users only)
 router.delete("/:reviewId", updateAccessTokenMiddleware, isAthenticated, deleteReview);
+
+// Admin routes
+// Get all reviews for admin management
+router.get("/admin/all", updateAccessTokenMiddleware, isAthenticated, requireAdmin, getAdminReviews);
+
+// Admin delete any review
+router.delete("/admin/:reviewId", updateAccessTokenMiddleware, isAthenticated, requireAdmin, deleteReviewAdmin);
 
 export default router;
