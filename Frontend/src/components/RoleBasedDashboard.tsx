@@ -237,7 +237,7 @@ function InstructorDashboard({ data }: { data: DashboardData }) {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => router.push("/instructor/courses/create")}>
+          <Button onClick={() => router.push("/create-course")}>
             <Plus className="w-4 h-4 mr-2" />
             Create Course
           </Button>
@@ -295,7 +295,7 @@ function InstructorDashboard({ data }: { data: DashboardData }) {
             <Button 
               className="w-full justify-start" 
               variant="outline"
-              onClick={() => router.push("/instructor/courses/create")}
+              onClick={() => router.push("/create-course")}
             >
               <Plus className="w-4 h-4 mr-2" />
               Create New Course

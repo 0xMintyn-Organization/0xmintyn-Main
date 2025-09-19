@@ -342,7 +342,7 @@ function InstructorAnalytics() {
   };
 
   const handleCreateCourse = () => {
-    router.push("/instructor/courses/create");
+    router.push("/create-course");
   };
 
   const formatCurrency = (value: number) => {

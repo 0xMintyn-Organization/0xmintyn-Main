@@ -52,10 +52,10 @@
             // @ts-ignore
             const activationToken = createActivationToken(user); 
             const activationCode = activationToken.activationCode;
+            console.log(activationCode);
 
             const data = { user: { name: user.firstName }, activationCode };
             const html = await ejs.renderFile(path.join(__dirname, '../mails/activatiomail.ejs'), data);
-            console.log(activationCode);
             try {
                 await sendEmail({
                     email,

@@ -7,14 +7,13 @@ import axios from "axios";
 import { AllRolesProtected } from "@/components/RoleProtected";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
+import ReviewSection from "@/components/ReviewSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MuxPlayer  from '@mux/mux-player-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
 import {
   Play, Clock, Users, Star, Award, BookOpen, Video, FileText, Download, Globe,
   Calendar, CheckCircle, Lock, ShoppingCart, Heart, Share2, BarChart, Target, Shield,
@@ -22,6 +21,7 @@ import {
   Edit
 } from "lucide-react";
 import Spinner from "@/components/Spinner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function CoursePreviewPage() {
   const [loading, setLoading] = useState(true);
@@ -242,7 +242,7 @@ export default function CoursePreviewPage() {
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
                   {course?.averageRating || 0}
-                  <span className="text-gray-400">({course?.totalReviews} reviews)</span>
+                  <span className="text-gray-400">({course?.totalReviews || 0} reviews)</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="w-5 h-5" />
@@ -552,79 +552,7 @@ export default function CoursePreviewPage() {
                     </TabsContent>
 
                <TabsContent value="reviews" className="space-y-6">
-                        <Card>
-                            <CardContent className="p-6">
-                                <h2 className="text-2xl font-bold mb-6">Student Reviews</h2>
-                                
-                                {/* Rating Summary */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                    <div className="text-center">
-                                        <div className="text-5xl font-bold text-green-600">4.8</div>
-                                        <div className="flex justify-center gap-1 my-2">
-                                            {[1, 2, 3, 4, 5].map((star) => (
-                                                <Star key={star} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                                            ))}
-                                        </div>
-                                        <p className="text-gray-600">Course Rating</p>
-                                    </div>
-                                    
-                                    <div className="col-span-2 space-y-2">
-                                        {[
-                                            { stars: 5, percentage: 75 },
-                                            { stars: 4, percentage: 15 },
-                                            { stars: 3, percentage: 7 },
-                                            { stars: 2, percentage: 2 },
-                                            { stars: 1, percentage: 1 }
-                                        ].map((rating) => (
-                                            <div key={rating.stars} className="flex items-center gap-3">
-                                                <div className="flex items-center gap-1 w-20">
-                                                    {[...Array(5)].map((_, i) => (
-                                                        <Star
-                                                            key={i}
-                                                            className={`w-4 h-4 ${
-                                                                i < rating.stars
-                                                                    ? 'fill-yellow-400 text-yellow-400'
-                                                                    : 'text-gray-300'
-                                                            }`}
-                                                        />
-                                                    ))}
-                                                </div>
-                                                <Progress value={rating.percentage} className="flex-1" />
-                                                <span className="text-sm text-gray-600 w-10">{rating.percentage}%</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Individual Reviews */}
-                                <div className="space-y-4">
-                                    {[1, 2, 3].map((review) => (
-                                        <div key={review} className="border-t pt-4">
-                                            <div className="flex items-start gap-4">
-                                                <Avatar>
-                                                    <AvatarFallback>U{review}</AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="font-semibold">User {review}</span>
-                                                        <div className="flex gap-0.5">
-                                                            {[...Array(5)].map((_, i) => (
-                                                                <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                                            ))}
-                                                        </div>
-                                                        <span className="text-sm text-gray-500">2 weeks ago</span>
-                                                    </div>
-                                                    <p className="text-zinc-700 dark:text-gray-300">
-                                                        This course is amazing! The instructor explains everything clearly and the 
-                                                        projects are really helpful for understanding the concepts.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <ReviewSection />
                     </TabsContent>
         </Tabs>
       </div>

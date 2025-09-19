@@ -302,7 +302,7 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
         });
         
         if (mode === "create") {
-          router.push('/instructor/courses');
+          router.push('/instructor/my_courses');
         } else {
           router.push(`/instructor/courses/${courseId}`);
         }

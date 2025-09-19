@@ -259,7 +259,7 @@ useEffect(() => {
                                         <Button
                                             variant="outline"
                                             className="border-green-900 text-green-900 hover:bg-green-50 dark:border-green-400 dark:text-green-400"
-                                            onClick={() => router.push("/instructor/courses")}
+                                            onClick={() => router.push("/instructor/my_courses")}
                                         >
                                             <BookOpen className="w-4 h-4 mr-2" />
                                             My Courses

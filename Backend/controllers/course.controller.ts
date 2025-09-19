@@ -266,7 +266,7 @@ export const createTempProfessionalCourse = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     // Professional course data with enhanced details
     const professionalCourseData = {
-      name: "Complete Data Science Masterclass: From Zero to Hero",
+      name: "Testing Course 1",
       description: `Master the art of data science with this comprehensive course designed for both beginners and intermediate learners. 
 
 This course covers everything you need to know to become a proficient data scientist, including:
