@@ -105,24 +105,39 @@ function PurchasedCoursesPage() {
   };
 
   const filteredCourses = courses.filter((course) => {
+    // Skip courses where the course data is completely missing (orphaned enrollments)
+    if (!course.course) {
+      return false;
+    }
+
     const matchesSearch = course.courseName
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesCategory =
-      categoryFilter === "all" || course.course.categories === categoryFilter;
+      categoryFilter === "all" || course.course?.categories === categoryFilter;
     const matchesLevel =
-      levelFilter === "all" || course.course.level === levelFilter;
+      levelFilter === "all" || course.course?.level === levelFilter;
 
     return matchesSearch && matchesCategory && matchesLevel;
   });
 
   const getCategories = () => {
-    const categories = new Set(courses.map((course) => course.course.categories));
+    const categories = new Set(
+      courses
+        .filter((course) => course.course) // Only include courses with course data
+        .map((course) => course.course?.categories)
+        .filter(Boolean)
+    );
     return Array.from(categories);
   };
 
   const getLevels = () => {
-    const levels = new Set(courses.map((course) => course.course.level));
+    const levels = new Set(
+      courses
+        .filter((course) => course.course) // Only include courses with course data
+        .map((course) => course.course?.level)
+        .filter(Boolean)
+    );
     return Array.from(levels);
   };
 
@@ -292,7 +307,7 @@ function PurchasedCoursesPage() {
                       <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          <span>{course.course.level}</span>
+                          <span>{course.course?.level || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Star className="w-4 h-4" />
@@ -301,7 +316,7 @@ function PurchasedCoursesPage() {
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline">{course.course.categories}</Badge>
+                        <Badge variant="outline">{course.course?.categories || 'General'}</Badge>
                       </div>
                       
                       <div className="flex gap-2">
