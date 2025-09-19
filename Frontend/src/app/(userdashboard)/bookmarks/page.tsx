@@ -139,15 +139,7 @@ export default function BookmarksPage() {
   const categories = ["all", ...Object.keys(categorizedBookmarks)];
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <Spinner />
-          </div>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen text="Loading your bookmarks..." />;
   }
 
   return (
@@ -273,7 +265,11 @@ export default function BookmarksPage() {
                             disabled={removingBookmark === bookmark.courseId}
                             className="text-red-500 hover:text-red-700 hover:bg-red-50"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {removingBookmark === bookmark.courseId ? (
+                              <Spinner size="sm" inline />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </Button>
                         </div>
 
@@ -350,7 +346,11 @@ export default function BookmarksPage() {
                             disabled={removingBookmark === bookmark.courseId}
                             className="text-red-500 hover:text-red-700 hover:bg-red-50"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {removingBookmark === bookmark.courseId ? (
+                              <Spinner size="sm" inline />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </Button>
                         </div>
 

@@ -118,9 +118,7 @@ function MyCoursesPage() {
   if (loading) {
     return (
       <Protected>
-        <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
-          <Spinner />
-        </div>
+        <Spinner fullScreen text="Loading your courses..." />
       </Protected>
     );
   }

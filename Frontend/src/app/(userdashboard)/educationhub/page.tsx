@@ -235,10 +235,8 @@ useEffect(() => {
     return (
         <Protected>
             {loading ? (
-            <>
-                    <Spinner />
-
-            </> ):(
+                    <Spinner fullScreen text="Loading courses..." />
+            ) : (
             <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
                 {/* Header Section */}
                 <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">

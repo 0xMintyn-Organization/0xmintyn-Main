@@ -387,7 +387,12 @@ export default function CoursePlayerPage() {
                   } font-semibold`}
                 >
                   <Bookmark className={`w-4 h-4 mr-2 ${isBookmarked ? "fill-current" : ""}`} />
-                  {bookmarkLoading ? "Loading..." : isBookmarked ? "Bookmarked" : "Bookmark Course"}
+                  {bookmarkLoading ? (
+                    <>
+                      <Spinner size="sm" inline />
+                      <span className="ml-2">Loading...</span>
+                    </>
+                  ) : isBookmarked ? "Bookmarked" : "Bookmark Course"}
                 </Button>
               </div>
 

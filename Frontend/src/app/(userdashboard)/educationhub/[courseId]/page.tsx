@@ -213,7 +213,7 @@ export default function CoursePreviewPage() {
     return `${hours > 0 ? hours + "h " : ""}${minutes} mins`;
   };
 
-  if (loading) return <Spinner />;
+  if (loading) return <Spinner fullScreen text="Loading course details..." />;
   if (error) return (
     <Protected>
       <div className="p-10 text-center text-red-600">{error}</div>
@@ -361,7 +361,12 @@ export default function CoursePreviewPage() {
                       disabled={bookmarkLoading}
                     >
                       <Heart className={`w-4 h-4 mr-2 ${isBookmarked ? "fill-current" : ""}`} />
-                      {bookmarkLoading ? "Loading..." : isBookmarked ? "Bookmarked" : "Bookmark"}
+                      {bookmarkLoading ? (
+                        <>
+                          <Spinner size="sm" inline />
+                          <span className="ml-2">Loading...</span>
+                        </>
+                      ) : isBookmarked ? "Bookmarked" : "Bookmark"}
                     </Button>
                   </div>
 
