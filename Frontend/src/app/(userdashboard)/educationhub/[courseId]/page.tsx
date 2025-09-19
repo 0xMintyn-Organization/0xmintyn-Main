@@ -17,8 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Play, Clock, Users, Star, Award, BookOpen, Video, FileText, Download, Globe,
   Calendar, CheckCircle, Lock, ShoppingCart, Heart, Share2, BarChart, Target, Shield,
-  ChevronDown,
-  Edit
+  ChevronDown, Edit, Mail, GraduationCap
 } from "lucide-react";
 import Spinner from "@/components/Spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,6 +34,8 @@ export default function CoursePreviewPage() {
   const [isCourseInstructor, setIsCourseInstructor] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [instructorData, setInstructorData] = useState<any>(null);
+  const [instructorLoading, setInstructorLoading] = useState(false);
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -66,6 +67,11 @@ export default function CoursePreviewPage() {
           // Check if current user is the course instructor
           if (user && data.createdBy && data.createdBy._id === user._id) {
             setIsCourseInstructor(true);
+          }
+          
+          // Fetch instructor data
+          if (data.createdBy && data.createdBy._id) {
+            fetchInstructorData(data.createdBy._id);
           }
           
           console.log(data);
@@ -148,6 +154,24 @@ export default function CoursePreviewPage() {
       }
     } catch (error: any) {
       console.error("Error checking bookmark status:", error);
+    }
+  };
+
+  const fetchInstructorData = async (instructorId: string) => {
+    try {
+      setInstructorLoading(true);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}user/instructor-stats/${instructorId}`,
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        setInstructorData(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching instructor data:", error);
+    } finally {
+      setInstructorLoading(false);
     }
   };
 
@@ -500,53 +524,125 @@ export default function CoursePreviewPage() {
                     <TabsContent value="instructor" className="space-y-6">
                         <Card>
                             <CardContent className="p-6">
-                                <div className="flex items-start gap-6">
-                                    <Avatar className="w-24 h-24">
-                                        <AvatarImage src={course.createdBy?.avatar} />
-                                        <AvatarFallback>JD</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1">
-                                        <h2 className="text-2xl font-bold mb-2">{course.createdBy?.firstName} {course.createdBy?.lastName}</h2>
-                                        <p className="text-gray-600 dark:text-gray-400 mb-4">
-                                            Senior React Developer & Instructor
-                                        </p>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                            <div>
-                                                <div className="flex items-center gap-2 text-gray-600">
-                                                    <Star className="w-4 h-4" />
-                                                    <span className="font-semibold">4.7</span>
+                                {instructorLoading ? (
+                                    <div className="flex items-center justify-center py-12">
+                                        <div className="text-center">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                            <p className="text-gray-500">Loading instructor information...</p>
+                                        </div>
+                                    </div>
+                                ) : instructorData ? (
+                                    <div className="flex items-start gap-6">
+                                        <Avatar className="w-24 h-24">
+                                            <AvatarImage 
+                                                src={instructorData.instructor?.avatar?.url || instructorData.instructor?.avatar} 
+                                                alt={`${instructorData.instructor?.firstName} ${instructorData.instructor?.lastName}`}
+                                            />
+                                            <AvatarFallback className="text-lg">
+                                                {instructorData.instructor?.firstName?.[0]}{instructorData.instructor?.lastName?.[0]}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <h2 className="text-2xl font-bold">
+                                                    {instructorData.instructor?.firstName} {instructorData.instructor?.lastName}
+                                                </h2>
+                                                <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                                                    <GraduationCap className="w-4 h-4" />
+                                                    <span>Instructor</span>
                                                 </div>
-                                                <p className="text-sm text-gray-500">Instructor Rating</p>
+                                                {instructorData.instructor?.isVerified && (
+                                                    <div className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
+                                                        <CheckCircle className="w-4 h-4" />
+                                                        <span>Verified</span>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div>
-                                                <div className="flex items-center gap-2 text-gray-600">
-                                                    <Award className="w-4 h-4" />
-                                                    <span className="font-semibold">15,234</span>
+                                            
+                                            {instructorData.instructor?.instructorHeadline && (
+                                                <p className="text-gray-600 dark:text-gray-400 mb-4 font-medium">
+                                                    {instructorData.instructor.instructorHeadline}
+                                                </p>
+                                            )}
+                                            
+                                            <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400 mb-4">
+                                                <div className="flex items-center gap-1">
+                                                    <Mail className="w-4 h-4" />
+                                                    <span>{instructorData.instructor?.email}</span>
                                                 </div>
-                                                <p className="text-sm text-gray-500">Reviews</p>
+                                                {instructorData.instructor?.website && (
+                                                    <div className="flex items-center gap-1">
+                                                        <Globe className="w-4 h-4" />
+                                                        <a 
+                                                            href={instructorData.instructor.website} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="hover:text-blue-600 dark:hover:text-blue-400"
+                                                        >
+                                                            Website
+                                                        </a>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div>
-                                                <div className="flex items-center gap-2 text-gray-600">
-                                                    <Users className="w-4 h-4" />
-                                                    <span className="font-semibold">45,678</span>
+                                            
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                                <div>
+                                                    <div className="flex items-center gap-2 text-gray-600">
+                                                        <Star className="w-4 h-4" />
+                                                        <span className="font-semibold">{instructorData.stats?.averageRating || 0}</span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-500">Instructor Rating</p>
                                                 </div>
-                                                <p className="text-sm text-gray-500">Students</p>
+                                                <div>
+                                                    <div className="flex items-center gap-2 text-gray-600">
+                                                        <Award className="w-4 h-4" />
+                                                        <span className="font-semibold">{instructorData.stats?.totalReviews || 0}</span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-500">Reviews</p>
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2 text-gray-600">
+                                                        <Users className="w-4 h-4" />
+                                                        <span className="font-semibold">{instructorData.stats?.totalStudents || 0}</span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-500">Students</p>
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2 text-gray-600">
+                                                        <Video className="w-4 h-4" />
+                                                        <span className="font-semibold">{instructorData.stats?.totalCourses || 0}</span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-500">Courses</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div className="flex items-center gap-2 text-gray-600">
-                                                    <Video className="w-4 h-4" />
-                                                    <span className="font-semibold">12</span>
+                                            
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <h3 className="text-lg font-semibold mb-2">About the Instructor</h3>
+                                                    <p className="text-zinc-700 dark:text-gray-300 leading-relaxed">
+                                                        {instructorData.instructor?.instructorBio || instructorData.instructor?.bio || 
+                                                         "This instructor is passionate about sharing knowledge and helping students achieve their learning goals. With years of experience in their field, they bring practical insights and real-world examples to make learning engaging and effective."}
+                                                    </p>
                                                 </div>
-                                                <p className="text-sm text-gray-500">Courses</p>
+                                                
+                                                {instructorData.stats?.totalRevenue && instructorData.stats.totalRevenue > 0 && (
+                                                    <div>
+                                                        <h3 className="text-lg font-semibold mb-2">Total Revenue</h3>
+                                                        <p className="text-2xl font-bold text-green-600">
+                                                            ${instructorData.stats.totalRevenue.toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                        <p className="text-zinc-700 dark:text-gray-300">
-                                            I&apos;m a passionate developer with over 10 years of experience in web development. 
-                                            I&apos;ve worked with companies like Google, Facebook, and Microsoft, and now I&apos;m 
-                                            dedicated to teaching the next generation of developers.
-                                        </p>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="flex items-center justify-center py-12">
+                                        <div className="text-center">
+                                            <p className="text-gray-500">Instructor information not available</p>
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>

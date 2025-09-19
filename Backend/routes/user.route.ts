@@ -1,5 +1,6 @@
 import express from 'express';
 import { activateUserAccount, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor } from '../controllers/user.controller';
+import { getInstructorStats } from '../controllers/instructor.controller';
 import { isAthenticated as isAuthenticated } from '../utils/auth';
 import upload from '../middleware/multerConfig';
 
@@ -18,6 +19,7 @@ userRouter.get('/users', getAllUsers);
 userRouter.get('/refreshtoken', updateAccessToken);
 
 userRouter.get('/me', updateAccessTokenMiddleware,  isAuthenticated, getUserInfo);
+userRouter.get('/instructor-stats/:instructorId', getInstructorStats);
 
 userRouter.put('/update-user-info', updateAccessTokenMiddleware, isAuthenticated, updateProfile);
 

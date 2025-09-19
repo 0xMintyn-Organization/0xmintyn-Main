@@ -9,6 +9,9 @@
     import { accessTokenOptions, refreshTokenOptions, sendToken } from '../utils/jwt';
     import sendEmail from '../utils/sendMail';
     import { getUserById } from '../services/user.services';
+    import CourseModel from '../models/course.model';
+    import OrderModel from '../models/order.model';
+    import ReviewModel from '../models/review.model';
 
     // Register a user
     interface IRegistrationBody {
