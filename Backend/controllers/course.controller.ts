@@ -473,5 +473,164 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
   }
 );
 
+// Admin: Get all courses with detailed information
+export const getAdminCourses = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 12;
+    const skip = (page - 1) * limit;
 
+    // Build filter object
+    const filter: any = {};
+    
+    if (req.query.status && req.query.status !== 'all') {
+      filter.status = req.query.status;
+    }
+    
+    if (req.query.category && req.query.category !== 'all') {
+      filter.categories = req.query.category;
+    }
+    
+    if (req.query.level && req.query.level !== 'all') {
+      filter.level = req.query.level;
+    }
+    
+    if (req.query.search) {
+      filter.$or = [
+        { name: { $regex: req.query.search, $options: 'i' } },
+        { description: { $regex: req.query.search, $options: 'i' } },
+        { 'createdBy.firstName': { $regex: req.query.search, $options: 'i' } },
+        { 'createdBy.lastName': { $regex: req.query.search, $options: 'i' } }
+      ];
+    }
+
+    // Get courses with populated instructor data
+    const courses = await CourseModel.find(filter)
+      .populate('createdBy', 'firstName lastName email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    // Add default values for missing fields
+    const coursesWithDefaults = courses.map(course => ({
+      ...course.toObject(),
+      enrolledStudents: course.enrolledStudents || 0,
+      totalRevenue: course.totalRevenue || 0,
+      rating: course.averageRating || 0,
+      reviews: course.totalReviews || 0,
+      status: course.status || 'active'
+    }));
+
+    // Get total count for pagination
+    const totalCourses = await CourseModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalCourses / limit);
+
+    // Get unique categories and levels for filters
+    const categories = await CourseModel.distinct('categories');
+    const levels = await CourseModel.distinct('level');
+
+    // Calculate statistics
+    const stats = await CourseModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalCourses: { $sum: 1 },
+          activeCourses: {
+            $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
+          },
+          pendingCourses: {
+            $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
+          },
+          totalRevenue: { $sum: '$price' },
+          totalStudents: { $sum: '$enrolledStudents' },
+          averageRating: { $avg: '$averageRating' }
+        }
+      }
+    ]);
+
+    const courseStats = stats[0] || {
+      totalCourses: 0,
+      activeCourses: 0,
+      pendingCourses: 0,
+      totalRevenue: 0,
+      totalStudents: 0,
+      averageRating: 0
+    };
+
+    res.status(200).json({
+      success: true,
+      courses: coursesWithDefaults,
+      stats: courseStats,
+      categories,
+      levels,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCourses,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
+    });
+
+  } catch (error: any) {
+    console.error("Error fetching admin courses:", error);
+    return next(new ErrorHandler("Failed to fetch courses", 500));
+  }
+});
+
+// Admin: Update course status
+export const updateCourseStatus = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['active', 'inactive', 'pending', 'rejected'].includes(status)) {
+      return next(new ErrorHandler("Invalid status. Must be: active, inactive, pending, or rejected", 400));
+    }
+
+    const course = await CourseModel.findByIdAndUpdate(
+      id,
+      { status, updatedAt: new Date() },
+      { new: true }
+    ).populate('createdBy', 'firstName lastName email');
+
+    if (!course) {
+      return next(new ErrorHandler("Course not found", 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Course status updated successfully",
+      course
+    });
+
+  } catch (error: any) {
+    console.error("Error updating course status:", error);
+    return next(new ErrorHandler("Failed to update course status", 500));
+  }
+});
+
+// Admin: Delete course
+export const deleteCourseAdmin = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const course = await CourseModel.findById(id);
+    if (!course) {
+      return next(new ErrorHandler("Course not found", 404));
+    }
+
+    // Delete the course
+    await CourseModel.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Course deleted successfully"
+    });
+
+  } catch (error: any) {
+    console.error("Error deleting course:", error);
+    return next(new ErrorHandler("Failed to delete course", 500));
+  }
+});
 

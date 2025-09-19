@@ -1,9 +1,9 @@
 import express from "express";
-import { createCourse, getAllCourses, getCourseById, getPurchasedCourseById, updateCourse, deleteCourse, getInstructorCourses, createTempProfessionalCourse } from "../controllers/course.controller";
+import { createCourse, getAllCourses, getCourseById, getPurchasedCourseById, updateCourse, deleteCourse, getInstructorCourses, createTempProfessionalCourse, getAdminCourses, updateCourseStatus, deleteCourseAdmin } from "../controllers/course.controller";
 import { isAthenticated } from "../utils/auth";
 import upload from "../middleware/multerConfig";
 import { updateAccessTokenMiddleware } from "../controllers/user.controller";
-import { requireInstructorOrAdmin } from "../middleware/roleAuth";
+import { requireInstructorOrAdmin, requireAdmin } from "../middleware/roleAuth";
 
 const router = express.Router();
 
@@ -30,5 +30,10 @@ router.delete("/:id", updateAccessTokenMiddleware, isAthenticated, requireInstru
 
 // Temporary API to create professional course (for testing)
 router.post("/create-professional",isAthenticated, createTempProfessionalCourse);
+
+// Admin course management (Admin only)
+router.get("/admin/all", updateAccessTokenMiddleware, isAthenticated, requireAdmin, getAdminCourses);
+router.put("/admin/:id/status", updateAccessTokenMiddleware, isAthenticated, requireAdmin, updateCourseStatus);
+router.delete("/admin/:id", updateAccessTokenMiddleware, isAthenticated, requireAdmin, deleteCourseAdmin);
 
 export default router;
