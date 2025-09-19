@@ -257,20 +257,20 @@ export default function AdminCourseManagement() {
       case 'rejected':
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+        return "bg-gray-100 text-gray-800 dark:bg-zinc-900 dark:text-gray-300";
     }
   };
 
   const getLevelBadgeColor = (level: string) => {
     switch (level.toLowerCase()) {
       case 'beginner':
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
       case 'intermediate':
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
       case 'advanced':
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+        return "bg-gray-100 text-gray-800 dark:bg-zinc-900 dark:text-gray-300";
     }
   };
 
@@ -289,7 +289,7 @@ export default function AdminCourseManagement() {
 
   return (
     <Protected>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8">
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
@@ -506,7 +506,7 @@ export default function AdminCourseManagement() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <GraduationCap className="w-4 h-4 text-blue-500" />
+                            <GraduationCap className="w-4 h-4 text-green-500" />
                             <div>
                               <p className="text-sm font-medium">
                                 {course.createdBy.firstName} {course.createdBy.lastName}
@@ -629,7 +629,7 @@ export default function AdminCourseManagement() {
                         </Badge>
                       </div>
 
-                      <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-green-600 transition-colors">
                         {course.name}
                       </h3>
 

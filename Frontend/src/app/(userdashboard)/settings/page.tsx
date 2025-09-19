@@ -125,7 +125,7 @@ export default function Settings() {
                     }`}
                     onClick={() => setPreviewTheme("dark")}
                   >
-                    <div className="bg-gray-900 border border-gray-700 rounded-md p-2 mb-2">
+                    <div className="bg-zinc-900 border border-gray-700 rounded-md p-2 mb-2">
                       <div className="h-2 w-16 bg-gray-700 rounded-full mb-1"></div>
                       <div className="h-2 w-10 bg-gray-800 rounded-full"></div>
                     </div>

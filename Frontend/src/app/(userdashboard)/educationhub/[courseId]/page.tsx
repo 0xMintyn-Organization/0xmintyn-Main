@@ -305,7 +305,7 @@ export default function CoursePreviewPage() {
                     {isCourseInstructor || isAdmin() ? (
                       <Button 
                         size="lg" 
-                        className="w-full bg-blue-600 text-white"
+                        className="w-full bg-green-600 text-white"
                         onClick={() => router.push(`/instructor/courses/${courseId}`)}
                       >
                         <Edit className="w-4 h-4 mr-2" />
@@ -354,7 +354,7 @@ export default function CoursePreviewPage() {
                       size="lg" 
                       className={`w-full ${
                         isBookmarked 
-                          ? "border-blue-500 text-blue-500 bg-blue-50" 
+                          ? "border-green-500 text-green-500 bg-green-50 dark:bg-green-900/20" 
                           : "border-gray-300 text-gray-600"
                       }`}
                       onClick={toggleBookmark}

@@ -105,7 +105,7 @@ function MyCoursesPage() {
       case 'advanced':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+        return 'bg-gray-100 text-gray-800 dark:bg-zinc-900 dark:text-gray-300';
     }
   };
 

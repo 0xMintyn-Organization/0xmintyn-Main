@@ -45,7 +45,7 @@ const getNavItems = (userRole: string, bookmarkCount: number) => {
       href: "/educationhub", 
       icon: GraduationCap,
       badge: "12",
-      badgeColor: "bg-blue-100 text-blue-800",
+      badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       description: "Courses & Learning"
     },
     { 
@@ -53,7 +53,7 @@ const getNavItems = (userRole: string, bookmarkCount: number) => {
       href: "/governance", 
       icon: Vote,
       badge: "3",
-      badgeColor: "bg-purple-100 text-purple-800",
+      badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       description: "Vote on Proposals"
     },
     { 

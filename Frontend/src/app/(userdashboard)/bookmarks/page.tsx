@@ -143,12 +143,12 @@ export default function BookmarksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <Bookmark className="w-8 h-8 text-blue-600" />
+            <Bookmark className="w-8 h-8 text-green-600" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               My Bookmarks
             </h1>
@@ -273,7 +273,7 @@ export default function BookmarksPage() {
                           </Button>
                         </div>
 
-                        <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                        <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-green-600 transition-colors">
                           {bookmark.courseName}
                         </h3>
 
@@ -304,7 +304,7 @@ export default function BookmarksPage() {
                           <Button
                             size="sm"
                             onClick={() => handleCourseClick(bookmark.courseId)}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-green-600 hover:bg-green-700"
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View
@@ -354,7 +354,7 @@ export default function BookmarksPage() {
                           </Button>
                         </div>
 
-                        <h3 className="font-semibold text-lg mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                        <h3 className="font-semibold text-lg mb-1 line-clamp-1 group-hover:text-green-600 transition-colors">
                           {bookmark.courseName}
                         </h3>
 
@@ -384,7 +384,7 @@ export default function BookmarksPage() {
                           <Button
                             size="sm"
                             onClick={() => handleCourseClick(bookmark.courseId)}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-green-600 hover:bg-green-700"
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View Course
