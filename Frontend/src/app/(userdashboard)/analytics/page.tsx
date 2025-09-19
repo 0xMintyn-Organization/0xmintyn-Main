@@ -63,6 +63,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import Spinner from "@/components/Spinner";
+import { AdminProtected } from "@/components/RoleProtected";
 
 // Types
 interface AnalyticsData {
@@ -186,17 +187,17 @@ function Analytics() {
 
   if (loading) {
     return (
-      <Protected>
+      <AdminProtected>
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
           <Spinner />
         </div>
-      </Protected>
+      </AdminProtected>
     );
   }
 
   if (!analyticsData) {
     return (
-      <Protected>
+      <AdminProtected>
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -207,12 +208,12 @@ function Analytics() {
             </p>
           </div>
         </div>
-      </Protected>
+      </AdminProtected>
     );
   }
 
   return (
-    <Protected>
+    <AdminProtected>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8">
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}
@@ -518,7 +519,7 @@ function Analytics() {
           </Tabs>
         </div>
       </div>
-    </Protected>
+    </AdminProtected>
   );
 }
 

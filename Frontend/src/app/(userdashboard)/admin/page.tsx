@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/utils/axiosInstance";
-import Protected from "@/hooks/useProtected";
+import { AdminProtected } from "@/components/RoleProtected";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -62,7 +62,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import Spinner from "@/components/Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AdminProtected } from "@/components/RoleProtected";
 
 interface User {
   _id: string;
@@ -280,18 +279,17 @@ function AdminDashboard() {
 
   if (loading ) {
     return (
-      <Protected>
+      <AdminProtected>
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
           <Spinner />
         </div>
-      </Protected>
+      </AdminProtected>
     );
   }
 
   return (
-    <Protected>
-      {/* <AdminProtected> */}
-        <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8">
+    <AdminProtected>
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8">
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
@@ -684,8 +682,7 @@ function AdminDashboard() {
           </Dialog>
         </div>
       </div>
-      {/* </AdminProtected> */}
-    </Protected>
+    </AdminProtected>
   );
 }
 

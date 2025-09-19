@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
-import Protected from "@/hooks/useProtected";
+import { AllRolesProtected } from "@/components/RoleProtected";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
@@ -215,13 +215,13 @@ export default function CoursePreviewPage() {
 
   if (loading) return <Spinner fullScreen text="Loading course details..." />;
   if (error) return (
-    <Protected>
+    <AllRolesProtected>
       <div className="p-10 text-center text-red-600">{error}</div>
-    </Protected>
+    </AllRolesProtected>
   );
 
   return (
-    <Protected>
+    <AllRolesProtected>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
       {/* Hero Section */}
       <div className="bg-zinc-900 text-white">
@@ -629,6 +629,6 @@ export default function CoursePreviewPage() {
         </Tabs>
       </div>
     </div>
-    </Protected>
+    </AllRolesProtected>
   );
 }

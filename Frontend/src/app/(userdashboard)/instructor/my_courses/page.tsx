@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import Protected from "@/hooks/useProtected";
+import { InstructorProtected } from "@/components/RoleProtected";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -160,14 +160,14 @@ function MyCoursesPage() {
 
   if (loading) {
     return (
-      <Protected>
+      <InstructorProtected>
         <Spinner fullScreen text="Loading your courses..." />
-      </Protected>
+      </InstructorProtected>
     );
   }
 
   return (
-    <Protected>
+    <InstructorProtected>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8">
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}
@@ -408,7 +408,7 @@ function MyCoursesPage() {
           </Dialog>
         </div>
       </div>
-    </Protected>
+    </InstructorProtected>
   );
 }
 

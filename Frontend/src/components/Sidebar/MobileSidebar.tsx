@@ -1,8 +1,8 @@
+import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import SidebarContent from "./SidebarContent";
-import { Button } from "@/components/ui/button";
 
 export default function MobileSidebar() {
   const [open, setOpen] = useState(false);

@@ -1,49 +1,35 @@
 "use client";
 
-import { useState } from "react";
-import { useSelector } from "react-redux";
-import { useBookmarkCount } from "@/hooks/useBookmarkCount";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import {
-  Users,
-  BookOpen,
-  BarChart3,
-  Settings,
-  Crown,
-  GraduationCap,
-  User,
-  Home,
-  Plus,
-  List,
-  ChevronDown,
-  ChevronRight,
-  ShoppingCart,
-  Shield,
-  DollarSign,
-  FileText,
-  Calendar,
-  MessageSquare,
-  Globe,
-  Search,
-  ShoppingCart,
-  Heart,
-  Bell,
-  HelpCircle,
-  LogOut,
-  Edit,
-  Eye,
-  Trash2,
-  TrendingUp,
-  Target,
-  Zap,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useBookmarkCount } from "@/hooks/useBookmarkCount";
+import { cn } from "@/lib/utils";
+import {
+  BarChart3,
+  Bell,
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  Crown,
+  DollarSign,
+  FileText,
+  GraduationCap,
+  Heart,
+  HelpCircle,
+  Home,
+  LogOut,
+  MessageSquare,
+  Plus,
+  Settings,
+  Shield,
+  ShoppingCart,
+  User,
+  Users
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { useSelector } from "react-redux";
 
 interface NavItem {
   name: string;

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import Protected from "@/hooks/useProtected";
+import { AdminProtected } from "@/components/RoleProtected";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -288,7 +288,7 @@ export default function AdminCourseManagement() {
   }
 
   return (
-    <Protected>
+    <AdminProtected>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8">
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}
@@ -770,6 +770,6 @@ export default function AdminCourseManagement() {
           </Dialog>
         </div>
       </div>
-    </Protected>
+    </AdminProtected>
   );
 }

@@ -1,12 +1,12 @@
 'use client';
-import SidebarContent from './SidebarContent';
-import { useRole } from '@/hooks/useRole';
-import { useState, useEffect } from 'react';
-import { ChevronLeft, Sparkles, LayoutDashboard, GraduationCap, Vote, Settings, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSidebar } from '@/contexts/SidebarContext';
+import { useRole } from '@/hooks/useRole';
+import { ChevronLeft, GraduationCap, LayoutDashboard, Settings, User, Vote } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useSidebar } from '@/contexts/SidebarContext';
+import { useState } from 'react';
+import SidebarContent from './SidebarContent';
 
 // Get collapsed nav items based on role
 const getCollapsedNavItems = (userRole: string) => {

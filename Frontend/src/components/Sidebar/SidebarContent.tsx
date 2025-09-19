@@ -2,33 +2,29 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useBookmarkCount } from "@/hooks/useBookmarkCount";
+import { useRole } from "@/hooks/useRole";
 import {
-  ArrowLeftRight,
+  BarChart3,
+  Bookmark,
+  BookOpen,
   ChevronRight,
+  DollarSign,
+  FileText,
   GraduationCap,
   LayoutDashboard,
-  Settings,
-  ShoppingBag,
-  ShoppingCart,
-  Sparkles,
-  User,
-  Vote,
-  BookOpen,
-  Users,
-  BarChart3,
   Plus,
-  Bookmark,
-  Target,
-  DollarSign,
+  Settings,
   Shield,
+  ShoppingCart,
+  TrendingUp,
+  User,
   UserCheck,
-  FileText,
-  TrendingUp
+  Users,
+  Vote
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRole } from "@/hooks/useRole";
-import { useBookmarkCount } from "@/hooks/useBookmarkCount";
 
 // Role-based navigation items
 const getNavItems = (userRole: string, bookmarkCount: number) => {

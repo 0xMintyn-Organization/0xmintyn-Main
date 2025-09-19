@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios"; 
-import Protected from "@/hooks/useProtected";
+import { AllRolesProtected } from "@/components/RoleProtected";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -233,7 +233,7 @@ useEffect(() => {
     });
 
     return (
-        <Protected>
+        <AllRolesProtected>
             {loading ? (
                     <Spinner fullScreen text="Loading courses..." />
             ) : (
@@ -541,7 +541,7 @@ useEffect(() => {
                 isOpen={showInstructorModal}
                 onClose={() => setShowInstructorModal(false)}
             />
-        </Protected>
+        </AllRolesProtected>
     );
 }
 

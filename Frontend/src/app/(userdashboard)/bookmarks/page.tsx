@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
+import { AllRolesProtected } from "@/components/RoleProtected";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -139,11 +140,16 @@ export default function BookmarksPage() {
   const categories = ["all", ...Object.keys(categorizedBookmarks)];
 
   if (loading) {
-    return <Spinner fullScreen text="Loading your bookmarks..." />;
+    return (
+      <AllRolesProtected>
+        <Spinner fullScreen text="Loading your bookmarks..." />
+      </AllRolesProtected>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 p-6">
+    <AllRolesProtected>
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -400,5 +406,6 @@ export default function BookmarksPage() {
         )}
       </div>
     </div>
+    </AllRolesProtected>
   );
 }

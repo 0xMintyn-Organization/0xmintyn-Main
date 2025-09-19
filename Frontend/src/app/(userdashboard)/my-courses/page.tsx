@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import Protected from "@/hooks/useProtected";
+import { AllRolesProtected } from "@/components/RoleProtected";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -117,14 +117,14 @@ function MyCoursesPage() {
 
   if (loading) {
     return (
-      <Protected>
+      <AllRolesProtected>
         <Spinner fullScreen text="Loading your courses..." />
-      </Protected>
+      </AllRolesProtected>
     );
   }
 
   return (
-    <Protected>
+    <AllRolesProtected>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8">
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}
@@ -276,7 +276,7 @@ function MyCoursesPage() {
           )}
         </div>
       </div>
-    </Protected>
+    </AllRolesProtected>
   );
 }
 
