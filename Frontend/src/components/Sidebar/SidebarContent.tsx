@@ -179,15 +179,20 @@ const getNavItems = (userRole: string, bookmarkCount: number) => {
           href: "/admin/reviews",
           icon: MessageSquare,
           description: "Manage Course Reviews"
+        },
+        {
+          name: "User Management",
+          href: "/admin/users",
+          icon: Users,
+          description: "Manage Platform Users"
+        },
+        {
+          name: "Order Management",
+          href: "/admin/orders",
+          icon: ShoppingCart,
+          description: "Manage Orders & Transactions"
         }
       ]
-    },
-    { 
-      name: "Order Management", 
-      href: "/admin/orders", 
-      icon: FileText,
-      badge: null,
-      description: "Order Tracking"
     },
     { 
       name: "Analytics", 
