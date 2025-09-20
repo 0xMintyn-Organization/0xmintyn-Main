@@ -19,9 +19,9 @@ function Header() {
 
     const handleLogout = async () => {
         setLogout(true);
-        await signOut();
-        redirect("/login");
-    };
+        await signOut({ callbackUrl: "https://app.0xmintyn.com/login" });
+      };
+      
 
     return (
         <header className="flex justify-between items-center px-4 sm:px-8 py-2 w-full">
