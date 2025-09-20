@@ -16,7 +16,7 @@ function Users() {
     const [users, setUsers] = useState([])
 
     useEffect(() => {
-        fetch("http://localhost:8000/api/v1/users")
+        fetch("https://appbackend.0xmintyn.com/api/v1/users")
             .then((res) => res.json())
             .then((data) => {
                 if (data.success) {

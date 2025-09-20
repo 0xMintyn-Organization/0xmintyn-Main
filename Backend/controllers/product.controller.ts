@@ -16,7 +16,7 @@ export const createProduct = CatchAsyncError(async (req: Request, res: Response,
     }
 
     // @ts-ignore 
-    const coverImage = `${process.env.SERVER_URL || "http://localhost:8000"}/uploads/${req.file.filename}`;
+    const coverImage = `${process.env.SERVER_URL || "https://appbackend.0xmintyn.com"}/uploads/${req.file.filename}`;
 
     const product = await ProductModel.create({
         title,
@@ -132,7 +132,7 @@ export const updateProduct = CatchAsyncError(async (req: Request, res: Response,
     // @ts-ignore 
     if (req.file) {
         // @ts-ignore 
-        updates.coverImage = `${process.env.SERVER_URL || "http://localhost:8000"}/uploads/${req.file.filename}`;
+        updates.coverImage = `${process.env.SERVER_URL || "https://appbackend.0xmintyn.com"}/uploads/${req.file.filename}`;
     }
 
     Object.assign(product, updates);
