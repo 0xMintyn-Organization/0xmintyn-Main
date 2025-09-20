@@ -184,7 +184,7 @@ function EnhancedEducationCard({ course }: { course: Course }) {
                         }
                         onClick={() => {
                             if (course.isPurchased) {
-                                router.push(`/courses/${course.id}`);
+                                router.push(`/educationhub/${course.id}`);
                             } else {
                                 router.push(`/educationhub/${course.id}`);
                             }

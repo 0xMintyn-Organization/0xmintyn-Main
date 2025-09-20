@@ -31,7 +31,7 @@ export const createCourse = CatchAsyncError(async (req: Request, res: Response, 
     return next(new ErrorHandler("Please upload a course thumbnail image", 400));
   }
 
-  const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
+  const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
   const thumbnail = `${serverUrl}/uploads/${req.file.filename}`;
 
   // Parse JSON body fields for arrays
@@ -206,7 +206,7 @@ export const updateCourse = CatchAsyncError(
 
     // Handle thumbnail update if provided
     if (req.file) {
-      const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
+      const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
       course.thumbnail = `${serverUrl}/uploads/${req.file.filename}`;
     }
 
