@@ -9,8 +9,8 @@ function FundRaisingModel() {
     const modelDetails: {image: string | IconType, title: string, shortDesc: string}[] = [
         {
             image: '/assets/images/dap/icons/library-48.ico',
-            title: "DAO Governance",
-            shortDesc: "Decentralized decision-making for community-driven initiatives"
+            title: "Community Projects",
+            shortDesc: "Supporting community-driven initiatives and development"
         },
         {
             image: '/assets/images/dap/icons/money-bag.svg',
@@ -33,8 +33,8 @@ function FundRaisingModel() {
         <div className="space-y-2 dark:bg-zinc-800 p-5 rounded-xl mt-6">
             <h2 className="text-heading font-semibold">DAP Fundraising Model</h2>
             <p className="text-xs">
-                0xMintyn&apos;s DAP fundraising model empowers communities through DAO 
-                governance and impact innvesting supporting UBI-driven projects that
+                0xMintyn&apos;s DAP fundraising model empowers communities through 
+                community-driven initiatives and impact investing supporting UBI-driven projects that
                 address critical societal challenges. By participating, individuals
                 join a transformative movement, fostering collaboration, transparency,
                 and sustainable social and financial outcomes, ultimately creating a 

@@ -26,7 +26,6 @@ import {
   EyeOff,
   Lock,
   Settings as SettingsIcon,
-  Vote,
   Wallet,
 } from "lucide-react";
 import { useState } from "react";
@@ -68,10 +67,6 @@ export default function Settings() {
           <TabsTrigger value="wallet" className="flex items-center gap-2">
             <Wallet className="h-4 w-4" />
             <span>Wallet</span>
-          </TabsTrigger>
-          <TabsTrigger value="governance" className="flex items-center gap-2">
-            <Vote className="h-4 w-4" />
-            <span>Governance</span>
           </TabsTrigger>
         </TabsList>
 
@@ -435,8 +430,8 @@ export default function Settings() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
-                      <h4 className="font-medium">Governance Updates</h4>
-                      <p className="text-xs text-muted-foreground">News about governance proposals</p>
+                      <h4 className="font-medium">Community Updates</h4>
+                      <p className="text-xs text-muted-foreground">News about community initiatives</p>
                     </div>
                     <Switch defaultChecked />
                   </div>
@@ -583,101 +578,6 @@ export default function Settings() {
           </Card>
         </TabsContent>
         
-        {/* GOVERNANCE */}
-        <TabsContent value="governance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Governance & Participation</CardTitle>
-              <CardDescription>Manage your governance settings and view participation statistics.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Voting Dashboard */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Voting Dashboard</h3>
-                <div className="space-y-2">
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex justify-between mb-2">
-                      <h4 className="font-medium">Active Proposals</h4>
-                      <span className="text-sm font-medium text-green-500">4 Open</span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded">
-                        <span className="text-sm">UBI Increase Proposal</span>
-                        <Button size="sm" variant="outline" className="bg-green-700 hover:bg-green-800 text-white hover:text-white">Vote</Button>
-                      </div>
-                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded">
-                        <span className="text-sm">Protocol Upgrade v2.3</span>
-                        <Button size="sm" variant="outline" className="bg-green-700 hover:bg-green-800 text-white hover:text-white">Vote</Button>
-                      </div>
-                    </div>
-                    <Button variant="link" className="px-0 mt-2">View All Proposals</Button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Delegate Voting Power</h4>
-                      <p className="text-xs text-muted-foreground">Allow a trusted delegate to vote on your behalf</p>
-                    </div>
-                    <Button variant="outline" size="sm" className="bg-green-700 hover:bg-green-800 text-white hover:text-white">Configure</Button>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Project Contributions */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Project Contributions</h3>
-                <div className="space-y-2">
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex justify-between mb-4">
-                      <h4 className="font-medium">Reputation Points</h4>
-                      <span className="text-lg font-bold">1,250</span>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>Governance Participation</span>
-                          <span>450 pts</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div className="w-[36%] bg-blue-500 h-2 rounded-full"></div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>Community Engagement</span>
-                          <span>325 pts</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div className="w-[26%] bg-green-500 h-2 rounded-full"></div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>Protocol Testing</span>
-                          <span>475 pts</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div className="w-[38%] bg-purple-500 h-2 rounded-full"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Contribution Preferences</h4>
-                      <p className="text-xs text-muted-foreground">Choose areas where you&apos;d like to contribute</p>
-                    </div>
-                    <Button variant="outline" size="sm" className="bg-green-700 hover:bg-green-800 text-white hover:text-white">Configure</Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
     </Protected>

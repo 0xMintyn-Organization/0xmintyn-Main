@@ -19,6 +19,8 @@ import reviewRoutes from './routes/review.route';
 import noteRoutes from './routes/note.route';
 import instructorRoutes from './routes/instructor.route';
 import adminRoutes from './routes/admin.route';
+import proposalRoutes from './routes/governance/proposal.route';
+import voteRoutes from './routes/governance/vote.route';
 require('dotenv').config();
 export const app = express();
 
@@ -35,7 +37,7 @@ app.use(cookieParser());
 
 // cors
 app.use(cors({ 
-    origin: ['https://app.0xmintyn.com', 'http://localhost:3000', 'http://209.74.89.249:3000' ], 
+    origin: ['http://localhost:3000', 'http://localhost:3000', 'http://209.74.89.249:3000' ], 
     credentials: true 
 }));
 
@@ -95,6 +97,8 @@ app.use('/api/v1/review', reviewRoutes);
 app.use('/api/v1/note', noteRoutes);
 app.use('/api/v1', instructorRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/proposal', proposalRoutes);
+app.use('/api/v1/vote', voteRoutes);
 
 
 

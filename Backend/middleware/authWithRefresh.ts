@@ -29,6 +29,11 @@ export const authWithRefresh = CatchAsyncError(async (req: Request, res: Respons
         }
 
         req.user = user.toJSON();
+        console.log('=== AUTH DEBUG ===');
+        console.log('User ID from JWT:', decoded.id);
+        console.log('User ID from DB:', user._id);
+        console.log('User ID in req.user:', req.user.id);
+        console.log('User ID in req.user._id:', req.user._id);
         next();
 
     } catch (error: any) {
@@ -64,6 +69,11 @@ export const authWithRefresh = CatchAsyncError(async (req: Request, res: Respons
                 res.cookie('refresh_token', newRefreshToken, refreshTokenOptions);
 
                 req.user = user.toJSON();
+                console.log('=== AUTH REFRESH DEBUG ===');
+                console.log('User ID from JWT:', refreshDecoded.id);
+                console.log('User ID from DB:', user._id);
+                console.log('User ID in req.user:', req.user.id);
+                console.log('User ID in req.user._id:', req.user._id);
                 next();
 
             } catch (refreshError: any) {

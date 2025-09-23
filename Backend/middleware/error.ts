@@ -13,7 +13,18 @@ export const ErrorMiddleware = (err:any , req: Request, res: Response, next : Ne
 
     // duplicate key error
     if(err.code === 11000){
-        const message = `Duplicate ${Object.keys(err.keyValue)} entered`;
+        const keyFields = Object.keys(err.keyValue);
+        let message = 'Duplicate entry found';
+        
+        // Provide more specific error messages based on the duplicate fields
+        if (keyFields.includes('email')) {
+            message = 'Email address is already registered';
+        } else if (keyFields.includes('username')) {
+            message = 'Username is already taken';
+        } else {
+            message = `Duplicate ${keyFields.join(', ')} entered`;
+        }
+        
         err = new ErrorHandler(message, 400);
     }
 

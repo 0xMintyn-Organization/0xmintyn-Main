@@ -24,7 +24,8 @@ import {
   Shield,
   ShoppingCart,
   User,
-  Users
+  Users,
+  Vote
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -59,7 +60,7 @@ const navigation: NavItem[] = [
   {
     name: "Governance",
     href: "/governance",
-    icon: Shield,
+    icon: Vote,
     roles: ["user", "instructor", "admin"],
   },
   {
@@ -185,6 +186,12 @@ const navigation: NavItem[] = [
         name: "System Settings",
         href: "/admin/settings",
         icon: Settings,
+        roles: ["admin"],
+      },
+      {
+        name: "Governance Management",
+        href: "/admin/governance",
+        icon: Vote,
         roles: ["admin"],
       },
     ],
@@ -355,7 +362,7 @@ export default function AdvancedSidebar({ className }: AdvancedSidebarProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-              {user.firstName} {user.lastName}
+              {user.username || `${user.firstName} ${user.lastName}`}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
               {user.role}

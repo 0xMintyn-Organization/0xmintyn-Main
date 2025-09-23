@@ -1,9 +1,6 @@
-import ActiveProposalsCard from "@/components/Dap/ActiveProposalsCard"
 import FundRaisingModel from "@/components/Dap/FundRaisingModel"
-import SnapshotComponent from "@/components/Governance/SnapshotComponent"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Protected from "@/hooks/useProtected"
-import { proposalCard, proposalsSnapshot } from "@/lib/utils"
 
 function Dap() {
 
@@ -13,16 +10,14 @@ function Dap() {
         <div className="flex flex-col mx-auto space-y-4 py-6 px-4">
             <Card>
                 <CardHeader className="text-heading font-semibold">
-                    <CardTitle>0xMintyn Governance</CardTitle>
+                    <CardTitle>0xMintyn DAP</CardTitle>
                     
                 </CardHeader>
                 <CardContent className="px-4">
 
-                    {/* Proposals Snapshot */}
+                    {/* DAP Content */}
                     <div className="flex justify-around lg:flex-nowrap flex-wrap my-4">
-                        {proposalsSnapshot && proposalsSnapshot.map((proposal, idx) => (
-                            <SnapshotComponent key={idx} propsalSate={proposal.propsalSate} states={proposal.states} />
-                        ))}
+                        <p className="text-center text-gray-600">DAP functionality coming soon...</p>
                     </div>
 
                 </CardContent>
@@ -32,25 +27,15 @@ function Dap() {
             {/* Fund Raising Component */}
             <FundRaisingModel />
 
-            {/* Active Proposals */}
+            {/* DAP Features */}
             <Card>
                 <CardHeader className="text-heading font-semibold">
-                    <CardTitle>Active Proposals</CardTitle>
+                    <CardTitle>DAP Features</CardTitle>
                 </CardHeader>
                 <CardContent className="px-6">
-
-                    {/* Active Proposals */}
-                    {proposalCard && proposalCard.slice(0, 3).map((proposal, idx) => (
-                        <ActiveProposalsCard 
-                            key={idx} 
-                            title={proposal.title} 
-                            proStatus={proposal.proStatus} 
-                            description={proposal.description} 
-                            yesValue={proposal.yesVal} 
-                            noValue={proposal.noVal} 
-                        />
-                    ))}
-
+                    <div className="text-center py-8">
+                        <p className="text-gray-600">DAP features and functionality coming soon...</p>
+                    </div>
                 </CardContent>
             </Card>
         </div>

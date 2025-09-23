@@ -23,9 +23,9 @@ import {
   User,
   UserCheck,
   Users,
-  Vote,
   MessageSquare,
-  Star
+  Star,
+  Vote
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -53,8 +53,8 @@ const getNavItems = (userRole: string, bookmarkCount: number) => {
       href: "/governance", 
       icon: Vote,
       badge: "3",
-      badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      description: "Vote on Proposals"
+      badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      description: "Community Proposals"
     },
     { 
       name: "Settings", 
@@ -200,6 +200,14 @@ const getNavItems = (userRole: string, bookmarkCount: number) => {
       icon: TrendingUp,
       badge: null,
       description: "Platform Analytics"
+    },
+    { 
+      name: "Governance Management", 
+      href: "/admin/governance", 
+      icon: Vote,
+      badge: "Admin",
+      badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+      description: "Manage Proposals"
     }
   ];
 
@@ -251,10 +259,10 @@ export default function Sidebar() {
           <div className="flex items-center gap-3 mb-3">
             <Avatar className="w-10 h-10 ring-2 ring-green-600 ring-offset-2">
               <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} />
-              <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+              <AvatarFallback>{(user?.username || user?.name)?.charAt(0)?.toUpperCase() || "U"}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="font-semibold text-sm">{user?.name || "User"}</p>
+              <p className="font-semibold text-sm">{user?.username || user?.name || "User"}</p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 capitalize">
                 {user?.role === 'instructor' ? 'Instructor' : 
                  user?.role === 'admin' ? 'Administrator' : 'Member'}

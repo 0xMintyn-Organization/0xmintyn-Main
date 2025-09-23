@@ -49,7 +49,7 @@ export interface SkillDetailType {
   name: string;
 }
 
-// Governance Page
+// DAP Page
 export interface ActiveProposalsDetailType {
   title: string;
   description: string;

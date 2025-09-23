@@ -30,7 +30,7 @@ export const swapRate: SwapRateType[] = [
 
 export const commFeedDetail: CommFeedDetailType[] = [
   {proImage: '/assets/images/dashboard/profile_images/user_1.jpg', description: `Alice just listed a new digital artwork: 'Neon Dreams'`},
-  {proImage: '/assets/images/dashboard/profile_images/user_2.jpg', description: `Bob proposed a new governance vote on token buring mechanism.`},
+  {proImage: '/assets/images/dashboard/profile_images/user_2.jpg', description: `Bob completed a new course: 'Blockchain Fundamentals'`},
   {proImage: '/assets/images/dashboard/profile_images/user_3.jpg', description: `Charlie completed a P2P transaction worth 1000 OXM`},
 ]
 
@@ -136,7 +136,7 @@ export const skillDetail: SkillDetailType[] = [
   
 ]
 
-// Governance Page
+// DAP Page
 
 export const activeProposalsDetail: ActiveProposalsDetailType[] = [
   {
