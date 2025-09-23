@@ -35,6 +35,7 @@ import {
 import Protected from '@/hooks/useProtected';
 import ProposalForm from '@/components/Governance/ProposalForm';
 import ProposalDetails from '@/components/Governance/ProposalDetails';
+import Spinner from '@/components/Spinner';
 
 interface Proposal {
   _id: string;
@@ -299,7 +300,8 @@ function GovernancePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        
+        <Spinner />
       </div>
     );
   }
