@@ -5,8 +5,6 @@ import { rateLimit } from 'express-rate-limit';
 import { ErrorMiddleware } from './middleware/error';
 import userRouter from './routes/user.route';
 import path from 'path';
-import productRouter from './routes/product.route';
-import orderRouter from './routes/order.route';
 import uploadRoutes from './routes/upload.route';
 import streamRoutes from './routes/stream.route';
 import coursesRoutes from './routes/course.route';
@@ -83,8 +81,6 @@ app.use('/api/v1/user', authLimiter);
 
 // routes
 app.use('/api/v1', userRouter);
-app.use('/api/v1/product', productRouter);
-app.use('/api/v1/order', orderRouter);
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/stream", streamRoutes);
 app.use('/api/v1/course', coursesRoutes);

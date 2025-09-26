@@ -1,17 +1,14 @@
-    require('dotenv').config();
-    import ejs from 'ejs';
-    import { NextFunction, Request, Response } from 'express';
-    import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
-    import path from 'path';
-    import { CatchAsyncError } from '../middleware/catchAsyncError';
-    import UserModel, { IUser } from '../models/user.mode';
-    import ErrorHandler from '../utils/errorHandler';
-    import { accessTokenOptions, refreshTokenOptions, sendToken } from '../utils/jwt';
-    import sendEmail from '../utils/sendMail';
-    import { getUserById } from '../services/user.services';
-    import CourseModel from '../models/course.model';
-    import OrderModel from '../models/order.model';
-    import ReviewModel from '../models/review.model';
+require('dotenv').config();
+import ejs from 'ejs';
+import { NextFunction, Request, Response } from 'express';
+import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
+import path from 'path';
+import { CatchAsyncError } from '../middleware/catchAsyncError';
+import UserModel, { IUser } from '../models/user.mode';
+import { getUserById } from '../services/user.services';
+import ErrorHandler from '../utils/errorHandler';
+import { accessTokenOptions, refreshTokenOptions, sendToken } from '../utils/jwt';
+import sendEmail from '../utils/sendMail';
 
     // Register a user
     interface IRegistrationBody {
@@ -138,7 +135,7 @@
                 return next(new ErrorHandler('Please enter email and password', 400));
             }
 
-            const user = await UserModel.findOne({ email }).select('+password').populate("products");
+            const user = await UserModel.findOne({ email }).select('+password');
             if (!user) {
                 return next(new ErrorHandler('Invalid email or password', 401));
             }

@@ -1,9 +1,8 @@
-import { Request, Response, NextFunction } from "express";
-import UserModel from "../models/user.mode";
+import { NextFunction, Request, Response } from "express";
+import { CatchAsyncError } from "../middleware/catchAsyncError";
 import { CourseModel } from "../models/course.model";
 import OrderModel from "../models/order.model";
-import ReviewModel from "../models/review.model";
-import { CatchAsyncError } from "../middleware/catchAsyncError";
+import UserModel from "../models/user.mode";
 import ErrorHandler from "../utils/errorHandler";
 
 // Chart colors
