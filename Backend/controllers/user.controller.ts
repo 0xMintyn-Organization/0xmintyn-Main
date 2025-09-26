@@ -327,7 +327,7 @@
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com"; 
+            const serverUrl = process.env.SERVER_URL || "http://localhost:8000"; 
             // @ts-ignore
             const avatarUrl = `${serverUrl}/uploads/${req.file.filename}`;
 
@@ -360,7 +360,7 @@
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
+            const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
             // @ts-ignore
             const bannerUrl = `${serverUrl}/uploads/${req.file.filename}`;
 

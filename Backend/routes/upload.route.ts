@@ -17,7 +17,7 @@ router.post("/upload", videoUpload.single("file"), async (req, res) => {
     return res.status(400).json({ success: false, message: "No file uploaded" });
   }
 
-  const baseUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
+  const baseUrl = process.env.SERVER_URL || "http://localhost:8000";
   const fileUrl = `${baseUrl}/uploads/videos/${multerReq.file.filename}`;
 
   return res.status(200).json({
