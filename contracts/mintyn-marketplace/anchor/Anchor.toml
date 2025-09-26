@@ -1,0 +1,26 @@
+[toolchain]
+package_manager = "yarn"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+marketplace = "MktpE3ndUJwKy38f7CYqc5PTCD6MEYPNMdwbN"
+
+[programs.devnet]
+marketplace = "MktpE3ndUJwKy38f7CYqc5PTCD6MEYPNMdwbN"
+
+[programs.mainnet]
+marketplace = "MktpE3ndUJwKy38f7CYqc5PTCD6MEYPNMdwbN"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "../node_modules/.bin/jest --preset ts-jest"
+

@@ -1,0 +1,1497 @@
+{
+  "address": "CsKFzRYMSJpE3ndUJwKy38f7CYqc5PTCD6MEYPNMdwbN",
+  "metadata": {
+    "name": "ubi_program",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "claim_initial_ubi",
+      "docs": [
+        "Claim initial UBI (one-time $2000 distribution)"
+      ],
+      "discriminator": [
+        63,
+        10,
+        248,
+        119,
+        251,
+        98,
+        42,
+        190
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "signer": true
+        },
+        {
+          "name": "ubi_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fraud_detection",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  114,
+                  97,
+                  117,
+                  100,
+                  95,
+                  100,
+                  101,
+                  116,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "ubi_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury_token_account",
+          "writable": true
+        },
+        {
+          "name": "user_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_monthly_ubi",
+      "docs": [
+        "Claim monthly recurring UBI ($1000 equivalent)"
+      ],
+      "discriminator": [
+        174,
+        187,
+        136,
+        238,
+        254,
+        252,
+        136,
+        211
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "signer": true
+        },
+        {
+          "name": "ubi_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fraud_detection",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  114,
+                  97,
+                  117,
+                  100,
+                  95,
+                  100,
+                  101,
+                  116,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "ubi_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury_token_account",
+          "writable": true
+        },
+        {
+          "name": "user_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "fund_treasury",
+      "docs": [
+        "Admin function to fund the treasury"
+      ],
+      "discriminator": [
+        71,
+        154,
+        45,
+        220,
+        206,
+        32,
+        174,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "ubi_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "ubi_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin_token_account",
+          "writable": true
+        },
+        {
+          "name": "treasury_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_program",
+      "docs": [
+        "Initialize the UBI program with treasury and configuration"
+      ],
+      "discriminator": [
+        176,
+        107,
+        205,
+        168,
+        24,
+        157,
+        175,
+        103
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "ubi_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "ubi_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "admin",
+          "type": "pubkey"
+        },
+        {
+          "name": "token_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "max_users",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "initialize_user",
+      "docs": [
+        "Register new user and distribute welcome bonus"
+      ],
+      "discriminator": [
+        111,
+        17,
+        185,
+        250,
+        60,
+        122,
+        38,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "ubi_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fraud_detection",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  114,
+                  97,
+                  117,
+                  100,
+                  95,
+                  100,
+                  101,
+                  116,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "ubi_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury_token_account",
+          "writable": true
+        },
+        {
+          "name": "user_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "identity_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "referral_code",
+          "type": {
+            "option": "string"
+          }
+        }
+      ]
+    },
+    {
+      "name": "report_fraud",
+      "docs": [
+        "Report suspicious activity (can be called by anyone)"
+      ],
+      "discriminator": [
+        197,
+        111,
+        235,
+        49,
+        151,
+        143,
+        182,
+        154
+      ],
+      "accounts": [
+        {
+          "name": "reporter",
+          "signer": true
+        },
+        {
+          "name": "fraud_detection",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  114,
+                  97,
+                  117,
+                  100,
+                  95,
+                  100,
+                  101,
+                  116,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "fraud_detection.user",
+                "account": "FraudDetection"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "reported_user",
+          "type": "pubkey"
+        },
+        {
+          "name": "reason",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "suspend_user",
+      "docs": [
+        "Admin function to suspend/unsuspend user"
+      ],
+      "discriminator": [
+        231,
+        239,
+        17,
+        160,
+        182,
+        128,
+        204,
+        195
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "ubi_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user_profile.user",
+                "account": "UserProfile"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fraud_detection",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  114,
+                  97,
+                  117,
+                  100,
+                  95,
+                  100,
+                  101,
+                  116,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user_profile.user",
+                "account": "UserProfile"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "suspend",
+          "type": "bool"
+        },
+        {
+          "name": "reason",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "toggle_program",
+      "docs": [
+        "Admin function to pause/unpause the program"
+      ],
+      "discriminator": [
+        147,
+        206,
+        27,
+        218,
+        32,
+        205,
+        32,
+        121
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "ubi_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "active",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "update_ubi_amounts",
+      "docs": [
+        "Admin function to update UBI amounts"
+      ],
+      "discriminator": [
+        130,
+        14,
+        198,
+        84,
+        232,
+        158,
+        115,
+        96
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "ubi_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_welcome_bonus",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "new_initial_ubi",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "new_monthly_ubi",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
+    },
+    {
+      "name": "verify_user",
+      "docs": [
+        "Admin function to verify user identity"
+      ],
+      "discriminator": [
+        127,
+        54,
+        157,
+        106,
+        85,
+        167,
+        116,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "ubi_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  98,
+                  105,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user_profile.user",
+                "account": "UserProfile"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "verification_score",
+          "type": "u8"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "FraudDetection",
+      "discriminator": [
+        89,
+        113,
+        13,
+        68,
+        150,
+        8,
+        176,
+        107
+      ]
+    },
+    {
+      "name": "Treasury",
+      "discriminator": [
+        238,
+        239,
+        123,
+        238,
+        89,
+        1,
+        168,
+        253
+      ]
+    },
+    {
+      "name": "UbiConfig",
+      "discriminator": [
+        90,
+        101,
+        194,
+        43,
+        254,
+        23,
+        84,
+        206
+      ]
+    },
+    {
+      "name": "UserProfile",
+      "discriminator": [
+        32,
+        37,
+        119,
+        205,
+        179,
+        180,
+        13,
+        194
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "FraudReported",
+      "discriminator": [
+        129,
+        128,
+        197,
+        74,
+        187,
+        182,
+        4,
+        85
+      ]
+    },
+    {
+      "name": "InitialUbiClaimed",
+      "discriminator": [
+        171,
+        196,
+        219,
+        237,
+        123,
+        208,
+        172,
+        181
+      ]
+    },
+    {
+      "name": "MonthlyUbiClaimed",
+      "discriminator": [
+        83,
+        139,
+        148,
+        174,
+        250,
+        235,
+        205,
+        181
+      ]
+    },
+    {
+      "name": "ProgramToggled",
+      "discriminator": [
+        242,
+        201,
+        84,
+        55,
+        231,
+        180,
+        252,
+        38
+      ]
+    },
+    {
+      "name": "TreasuryFunded",
+      "discriminator": [
+        172,
+        66,
+        241,
+        101,
+        216,
+        219,
+        147,
+        130
+      ]
+    },
+    {
+      "name": "UbiAmountsUpdated",
+      "discriminator": [
+        119,
+        98,
+        41,
+        19,
+        133,
+        175,
+        1,
+        143
+      ]
+    },
+    {
+      "name": "UbiProgramInitialized",
+      "discriminator": [
+        142,
+        225,
+        233,
+        63,
+        38,
+        223,
+        91,
+        236
+      ]
+    },
+    {
+      "name": "UserInitialized",
+      "discriminator": [
+        66,
+        195,
+        5,
+        223,
+        42,
+        84,
+        135,
+        60
+      ]
+    },
+    {
+      "name": "UserSuspended",
+      "discriminator": [
+        90,
+        110,
+        94,
+        61,
+        28,
+        234,
+        116,
+        151
+      ]
+    },
+    {
+      "name": "UserVerified",
+      "discriminator": [
+        191,
+        18,
+        15,
+        86,
+        86,
+        109,
+        153,
+        63
+      ]
+    },
+    {
+      "name": "WelcomeBonusDistributed",
+      "discriminator": [
+        202,
+        95,
+        99,
+        19,
+        126,
+        72,
+        109,
+        18
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "ProgramInactive",
+      "msg": "Program is inactive"
+    },
+    {
+      "code": 6001,
+      "name": "MaxUsersReached",
+      "msg": "Maximum users reached"
+    },
+    {
+      "code": 6002,
+      "name": "UserSuspended",
+      "msg": "User is suspended"
+    },
+    {
+      "code": 6003,
+      "name": "UserNotVerified",
+      "msg": "User is not verified"
+    },
+    {
+      "code": 6004,
+      "name": "InitialUbiAlreadyClaimed",
+      "msg": "Initial UBI already claimed"
+    },
+    {
+      "code": 6005,
+      "name": "InitialUbiNotClaimed",
+      "msg": "Initial UBI not claimed yet"
+    },
+    {
+      "code": 6006,
+      "name": "MonthlyPeriodNotMet",
+      "msg": "Monthly period not met"
+    },
+    {
+      "code": 6007,
+      "name": "VerificationPeriodNotMet",
+      "msg": "Verification period not met"
+    },
+    {
+      "code": 6008,
+      "name": "InsufficientVerificationScore",
+      "msg": "Insufficient verification score"
+    },
+    {
+      "code": 6009,
+      "name": "UserFlagged",
+      "msg": "User is flagged for suspicious activity"
+    },
+    {
+      "code": 6010,
+      "name": "UnauthorizedAdmin",
+      "msg": "Unauthorized admin"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidVerificationScore",
+      "msg": "Invalid verification score"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidAmount",
+      "msg": "Invalid amount"
+    },
+    {
+      "code": 6013,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow"
+    }
+  ],
+  "types": [
+    {
+      "name": "FraudDetection",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "identity_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "registration_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "verification_attempts",
+            "type": "u8"
+          },
+          {
+            "name": "is_flagged",
+            "type": "bool"
+          },
+          {
+            "name": "risk_score",
+            "type": "u8"
+          },
+          {
+            "name": "last_activity",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Treasury",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "token_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_funded",
+            "type": "u64"
+          },
+          {
+            "name": "total_distributed",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UbiConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "token_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "welcome_bonus_amount",
+            "type": "u64"
+          },
+          {
+            "name": "initial_ubi_amount",
+            "type": "u64"
+          },
+          {
+            "name": "monthly_ubi_amount",
+            "type": "u64"
+          },
+          {
+            "name": "max_users",
+            "type": "u32"
+          },
+          {
+            "name": "total_users",
+            "type": "u32"
+          },
+          {
+            "name": "total_distributed",
+            "type": "u64"
+          },
+          {
+            "name": "is_active",
+            "type": "bool"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserProfile",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "identity_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "registered_at",
+            "type": "i64"
+          },
+          {
+            "name": "welcome_bonus_claimed",
+            "type": "bool"
+          },
+          {
+            "name": "initial_ubi_claimed",
+            "type": "bool"
+          },
+          {
+            "name": "last_monthly_claim",
+            "type": "i64"
+          },
+          {
+            "name": "total_claimed",
+            "type": "u64"
+          },
+          {
+            "name": "is_verified",
+            "type": "bool"
+          },
+          {
+            "name": "is_suspended",
+            "type": "bool"
+          },
+          {
+            "name": "referral_code",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "verification_score",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}
+
