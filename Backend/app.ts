@@ -19,6 +19,7 @@ import instructorRoutes from './routes/instructor.route';
 import adminRoutes from './routes/admin.route';
 import proposalRoutes from './routes/governance/proposal.route';
 import voteRoutes from './routes/governance/vote.route';
+import marketRoutes from './src/modules/market/routes/index';
 require('dotenv').config();
 export const app = express();
 
@@ -95,6 +96,7 @@ app.use('/api/v1', instructorRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/proposal', proposalRoutes);
 app.use('/api/v1/vote', voteRoutes);
+app.use('/api/v1/market', marketRoutes);
 
 
 

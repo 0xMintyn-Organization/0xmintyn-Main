@@ -1,6 +1,6 @@
-# 0xMintyn - Universal Basic Income Platform
+# 0xMintyn - Educational Platform
 
-A comprehensive educational platform with integrated governance, marketplace, and UBI distribution features built with modern web technologies.
+A comprehensive educational platform with integrated governance and course management features built with modern web technologies.
 
 ## Table of Contents
 
@@ -93,9 +93,13 @@ The API follows RESTful conventions with versioned endpoints (`/api/v1/`). All r
 - `GET /access/:courseId` - Check course access (Protected)
 - `POST /progress/:courseId/:lectureId/complete` - Mark lecture complete (Protected)
 - `GET /progress/:courseId` - Get course progress (Protected)
+- `GET /orders` - Get all orders (Admin only)
+- `GET /orders/:orderId` - Get order details (Protected)
+- `PUT /orders/:orderId/status` - Update order status (Admin only)
 
 **Admin Management (`/api/v1/admin`)**
 - `GET /users` - Get admin users data (Admin only)
+- `GET /orders` - Get admin orders data (Admin only)
 
 **Instructor Management (`/api/v1/instructor`)**
 - `GET /instructor-stats/:instructorId` - Get instructor statistics (Public)
@@ -453,6 +457,7 @@ axiosInstance.interceptors.response.use(
 **Analytics & Reporting:**
 - User growth metrics
 - Course performance analytics
+- Order and enrollment tracking
 - System health monitoring
 
 ### Instructor Capabilities
@@ -482,6 +487,7 @@ axiosInstance.interceptors.response.use(
 **Analytics:**
 - View course performance metrics
 - Track student engagement
+- Monitor course enrollments and orders
 - Access instructor-specific analytics
 
 ### Regular User Capabilities
@@ -494,8 +500,9 @@ axiosInstance.interceptors.response.use(
 
 **Content Access:**
 - Browse available courses
-- Enroll in courses
+- Enroll in courses (free enrollment)
 - Access enrolled course content
+- Track enrollment history
 
 **Learning Features:**
 - Track learning progress
@@ -651,6 +658,8 @@ interface ICourse {
   name: string;
   description: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
+  price: number;
+  estimatedPrice: number;
   createdBy: ObjectId;
   courseData: Section[];
   reviews: Review[];
@@ -673,14 +682,41 @@ interface IProposal {
 }
 ```
 
+**Order Model:**
+```typescript
+interface IOrder {
+  courseId: string;
+  userId: string;
+  courseName: string;
+  coursePrice: number;
+  courseThumbnail: string;
+  instructorId: string;
+  instructorName: string;
+  status: 'pending' | 'completed' | 'cancelled' | 'refunded';
+  payment_info?: {
+    paymentId?: string;
+    paymentMethod?: string;
+    paymentStatus?: string;
+    transactionId?: string;
+    amount?: number;
+    currency?: string;
+  };
+  enrolledAt?: Date;
+  completedAt?: Date;
+  completedLectures?: string[];
+}
+```
+
 **Relationships:**
 - Users → Courses (one-to-many)
+- Users → Orders (one-to-many)
 - Courses → Reviews (one-to-many)
 - Users → Proposals (one-to-many)
 
 **Indexes:**
 - User email and username (unique)
 - Course createdBy and status
+- Order userId and courseId
 - Proposal status and createdAt
 
 ### Deployment & Environment

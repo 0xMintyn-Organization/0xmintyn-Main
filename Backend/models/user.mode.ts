@@ -18,7 +18,7 @@ export interface IUser extends Document {
     username: string;
     contactNumber: string;
     password: string;
-    role: string;
+    role: 'user' | 'instructor' | 'seller' | 'admin';
     avatar: string;
     banner: string;
     bio: string;
@@ -27,6 +27,21 @@ export interface IUser extends Document {
     instructorStatus: string;
     isVerified: boolean;
     products: mongoose.Types.ObjectId[];
+    sellerStatus: 'pending' | 'approved' | 'rejected';
+    sellerApplication?: {
+        businessName: string;
+        businessType: string;
+        experience: string;
+        portfolio?: string;
+        skills: string[];
+        languages: string[];
+        timezone?: string;
+        availability?: string;
+        appliedAt: Date;
+        reviewedAt?: Date;
+        reviewedBy?: mongoose.Types.ObjectId;
+        reviewNotes?: string;
+    };
     comparePassword: (password: string) => Promise<boolean>;
     SignAccessToken: () => string;
     SignRefreshToken: () => string;
@@ -81,7 +96,7 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'instructor', 'admin'],
+        enum: ['user', 'instructor', 'seller', 'admin'],
         default: 'user',
         required: true,
     },
@@ -119,8 +134,31 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
             productId: String,
         }
     ],
-    
-    
+    sellerStatus: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending',
+    },
+    sellerApplication: {
+        businessName: String,
+        businessType: String,
+        experience: String,
+        portfolio: String,
+        skills: [String],
+        languages: [String],
+        timezone: String,
+        availability: String,
+        appliedAt: {
+            type: Date,
+            default: Date.now
+        },
+        reviewedAt: Date,
+        reviewedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        reviewNotes: String
+    }
 }, { timestamps: true });
 
 userSchema.virtual("products", {
