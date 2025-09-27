@@ -22,6 +22,7 @@ import voteRoutes from './routes/governance/vote.route';
 import marketplaceProductRouter from './routes/marketplace/marketplaceProduct.route';
 import marketplaceServiceRouter from './routes/marketplace/marketplaceService.route';
 import blockchainRoutes from './routes/blockchain';
+import walletRoutes from './routes/wallet.route';
 require('dotenv').config();
 export const app = express();
 
@@ -101,6 +102,7 @@ app.use('/api/v1/marketplace/services', marketplaceServiceRouter);
 app.use('/api/v1/proposal', proposalRoutes);
 app.use('/api/v1/vote', voteRoutes);
 app.use('/api/v1/blockchain', blockchainRoutes);
+app.use('/api/v1/wallet', walletRoutes);
 
 
 
