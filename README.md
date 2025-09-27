@@ -44,7 +44,7 @@ A comprehensive educational platform with integrated governance, marketplace, an
 
 **Key Dependencies:**
 - **Authentication**: JWT (jsonwebtoken), bcryptjs
-- **File Upload**: Multer, Cloudinary
+- **File Upload**: Multer
 - **Email**: Nodemailer, EJS templates
 - **Real-time**: Socket.io
 - **Security**: express-rate-limit, cors, helmet
@@ -727,7 +727,6 @@ NEXT_PUBLIC_SERVER_URI=http://localhost:8000
 - Backend: Node.js server with PM2
 - Frontend: Next.js static export or Vercel
 - Database: MongoDB Atlas or self-hosted
-- File Storage: Cloudinary
 - CDN: For static assets
 
 **Build Commands:**
