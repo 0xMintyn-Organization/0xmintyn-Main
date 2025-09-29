@@ -9,7 +9,7 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
   const { isCollapsed } = useSidebar();
 
   return (
-    <div className="antialiased dark:text-white bg-gray-100 dark:bg-zinc-900 min-h-screen flex flex-col lg:flex-row">
+    <div className="antialiased bg-background text-foreground min-h-screen flex flex-col lg:flex-row">
       
       {/* Sidebar (Hidden in mobile) */}
       <DesktopSidebar />
@@ -23,7 +23,7 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
         `}
       >
         {/* Header now goes inside main wrapper */}
-        <div className="sticky top-0 z-30 bg-white dark:bg-zinc-800 shadow-sm border-b border-zinc-200 dark:border-zinc-700 px-4 py-2">
+        <div className="sticky top-0 z-30 bg-background shadow-sm border-b border-border px-4 py-2">
           <Header />
         </div>
 

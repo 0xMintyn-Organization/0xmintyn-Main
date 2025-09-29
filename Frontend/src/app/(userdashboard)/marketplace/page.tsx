@@ -1,229 +1,145 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-import Categories from "@/components/Marketplace/Categories";
-import CategoryCard from "@/components/Marketplace/CategoryCard";
-import { MarketplacePagination } from "@/components/Marketplace/MarketplacePagination";
-import SortDropdown from "@/components/Marketplace/SortDropdown";
-import Spinner from "@/components/Spinner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import Protected from "@/hooks/useProtected";
-import { useGetAllProductsByPaginationQuery } from "@/redux/features/ebook/ebookApi";
-import { useCreatePaymentIntentMutation, useGetStripePublishableKeyQuery } from "@/redux/features/order/orderApi";
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { loadStripe } from "@stripe/stripe-js"
-import { Elements } from '@stripe/react-stripe-js'
-import PaymentForm from "@/components/Marketplace/PaymentForm";
-import { IoMdCheckmarkCircleOutline, IoMdClose, IoMdCloseCircle } from 'react-icons/io'
 
-function Marketplace() {
-  const { toast } = useToast();
-  const { user } = useSelector((state: any) => state.auth);
-  const [currentPage, setCurrentPage] = useState(1);
+import CategoryGrid from '@/components/Marketplace/CategoryGrid';
+import FeaturedSection from '@/components/Marketplace/FeaturedSection';
+import HeroSection from '@/components/Marketplace/HeroSection';
+import MarketplaceHeader from '@/components/Marketplace/MarketplaceHeader';
+import MobileNavigation from '@/components/Marketplace/MobileNavigation';
+import ProductGrid from '@/components/Marketplace/ProductGrid';
+import QuickViewModal from '@/components/Marketplace/QuickViewModal';
+import SearchFilters from '@/components/Marketplace/SearchFilters';
+import ServiceGrid from '@/components/Marketplace/ServiceGrid';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Filter, Grid, List, Search } from 'lucide-react';
+import { useState } from 'react';
+
+export default function MarketplacePage() {
+  const [activeTab, setActiveTab] = useState<'products' | 'services'>('products');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedSort, setSelectedSort] = useState("newest");
-  const [productId , setProductId] = useState("");
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showFilters, setShowFilters] = useState(false);
+  const [showQuickView, setShowQuickView] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
-
-  const { data, isLoading, isSuccess , refetch } = useGetAllProductsByPaginationQuery({
-    page: currentPage,
-    search: searchQuery,
-    category: selectedCategory,
-    sort: selectedSort,
-    sortBy: selectedSort,
-
-  },
-    {
-      refetchOnMountOrArgChange: true
-    }
-
-  );
-  const [products, setProducts] = useState<any[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
-
-  const { data: config } = useGetStripePublishableKeyQuery({})
-  const [createPaymentIntent, { data: paymentIntent }] =
-    useCreatePaymentIntentMutation();
-  const [stripePromise, setStripePromise] = useState<any>(null)
-  const [clientSecret, setClientSecret] = useState("")
-
-  console.log("purchased", user?.purchasedProducts)
-  console.log("products", products)
-
-  const isPurchased = (productId: string) => {
-    if (!user?.purchasedProducts) return false;
-
-    return user.purchasedProducts.some((purchase: any) => purchase.productId === productId);
+  const handleQuickView = (product: any) => {
+    setSelectedProduct(product);
+    setShowQuickView(true);
   };
 
-
-  useEffect(() => {
-    if (config) {
-      setStripePromise(loadStripe(config.pulishableKey));
-    }
-  }, [config]);
-
-  const handlePayment = async (amount: number) => {
-    try {
-      const amountInCents = amount * 100; // Convert to cents if needed
-      const response = await createPaymentIntent(amountInCents ).unwrap();
-      setClientSecret(response.client_secret);
-      toast({ title: 'Success', description: 'Payment initiated', variant: 'default' });
-    } catch (error) {
-      toast({ title: 'Error', description: 'Payment failed', variant: 'destructive' });
-    }
+  const handleApplyFilters = (filters: any) => {
+    console.log('Applied filters:', filters);
+    // Implement filter logic here
   };
-
-  useEffect(() => {
-    if (paymentIntent) {
-      setClientSecret(paymentIntent?.client_secret)
-    }
-  }, [paymentIntent])
-
-
-  useEffect(() => {
-    if (isSuccess) {
-      setProducts(data.products);
-      setTotalPages(data.totalPages);
-    }
-
-   
-
-  }, [data, isSuccess,  toast, refetch]);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleSortChange = (sortBy: string) => {
-    setSelectedSort(sortBy);
-    setCurrentPage(1);
-  };
-
-
-
-  if (isLoading) {
-    return (
-      <Spinner />
-    );
-  }
 
   return (
-    <Protected>
-      <div className="flex mx-auto py-6 px-4">
-        <div className="fixed hidden lg:block w-[10%] h-screen">
-          <Categories onSelectCategory={(category) => {
-            setSelectedCategory(category);
-            setCurrentPage(1);
-          }} />
-        </div>
+    <div className="min-h-screen bg-background">
+      {/* Desktop Header */}
+      <div className="hidden lg:block">
+        <MarketplaceHeader 
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
+      </div>
 
-        <div className="w-full lg:ml-[14%] p-5 dark:bg-zinc-800 rounded-xl">
-          <div className="space-y-4 mb-4">
-            <h2 className="text-heading font-semibold">0xMintyn Marketplace</h2>
-            <Button className="text-white bg-green-900 hover:bg-green-800 font-semibold w-full">
-              Create New Listing
-            </Button>
-            <div className="flex w-full items-center space-x-2">
+      {/* Mobile Navigation */}
+      <MobileNavigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+      
+      <main className="container mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <HeroSection />
+        
+        {/* Category Grid */}
+        <CategoryGrid activeTab={activeTab} />
+        
+        {/* Search and Filter Bar */}
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                type="text"
+                placeholder="Search digital products and services..."
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Search for Products and Services"
-                className="border-gray-500"
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full"
               />
-              <Button className="text-white bg-green-900 hover:bg-green-800 font-semibold">
-                Search
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowFilters(true)}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+            </Button>
+            
+            <div className="flex border rounded-lg">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className={viewMode === 'grid' ? 'bg-green-900 hover:bg-green-800 text-white rounded-r-none' : 'rounded-r-none hover:bg-gray-200 dark:hover:bg-zinc-600'}
+              >
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={viewMode === 'list' ? 'bg-green-900 hover:bg-green-800 text-white rounded-l-none' : 'rounded-l-none hover:bg-gray-200 dark:hover:bg-zinc-600'}
+              >
+                <List className="w-4 h-4" />
               </Button>
             </div>
-            <div className="flex items-center justify-between mt-4">
-              <SortDropdown onSortChange={handleSortChange} />
-              <div>
-
-                {data && data.productsCount > 0 ? (
-                  <p className="text-sm text-gray-500">
-                    {data.productsCount} results found
-                  </p>
-                ) : (
-                  <p className="text-sm text-gray-500">
-                    No results found
-                  </p>
-                )}
-              </div>
-            </div>
-
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 gap-4 overflow-y-auto">
-            {products.map((product: any) => (
-              <CategoryCard
-                key={product._id}
-                imagePath={product.coverImage}
-                type={product.type}
-                currency={product.currency}
-                imageAltText={product.title}
-                profileImage={product.createdBy?.avatar}
-                profileName={`${product.createdBy?.firstName} ${product.createdBy?.lastName}`}
-                title={product.title}
-                price={product.amount}
-                description={product.description}
-                onBuyNowClick={() => {
-                  setProductId(product._id);
-                  handlePayment(product.amount);
-                }}
-                isPurchased={isPurchased(product._id)}
-
-
-              />
-
-              
-            ))}
-           
-          </div>
-
-          {/* Pagination */}
-          <div className="mt-12">
-            <MarketplacePagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
           </div>
         </div>
-        {clientSecret && stripePromise && productId && (
-          <div
-            className='w-full h-screen bg-[#00000036] fixed top-0 left-0 flex items-center justify-center z-50'
-          >
-            <div
-              className='w-[500px] bg-white dark:bg-zinc-800  rounded-xl p-3'
-            >
-              <div className="w-full flex justify-end">
-                <IoMdClose
-                  size={40}
-                  className='cursor-pointer text-black'
-                  onClick={() => {
-                    setClientSecret("");
-                    setProductId("");
-                  }
-                }
-                />
-              </div>
-          <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <PaymentForm clientSecret={clientSecret} productId={productId} setProductId={setProductId} />
-          </Elements>
-          </div>
-          </div>
+
+        {/* Tab Content */}
+        {activeTab === 'products' ? (
+          <ProductGrid 
+            viewMode={viewMode} 
+            searchQuery={searchQuery}
+            onQuickView={handleQuickView}
+          />
+        ) : (
+          <ServiceGrid 
+            viewMode={viewMode} 
+            searchQuery={searchQuery}
+          />
         )}
-      </div>
-    </Protected>
+
+        {/* Featured Sections */}
+        <FeaturedSection activeTab={activeTab} />
+      </main>
+
+      {/* Search Filters Modal */}
+      <SearchFilters
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        onApplyFilters={handleApplyFilters}
+      />
+
+      {/* Quick View Modal */}
+      {selectedProduct && (
+        <QuickViewModal
+          isOpen={showQuickView}
+          onClose={() => {
+            setShowQuickView(false);
+            setSelectedProduct(null);
+          }}
+          product={selectedProduct}
+        />
+      )}
+    </div>
   );
 }
-
-export default Marketplace;

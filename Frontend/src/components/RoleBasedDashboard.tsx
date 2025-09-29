@@ -86,7 +86,7 @@ export default function RoleBasedDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-white mb-4">
           Welcome to 0xMintyn
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
@@ -106,7 +106,7 @@ function AdminDashboard({ data }: { data: DashboardData }) {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
             Admin Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -229,7 +229,7 @@ function InstructorDashboard({ data }: { data: DashboardData }) {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
             Instructor Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -341,7 +341,7 @@ function UserDashboard({ data }: { data: DashboardData }) {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
             Welcome Back!
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">

@@ -275,7 +275,7 @@ function InstructorEarnings() {
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
             Unable to load earnings data
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -592,7 +592,7 @@ function InstructorEarnings() {
                   {earningsData.recentTransactions.length === 0 ? (
                     <div className="text-center py-12">
                       <Receipt className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
                         No transactions yet
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">
@@ -667,7 +667,7 @@ function InstructorEarnings() {
                   {earningsData.courseEarnings.length === 0 ? (
                     <div className="text-center py-12">
                       <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
                         No course earnings yet
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -735,7 +735,7 @@ function InstructorEarnings() {
                   {earningsData.payoutHistory.length === 0 ? (
                     <div className="text-center py-12">
                       <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
                         No payouts yet
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">

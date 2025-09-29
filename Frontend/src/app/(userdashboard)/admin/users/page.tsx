@@ -295,7 +295,7 @@ function AdminUsers() {
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
             Unable to load users data
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -487,7 +487,7 @@ function AdminUsers() {
               {filteredUsers.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
                     {searchTerm || roleFilter !== "all" || statusFilter !== "all" ? "No users found" : "No users yet"}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -523,7 +523,7 @@ function AdminUsers() {
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <div className="font-medium text-gray-900 dark:text-white">
+                                <div className="font-medium text-gray-900 dark:text-gray-200 dark:text-white">
                                   {user.firstName} {user.lastName}
                                 </div>
                                 <div className="text-sm text-gray-500">
@@ -644,7 +644,7 @@ function AdminUsers() {
                           </div>
                         </div>
                         <div className="flex-1">
-                          <div className="font-medium text-gray-900 dark:text-white">
+                          <div className="font-medium text-gray-900 dark:text-gray-200 dark:text-white">
                             {user.firstName} {user.lastName}
                           </div>
                           <div className="text-sm text-gray-500">
@@ -695,7 +695,7 @@ function AdminUsers() {
                           </div>
                         </div>
                         <div className="flex-1">
-                          <div className="font-medium text-gray-900 dark:text-white">
+                          <div className="font-medium text-gray-900 dark:text-gray-200 dark:text-white">
                             {user.firstName} {user.lastName}
                           </div>
                           <div className="text-sm text-gray-500">

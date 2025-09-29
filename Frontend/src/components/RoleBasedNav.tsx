@@ -116,7 +116,7 @@ export default function RoleBasedNav() {
               "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
               isActive
                 ? "bg-green-100 text-green-900 dark:bg-green-900 dark:text-green-100"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-200 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-white"
             )}
           >
             <item.icon

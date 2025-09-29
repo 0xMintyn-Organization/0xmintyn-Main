@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.className} antialiased dark:text-white bg-gray-100 dark:bg-zinc-900`}
+        className={`${inter.className} antialiased bg-background text-foreground`}
       >
         <ThemeProviderWrapper>
           <Providers>

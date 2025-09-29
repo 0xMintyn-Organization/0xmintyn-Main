@@ -203,7 +203,7 @@ function SocialCommunity() {
                             {getContributionTypeIcon(contribution.type)}
                           </div>
                           <div>
-                            <span className="font-medium text-gray-900 dark:text-white">{contribution.type}</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-200 dark:text-white">{contribution.type}</span>
                             <span className={`ml-2 text-xs px-2 py-1 rounded ${getPlatformColor(contribution.platform)}`}>
                               {contribution.platform}
                             </span>

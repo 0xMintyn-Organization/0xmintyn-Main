@@ -49,7 +49,7 @@ export default function AdvancedLayout({ children }: AdvancedLayoutProps) {
           {/* Page Title */}
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1 items-center">
-              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-200 dark:text-white">
                 {/* Page title will be set by individual pages */}
               </h1>
             </div>

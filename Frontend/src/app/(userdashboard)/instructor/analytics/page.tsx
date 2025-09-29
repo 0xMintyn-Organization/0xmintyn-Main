@@ -381,7 +381,7 @@ function InstructorAnalytics() {
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
             Unable to load analytics
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -666,7 +666,7 @@ function InstructorAnalytics() {
                   {courses.length === 0 ? (
                     <div className="text-center py-8">
                       <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
                         No courses yet
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -689,7 +689,7 @@ function InstructorAnalytics() {
                               <BookOpen className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                             </div>
                             <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">
+                              <h4 className="font-medium text-gray-900 dark:text-gray-200 dark:text-white">
                                 {course.name}
                               </h4>
                               <p className="text-sm text-gray-600 dark:text-gray-400">

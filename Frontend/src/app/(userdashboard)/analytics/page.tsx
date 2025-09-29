@@ -200,7 +200,7 @@ function Analytics() {
       <AdminProtected>
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-white mb-4">
               No Analytics Data Available
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
@@ -220,7 +220,7 @@ function Analytics() {
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
                   Platform Analytics
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">

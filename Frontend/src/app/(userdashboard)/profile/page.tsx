@@ -184,7 +184,7 @@ function ProfilePage() {
       <Protected>
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-white mb-4">
               Profile Not Found
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
@@ -204,7 +204,7 @@ function ProfilePage() {
           <div className="mb-8">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
                   Profile Settings
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">

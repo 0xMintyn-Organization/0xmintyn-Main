@@ -99,7 +99,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ clientSecret, productId, setP
     }, [toast, isSuccess , error])
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6 bg-background rounded-lg shadow-md">
             <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Complete Your Payment</h3>
 
             <div className="p-4 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm">

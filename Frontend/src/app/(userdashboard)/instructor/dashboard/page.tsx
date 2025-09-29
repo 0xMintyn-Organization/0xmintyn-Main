@@ -244,7 +244,7 @@ function InstructorDashboard() {
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
             Unable to load dashboard
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -435,7 +435,7 @@ function InstructorDashboard() {
                   {dashboardData.recentOrders.length === 0 ? (
                     <div className="text-center py-8">
                       <Package className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
                         No orders yet
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">
@@ -470,7 +470,7 @@ function InstructorDashboard() {
                                     <User className="w-4 h-4 text-blue-600" />
                                   </div>
                                   <div>
-                                    <div className="font-medium text-gray-900 dark:text-white">
+                                    <div className="font-medium text-gray-900 dark:text-gray-200 dark:text-white">
                                       {order.studentName}
                                     </div>
                                     <div className="text-sm text-gray-500">
@@ -480,7 +480,7 @@ function InstructorDashboard() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="font-medium text-gray-900 dark:text-white">
+                                <div className="font-medium text-gray-900 dark:text-gray-200 dark:text-white">
                                   {order.courseName}
                                 </div>
                               </TableCell>
@@ -540,7 +540,7 @@ function InstructorDashboard() {
                   {dashboardData.topCourses.length === 0 ? (
                     <div className="text-center py-8">
                       <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 dark:text-white mb-2">
                         No courses yet
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -569,7 +569,7 @@ function InstructorDashboard() {
                               </span>
                             </div>
                             <div>
-                              <div className="font-medium text-gray-900 dark:text-white text-sm">
+                              <div className="font-medium text-gray-900 dark:text-gray-200 dark:text-white text-sm">
                                 {course.name}
                               </div>
                               <div className="text-xs text-gray-500">
@@ -578,7 +578,7 @@ function InstructorDashboard() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-medium text-gray-900 dark:text-white text-sm">
+                            <div className="font-medium text-gray-900 dark:text-gray-200 dark:text-white text-sm">
                               {formatCurrency(course.revenue)}
                             </div>
                             <div className="flex items-center text-xs text-gray-500">

@@ -160,7 +160,7 @@ function PurchasedCoursesPage() {
                 <ShoppingCart className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
                   My Purchased Courses
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
@@ -231,7 +231,7 @@ function PurchasedCoursesPage() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 dark:text-white"
               >
                 <option value="all">All Categories</option>
                 {getCategories().map((category) => (
@@ -243,7 +243,7 @@ function PurchasedCoursesPage() {
               <select
                 value={levelFilter}
                 onChange={(e) => setLevelFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 dark:text-white"
               >
                 <option value="all">All Levels</option>
                 {getLevels().map((level) => (
@@ -260,7 +260,7 @@ function PurchasedCoursesPage() {
             <Card>
               <CardContent className="text-center py-12">
                 <ShoppingCart className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 dark:text-white mb-2">
                   {courses.length === 0 ? "No purchased courses yet" : "No courses match your filters"}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">

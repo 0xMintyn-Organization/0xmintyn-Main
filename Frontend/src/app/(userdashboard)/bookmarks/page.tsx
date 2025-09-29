@@ -155,7 +155,7 @@ export default function BookmarksPage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <Bookmark className="w-8 h-8 text-green-600" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
               My Bookmarks
             </h1>
             <Badge variant="secondary" className="ml-2">
@@ -221,7 +221,7 @@ export default function BookmarksPage() {
         {filteredBookmarks.length === 0 ? (
           <div className="text-center py-12">
             <Bookmark className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 dark:text-white mb-2">
               {searchTerm || selectedCategory !== "all" ? "No matching bookmarks" : "No bookmarks yet"}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">

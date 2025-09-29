@@ -187,7 +187,7 @@ export default function AdminReviewsPage() {
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
                   Review Management
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -204,7 +204,7 @@ export default function AdminReviewsPage() {
                     <div className="flex items-center gap-3">
                       <MessageSquare className="w-8 h-8 text-green-600" />
                       <div>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
                           {reviewData.pagination.totalReviews}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">Total Reviews</p>
@@ -218,7 +218,7 @@ export default function AdminReviewsPage() {
                     <div className="flex items-center gap-3">
                       <BookOpen className="w-8 h-8 text-blue-600" />
                       <div>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
                           {reviewData.courses.length}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">Courses with Reviews</p>
@@ -232,7 +232,7 @@ export default function AdminReviewsPage() {
                     <div className="flex items-center gap-3">
                       <Star className="w-8 h-8 text-yellow-600" />
                       <div>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
                           {reviewData.reviews.length > 0 
                             ? (reviewData.reviews.reduce((sum, review) => sum + review.rating, 0) / reviewData.reviews.length).toFixed(1)
                             : "0.0"
@@ -249,7 +249,7 @@ export default function AdminReviewsPage() {
                     <div className="flex items-center gap-3">
                       <User className="w-8 h-8 text-purple-600" />
                       <div>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
                           {new Set(reviewData.reviews.map(review => review.userId)).size}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">Unique Reviewers</p>
@@ -324,7 +324,7 @@ export default function AdminReviewsPage() {
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                            <h4 className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white">
                               {review.userName}
                             </h4>
                             <div className="flex gap-0.5">

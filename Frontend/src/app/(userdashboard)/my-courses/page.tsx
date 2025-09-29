@@ -131,7 +131,7 @@ function MyCoursesPage() {
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
                   My Courses
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -258,7 +258,7 @@ function MyCoursesPage() {
           ) : (
             <div className="text-center py-12">
               <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 dark:text-white mb-2">
                 {searchTerm || categoryFilter !== "all" || levelFilter !== "all" 
                   ? "No courses match your filters" 
                   : "No courses enrolled yet"}

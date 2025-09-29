@@ -412,7 +412,7 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
                   {isOwnProfile && (
                     <button
                       onClick={handleUserNameEditToggle}
-                      className="text-gray-600 hover:text-gray-900"
+                      className="text-gray-600 hover:text-gray-900 dark:text-gray-200"
                     >
                       <FaPencil className="w-4 h-4" />
                     </button>

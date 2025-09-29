@@ -1,0 +1,166 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Star, TrendingUp, Users, Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
+
+const heroSlides = [
+  {
+    id: 1,
+    title: "Digital Learning Hub",
+    subtitle: "Access premium courses, e-books, and digital resources instantly",
+    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=400&fit=crop",
+    cta: "Explore Products",
+    badge: "New Arrivals"
+  },
+  {
+    id: 2,
+    title: "Professional Services",
+    subtitle: "Connect with skilled professionals for your digital projects",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=400&fit=crop",
+    cta: "Browse Services",
+    badge: "Top Rated"
+  },
+  {
+    id: 3,
+    title: "Instant Downloads",
+    subtitle: "Get immediate access to courses, templates, and digital assets",
+    image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=400&fit=crop",
+    cta: "Start Learning",
+    badge: "Best Sellers"
+  }
+];
+
+const stats = [
+  { icon: Package, label: "Digital Products", value: "2,500+" },
+  { icon: Users, label: "Active Sellers", value: "1,200+" },
+  { icon: Star, label: "Happy Learners", value: "25,000+" },
+  { icon: TrendingUp, label: "Success Rate", value: "98%" }
+];
+
+export default function HeroSection() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+  };
+
+  return (
+    <div className="mb-12">
+      {/* Hero Carousel */}
+            <div className="relative bg-gradient-to-r from-green-900 to-green-800 rounded-2xl overflow-hidden mb-8">
+        <div className="relative h-96">
+          {heroSlides.map((slide, index) => (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 transition-opacity duration-500 ${
+                index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <div className="relative h-full">
+                <Image
+                  src={slide.image}
+                  alt={slide.title}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-40" />
+                <div className="absolute inset-0 flex items-center">
+                  <div className="container mx-auto px-8">
+                    <div className="max-w-2xl">
+                      <Badge className="mb-4 bg-green-100 text-green-800 border-0">
+                        {slide.badge}
+                      </Badge>
+                      <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                        {slide.title}
+                      </h1>
+                      <p className="text-xl text-gray-200 mb-6">
+                        {slide.subtitle}
+                      </p>
+                      <Button size="lg" className="bg-green-900 hover:bg-green-800 text-white">
+                        {slide.cta}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Navigation Arrows */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={prevSlide}
+          className="absolute left-4 top-1/2 transform -translate-y-1/2  bg-opacity-20 hover:bg-opacity-30 text-white"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={nextSlide}
+          className="absolute right-4 top-1/2 transform -translate-y-1/2  bg-opacity-20 hover:bg-opacity-30 text-white"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </Button>
+
+        {/* Dots Indicator */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {heroSlides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                index === currentSlide ? '' : ' bg-opacity-50'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        {stats.map((stat, index) => (
+          <div key={index} className="bg-background rounded-lg p-6 shadow-sm border border-zinc-200 dark:border-zinc-700 text-center">
+            <div className="flex justify-center mb-3">
+              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
+                <stat.icon className="w-6 h-6 text-green-700 dark:text-green-400" />
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-white mb-1">
+              {stat.value}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {stat.label}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <Button size="lg" className="flex-1 bg-green-900 hover:bg-green-800 text-white">
+                Start Selling
+              </Button>
+              <Button size="lg" variant="outline" className="flex-1 border-green-900 text-green-900 hover:bg-green-50 dark:border-green-400 dark:text-green-400">
+                Explore Marketplace
+              </Button>
+            </div>
+    </div>
+  );
+}

@@ -325,7 +325,7 @@ export default function AdvancedSidebar({ className }: AdvancedSidebarProps) {
           level > 0 && "ml-4",
           isItemActive
             ? "bg-green-100 text-green-900 dark:bg-green-900 dark:text-green-100"
-            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-200 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-white"
         )}
       >
         <item.icon
@@ -361,7 +361,7 @@ export default function AdvancedSidebar({ className }: AdvancedSidebarProps) {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-200 dark:text-white truncate">
               {user.username || `${user.firstName} ${user.lastName}`}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
@@ -381,7 +381,7 @@ export default function AdvancedSidebar({ className }: AdvancedSidebarProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          className="w-full justify-start text-gray-600 hover:text-gray-900 dark:text-gray-200 dark:text-gray-400 dark:hover:text-white"
         >
           <Bell className="w-4 h-4 mr-3" />
           Notifications
@@ -389,7 +389,7 @@ export default function AdvancedSidebar({ className }: AdvancedSidebarProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          className="w-full justify-start text-gray-600 hover:text-gray-900 dark:text-gray-200 dark:text-gray-400 dark:hover:text-white"
         >
           <LogOut className="w-4 h-4 mr-3" />
           Sign Out
