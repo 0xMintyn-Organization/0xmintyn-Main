@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Star, TrendingUp, Clock, Award, Users, Zap } from 'lucide-react';
+import { Star, TrendingUp, Clock, Award, Users, Zap, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,42 +10,42 @@ import Image from 'next/image';
 const featuredProducts = [
   {
     id: 1,
-    title: "MacBook Pro 16-inch M2 Pro",
-    price: 2499,
-    originalPrice: 2799,
+    title: "Premium Website Template Pack",
+    price: 49,
+    originalPrice: 99,
     rating: 4.8,
     reviewCount: 124,
-    image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=200&fit=crop",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop",
     badge: "Best Seller"
   },
   {
     id: 2,
-    title: "Sony WH-1000XM4 Headphones",
-    price: 349,
-    originalPrice: 399,
+    title: "Professional UI/UX Design Kit",
+    price: 29,
+    originalPrice: 59,
     rating: 4.7,
     reviewCount: 89,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=200&fit=crop",
+    image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=300&h=200&fit=crop",
     badge: "Sale"
   },
   {
     id: 3,
-    title: "iPhone 15 Pro Max",
-    price: 1199,
-    originalPrice: 1199,
+    title: "Stock Photo Collection - Business",
+    price: 19,
+    originalPrice: 39,
     rating: 4.9,
     reviewCount: 234,
-    image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=300&h=200&fit=crop",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=200&fit=crop",
     badge: "Hot"
   },
   {
     id: 4,
-    title: "Dell XPS 13 Laptop",
-    price: 1299,
-    originalPrice: 1499,
+    title: "React Native App Template",
+    price: 199,
+    originalPrice: 299,
     rating: 4.6,
     reviewCount: 67,
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=200&fit=crop",
+    image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=300&h=200&fit=crop",
     badge: "New"
   }
 ];
@@ -148,12 +148,18 @@ export default function FeaturedSection({ activeTab }: FeaturedSectionProps) {
             <Card key={item.id} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
               <div className="relative">
                 <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                  <Image
-                    src={item.image}
-                    alt={item.title}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
+                  {item.image ? (
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
+                      <FileText className="w-12 h-12 text-gray-400" />
+                    </div>
+                  )}
                   <Badge className="absolute top-2 left-2 bg-red-500 text-white">
                     {item.badge}
                   </Badge>
@@ -276,7 +282,7 @@ export default function FeaturedSection({ activeTab }: FeaturedSectionProps) {
       </div>
 
       {/* Call to Action */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-center text-white">
+      <div className="bg-gradient-to-r from-green-900 to-green-800 rounded-2xl p-8 text-center text-white">
         <h2 className="text-3xl font-bold mb-4">
           Ready to Start Selling?
         </h2>

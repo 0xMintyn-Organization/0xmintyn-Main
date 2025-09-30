@@ -22,12 +22,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 const productCategories = [
-        { id: 'courses', name: 'Online Courses', icon: BookOpen, count: 1250, color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' },
+  { id: 'templates', name: 'Website Templates', icon: FileText, count: 750, color: 'bg-pink-100 text-pink-600 dark:bg-pink-900/20 dark:text-pink-400' },
   { id: 'design', name: 'Design Assets', icon: Palette, count: 890, color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400' },
   { id: 'code', name: 'Code Templates', icon: Code, count: 650, color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' },
   { id: 'ebooks', name: 'E-books & Guides', icon: BookOpen, count: 450, color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400' },
-  { id: 'tools', name: 'Digital Tools', icon: Laptop, count: 320, color: 'bg-teal-100 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400' },
-  { id: 'templates', name: 'Templates', icon: FileText, count: 750, color: 'bg-pink-100 text-pink-600 dark:bg-pink-900/20 dark:text-pink-400' }
+  { id: 'software', name: 'Software & Tools', icon: Laptop, count: 320, color: 'bg-teal-100 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400' },
+  { id: 'media', name: 'Stock Media', icon: Camera, count: 1250, color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' },
+  { id: 'fonts', name: 'Fonts & Typography', icon: PenTool, count: 280, color: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' },
+  { id: '3d', name: '3D Assets', icon: Gamepad2, count: 180, color: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400' }
 ];
 
 const serviceCategories = [

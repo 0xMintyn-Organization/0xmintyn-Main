@@ -16,30 +16,31 @@ interface SearchFiltersProps {
 
 export default function SearchFilters({ isOpen, onClose, onApplyFilters }: SearchFiltersProps) {
   const [filters, setFilters] = useState({
-    priceRange: [0, 1000],
+    priceRange: [0, 500],
     rating: 0,
     categories: [] as string[],
     brands: [] as string[],
-    shipping: [] as string[],
-    condition: [] as string[]
+    fileFormats: [] as string[],
+    licenses: [] as string[]
   });
 
   const categories = [
-    'Electronics', 'Books', 'Clothing', 'Home & Garden', 'Sports', 'Beauty',
-    'Toys', 'Automotive', 'Health', 'Jewelry', 'Tools', 'Music'
+    'Website Templates', 'Design Assets', 'Code Templates', 'E-books & Guides',
+    'Software & Tools', 'Stock Media', 'Fonts & Typography', '3D Assets'
   ];
 
   const brands = [
-    'Apple', 'Samsung', 'Sony', 'Nike', 'Adidas', 'Dell', 'HP', 'Canon',
-    'Microsoft', 'Google', 'Amazon', 'Bose'
+    'WebCraft', 'DesignPro', 'PhotoStock', 'CryptoEdu', 'CodeMaster', 'TypeCraft',
+    'TechEdu', 'MarketingGuru', 'AI Academy', 'CreativeStudio', 'DigitalHub', 'PixelCraft'
   ];
 
-  const shippingOptions = [
-    'Free Shipping', 'Express Delivery', 'Same Day Delivery', 'International'
+  const fileFormats = [
+    'HTML/CSS', 'Figma/Sketch', 'JPG/PNG', 'PDF', 'React Native', 'TTF/OTF',
+    'MP4', 'MP3', 'ZIP', 'PSD', 'AI', 'SVG'
   ];
 
-  const conditions = [
-    'New', 'Like New', 'Good', 'Fair', 'Refurbished'
+  const licenses = [
+    'Personal', 'Commercial', 'Extended', 'Standard', 'Premium', 'Lifetime'
   ];
 
   const handleFilterChange = (key: string, value: any) => {
@@ -159,50 +160,50 @@ export default function SearchFilters({ isOpen, onClose, onApplyFilters }: Searc
             </div>
           </div>
 
-          {/* Shipping */}
+          {/* File Formats */}
           <div>
-            <h3 className="font-semibold mb-3">Shipping Options</h3>
-            <div className="space-y-2">
-              {shippingOptions.map((option) => (
-                <div key={option} className="flex items-center space-x-2">
+            <h3 className="font-semibold mb-3">File Formats</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {fileFormats.map((format) => (
+                <div key={format} className="flex items-center space-x-2">
                   <Checkbox
-                    id={option}
-                    checked={filters.shipping.includes(option)}
+                    id={format}
+                    checked={filters.fileFormats.includes(format)}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        handleFilterChange('shipping', [...filters.shipping, option]);
+                        handleFilterChange('fileFormats', [...filters.fileFormats, format]);
                       } else {
-                        handleFilterChange('shipping', filters.shipping.filter(s => s !== option));
+                        handleFilterChange('fileFormats', filters.fileFormats.filter(f => f !== format));
                       }
                     }}
                   />
-                  <label htmlFor={option} className="text-sm cursor-pointer">
-                    {option}
+                  <label htmlFor={format} className="text-sm cursor-pointer">
+                    {format}
                   </label>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Condition */}
+          {/* Licenses */}
           <div>
-            <h3 className="font-semibold mb-3">Condition</h3>
+            <h3 className="font-semibold mb-3">License Types</h3>
             <div className="space-y-2">
-              {conditions.map((condition) => (
-                <div key={condition} className="flex items-center space-x-2">
+              {licenses.map((license) => (
+                <div key={license} className="flex items-center space-x-2">
                   <Checkbox
-                    id={condition}
-                    checked={filters.condition.includes(condition)}
+                    id={license}
+                    checked={filters.licenses.includes(license)}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        handleFilterChange('condition', [...filters.condition, condition]);
+                        handleFilterChange('licenses', [...filters.licenses, license]);
                       } else {
-                        handleFilterChange('condition', filters.condition.filter(c => c !== condition));
+                        handleFilterChange('licenses', filters.licenses.filter(l => l !== license));
                       }
                     }}
                   />
-                  <label htmlFor={condition} className="text-sm cursor-pointer">
-                    {condition}
+                  <label htmlFor={license} className="text-sm cursor-pointer">
+                    {license}
                   </label>
                 </div>
               ))}
@@ -210,7 +211,7 @@ export default function SearchFilters({ isOpen, onClose, onApplyFilters }: Searc
           </div>
 
           {/* Active Filters */}
-          {(filters.categories.length > 0 || filters.brands.length > 0 || filters.shipping.length > 0 || filters.condition.length > 0) && (
+          {(filters.categories.length > 0 || filters.brands.length > 0 || filters.fileFormats.length > 0 || filters.licenses.length > 0) && (
             <div>
               <h3 className="font-semibold mb-3">Active Filters</h3>
               <div className="flex flex-wrap gap-2">
@@ -224,14 +225,14 @@ export default function SearchFilters({ isOpen, onClose, onApplyFilters }: Searc
                     {brand} <X className="w-3 h-3 ml-1" />
                   </Badge>
                 ))}
-                {filters.shipping.map((option) => (
-                  <Badge key={option} variant="secondary" className="cursor-pointer">
-                    {option} <X className="w-3 h-3 ml-1" />
+                {filters.fileFormats.map((format) => (
+                  <Badge key={format} variant="secondary" className="cursor-pointer">
+                    {format} <X className="w-3 h-3 ml-1" />
                   </Badge>
                 ))}
-                {filters.condition.map((condition) => (
-                  <Badge key={condition} variant="secondary" className="cursor-pointer">
-                    {condition} <X className="w-3 h-3 ml-1" />
+                {filters.licenses.map((license) => (
+                  <Badge key={license} variant="secondary" className="cursor-pointer">
+                    {license} <X className="w-3 h-3 ml-1" />
                   </Badge>
                 ))}
               </div>

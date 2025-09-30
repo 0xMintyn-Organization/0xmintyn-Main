@@ -15,11 +15,11 @@ const orderItems = [
   {
     id: 1,
     type: 'product',
-    title: "Complete Web Development Course",
-    price: 99,
+    title: "Premium Website Template Pack",
+    price: 49,
     quantity: 1,
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop",
-    seller: "TechEdu"
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=100&h=100&fit=crop",
+    seller: "WebCraft"
   },
   {
     id: 2,

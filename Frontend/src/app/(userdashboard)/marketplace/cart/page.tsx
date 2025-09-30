@@ -14,26 +14,30 @@ const cartItems = [
   {
     id: 1,
     type: 'product',
-    title: "Complete Web Development Course",
-    price: 99,
-    originalPrice: 199,
+    title: "Premium Website Template Pack",
+    price: 49,
+    originalPrice: 99,
     quantity: 1,
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=200&h=150&fit=crop",
-    seller: "TechEdu",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&h=150&fit=crop",
+    seller: "WebCraft",
     delivery: "Instant Download",
-    inStock: true
+    inStock: true,
+    fileFormat: "HTML/CSS",
+    fileSize: "25.4 MB"
   },
   {
     id: 2,
     type: 'product',
-    title: "Premium UI/UX Design Kit",
-    price: 49,
-    originalPrice: 79,
+    title: "Professional UI/UX Design Kit",
+    price: 29,
+    originalPrice: 59,
     quantity: 1,
     image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=200&h=150&fit=crop",
     seller: "DesignPro",
     delivery: "Instant Download",
-    inStock: true
+    inStock: true,
+    fileFormat: "Figma/Sketch",
+    fileSize: "12.8 MB"
   },
   {
     id: 3,

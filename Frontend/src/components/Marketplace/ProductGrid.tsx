@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Star, Heart, ShoppingCart, Eye, Truck, Shield } from 'lucide-react';
+import { Star, Heart, ShoppingCart, Eye, Download, FileText, Image as ImageIcon, Code, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -11,21 +11,24 @@ import Image from 'next/image';
 const sampleProducts = [
   {
     id: 1,
-    title: "Complete Web Development Course",
-    price: 99,
-    originalPrice: 199,
+    title: "Premium Website Template Pack",
+    price: 29,
+    originalPrice: 59,
     rating: 4.8,
     reviewCount: 124,
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop",
-    brand: "TechEdu",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop",
+    brand: "WebCraft",
     delivery: "Instant Download",
     badge: "Best Seller",
     inStock: true,
-    type: "Course"
+    type: "Template",
+    fileFormat: "HTML/CSS",
+    fileSize: "25.4 MB",
+    license: "Commercial"
   },
   {
     id: 2,
-    title: "Premium UI/UX Design Kit",
+    title: "Professional UI/UX Design Kit",
     price: 49,
     originalPrice: 79,
     rating: 4.7,
@@ -35,26 +38,32 @@ const sampleProducts = [
     delivery: "Instant Download",
     badge: "Sale",
     inStock: true,
-    type: "Design Assets"
+    type: "Design Assets",
+    fileFormat: "Figma/Sketch",
+    fileSize: "12.8 MB",
+    license: "Extended"
   },
   {
     id: 3,
-    title: "Digital Marketing Masterclass",
-    price: 149,
-    originalPrice: 299,
+    title: "Stock Photo Collection - Business",
+    price: 19,
+    originalPrice: 39,
     rating: 4.6,
     reviewCount: 67,
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop",
-    brand: "MarketingGuru",
-    delivery: "Instant Access",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop",
+    brand: "PhotoStock",
+    delivery: "Instant Download",
     badge: "New",
     inStock: true,
-    type: "Course"
+    type: "Stock Photos",
+    fileFormat: "JPG/PNG",
+    fileSize: "45.2 MB",
+    license: "Standard"
   },
   {
     id: 4,
-    title: "Cryptocurrency Trading Guide",
-    price: 79,
+    title: "Cryptocurrency Trading eBook",
+    price: 39,
     originalPrice: 79,
     rating: 4.9,
     reviewCount: 234,
@@ -63,7 +72,10 @@ const sampleProducts = [
     delivery: "Instant Download",
     badge: "Hot",
     inStock: true,
-    type: "E-book"
+    type: "E-book",
+    fileFormat: "PDF",
+    fileSize: "8.7 MB",
+    license: "Personal"
   },
   {
     id: 5,
@@ -77,21 +89,27 @@ const sampleProducts = [
     delivery: "Instant Download",
     badge: "Trending",
     inStock: true,
-    type: "Code Template"
+    type: "Code Template",
+    fileFormat: "React Native",
+    fileSize: "156.3 MB",
+    license: "Commercial"
   },
   {
     id: 6,
-    title: "AI & Machine Learning Course",
-    price: 249,
-    originalPrice: 249,
+    title: "Premium Font Collection",
+    price: 49,
+    originalPrice: 99,
     rating: 4.8,
     reviewCount: 78,
     image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=300&fit=crop",
-    brand: "AI Academy",
-    delivery: "Instant Access",
+    brand: "TypeCraft",
+    delivery: "Instant Download",
     badge: "Popular",
     inStock: true,
-    type: "Course"
+    type: "Fonts",
+    fileFormat: "TTF/OTF",
+    fileSize: "12.1 MB",
+    license: "Extended"
   }
 ];
 
@@ -124,12 +142,18 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView }: Prod
           <Card key={product.id} className="hover:shadow-md transition-shadow">
             <div className="flex">
               <div className="relative w-48 h-32 flex-shrink-0">
-                <Image
-                  src={product.image}
-                  alt={product.title}
-                  fill
-                  className="object-cover rounded-l-lg"
-                />
+                {product.image ? (
+                  <Image
+                    src={product.image}
+                    alt={product.title}
+                    fill
+                    className="object-cover rounded-l-lg"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 rounded-l-lg flex items-center justify-center">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
+                )}
                 {product.badge && (
                   <Badge className="absolute top-2 left-2 bg-red-500 text-white">
                     {product.badge}
@@ -165,12 +189,19 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView }: Prod
 
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                       <div className="flex items-center">
-                        <Truck className="w-4 h-4 mr-1" />
+                        <Download className="w-4 h-4 mr-1" />
                         {product.delivery}
                       </div>
                       <div className="flex items-center">
-                        <Shield className="w-4 h-4 mr-1" />
-                        Lifetime access
+                        <Badge variant="outline" className="text-xs mr-2">
+                          {product.fileFormat}
+                        </Badge>
+                        <span>{product.fileSize}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Badge variant="secondary" className="text-xs">
+                          {product.license} License
+                        </Badge>
                       </div>
                     </div>
                   </div>
@@ -206,10 +237,10 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView }: Prod
                       <Button 
                         size="sm" 
                         disabled={!product.inStock}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-green-900 hover:bg-green-800 text-white"
                       >
-                        <ShoppingCart className="w-4 h-4 mr-2" />
-                        {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                        <Download className="w-4 h-4 mr-2" />
+                        {product.inStock ? 'Get Instant Access' : 'Unavailable'}
                       </Button>
                     </div>
                   </div>
@@ -228,12 +259,18 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView }: Prod
         <Card key={product.id} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
           <div className="relative">
             <div className="aspect-square relative overflow-hidden rounded-t-lg">
-              <Image
-                src={product.image}
-                alt={product.title}
-                fill
-                className="object-cover group-hover:scale-110 transition-transform duration-300"
-              />
+              {product.image ? (
+                <Image
+                  src={product.image}
+                  alt={product.title}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
+                  <FileText className="w-12 h-12 text-gray-400" />
+                </div>
+              )}
               {product.badge && (
                 <Badge className="absolute top-2 left-2 bg-red-500 text-white">
                   {product.badge}
@@ -302,10 +339,18 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView }: Prod
               </div>
             </div>
 
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-3">
-              <Truck className="w-4 h-4 mr-1" />
-              {product.delivery}
-            </div>
+                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <div className="flex items-center">
+                      <Download className="w-4 h-4 mr-1" />
+                      {product.delivery}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="text-xs">
+                        {product.fileFormat}
+                      </Badge>
+                      <span className="text-xs">{product.fileSize}</span>
+                    </div>
+                  </div>
           </CardContent>
 
           <CardFooter className="p-4 pt-0">
@@ -313,9 +358,9 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView }: Prod
             className="w-full bg-green-900 hover:bg-green-800 text-white"
             disabled={!product.inStock}
           >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              {product.inStock ? 'Add to Cart' : 'Out of Stock'}
-            </Button>
+            <Download className="w-4 h-4 mr-2" />
+            {product.inStock ? 'Get Instant Access' : 'Unavailable'}
+          </Button>
           </CardFooter>
         </Card>
       ))}

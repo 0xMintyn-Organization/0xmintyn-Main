@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Star, Heart, ShoppingCart, Truck, Shield, Minus, Plus } from 'lucide-react';
+import { X, Star, Heart, Download, FileText, Shield, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,12 +43,18 @@ export default function QuickViewModal({ isOpen, onClose, product }: QuickViewMo
           {/* Product Image */}
           <div className="w-1/2 p-6">
             <div className="aspect-square relative overflow-hidden rounded-lg bg-gray-100 dark:bg-zinc-700">
-              <Image
-                src={product.image}
-                alt={product.title}
-                fill
-                className="object-cover"
-              />
+              {product.image ? (
+                <Image
+                  src={product.image}
+                  alt={product.title}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
+                  <FileText className="w-16 h-16 text-gray-400" />
+                </div>
+              )}
             </div>
           </div>
 
@@ -112,27 +118,16 @@ export default function QuickViewModal({ isOpen, onClose, product }: QuickViewMo
               </ul>
             </div>
 
-            {/* Quantity */}
+            {/* Digital Info */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-foreground mb-2">Quantity:</label>
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center border rounded-lg">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleQuantityChange(-1)}
-                    disabled={quantity <= 1}
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                  <span className="px-4 py-2 border-x">{quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleQuantityChange(1)}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                <div className="flex items-center">
+                  <Download className="w-4 h-4 mr-1" />
+                  Instant Download
+                </div>
+                <div className="flex items-center">
+                  <FileText className="w-4 h-4 mr-1" />
+                  Lifetime Access
                 </div>
               </div>
             </div>
@@ -141,11 +136,11 @@ export default function QuickViewModal({ isOpen, onClose, product }: QuickViewMo
             <div className="space-y-4">
               <div className="flex space-x-2">
                 <Button 
-                  className="flex-1 bg-blue-600 hover:bg-blue-700" 
+                  className="flex-1 bg-green-900 hover:bg-green-800 text-white" 
                   disabled={!product.inStock}
                 >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                  <Download className="w-4 h-4 mr-2" />
+                  {product.inStock ? 'Get Instant Access' : 'Unavailable'}
                 </Button>
                 <Button variant="outline" className="flex-1">
                   Buy Now

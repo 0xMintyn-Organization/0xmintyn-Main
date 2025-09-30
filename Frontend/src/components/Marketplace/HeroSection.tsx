@@ -9,9 +9,9 @@ import Image from 'next/image';
 const heroSlides = [
   {
     id: 1,
-    title: "Digital Learning Hub",
-    subtitle: "Access premium courses, e-books, and digital resources instantly",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=400&fit=crop",
+    title: "Digital Products Marketplace",
+    subtitle: "Access premium templates, design assets, and digital tools instantly",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop",
     cta: "Explore Products",
     badge: "New Arrivals"
   },
@@ -26,9 +26,9 @@ const heroSlides = [
   {
     id: 3,
     title: "Instant Downloads",
-    subtitle: "Get immediate access to courses, templates, and digital assets",
-    image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=400&fit=crop",
-    cta: "Start Learning",
+    subtitle: "Get immediate access to templates, assets, and digital resources",
+    image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=800&h=400&fit=crop",
+    cta: "Start Shopping",
     badge: "Best Sellers"
   }
 ];
@@ -36,7 +36,7 @@ const heroSlides = [
 const stats = [
   { icon: Package, label: "Digital Products", value: "2,500+" },
   { icon: Users, label: "Active Sellers", value: "1,200+" },
-  { icon: Star, label: "Happy Learners", value: "25,000+" },
+  { icon: Star, label: "Happy Customers", value: "25,000+" },
   { icon: TrendingUp, label: "Success Rate", value: "98%" }
 ];
 

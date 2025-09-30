@@ -1,58 +1,58 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Star, Heart, ShoppingCart, Truck, Shield, CheckCircle, Minus, Plus, Share2 } from 'lucide-react';
+import { Star, Heart, Download, FileText, Shield, CheckCircle, Minus, Plus, Share2, Clock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 
-// Sample product data
+// Sample digital product data
 const productData = {
   id: 1,
-  title: "MacBook Pro 16-inch M2 Pro",
-  brand: "Apple",
-  price: 2499,
-  originalPrice: 2799,
+  title: "Premium Website Template Pack",
+  brand: "WebCraft",
+  price: 49,
+  originalPrice: 99,
   rating: 4.8,
   reviewCount: 124,
   images: [
-    "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop",
     "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop"
+    "https://images.unsplash.com/photo-1558655146-d09347e92766?w=800&h=600&fit=crop"
   ],
-  description: "The MacBook Pro 16-inch with M2 Pro chip delivers exceptional performance for professional workflows. Featuring a stunning Liquid Retina XDR display, advanced camera and audio systems, and all-day battery life.",
+  description: "A comprehensive collection of premium website templates designed for modern businesses. This pack includes 10 responsive HTML/CSS templates with clean code, modern design, and mobile-first approach.",
   features: [
-    "M2 Pro chip with 12-core CPU and 19-core GPU",
-    "16-inch Liquid Retina XDR display",
-    "Up to 22 hours of battery life",
-    "1080p FaceTime HD camera",
-    "Six-speaker sound system with Spatial Audio",
-    "Three Thunderbolt 4 ports",
-    "SDXC card slot",
-    "HDMI port",
-    "MagSafe 3 charging port"
+    "10 Responsive HTML/CSS Templates",
+    "Mobile-First Design Approach",
+    "Clean, Semantic HTML5 Code",
+    "CSS3 Animations & Transitions",
+    "Cross-Browser Compatible",
+    "SEO Optimized Structure",
+    "Easy to Customize",
+    "Well Documented Code",
+    "Free Fonts & Icons Included"
   ],
   specifications: {
-    "Display": "16.2-inch Liquid Retina XDR display",
-    "Processor": "Apple M2 Pro chip",
-    "Memory": "16GB unified memory",
-    "Storage": "512GB SSD",
-    "Graphics": "19-core GPU",
-    "Camera": "1080p FaceTime HD camera",
-    "Audio": "Six-speaker sound system",
-    "Ports": "Three Thunderbolt 4, HDMI, SDXC, MagSafe 3",
-    "Wireless": "Wi-Fi 6E, Bluetooth 5.3",
-    "Battery": "Up to 22 hours"
+    "File Format": "HTML/CSS",
+    "File Size": "25.4 MB",
+    "Templates": "10 Responsive Templates",
+    "Browser Support": "Chrome, Firefox, Safari, Edge",
+    "Framework": "Pure HTML/CSS",
+    "License": "Commercial License",
+    "Updates": "Lifetime Updates",
+    "Support": "6 Months Email Support",
+    "Documentation": "Included"
   },
-  shipping: {
-    free: true,
-    estimated: "2-3 business days",
+  digitalDelivery: {
+    instant: true,
+    downloadLimit: 5,
+    accessDuration: "Lifetime",
     returnPolicy: "30-day return policy"
   },
   seller: {
-    name: "TechStore Pro",
+    name: "WebCraft",
     rating: 4.9,
     reviewCount: 1250,
     verified: true
@@ -63,31 +63,31 @@ const productData = {
       user: "John D.",
       rating: 5,
       date: "2024-01-15",
-      title: "Amazing performance!",
-      comment: "This MacBook Pro is incredible. The M2 Pro chip handles everything I throw at it with ease. The display is gorgeous and the battery life is outstanding."
+      title: "Excellent templates!",
+      comment: "These templates are exactly what I needed for my client projects. Clean code, modern design, and easy to customize. The documentation is very helpful."
     },
     {
       id: 2,
       user: "Sarah M.",
       rating: 4,
       date: "2024-01-10",
-      title: "Great laptop, minor issues",
-      comment: "Overall a great laptop. The performance is excellent and the build quality is solid. Only minor complaint is the weight, but that's expected for a 16-inch laptop."
+      title: "Great value for money",
+      comment: "Good collection of templates with responsive design. The code quality is high and the templates are well-structured. Minor issues with some browser compatibility."
     }
   ],
   relatedProducts: [
     {
       id: 2,
-      title: "MacBook Air M2",
-      price: 1199,
-      image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=200&fit=crop",
+      title: "Professional UI/UX Design Kit",
+      price: 29,
+      image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=300&h=200&fit=crop",
       rating: 4.7
     },
     {
       id: 3,
-      title: "MacBook Pro 14-inch",
-      price: 1999,
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop",
+      title: "React Native App Template",
+      price: 199,
+      image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=300&h=200&fit=crop",
       rating: 4.8
     }
   ]
@@ -203,9 +203,9 @@ export default function ProductDetailPage() {
               </div>
 
               <div className="flex space-x-4">
-                <Button size="lg" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  Add to Cart
+                <Button size="lg" className="flex-1 bg-green-900 hover:bg-green-800 text-white">
+                  <Download className="w-5 h-5 mr-2" />
+                  Get Instant Access
                 </Button>
                 <Button size="lg" variant="outline" className="flex-1">
                   Buy Now
@@ -224,15 +224,15 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Shipping Info */}
+            {/* Digital Delivery Info */}
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
-                  <Truck className="w-5 h-5 text-green-600" />
+                  <Download className="w-5 h-5 text-green-600" />
                   <div>
-                    <p className="font-medium text-green-600">Free shipping</p>
+                    <p className="font-medium text-green-600">Instant Download</p>
                     <p className="text-sm text-gray-600">
-                      Estimated delivery: {productData.shipping.estimated}
+                      Access immediately after purchase
                     </p>
                   </div>
                 </div>
@@ -242,6 +242,15 @@ export default function ProductDetailPage() {
                     <p className="font-medium text-blue-600">30-day returns</p>
                     <p className="text-sm text-gray-600">
                       Free returns within 30 days
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4 mt-2">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  <div>
+                    <p className="font-medium text-purple-600">Lifetime Access</p>
+                    <p className="text-sm text-gray-600">
+                      Download up to {productData.digitalDelivery.downloadLimit} times
                     </p>
                   </div>
                 </div>
@@ -294,7 +303,7 @@ export default function ProductDetailPage() {
             <TabsTrigger value="description">Description</TabsTrigger>
             <TabsTrigger value="specifications">Specifications</TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
-            <TabsTrigger value="shipping">Shipping & Returns</TabsTrigger>
+            <TabsTrigger value="shipping">Digital Delivery & Returns</TabsTrigger>
           </TabsList>
 
           <TabsContent value="description" className="mt-6">
@@ -374,23 +383,23 @@ export default function ProductDetailPage() {
           <TabsContent value="shipping" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Shipping & Returns</CardTitle>
+                <CardTitle>Digital Delivery & Returns</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold mb-2">Shipping Information</h4>
+                    <h4 className="font-semibold mb-2">Digital Delivery Information</h4>
                     <ul className="space-y-1 text-gray-700">
-                      <li>• Free shipping on all orders</li>
-                      <li>• Estimated delivery: {productData.shipping.estimated}</li>
-                      <li>• Tracking information provided</li>
+                      <li>• Instant download after purchase</li>
+                      <li>• Access duration: {productData.digitalDelivery.accessDuration}</li>
+                      <li>• Download limit: {productData.digitalDelivery.downloadLimit} times</li>
                     </ul>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Return Policy</h4>
                     <ul className="space-y-1 text-gray-700">
-                      <li>• {productData.shipping.returnPolicy}</li>
-                      <li>• Free return shipping</li>
+                      <li>• {productData.digitalDelivery.returnPolicy}</li>
+                      <li>• Digital product returns accepted</li>
                       <li>• Full refund or exchange</li>
                     </ul>
                   </div>
