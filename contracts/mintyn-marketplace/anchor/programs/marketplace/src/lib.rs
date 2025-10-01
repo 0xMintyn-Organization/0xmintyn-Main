@@ -1,8 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer, Mint};
-use std::collections::HashMap;
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-declare_id!("MktpE3ndUJwKy38f7CYqc5PTCD6MEYPNMdwbN");
+declare_id!("3wwzXoF3tK7Y97uyaGWdAv1SjTaw9edCeP7tYfMczfKL");
 
 // Constants
 const MARKETPLACE_FEE_BPS: u16 = 250; // 2.5% marketplace fee
@@ -116,7 +115,7 @@ pub mod marketplace {
         product.description = description;
         product.image_uri = image_uri;
         product.price = price;
-        product.category = category;
+        product.category = category.clone();
         product.metadata_uri = metadata_uri;
         product.is_digital = is_digital;
         product.max_supply = max_supply;
@@ -293,10 +292,10 @@ pub mod marketplace {
             .ok_or(MarketplaceError::ArithmeticOverflow)?;
 
         // Release funds using escrow PDA as authority
-        let escrow_key = escrow.key();
+        let purchase_key = purchase.key();
         let escrow_seeds = &[
             ESCROW_SEED,
-            purchase.key().as_ref(),
+            purchase_key.as_ref(),
             &[escrow.bump],
         ];
         let signer_seeds = &[&escrow_seeds[..]];
@@ -445,10 +444,10 @@ pub mod marketplace {
             .ok_or(MarketplaceError::ArithmeticOverflow)?;
 
         // Execute resolution
-        let escrow_key = escrow.key();
+        let purchase_key = purchase.key();
         let escrow_seeds = &[
             ESCROW_SEED,
-            purchase.key().as_ref(),
+            purchase_key.as_ref(),
             &[escrow.bump],
         ];
         let signer_seeds = &[&escrow_seeds[..]];
