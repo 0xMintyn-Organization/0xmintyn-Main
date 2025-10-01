@@ -1,427 +1,391 @@
-import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
+import { Server as SocketIOServer, Socket } from 'socket.io';
+import { getEventService } from '../eventService';
 import { logger } from '../../utils/logger';
-import { redisService, EVENT_CHANNELS } from '../cache/redis.service';
 
-// Types
-export interface WebSocketEvent {
-  type: string;
-  data: any;
-  timestamp: number;
-  userId?: string;
-  room?: string;
-}
-
-export interface ClientInfo {
+export interface WebSocketClient {
   id: string;
-  userId?: string;
-  rooms: Set<string>;
-  lastActivity: number;
-  isAuthenticated: boolean;
+  socket: Socket;
+  walletAddress?: string;
+  subscribedEvents: string[];
+  connectedAt: number;
 }
 
-export interface RoomInfo {
-  name: string;
-  clients: Set<string>;
-  createdAt: number;
-  lastActivity: number;
+export interface WebSocketStats {
+  connectedClients: number;
+  activeRooms: number;
+  totalConnections: number;
+  totalDisconnections: number;
+  eventsBroadcasted: number;
 }
 
-// WebSocket Service Class
 export class WebSocketService {
   private io: SocketIOServer;
-  private clients: Map<string, ClientInfo> = new Map();
-  private rooms: Map<string, RoomInfo> = new Map();
-  private isInitialized: boolean = false;
+  private clients = new Map<string, WebSocketClient>();
+  private rooms = new Map<string, Set<string>>();
+  private eventService = getEventService();
+  private stats: WebSocketStats;
 
   constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
       cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
-        methods: ["GET", "POST"],
+        origin: [
+          'http://localhost:3000',
+          'https://app.0xmintyn.com',
+          'https://advanced-lms-client.vercel.app'
+        ],
         credentials: true,
+        methods: ['GET', 'POST']
       },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket', 'polling']
     });
 
-    this.initializeEventHandlers();
-    this.initializeRedisSubscriptions();
-    this.startHeartbeat();
+    this.stats = {
+      connectedClients: 0,
+      activeRooms: 0,
+      totalConnections: 0,
+      totalDisconnections: 0,
+      eventsBroadcasted: 0
+    };
+
+    this.setupEventHandlers();
+    this.setupEventServiceIntegration();
+    logger.info('WebSocket Service initialized');
   }
 
-  private initializeEventHandlers(): void {
-    this.io.on('connection', (socket) => {
-      const clientId = socket.id;
-      const clientInfo: ClientInfo = {
-        id: clientId,
-        rooms: new Set(),
-        lastActivity: Date.now(),
-        isAuthenticated: false,
-      };
+  private setupEventHandlers(): void {
+    this.io.on('connection', (socket: Socket) => {
+      this.handleConnection(socket);
+    });
+  }
 
-      this.clients.set(clientId, clientInfo);
-      logger.info(`Client connected: ${clientId}`);
+  private handleConnection(socket: Socket): void {
+    const clientId = socket.id;
+    const client: WebSocketClient = {
+      id: clientId,
+      socket,
+      subscribedEvents: [],
+      connectedAt: Date.now()
+    };
 
-      // Authentication
-      socket.on('authenticate', (data: { userId: string; token?: string }) => {
-        try {
-          // In production, verify the token here
-          clientInfo.userId = data.userId;
-          clientInfo.isAuthenticated = true;
-          clientInfo.lastActivity = Date.now();
+    this.clients.set(clientId, client);
+    this.stats.connectedClients++;
+    this.stats.totalConnections++;
 
-          // Join user-specific room
-          socket.join(`user:${data.userId}`);
-          clientInfo.rooms.add(`user:${data.userId}`);
+    logger.info(`Client connected: ${clientId}`);
 
-          socket.emit('authenticated', { success: true, userId: data.userId });
-          logger.info(`Client ${clientId} authenticated as user ${data.userId}`);
-        } catch (error) {
-          logger.error(`Authentication failed for client ${clientId}:`, error);
-          socket.emit('authentication_error', { error: 'Authentication failed' });
-        }
-      });
-
-      // Join room
-      socket.on('join_room', (data: { room: string }) => {
-        try {
-          const roomName = data.room;
-          socket.join(roomName);
-          clientInfo.rooms.add(roomName);
-          clientInfo.lastActivity = Date.now();
-
-          // Update room info
-          if (!this.rooms.has(roomName)) {
-            this.rooms.set(roomName, {
-              name: roomName,
-              clients: new Set(),
-              createdAt: Date.now(),
-              lastActivity: Date.now(),
-            });
-          }
-          
-          const roomInfo = this.rooms.get(roomName)!;
-          roomInfo.clients.add(clientId);
-          roomInfo.lastActivity = Date.now();
-
-          socket.emit('joined_room', { room: roomName });
-          logger.info(`Client ${clientId} joined room ${roomName}`);
-        } catch (error) {
-          logger.error(`Failed to join room for client ${clientId}:`, error);
-          socket.emit('join_room_error', { error: 'Failed to join room' });
-        }
-      });
-
-      // Leave room
-      socket.on('leave_room', (data: { room: string }) => {
-        try {
-          const roomName = data.room;
-          socket.leave(roomName);
-          clientInfo.rooms.delete(roomName);
-          clientInfo.lastActivity = Date.now();
-
-          // Update room info
-          const roomInfo = this.rooms.get(roomName);
-          if (roomInfo) {
-            roomInfo.clients.delete(clientId);
-            roomInfo.lastActivity = Date.now();
-            
-            // Remove room if empty
-            if (roomInfo.clients.size === 0) {
-              this.rooms.delete(roomName);
-            }
-          }
-
-          socket.emit('left_room', { room: roomName });
-          logger.info(`Client ${clientId} left room ${roomName}`);
-        } catch (error) {
-          logger.error(`Failed to leave room for client ${clientId}:`, error);
-          socket.emit('leave_room_error', { error: 'Failed to leave room' });
-        }
-      });
-
-      // Subscribe to specific events
-      socket.on('subscribe', (data: { events: string[] }) => {
-        try {
-          data.events.forEach(eventType => {
-            socket.join(`event:${eventType}`);
-            clientInfo.rooms.add(`event:${eventType}`);
-          });
-          clientInfo.lastActivity = Date.now();
-
-          socket.emit('subscribed', { events: data.events });
-          logger.info(`Client ${clientId} subscribed to events: ${data.events.join(', ')}`);
-        } catch (error) {
-          logger.error(`Failed to subscribe client ${clientId} to events:`, error);
-          socket.emit('subscribe_error', { error: 'Failed to subscribe to events' });
-        }
-      });
-
-      // Unsubscribe from events
-      socket.on('unsubscribe', (data: { events: string[] }) => {
-        try {
-          data.events.forEach(eventType => {
-            socket.leave(`event:${eventType}`);
-            clientInfo.rooms.delete(`event:${eventType}`);
-          });
-          clientInfo.lastActivity = Date.now();
-
-          socket.emit('unsubscribed', { events: data.events });
-          logger.info(`Client ${clientId} unsubscribed from events: ${data.events.join(', ')}`);
-        } catch (error) {
-          logger.error(`Failed to unsubscribe client ${clientId} from events:`, error);
-          socket.emit('unsubscribe_error', { error: 'Failed to unsubscribe from events' });
-        }
-      });
-
-      // Ping/Pong for connection health
-      socket.on('ping', () => {
-        clientInfo.lastActivity = Date.now();
-        socket.emit('pong', { timestamp: Date.now() });
-      });
-
-      // Disconnect
-      socket.on('disconnect', (reason) => {
-        logger.info(`Client ${clientId} disconnected: ${reason}`);
-        this.handleDisconnect(clientId);
-      });
-
-      // Error handling
-      socket.on('error', (error) => {
-        logger.error(`Socket error for client ${clientId}:`, error);
-      });
+    // Handle client events
+    socket.on('subscribe_wallet', (data) => {
+      this.handleWalletSubscription(client, data);
     });
 
-    this.isInitialized = true;
-    logger.info('WebSocket service initialized successfully');
-  }
-
-  private initializeRedisSubscriptions(): void {
-    // Subscribe to Redis event channels
-    Object.values(EVENT_CHANNELS).forEach(channel => {
-      redisService.subscribe(channel, (message) => {
-        this.broadcastEvent(channel, message);
-      });
+    socket.on('subscribe_events', (data) => {
+      this.handleEventSubscription(client, data);
     });
 
-    logger.info('Redis subscriptions initialized');
+    socket.on('unsubscribe_events', (data) => {
+      this.handleEventUnsubscription(client, data);
+    });
+
+    socket.on('get_event_history', (data) => {
+      this.handleGetEventHistory(client, data);
+    });
+
+    socket.on('ping', () => {
+      socket.emit('pong', { timestamp: Date.now() });
+    });
+
+    socket.on('disconnect', () => {
+      this.handleDisconnection(client);
+    });
+
+    // Send welcome message
+    socket.emit('connected', {
+      clientId,
+      timestamp: Date.now(),
+      availableEvents: [
+        'GOVERNANCE_VOTE_CAST',
+        'GOVERNANCE_PROPOSAL_CREATED',
+        'UBI_CLAIMED',
+        'COUNTER_INCREMENTED',
+        'COUNTER_DECREMENTED',
+        'SPL_TOKEN_TRANSFERRED',
+        'SOL_BALANCE_CHANGE',
+        'TOKEN_BALANCE_CHANGE'
+      ]
+    });
   }
 
-  private handleDisconnect(clientId: string): void {
-    const clientInfo = this.clients.get(clientId);
-    if (!clientInfo) return;
+  private handleWalletSubscription(client: WebSocketClient, data: { walletAddress: string }): void {
+    if (!data.walletAddress) {
+      client.socket.emit('error', { message: 'Wallet address is required' });
+      return;
+    }
 
-    // Remove client from all rooms
-    clientInfo.rooms.forEach(roomName => {
-      const roomInfo = this.rooms.get(roomName);
-      if (roomInfo) {
-        roomInfo.clients.delete(clientId);
-        roomInfo.lastActivity = Date.now();
-        
-        // Remove room if empty
-        if (roomInfo.clients.size === 0) {
+    client.walletAddress = data.walletAddress;
+    
+    // Join wallet-specific room
+    const roomName = `wallet:${data.walletAddress}`;
+    client.socket.join(roomName);
+    
+    if (!this.rooms.has(roomName)) {
+      this.rooms.set(roomName, new Set());
+    }
+    this.rooms.get(roomName)!.add(client.id);
+    this.stats.activeRooms = this.rooms.size;
+
+    logger.info(`Client ${client.id} subscribed to wallet ${data.walletAddress}`);
+    
+    client.socket.emit('wallet_subscribed', {
+      walletAddress: data.walletAddress,
+      roomName,
+      timestamp: Date.now()
+    });
+  }
+
+  private handleEventSubscription(client: WebSocketClient, data: { eventTypes: string[] }): void {
+    if (!data.eventTypes || !Array.isArray(data.eventTypes)) {
+      client.socket.emit('error', { message: 'Event types array is required' });
+      return;
+    }
+
+    client.subscribedEvents = [...new Set([...client.subscribedEvents, ...data.eventTypes])];
+    
+    // Join event-specific rooms
+    data.eventTypes.forEach(eventType => {
+      const roomName = `event:${eventType}`;
+      client.socket.join(roomName);
+      
+      if (!this.rooms.has(roomName)) {
+        this.rooms.set(roomName, new Set());
+      }
+      this.rooms.get(roomName)!.add(client.id);
+    });
+
+    this.stats.activeRooms = this.rooms.size;
+
+    logger.info(`Client ${client.id} subscribed to events: ${data.eventTypes.join(', ')}`);
+    
+    client.socket.emit('events_subscribed', {
+      eventTypes: data.eventTypes,
+      allSubscribedEvents: client.subscribedEvents,
+      timestamp: Date.now()
+    });
+  }
+
+  private handleEventUnsubscription(client: WebSocketClient, data: { eventTypes: string[] }): void {
+    if (!data.eventTypes || !Array.isArray(data.eventTypes)) {
+      client.socket.emit('error', { message: 'Event types array is required' });
+      return;
+    }
+
+    // Remove from subscribed events
+    client.subscribedEvents = client.subscribedEvents.filter(
+      event => !data.eventTypes.includes(event)
+    );
+    
+    // Leave event-specific rooms
+    data.eventTypes.forEach(eventType => {
+      const roomName = `event:${eventType}`;
+      client.socket.leave(roomName);
+      
+      if (this.rooms.has(roomName)) {
+        this.rooms.get(roomName)!.delete(client.id);
+        if (this.rooms.get(roomName)!.size === 0) {
           this.rooms.delete(roomName);
         }
       }
     });
 
-    // Remove client
-    this.clients.delete(clientId);
+    this.stats.activeRooms = this.rooms.size;
+
+    logger.info(`Client ${client.id} unsubscribed from events: ${data.eventTypes.join(', ')}`);
+    
+    client.socket.emit('events_unsubscribed', {
+      eventTypes: data.eventTypes,
+      remainingSubscribedEvents: client.subscribedEvents,
+      timestamp: Date.now()
+    });
   }
 
-  private startHeartbeat(): void {
-    setInterval(() => {
-      const now = Date.now();
-      const timeout = 5 * 60 * 1000; // 5 minutes
+  private handleGetEventHistory(client: WebSocketClient, data: {
+    walletAddress?: string;
+    eventTypes?: string[];
+    limit?: number;
+  }): void {
+    try {
+      const eventHistory = this.eventService.getEventHistory({
+        walletAddress: data.walletAddress,
+        eventTypes: data.eventTypes as any,
+        limit: data.limit
+      });
 
-      // Remove inactive clients
-      for (const [clientId, clientInfo] of this.clients.entries()) {
-        if (now - clientInfo.lastActivity > timeout) {
-          logger.info(`Removing inactive client: ${clientId}`);
-          this.handleDisconnect(clientId);
-          this.io.sockets.sockets.get(clientId)?.disconnect(true);
+      client.socket.emit('event_history', {
+        events: eventHistory,
+        total: eventHistory.length,
+        filters: data,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      logger.error('Failed to get event history:', error);
+      client.socket.emit('error', { message: 'Failed to get event history' });
+    }
+  }
+
+  private handleDisconnection(client: WebSocketClient): void {
+    // Remove from all rooms
+    this.rooms.forEach((clients, roomName) => {
+      clients.delete(client.id);
+      if (clients.size === 0) {
+        this.rooms.delete(roomName);
+      }
+    });
+
+    this.clients.delete(client.id);
+    this.stats.connectedClients--;
+    this.stats.totalDisconnections++;
+    this.stats.activeRooms = this.rooms.size;
+
+    logger.info(`Client disconnected: ${client.id}`);
+  }
+
+  private setupEventServiceIntegration(): void {
+    // Listen to events from the event service
+    this.eventService.on('event', (event) => {
+      this.broadcastEvent(event);
+    });
+  }
+
+  // Broadcast event to relevant clients
+  private broadcastEvent(event: any): void {
+    try {
+      // Broadcast to event-specific room
+      const eventRoom = `event:${event.type}`;
+      this.io.to(eventRoom).emit('blockchain_event', {
+        event,
+        timestamp: Date.now()
+      });
+
+      // Broadcast to wallet-specific room if applicable
+      if (event.data && this.isEventRelevantToWallet(event)) {
+        const walletAddress = this.extractWalletAddress(event);
+        if (walletAddress) {
+          const walletRoom = `wallet:${walletAddress}`;
+          this.io.to(walletRoom).emit('blockchain_event', {
+            event,
+            timestamp: Date.now()
+          });
         }
       }
 
-      // Clean up empty rooms
-      for (const [roomName, roomInfo] of this.rooms.entries()) {
-        if (roomInfo.clients.size === 0) {
-          this.rooms.delete(roomName);
-        }
-      }
-    }, 60000); // Check every minute
-  }
-
-  // Public methods for broadcasting events
-
-  public broadcastToRoom(room: string, event: string, data: any): void {
-    try {
-      this.io.to(room).emit(event, {
-        type: event,
-        data,
-        timestamp: Date.now(),
-      });
-      logger.debug(`Broadcasted event ${event} to room ${room}`);
+      this.stats.eventsBroadcasted++;
     } catch (error) {
-      logger.error(`Failed to broadcast to room ${room}:`, error);
+      logger.error('Failed to broadcast event:', error);
     }
   }
 
-  public broadcastToUser(userId: string, event: string, data: any): void {
-    try {
-      this.io.to(`user:${userId}`).emit(event, {
-        type: event,
-        data,
-        timestamp: Date.now(),
-        userId,
-      });
-      logger.debug(`Broadcasted event ${event} to user ${userId}`);
-    } catch (error) {
-      logger.error(`Failed to broadcast to user ${userId}:`, error);
-    }
+  // Check if event is relevant to any wallet
+  private isEventRelevantToWallet(event: any): boolean {
+    const data = event.data;
+    return !!(
+      data.voter ||
+      data.claimer ||
+      data.sender ||
+      data.recipient ||
+      data.authority ||
+      data.from ||
+      data.to
+    );
   }
 
-  public broadcastToEvent(eventType: string, data: any): void {
-    try {
-      this.io.to(`event:${eventType}`).emit(eventType, {
-        type: eventType,
-        data,
-        timestamp: Date.now(),
-      });
-      logger.debug(`Broadcasted event ${eventType} to subscribers`);
-    } catch (error) {
-      logger.error(`Failed to broadcast event ${eventType}:`, error);
-    }
+  // Extract wallet address from event
+  private extractWalletAddress(event: any): string | null {
+    const data = event.data;
+    return data.voter || data.claimer || data.sender || data.recipient || data.authority || data.from || data.to || null;
   }
 
-  public broadcastEvent(channel: string, data: any): void {
-    try {
-      // Map Redis channels to WebSocket events
-      const eventMap: Record<string, string> = {
-        [EVENT_CHANNELS.UBI_CLAIM]: 'ubi_claim',
-        [EVENT_CHANNELS.UBI_REGISTRATION]: 'ubi_registration',
-        [EVENT_CHANNELS.PROPOSAL_CREATED]: 'proposal_created',
-        [EVENT_CHANNELS.PROPOSAL_VOTED]: 'proposal_voted',
-        [EVENT_CHANNELS.PROPOSAL_EXECUTED]: 'proposal_executed',
-        [EVENT_CHANNELS.MARKETPLACE_PURCHASE]: 'marketplace_purchase',
-        [EVENT_CHANNELS.P2P_TRADE]: 'p2p_trade',
-        [EVENT_CHANNELS.BRIDGE_TRANSACTION]: 'bridge_transaction',
-        [EVENT_CHANNELS.FRAUD_REPORTED]: 'fraud_reported',
-        [EVENT_CHANNELS.SYSTEM_ALERT]: 'system_alert',
-      };
+  // Public methods for external use
 
-      const eventType = eventMap[channel] || channel;
-      this.broadcastToEvent(eventType, data);
-    } catch (error) {
-      logger.error(`Failed to broadcast event from channel ${channel}:`, error);
-    }
+  // Broadcast to specific event type
+  broadcastToEvent(eventType: string, data: any): void {
+    const eventRoom = `event:${eventType}`;
+    this.io.to(eventRoom).emit('blockchain_event', {
+      type: eventType,
+      data,
+      timestamp: Date.now()
+    });
+    this.stats.eventsBroadcasted++;
   }
 
-  public broadcastToAll(event: string, data: any): void {
-    try {
-      this.io.emit(event, {
-        type: event,
-        data,
-        timestamp: Date.now(),
-      });
-      logger.debug(`Broadcasted event ${event} to all clients`);
-    } catch (error) {
-      logger.error(`Failed to broadcast to all clients:`, error);
-    }
-  }
-
-  // Specific event broadcasters
-
-  public broadcastUbiClaim(userId: string, amount: string, type: string): void {
-    this.broadcastToUser(userId, 'ubi_claim', {
-      userId,
+  // Broadcast UBI claim
+  broadcastUbiClaim(user: string, amount: number, type: 'initial' | 'monthly'): void {
+    this.broadcastToEvent('UBI_CLAIMED', {
+      user,
       amount,
       type,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     });
   }
 
-  public broadcastProposalUpdate(proposalId: string, update: any): void {
-    this.broadcastToEvent('proposal_update', {
-      proposalId,
-      update,
-      timestamp: Date.now(),
-    });
-  }
-
-  public broadcastVoteCast(proposalId: string, voter: string, voteType: string): void {
-    this.broadcastToEvent('vote_cast', {
-      proposalId,
+  // Broadcast vote cast
+  broadcastVoteCast(proposal: string, voter: string, voteType: boolean): void {
+    this.broadcastToEvent('GOVERNANCE_VOTE_CAST', {
+      proposal,
       voter,
       voteType,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     });
   }
 
-  public broadcastSystemAlert(level: string, message: string, data?: any): void {
-    this.broadcastToAll('system_alert', {
-      level,
-      message,
+  // Broadcast to specific wallet
+  broadcastToWallet(walletAddress: string, eventType: string, data: any): void {
+    const walletRoom = `wallet:${walletAddress}`;
+    this.io.to(walletRoom).emit('blockchain_event', {
+      type: eventType,
       data,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     });
+    this.stats.eventsBroadcasted++;
   }
 
-  // Statistics and monitoring
-
-  public getStats(): {
-    connectedClients: number;
-    authenticatedClients: number;
-    activeRooms: number;
-    totalRooms: number;
-    uptime: number;
-  } {
-    const connectedClients = this.clients.size;
-    const authenticatedClients = Array.from(this.clients.values()).filter(c => c.isAuthenticated).length;
-    const activeRooms = Array.from(this.rooms.values()).filter(r => r.clients.size > 0).length;
-    const totalRooms = this.rooms.size;
-
-    return {
-      connectedClients,
-      authenticatedClients,
-      activeRooms,
-      totalRooms,
-      uptime: process.uptime(),
-    };
+  // Get statistics
+  getStats(): WebSocketStats {
+    return { ...this.stats };
   }
 
-  public getClientInfo(clientId: string): ClientInfo | null {
-    return this.clients.get(clientId) || null;
-  }
-
-  public getRoomInfo(roomName: string): RoomInfo | null {
-    return this.rooms.get(roomName) || null;
-  }
-
-  public getAllRooms(): RoomInfo[] {
-    return Array.from(this.rooms.values());
-  }
-
-  public getAllClients(): ClientInfo[] {
+  // Get connected clients
+  getConnectedClients(): WebSocketClient[] {
     return Array.from(this.clients.values());
   }
 
-  // Health check
-  public healthCheck(): boolean {
-    return this.isInitialized && this.io.engine.clientsCount >= 0;
+  // Get active rooms
+  getActiveRooms(): string[] {
+    return Array.from(this.rooms.keys());
   }
 
-  // Cleanup
-  public disconnect(): void {
-    try {
-      this.io.close();
-      this.clients.clear();
-      this.rooms.clear();
-      this.isInitialized = false;
-      logger.info('WebSocket service disconnected');
-    } catch (error) {
-      logger.error('Failed to disconnect WebSocket service:', error);
-    }
+  // Health check
+  healthCheck(): {
+    healthy: boolean;
+    stats: WebSocketStats;
+    connectedClients: number;
+    activeRooms: number;
+  } {
+    return {
+      healthy: true,
+      stats: this.getStats(),
+      connectedClients: this.clients.size,
+      activeRooms: this.rooms.size
+    };
+  }
+
+  // Disconnect all clients
+  disconnect(): void {
+    this.io.disconnectSockets();
+    this.clients.clear();
+    this.rooms.clear();
+    this.stats.connectedClients = 0;
+    this.stats.activeRooms = 0;
+    logger.info('WebSocket Service disconnected all clients');
   }
 }
 

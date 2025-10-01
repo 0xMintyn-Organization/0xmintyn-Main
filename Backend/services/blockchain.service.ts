@@ -1,9 +1,7 @@
 import { logger } from '../utils/logger';
 import { getConnectionPool } from './solana/connection';
-import { UbiService } from './solana/ubi.service';
 import { GovernanceService } from './solana/governance.service';
 import { redisService } from './cache/redis.service';
-import { ubiWorker } from './workers/ubi.worker';
 import { initializeWebSocketService } from './websocket/websocket.service';
 import { Server as HTTPServer } from 'http';
 import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
@@ -13,11 +11,7 @@ import { PublicKey, Keypair } from '@solana/web3.js';
 export interface BlockchainServiceConfig {
   rpcUrls: string[];
   programIds: {
-    ubi: string;
     governance: string;
-    marketplace: string;
-    p2p: string;
-    bridge: string;
   };
   adminWallet?: Keypair;
   enableWorkers: boolean;
@@ -39,10 +33,7 @@ export interface ServiceStats {
     queueLengths: Record<string, number>;
   };
   workers: {
-    ubi: {
-      running: boolean;
-      queueLengths: Record<string, number>;
-    };
+    // Removed UBI worker
   };
   websocket: {
     connected: boolean;
@@ -50,11 +41,7 @@ export interface ServiceStats {
     rooms: number;
   };
   programs: {
-    ubi: boolean;
     governance: boolean;
-    marketplace: boolean;
-    p2p: boolean;
-    bridge: boolean;
   };
 }
 
@@ -62,7 +49,6 @@ export interface ServiceStats {
 export class BlockchainService {
   private config: BlockchainServiceConfig;
   private connectionPool = getConnectionPool();
-  private ubiService: UbiService | null = null;
   private governanceService: GovernanceService | null = null;
   private webSocketService: any = null;
   private isInitialized: boolean = false;
@@ -146,19 +132,12 @@ export class BlockchainService {
 
   private async initializeProgramServices(): Promise<void> {
     try {
-      // Initialize UBI service
-      if (this.adminProvider) {
-        this.ubiService = new UbiService(this.adminProvider);
-        logger.info('UBI service initialized');
-      }
-
       // Initialize Governance service
       if (this.adminProvider) {
         this.governanceService = new GovernanceService(this.adminProvider);
         logger.info('Governance service initialized');
       }
 
-      // TODO: Initialize other services (marketplace, p2p, bridge)
       logger.info('Program services initialized');
     } catch (error) {
       logger.error('Failed to initialize program services:', error);
@@ -181,7 +160,7 @@ export class BlockchainService {
 
   private async initializeWorkers(): Promise<void> {
     try {
-      await ubiWorker.start();
+      // Removed UBI worker initialization
       logger.info('Background workers initialized');
     } catch (error) {
       logger.error('Failed to initialize workers:', error);
@@ -206,10 +185,6 @@ export class BlockchainService {
 
   // Public methods for accessing services
 
-  public getUbiService(): UbiService | null {
-    return this.ubiService;
-  }
-
   public getGovernanceService(): GovernanceService | null {
     return this.governanceService;
   }
@@ -226,9 +201,7 @@ export class BlockchainService {
     return this.webSocketService;
   }
 
-  public getUbiWorker() {
-    return ubiWorker;
-  }
+  // Removed UBI worker access
 
   // Health check and monitoring
 
@@ -255,12 +228,7 @@ export class BlockchainService {
         healthy = false;
       }
 
-      // Check workers
-      const workerHealth = await ubiWorker.healthCheck();
-      if (!workerHealth.isRunning) {
-        errors.push('UBI worker is not running');
-        healthy = false;
-      }
+      // Removed UBI worker health check
 
       // Check WebSocket
       const wsHealthy = this.webSocketService ? this.webSocketService.healthCheck() : true;
@@ -284,10 +252,7 @@ export class BlockchainService {
           queueLengths: await redisService.getStats().then(s => s.queueLengths),
         },
         workers: {
-          ubi: {
-            running: workerHealth.isRunning,
-            queueLengths: workerHealth.queueLengths,
-          },
+          // Removed UBI worker
         },
         websocket: {
           connected: wsHealthy,
@@ -295,11 +260,7 @@ export class BlockchainService {
           rooms: this.webSocketService ? this.webSocketService.getStats().activeRooms : 0,
         },
         programs: {
-          ubi: !!this.ubiService,
           governance: !!this.governanceService,
-          marketplace: false, // TODO: Implement
-          p2p: false, // TODO: Implement
-          bridge: false, // TODO: Implement
         },
       };
 
@@ -314,33 +275,7 @@ export class BlockchainService {
     }
   }
 
-  // Event handling
-
-  public async handleUbiEvent(event: any): Promise<void> {
-    try {
-      logger.info('Handling UBI event:', event);
-      
-      // Process the event based on type
-      switch (event.type) {
-        case 'UserInitialized':
-          await this.handleUserInitialized(event);
-          break;
-        case 'InitialUbiClaimed':
-          await this.handleInitialUbiClaimed(event);
-          break;
-        case 'MonthlyUbiClaimed':
-          await this.handleMonthlyUbiClaimed(event);
-          break;
-        case 'FraudReported':
-          await this.handleFraudReported(event);
-          break;
-        default:
-          logger.warn('Unknown UBI event type:', event.type);
-      }
-    } catch (error) {
-      logger.error('Failed to handle UBI event:', error);
-    }
-  }
+  // Event handling - Removed UBI events
 
   public async handleGovernanceEvent(event: any): Promise<void> {
     try {
@@ -365,35 +300,7 @@ export class BlockchainService {
     }
   }
 
-  // Event handlers
-
-  private async handleUserInitialized(event: any): Promise<void> {
-    // Update database, cache, and notify clients
-    if (this.webSocketService) {
-      this.webSocketService.broadcastToEvent('user_initialized', event);
-    }
-  }
-
-  private async handleInitialUbiClaimed(event: any): Promise<void> {
-    // Update database, cache, and notify clients
-    if (this.webSocketService) {
-      this.webSocketService.broadcastUbiClaim(event.user, event.amount, 'initial');
-    }
-  }
-
-  private async handleMonthlyUbiClaimed(event: any): Promise<void> {
-    // Update database, cache, and notify clients
-    if (this.webSocketService) {
-      this.webSocketService.broadcastUbiClaim(event.user, event.amount, 'monthly');
-    }
-  }
-
-  private async handleFraudReported(event: any): Promise<void> {
-    // Update database, cache, and notify admins
-    if (this.webSocketService) {
-      this.webSocketService.broadcastToEvent('fraud_reported', event);
-    }
-  }
+  // Event handlers - Removed UBI event handlers
 
   private async handleProposalCreated(event: any): Promise<void> {
     // Update database, cache, and notify clients
@@ -422,10 +329,7 @@ export class BlockchainService {
     try {
       logger.info('Cleaning up Blockchain Service...');
 
-      // Stop workers
-      if (this.config.enableWorkers) {
-        await ubiWorker.stop();
-      }
+      // Removed UBI worker cleanup
 
       // Disconnect WebSocket
       if (this.webSocketService) {
@@ -453,11 +357,7 @@ const defaultConfig: BlockchainServiceConfig = {
     'https://api.mainnet-beta.solana.com',
   ],
   programIds: {
-    ubi: process.env.UBI_PROGRAM_ID || '11111111111111111111111111111111',
     governance: process.env.GOVERNANCE_PROGRAM_ID || '11111111111111111111111111111111',
-    marketplace: process.env.MARKETPLACE_PROGRAM_ID || '11111111111111111111111111111111',
-    p2p: process.env.P2P_PROGRAM_ID || '11111111111111111111111111111111',
-    bridge: process.env.BRIDGE_PROGRAM_ID || '11111111111111111111111111111111',
   },
   enableWorkers: process.env.ENABLE_WORKERS !== 'false',
   enableWebSocket: process.env.ENABLE_WEBSOCKET !== 'false',

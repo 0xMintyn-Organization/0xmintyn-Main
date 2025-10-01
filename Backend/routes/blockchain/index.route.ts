@@ -2,7 +2,6 @@ import express from 'express';
 import { Request, Response } from 'express';
 import { logger } from '../../utils/logger';
 import { getBlockchainService } from '../../services/blockchain.service';
-import ubiRoutes from './ubi.route';
 import governanceRoutes from './governance.route';
 
 const router = express.Router();
@@ -120,62 +119,23 @@ router.get('/user/:publicKey/overview', async (req: Request, res: Response) => {
     }
 
     // Get user data from all services
-    const [ubiService, governanceService] = [
-      blockchainService.getUbiService(),
-      blockchainService.getGovernanceService(),
-    ];
+    const governanceService = blockchainService.getGovernanceService();
 
     const userOverview = {
       publicKey,
-      ubi: {
-        profile: null,
-        eligibility: null,
-        balance: 0,
-        canClaimInitial: false,
-        canClaimMonthly: false,
-      },
       governance: {
         votingPower: '0',
         votes: [],
         delegations: [],
         proposals: [],
       },
-      marketplace: {
-        products: [],
-        orders: [],
-        sales: [],
-      },
-      p2p: {
-        orders: [],
-        trades: [],
-        reputation: 0,
-      },
-      bridge: {
-        transactions: [],
-        supportedChains: [],
-      },
+      splToken: {
+        tokens: [],
+        totalBalance: 0
+      }
     };
 
-    // Fetch UBI data
-    if (ubiService) {
-      try {
-        const userPublicKey = new (await import('@solana/web3.js')).PublicKey(publicKey);
-        const profile = await ubiService.getUserProfile(userPublicKey);
-        const canClaimInitial = await ubiService.canClaimInitialUbi(userPublicKey);
-        const canClaimMonthly = await ubiService.canClaimMonthlyUbi(userPublicKey);
-        const balance = await ubiService.getUserTokenBalance(userPublicKey);
-
-        userOverview.ubi = {
-          profile,
-          eligibility: { canClaimInitial, canClaimMonthly },
-          balance,
-          canClaimInitial,
-          canClaimMonthly,
-        };
-      } catch (error) {
-        logger.warn(`Failed to fetch UBI data for user ${publicKey}:`, error);
-      }
-    }
+    // Removed UBI data fetching
 
     // Fetch Governance data
     if (governanceService) {
@@ -236,20 +196,7 @@ router.get('/analytics', async (req: Request, res: Response) => {
     const analytics = {
       timeframe,
       type,
-      ubi: {
-        totalUsers: 1250,
-        activeUsers: 1100,
-        totalDistributed: '50000000000', // 50,000 tokens
-        monthlyDistributed: '5000000000', // 5,000 tokens
-        averageClaimAmount: '2000000000', // 2000 tokens
-        fraudReports: 15,
-        successRate: 98.5,
-        trends: {
-          userGrowth: 12.5,
-          distributionGrowth: 8.3,
-          fraudRate: 1.2,
-        },
-      },
+      // Removed UBI analytics
       governance: {
         totalProposals: 15,
         activeProposals: 2,
@@ -263,37 +210,7 @@ router.get('/analytics', async (req: Request, res: Response) => {
           executionRate: 53.3,
         },
       },
-      marketplace: {
-        totalProducts: 0,
-        totalSales: 0,
-        totalVolume: '0',
-        averagePrice: '0',
-        trends: {
-          productGrowth: 0,
-          salesGrowth: 0,
-          volumeGrowth: 0,
-        },
-      },
-      p2p: {
-        totalOrders: 0,
-        totalTrades: 0,
-        totalVolume: '0',
-        averageTradeSize: '0',
-        trends: {
-          orderGrowth: 0,
-          tradeGrowth: 0,
-          volumeGrowth: 0,
-        },
-      },
-      bridge: {
-        totalTransactions: 0,
-        totalVolume: '0',
-        supportedChains: [],
-        trends: {
-          transactionGrowth: 0,
-          volumeGrowth: 0,
-        },
-      },
+      // Removed unused services analytics: marketplace, p2p, bridge
       system: {
         totalRequests: 0,
         successRate: 0,
@@ -340,14 +257,11 @@ router.get('/events', async (req: Request, res: Response) => {
 
     const eventChannels = {
       available: [
-        'ubi_claim',
-        'ubi_registration',
+        // Removed UBI event channels
         'proposal_created',
         'proposal_voted',
         'proposal_executed',
-        'marketplace_purchase',
-        'p2p_trade',
-        'bridge_transaction',
+        // Removed unused event channels: marketplace_purchase, p2p_trade, bridge_transaction
         'fraud_reported',
         'system_alert',
       ],
@@ -372,7 +286,6 @@ router.get('/events', async (req: Request, res: Response) => {
 });
 
 // Mount sub-routes
-router.use('/ubi', ubiRoutes);
 router.use('/governance', governanceRoutes);
 
 // TODO: Add other service routes

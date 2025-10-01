@@ -8,7 +8,6 @@ import { ActiveProposalsDetailType, CardDetailsType, ClaimHistoryItem, CommFeedD
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
-
 // Dashboard page
 export const topSellersDetails: SellerType[] = [
   {name: 'CryptoArtistic123', rate: '1,234'},
@@ -506,4 +505,5 @@ export const mockContributions: CommunityContribution[] = [
     platform: 'Internal'
   }
 ];
+
 

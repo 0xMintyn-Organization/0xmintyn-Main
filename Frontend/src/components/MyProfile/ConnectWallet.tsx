@@ -1,124 +1,137 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { setWalletAddress } from "@/redux/features/auth/authSlice";
-import {
-    Connection,
-    PublicKey
-} from "@solana/web3.js";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-
-declare global {
-    interface Window {
-        solana?: any;
-    }
-}
-
-const SOLANA_NETWORK = "https://api.mainnet-beta.solana.com";
+import { usePhantomWallet } from "@/hooks/usePhantomWallet";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Wallet, Loader2, RefreshCw } from "lucide-react";
 
 const ConnectAccount = () => {
-    const [publicKey, setPublicKey] = useState<string | null>(null);
-    const [balance, setBalance] = useState<number | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
+    const {
+        connected,
+        connecting,
+        publicKey,
+        balance,
+        error,
+        connectWallet,
+        disconnectWallet,
+        updateBalance
+    } = usePhantomWallet();
+    
     const dispatch = useDispatch();
 
-    const getWalletBalance = async (wallet: PublicKey) => {
-        try {
-            const connection = new Connection(SOLANA_NETWORK);
-            const lamports = await connection.getBalance(wallet);
-            setBalance(lamports / 10 ** 9);
-        } catch (err) {
-            console.error("Failed to fetch balance:", err);
-            setError("Unable to fetch balance");
-        }
-    };
-
+    // Update Redux store when wallet state changes
     useEffect(() => {
-        autoConnectWallet();
-    }, []);
-
-  
-
-    const autoConnectWallet = async () => {
-        if (window.solana?.isPhantom) {
-            try {
-                const response = await window.solana.connect({ onlyIfTrusted: true });
-                const wallet = response.publicKey.toString();
-                setPublicKey(wallet);
-                dispatch(setWalletAddress({ walletAddress: wallet }));
-                localStorage.setItem("phantom_wallet", wallet);
-            } catch {
-                console.warn("Auto-connect skipped.");
-            }
-        }
-    };
-
-    const connectPhantomWallet = async () => {
-        if (!window.solana?.isPhantom) {
-            setError("Phantom wallet not found. Please install it.");
-            return;
-        }
-
-        try {
-            setLoading(true);
-            const response = await window.solana.connect();
-            const wallet = response.publicKey.toString();
-            setPublicKey(wallet);
-            dispatch(setWalletAddress({ walletAddress: wallet }));
-            localStorage.setItem("phantom_wallet", wallet);
-            setError(null);
-        } catch (err) {
-            console.error("Connection failed:", err);
-            setError("Wallet connection failed.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const disconnectWallet = async () => {
-        if (window.solana?.isConnected) {
-            await window.solana.disconnect();
-            setPublicKey(null);
-            setBalance(null);
-            localStorage.removeItem("phantom_wallet");
+        if (connected && publicKey) {
+            dispatch(setWalletAddress({ walletAddress: publicKey.toString() }));
+        } else {
             dispatch(setWalletAddress({ walletAddress: null }));
-            console.log("Wallet disconnected.");
+        }
+    }, [connected, publicKey, dispatch]);
+
+    const handleConnect = async () => {
+        try {
+            await connectWallet();
+        } catch (error) {
+            console.error('Connection failed:', error);
+        }
+    };
+
+    const handleDisconnect = async () => {
+        try {
+            await disconnectWallet();
+        } catch (error) {
+            console.error('Disconnect failed:', error);
+        }
+    };
+
+    const handleRefreshBalance = async () => {
+        try {
+            await updateBalance();
+        } catch (error) {
+            console.error('Balance refresh failed:', error);
         }
     };
 
     return (
-        <div style={{ padding: "1rem", fontFamily: "monospace" }}>
-            {!publicKey ? (
-                <button onClick={connectPhantomWallet} disabled={loading}>
-                    {loading ? "Connecting..." : "Connect Phantom Wallet"}
-                </button>
-            ) : (
-                <>
-                    <p>
-                        <strong>Connected Wallet:</strong><br />
-                        {publicKey.slice(0, 6)}...{publicKey.slice(-4)}
-                    </p>
-
-                    {balance !== null && (
-                        <p>
-                            <strong>Balance:</strong> {balance.toFixed(4)} SOL{" "}
-                            <button
-                                onClick={() =>
-                                    getWalletBalance(new PublicKey(publicKey!))
-                                }
-                                style={{ marginLeft: "10px" }}
-                            >
-                                🔄 Refresh
-                            </button>
+        <Card className="w-full max-w-md">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5" />
+                    Phantom Wallet
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {!connected ? (
+                    <>
+                        <p className="text-sm text-muted-foreground">
+                            Connect your Phantom wallet to access blockchain features including governance, UBI, and token operations.
                         </p>
-                    )}
+                        <Button 
+                            onClick={handleConnect} 
+                            disabled={connecting}
+                            className="w-full"
+                        >
+                            {connecting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Connecting...
+                                </>
+                            ) : (
+                                <>
+                                    <Wallet className="mr-2 h-4 w-4" />
+                                    Connect Phantom Wallet
+                                </>
+                            )}
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                Connected
+                            </Badge>
+                            <Button variant="outline" size="sm" onClick={handleDisconnect}>
+                                Disconnect
+                            </Button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Address</p>
+                                <p className="font-mono text-sm">
+                                    {publicKey?.toString().slice(0, 8)}...{publicKey?.toString().slice(-8)}
+                                </p>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">SOL Balance</p>
+                                    <p className="font-mono text-sm">{balance.toFixed(4)} SOL</p>
+                                </div>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={handleRefreshBalance}
+                                >
+                                    <RefreshCw className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </>
+                )}
 
-                    <button onClick={disconnectWallet}>Disconnect</button>
-                </>
-            )}
-
-            {error && <p style={{ color: "red" }}>{error}</p>}
-        </div>
+                {error && (
+                    <Alert variant="destructive">
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
+            </CardContent>
+        </Card>
     );
 };
 
