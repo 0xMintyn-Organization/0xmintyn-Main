@@ -9,18 +9,31 @@ import ProductGrid from '@/components/Marketplace/ProductGrid';
 import QuickViewModal from '@/components/Marketplace/QuickViewModal';
 import SearchFilters from '@/components/Marketplace/SearchFilters';
 import ServiceGrid from '@/components/Marketplace/ServiceGrid';
+import BecomeSellerModal from '@/components/marketplace/BecomeSellerModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Filter, Grid, List, Search } from 'lucide-react';
-import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Filter, Grid, List, Search, Store, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MarketplacePage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'products' | 'services'>('products');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [showQuickView, setShowQuickView] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showBecomeSeller, setShowBecomeSeller] = useState(false);
+  const [isSeller, setIsSeller] = useState(false);
+
+  // Check seller status on component mount
+  useEffect(() => {
+    if (user) {
+      setIsSeller(user.isSeller || false);
+    }
+  }, [user]);
 
   const handleQuickView = (product: any) => {
     setSelectedProduct(product);
@@ -30,6 +43,11 @@ export default function MarketplacePage() {
   const handleApplyFilters = (filters: any) => {
     console.log('Applied filters:', filters);
     // Implement filter logic here
+  };
+
+  const handleBecomeSellerSuccess = () => {
+    setIsSeller(true);
+    setShowBecomeSeller(false);
   };
 
   return (
@@ -55,6 +73,38 @@ export default function MarketplacePage() {
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <HeroSection />
+        
+        {/* Become a Seller Section */}
+        {!isSeller && (
+          <div className="mb-8">
+            <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-green-200 dark:border-green-800">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
+                      <Store className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Start Selling on Our Marketplace
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Join thousands of sellers earning from digital products and services
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setShowBecomeSeller(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Become a Seller
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
         
         {/* Category Grid */}
         <CategoryGrid activeTab={activeTab} />
@@ -140,6 +190,13 @@ export default function MarketplacePage() {
           product={selectedProduct}
         />
       )}
+
+      {/* Become a Seller Modal */}
+      <BecomeSellerModal
+        isOpen={showBecomeSeller}
+        onClose={() => setShowBecomeSeller(false)}
+        onSuccess={handleBecomeSellerSuccess}
+      />
     </div>
   );
 }

@@ -10,6 +10,7 @@ export interface IMarketplaceSeller extends Document {
   contactEmail: string;
   contactPhone: string;
   businessType: string;
+  sellerType: string;
   businessAddress: {
     street: string;
     city: string;
@@ -88,6 +89,11 @@ const marketplaceSellerSchema: Schema<IMarketplaceSeller> = new mongoose.Schema(
     type: String,
     enum: ['Individual', 'Company', 'Partnership', 'LLC', 'Corporation'],
     default: 'Individual'
+  },
+  sellerType: {
+    type: String,
+    enum: ['products', 'services', 'both'],
+    default: 'both'
   },
   businessAddress: {
     street: {

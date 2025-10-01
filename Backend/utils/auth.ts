@@ -18,7 +18,7 @@ export const isAthenticated = CatchAsyncError(async (req: Request, res: Response
         return next(new ErrorHandler('Decode issue Please login to access this resource', 400));
     }
 
-
+    
     const user = await UserModel.findById(decoded.id).select('-password -createdAt -updatedAt -__v');
 
     console.log(user);

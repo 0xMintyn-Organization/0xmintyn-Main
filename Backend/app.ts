@@ -21,6 +21,7 @@ import proposalRoutes from './routes/governance/proposal.route';
 import voteRoutes from './routes/governance/vote.route';
 import marketplaceProductRouter from './routes/marketplace/marketplaceProduct.route';
 import marketplaceServiceRouter from './routes/marketplace/marketplaceService.route';
+import marketplaceSellerRouter from './routes/marketplace/marketplaceSeller.route';
 require('dotenv').config();
 export const app = express();
 
@@ -97,6 +98,7 @@ app.use('/api/v1', instructorRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/marketplace/products', marketplaceProductRouter);
 app.use('/api/v1/marketplace/services', marketplaceServiceRouter);
+app.use('/api/v1/marketplace/sellers', marketplaceSellerRouter);
 app.use('/api/v1/proposal', proposalRoutes);
 app.use('/api/v1/vote', voteRoutes);
 
