@@ -1,9 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
-import Protected from "@/hooks/useProtected";
+import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,28 +12,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import Protected from "@/hooks/useProtected";
+import { useRole } from "@/hooks/useRole";
+import axios from "axios";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  User,
-  Mail,
   Calendar,
-  Shield,
-  Edit,
-  Save,
-  X,
   Camera,
   Crown,
+  Edit,
   GraduationCap,
+  Mail,
+  Save,
+  Shield,
+  User,
+  X,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import Spinner from "@/components/Spinner";
-import { useRole } from "@/hooks/useRole";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface UserProfile {
   _id: string;
