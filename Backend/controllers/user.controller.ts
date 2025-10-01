@@ -554,3 +554,40 @@ import sendEmail from '../utils/sendMail';
             return next(new ErrorHandler(error.message, 400));
         }
     });
+
+    // Toggle seller status
+    export const toggleSellerStatus = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user?._id;
+            const user = await UserModel.findById(userId);
+
+            if (!user) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            // Toggle the isSeller status
+            user.isSeller = !user.isSeller;
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: user.isSeller ? "Seller status activated successfully" : "Seller status deactivated successfully",
+                user: {
+                    _id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    username: user.username,
+                    role: user.role,
+                    isVerified: user.isVerified,
+                    isSeller: user.isSeller,
+                    avatar: user.avatar,
+                    banner: user.banner,
+                    bio: user.bio
+                }
+            });
+
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });

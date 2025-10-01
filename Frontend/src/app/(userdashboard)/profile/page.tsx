@@ -49,6 +49,7 @@ interface UserProfile {
   avatar: string;
   banner: string;
   isVerified: boolean;
+  isSeller: boolean;
   createdAt: string;
 }
 

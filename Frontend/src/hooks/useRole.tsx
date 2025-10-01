@@ -7,6 +7,7 @@ import { useEffect } from "react";
 interface User {
   _id: string;
   role: 'user' | 'instructor' | 'admin';
+  isSeller: boolean;
   [key: string]: any;
 }
 

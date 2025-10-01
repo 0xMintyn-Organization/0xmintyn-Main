@@ -20,6 +20,13 @@ A comprehensive educational platform with integrated governance, marketplace, an
   - [Admin Capabilities](#admin-capabilities)
   - [Instructor Capabilities](#instructor-capabilities)
   - [Regular User Capabilities](#regular-user-capabilities)
+- [Digital Marketplace](#digital-marketplace)
+  - [Marketplace Overview](#marketplace-overview)
+  - [Digital Products](#digital-products)
+  - [Services](#services)
+  - [User Seller Status](#user-seller-status)
+  - [Marketplace Components](#marketplace-components)
+  - [Digital Library](#digital-library)
 - [UI/UX Details](#uiux-details)
   - [Layout Structure](#layout-structure)
   - [User Flows](#user-flows)
@@ -72,6 +79,7 @@ The API follows RESTful conventions with versioned endpoints (`/api/v1/`). All r
 - `PUT /update-user-avatar` - Update profile picture (Protected)
 - `PUT /update-user-banner` - Update banner picture (Protected)
 - `POST /apply-instructor` - Apply for instructor role (Protected)
+- `PUT /toggle-seller-status` - Toggle user seller status (Protected)
 
 **Course Management (`/api/v1/course`)**
 - `POST /create` - Create course (Instructor/Admin only)
@@ -510,6 +518,234 @@ axiosInstance.interceptors.response.use(
 
 ---
 
+## Digital Marketplace
+
+### Marketplace Overview
+
+The 0xMintyn platform features a comprehensive digital marketplace that allows users to buy and sell digital products and services. The marketplace is designed exclusively for digital goods, eliminating the need for physical shipping and logistics.
+
+**Key Features:**
+- **Digital-Only Products**: Templates, design assets, code, e-books, software, and media files
+- **Service Marketplace**: Fiverr-style services for digital work
+- **Instant Access**: Immediate download and access to purchased items
+- **Digital Library**: Centralized management of all purchased digital products
+- **Seller System**: Users can become sellers and monetize their digital creations
+
+### Digital Products
+
+**Product Categories:**
+- **Website Templates**: HTML/CSS templates, responsive designs
+- **Design Assets**: UI/UX kits, graphics, icons, illustrations
+- **Code Templates**: React Native apps, frameworks, boilerplates
+- **E-books & Guides**: PDF documents, educational materials
+- **Software & Tools**: Applications, plugins, extensions
+- **Stock Media**: Photos, videos, audio files
+- **Fonts & Typography**: Font collections, typefaces
+- **3D Assets**: Models, textures, animations
+
+**Product Information:**
+- File format indicators (HTML/CSS, Figma/Sketch, PDF, etc.)
+- File size information
+- License types (Personal, Commercial, Extended, Standard)
+- Download limits and access duration
+- Instant download messaging
+- Preview capabilities
+
+**Sample Digital Products:**
+1. Premium Website Template Pack (HTML/CSS, 25.4 MB, Commercial License)
+2. Professional UI/UX Design Kit (Figma/Sketch, 12.8 MB, Extended License)
+3. Stock Photo Collection - Business (JPG/PNG, 45.2 MB, Standard License)
+4. Cryptocurrency Trading eBook (PDF, 8.7 MB, Personal License)
+5. React Native App Template (React Native, 156.3 MB, Commercial License)
+6. Premium Font Collection (TTF/OTF, 12.1 MB, Extended License)
+
+### Services
+
+**Service Categories:**
+- **Design & Creative**: Logo design, branding, graphics
+- **Web Development**: Frontend, backend, full-stack development
+- **Writing & Translation**: Content writing, copywriting, translation
+- **Digital Marketing**: SEO, social media, advertising
+- **Tutoring & Education**: Online tutoring, mentoring
+- **Photography**: Photo editing, retouching
+- **Music & Audio**: Audio editing, music production
+- **Business Services**: Consulting, strategy, planning
+
+**Service Features:**
+- Service packages (Basic, Standard, Premium)
+- Seller profiles with ratings and portfolios
+- Delivery timelines and revision policies
+- Portfolio showcases with examples
+- Order management and communication
+
+### User Seller Status
+
+**New Feature: `isSeller` Field**
+
+The platform now includes a seller status system that allows users to become sellers in the marketplace.
+
+**User Model Updates:**
+```typescript
+interface IUser {
+  // ... existing fields
+  isSeller: boolean; // New field with default: false
+  // ... other fields
+}
+```
+
+**Seller Status Management:**
+- **Default Status**: All new users have `isSeller: false`
+- **Toggle Functionality**: Users can activate/deactivate seller status
+- **API Endpoint**: `PUT /api/v1/user/toggle-seller-status`
+- **Authentication Required**: Protected route requiring user authentication
+
+**Backend Implementation:**
+```typescript
+// Toggle seller status endpoint
+export const toggleSellerStatus = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  const userId = req.user?._id;
+  const user = await UserModel.findById(userId);
+  
+  if (!user) {
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  // Toggle the isSeller status
+  user.isSeller = !user.isSeller;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: user.isSeller ? "Seller status activated successfully" : "Seller status deactivated successfully",
+    user: {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      isVerified: user.isVerified,
+      isSeller: user.isSeller,
+      avatar: user.avatar,
+      banner: user.banner,
+      bio: user.bio
+    }
+  });
+});
+```
+
+**Frontend Integration:**
+- Updated all User interfaces to include `isSeller: boolean`
+- AuthContext, Admin pages, Profile pages, and hooks updated
+- Ready for seller-specific UI features and access control
+
+### Marketplace Components
+
+**Core Components:**
+
+**1. MarketplaceHeader**
+- Navigation with Products/Services tabs
+- Search functionality with filters
+- User account dropdown
+- Shopping cart indicator
+
+**2. ProductGrid**
+- Grid and list view options
+- Digital product cards with file information
+- File format badges and size indicators
+- License type indicators
+- "Get Instant Access" buttons
+
+**3. ServiceGrid**
+- Service listings with packages
+- Seller information and ratings
+- Delivery timelines
+- Portfolio previews
+
+**4. CategoryGrid**
+- Digital product categories
+- Service categories
+- Category-specific filtering
+
+**5. HeroSection**
+- Rotating banners for featured content
+- Marketplace statistics
+- Call-to-action buttons
+
+**6. FeaturedSection**
+- Trending products and services
+- Best sellers and new arrivals
+- Statistics and metrics
+
+**7. SearchFilters**
+- Advanced filtering options
+- File format filters
+- License type filters
+- Price range filters
+- Category filters
+
+**8. QuickViewModal**
+- Product preview without leaving the page
+- Digital product information
+- Instant access messaging
+
+**9. Digital Library**
+- All purchased digital products
+- Download tracking with limits
+- License information
+- Re-download capabilities
+- Purchase history
+
+### Digital Library
+
+**Features:**
+- **Grid and List Views**: Multiple viewing options for purchased items
+- **Search and Filter**: Find specific products by type, format, or date
+- **Download Management**: Track download counts and limits
+- **License Information**: View license types and terms
+- **Purchase History**: Complete record of all digital purchases
+- **Re-download**: Access purchased items multiple times (within limits)
+- **Favorites**: Mark frequently used items
+- **Status Tracking**: Monitor expired or limited access items
+
+**Library Page Structure:**
+```
+/marketplace/library
+├── Header with search and filters
+├── View toggle (Grid/List)
+├── Product cards with:
+│   ├── Product image/preview
+│   ├── File format and size
+│   ├── License information
+│   ├── Download count/limit
+│   ├── Purchase date
+│   └── Download button
+└── Status indicators (Active/Expired)
+```
+
+**Digital Rights Management:**
+- Download limit enforcement
+- License key generation (for software)
+- Access expiration dates (for time-limited licenses)
+- Watermarking options (for images/videos)
+- Commercial vs. personal license tracking
+
+**Integration with 0xMintyn Platform:**
+- **Educational Integration**: Easy conversion of educational resources to digital products
+- **UBI Integration**: Use UBI tokens/credits for digital purchases
+- **Community Discounts**: Special pricing for community members
+- **Separate from Education Hub**: No courses in marketplace (kept separate as requested)
+
+**Technical Implementation:**
+- **No Physical Logistics**: Instant downloads, no shipping addresses
+- **File Management**: Secure file storage and delivery
+- **License Tracking**: Database management of license types and limits
+- **Download Analytics**: Tracking of download patterns and usage
+- **Payment Integration**: Support for multiple payment methods
+- **Security**: Secure file access and download protection
+
+---
+
 ## UI/UX Details
 
 ### Layout Structure
@@ -641,6 +877,7 @@ interface IUser {
   bio: string;
   instructorStatus: 'pending' | 'approved' | 'rejected';
   isVerified: boolean;
+  isSeller: boolean; // New field for marketplace seller status
   // ... additional fields
 }
 ```

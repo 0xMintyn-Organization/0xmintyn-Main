@@ -12,6 +12,7 @@ interface User {
   role: string;
   avatar?: string;
   isVerified: boolean;
+  isSeller: boolean;
   instructorHeadline?: string;
   instructorBio?: string;
   instructorStatus?: string;

@@ -184,6 +184,7 @@ export const updateUserProfile = CatchAsyncError(
           avatar: user.avatar,
           banner: user.banner,
           isVerified: user.isVerified,
+          isSeller: user.isSeller,
           createdAt: user.createdAt
         }
       });

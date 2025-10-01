@@ -92,6 +92,7 @@ interface User {
   avatar?: string;
   role: "user" | "instructor" | "admin";
   isVerified: boolean;
+  isSeller: boolean;
   isActive: boolean;
   createdAt: string;
   lastLogin: string;

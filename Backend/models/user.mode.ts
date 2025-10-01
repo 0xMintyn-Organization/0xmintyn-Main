@@ -26,6 +26,7 @@ export interface IUser extends Document {
     instructorBio: string;
     instructorStatus: string;
     isVerified: boolean;
+    isSeller: boolean;
     products: mongoose.Types.ObjectId[];
     comparePassword: (password: string) => Promise<boolean>;
     SignAccessToken: () => string;
@@ -89,6 +90,10 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    isSeller: {
+        type: Boolean,
+        default: false,
+    },
     bio : {
         type: String,
         default: 'No bio available',
@@ -119,8 +124,6 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
             productId: String,
         }
     ],
-    
-    
 }, { timestamps: true });
 
 userSchema.virtual("products", {
