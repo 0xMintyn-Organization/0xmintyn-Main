@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SellerSuccessModal from "./SellerSuccessModal";
 import { 
@@ -326,7 +326,7 @@ export default function BecomeSellerModal({ isOpen, onClose, onSuccess }: Become
               <Card>
                 <CardHeader>
                   <CardTitle>What do you want to sell?</CardTitle>
-                  <CardDescription>
+                  <CardDescription >
                     Choose the type of marketplace you want to join
                   </CardDescription>
                 </CardHeader>
