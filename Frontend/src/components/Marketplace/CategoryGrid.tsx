@@ -82,30 +82,6 @@ export default function CategoryGrid({ activeTab }: CategoryGridProps) {
         ))}
       </div>
 
-      {/* Featured Categories */}
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4">
-          Popular This Week
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {categories.slice(0, 3).map((category) => (
-            <div
-              key={`featured-${category.id}`}
-              className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100 hover:shadow-lg transition-all duration-200 cursor-pointer"
-            >
-              <div className="flex items-center space-x-4">
-                <div className={`p-3 rounded-full ${category.color}`}>
-                  <category.icon className="w-8 h-8" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-gray-200">{category.name}</h4>
-                  <p className="text-sm text-gray-600">{category.count} items available</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

@@ -3,8 +3,7 @@
 import CategoryGrid from '@/components/Marketplace/CategoryGrid';
 import FeaturedSection from '@/components/Marketplace/FeaturedSection';
 import HeroSection from '@/components/Marketplace/HeroSection';
-import MarketplaceHeader from '@/components/Marketplace/MarketplaceHeader';
-import MobileNavigation from '@/components/Marketplace/MobileNavigation';
+import DynamicHeader from '@/components/Header/DynamicHeader';
 import ProductGrid from '@/components/Marketplace/ProductGrid';
 import QuickViewModal from '@/components/Marketplace/QuickViewModal';
 import SearchFilters from '@/components/Marketplace/SearchFilters';
@@ -16,11 +15,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Filter, Grid, List, Search, Store, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMarketplace } from '@/contexts/MarketplaceContext';
 
 export default function MarketplacePage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'products' | 'services'>('products');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { activeTab, setActiveTab, searchQuery, setSearchQuery } = useMarketplace();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [showQuickView, setShowQuickView] = useState(false);
@@ -51,26 +50,8 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Desktop Header */}
-      <div className="hidden lg:block">
-        <MarketplaceHeader 
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
-      </div>
-
-      {/* Mobile Navigation */}
-      <MobileNavigation
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
-      
-      <main className="container mx-auto px-4 py-8">
+    <div className="w-full">
+      <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <HeroSection />
         
@@ -209,7 +190,7 @@ export default function MarketplacePage() {
 
         {/* Featured Sections */}
         <FeaturedSection activeTab={activeTab} />
-      </main>
+      </div>
 
       {/* Search Filters Modal */}
       <SearchFilters

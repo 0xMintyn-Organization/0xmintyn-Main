@@ -25,7 +25,8 @@ import {
   Users,
   MessageSquare,
   Star,
-  Vote
+  Vote,
+  Store
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -47,6 +48,14 @@ const getNavItems = (userRole: string, bookmarkCount: number) => {
       badge: "12",
       badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       description: "Courses & Learning"
+    },
+    { 
+      name: "Marketplace", 
+      href: "/marketplace", 
+      icon: Store,
+      badge: "New",
+      badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      description: "Digital Products & Services"
     },
     { 
       name: "Governance", 

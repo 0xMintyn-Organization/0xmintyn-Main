@@ -133,24 +133,7 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-background rounded-lg p-6 shadow-sm border border-zinc-200 dark:border-zinc-700 text-center">
-            <div className="flex justify-center mb-3">
-              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
-                <stat.icon className="w-6 h-6 text-green-700 dark:text-green-400" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-white mb-1">
-              {stat.value}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {stat.label}
-            </div>
-          </div>
-        ))}
-      </div>
+    
 
       {/* Quick Actions */}
             <div className="flex flex-col md:flex-row gap-4">
