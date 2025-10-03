@@ -53,18 +53,16 @@ export default function DynamicHeader() {
                 />
               </div>
               <div className="font-bold text-xl">
-                <span className="hidden lg:inline">0xMintyn Community Hub</span>
-                <span className="lg:hidden">OXM Community Hub</span>
+                {isMarketplace ? (
+                  <span className="text-green-600 dark:text-green-400">Marketplace</span>
+                ) : (
+                  <>
+                    <span className="hidden lg:inline">0xMintyn Community Hub</span>
+                    <span className="lg:hidden">OXM Community Hub</span>
+                  </>
+                )}
               </div>
             </Link>
-
-            {/* Marketplace Section Indicator */}
-            {isMarketplace && (
-              <div className="hidden md:flex items-center space-x-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">/</span>
-                <span className="text-sm font-medium text-green-600 dark:text-green-400">Marketplace</span>
-              </div>
-            )}
           </div>
 
           {/* Center - Marketplace Navigation Tabs (only on marketplace pages) */}
@@ -91,6 +89,22 @@ export default function DynamicHeader() {
                 }
               >
                 Services
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = '/marketplace/products'}
+                className="hover:bg-gray-200 dark:hover:bg-zinc-600"
+              >
+                All Products
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = '/marketplace/services'}
+                className="hover:bg-gray-200 dark:hover:bg-zinc-600"
+              >
+                All Services
               </Button>
             </div>
           )}
@@ -157,7 +171,7 @@ export default function DynamicHeader() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                   <User className="w-5 h-5" />
-                  <span className="hidden md:block">{user?.firstName || 'User'}</span>
+                  <span className="hidden md:block">{user?.name || 'User'}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -189,7 +203,7 @@ export default function DynamicHeader() {
         {/* Mobile Marketplace Navigation (only on marketplace pages) */}
         {isMarketplace && marketplaceState && (
           <div className="lg:hidden border-t border-zinc-200 dark:border-zinc-700 py-2">
-            <div className="flex space-x-1 bg-gray-100 dark:bg-zinc-700 rounded-lg p-1">
+            <div className="flex flex-wrap gap-1 bg-gray-100 dark:bg-zinc-700 rounded-lg p-1">
               <Button
                 variant={marketplaceState.activeTab === 'products' ? 'default' : 'ghost'}
                 size="sm"
@@ -211,6 +225,22 @@ export default function DynamicHeader() {
                 }
               >
                 Services
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = '/marketplace/products'}
+                className="hover:bg-gray-200 dark:hover:bg-zinc-600"
+              >
+                All Products
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = '/marketplace/services'}
+                className="hover:bg-gray-200 dark:hover:bg-zinc-600"
+              >
+                All Services
               </Button>
             </div>
           </div>

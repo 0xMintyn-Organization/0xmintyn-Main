@@ -3,19 +3,18 @@
 import CategoryGrid from '@/components/Marketplace/CategoryGrid';
 import FeaturedSection from '@/components/Marketplace/FeaturedSection';
 import HeroSection from '@/components/Marketplace/HeroSection';
-import DynamicHeader from '@/components/Header/DynamicHeader';
 import ProductGrid from '@/components/Marketplace/ProductGrid';
 import QuickViewModal from '@/components/Marketplace/QuickViewModal';
 import SearchFilters from '@/components/Marketplace/SearchFilters';
 import ServiceGrid from '@/components/Marketplace/ServiceGrid';
 import BecomeSellerModal from '@/components/marketplace/BecomeSellerModal';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Filter, Grid, List, Search, Store, Plus } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
+import { Filter, Grid, List, Plus, Search, Store } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function MarketplacePage() {
   const { user } = useAuth();
