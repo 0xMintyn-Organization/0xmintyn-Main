@@ -259,7 +259,7 @@ const sampleServices = [
 // Connect to MongoDB
 async function connectDB() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/0xmintyn');
+    await mongoose.connect(process.env.DB_URI || 'mongodb://localhost:27017/0xmintyn');
     console.log('✅ Connected to MongoDB');
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
@@ -272,12 +272,12 @@ async function seedProducts() {
   try {
     console.log('🌱 Seeding products...');
     
-    // Create a dummy seller ID (you'll need to replace this with actual admin user ID)
-    const adminSellerId = new mongoose.Types.ObjectId();
+    // Use the specific seller ID from the database
+    const sellerId = new mongoose.Types.ObjectId('68df4f264603ea259fe23a53');
     
     const productsWithSeller = sampleProducts.map(product => ({
       ...product,
-      sellerId: adminSellerId,
+      sellerId: sellerId,
       isApproved: true,
       approvalStatus: 'Approved'
     }));
@@ -294,12 +294,12 @@ async function seedServices() {
   try {
     console.log('🌱 Seeding services...');
     
-    // Create a dummy seller ID (you'll need to replace this with actual admin user ID)
-    const adminSellerId = new mongoose.Types.ObjectId();
+    // Use the specific seller ID from the database
+    const sellerId = new mongoose.Types.ObjectId('68df4f264603ea259fe23a53');
     
     const servicesWithSeller = sampleServices.map(service => ({
       ...service,
-      sellerId: adminSellerId,
+      sellerId: sellerId,
       isApproved: true,
       approvalStatus: 'Approved'
     }));

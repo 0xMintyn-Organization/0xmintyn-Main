@@ -774,10 +774,16 @@ export default function CreateService() {
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <div className="border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-lg p-8 text-center hover:border-green-500 transition-colors">
-                      <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Drag and drop images here, or click to select
-                      </p>
+                      <label htmlFor="image-upload" className="cursor-pointer block">
+                        <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Drag and drop images here, or click to select
+                        </p>
+                        <Button type="button" variant="outline" disabled={formData.images.length >= 5}>
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                          Choose Images
+                        </Button>
+                      </label>
                       <input
                         type="file"
                         multiple
@@ -787,12 +793,6 @@ export default function CreateService() {
                         id="image-upload"
                         disabled={formData.images.length >= 5}
                       />
-                      <Label htmlFor="image-upload" className="cursor-pointer">
-                        <Button type="button" variant="outline" disabled={formData.images.length >= 5}>
-                          <ImageIcon className="h-4 w-4 mr-2" />
-                          Choose Images
-                        </Button>
-                      </Label>
                       <p className="text-xs text-muted-foreground mt-2">
                         PNG, JPG up to 5MB each • {formData.images.length}/5 images
                       </p>

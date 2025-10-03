@@ -74,25 +74,64 @@ export default function MarketplacePage() {
         {/* Hero Section */}
         <HeroSection />
         
-        {/* Become a Seller Section */}
-        {!isSeller && (
-          <div className="mb-8">
-            <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-green-200 dark:border-green-800">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
-                      <Store className="h-6 w-6 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Start Selling on Our Marketplace
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Join thousands of sellers earning from digital products and services
-                      </p>
-                    </div>
+        {/* Seller Section */}
+        <div className="mb-8">
+          <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-green-200 dark:border-green-800">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
+                    <Store className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
+                  <div>
+                    {isSeller ? (
+                      <>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Welcome back, Seller!
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Manage your products, services, and track your sales performance
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Start Selling on Our Marketplace
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Join thousands of sellers earning from digital products and services
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {isSeller ? (
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => window.location.href = '/marketplace/create-product'}
+                      className="bg-green-600 hover:bg-green-700 text-white gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create Product
+                    </Button>
+                    <Button
+                      onClick={() => window.location.href = '/marketplace/create-service'}
+                      variant="outline"
+                      className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create Service
+                    </Button>
+                    <Button
+                      onClick={() => window.location.href = '/seller-dashboard'}
+                      variant="outline"
+                      className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 gap-2"
+                    >
+                      <Store className="h-4 w-4" />
+                      View Dashboard
+                    </Button>
+                  </div>
+                ) : (
                   <Button
                     onClick={() => setShowBecomeSeller(true)}
                     className="bg-green-600 hover:bg-green-700 text-white gap-2"
@@ -100,11 +139,11 @@ export default function MarketplacePage() {
                     <Plus className="h-4 w-4" />
                     Become a Seller
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         
         {/* Category Grid */}
         <CategoryGrid activeTab={activeTab} />
