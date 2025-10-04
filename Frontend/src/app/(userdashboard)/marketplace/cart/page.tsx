@@ -21,7 +21,6 @@ const cartItems = [
     image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&h=150&fit=crop",
     seller: "WebCraft",
     delivery: "Instant Download",
-    inStock: true,
     fileFormat: "HTML/CSS",
     fileSize: "25.4 MB"
   },
@@ -35,7 +34,6 @@ const cartItems = [
     image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=200&h=150&fit=crop",
     seller: "DesignPro",
     delivery: "Instant Download",
-    inStock: true,
     fileFormat: "Figma/Sketch",
     fileSize: "12.8 MB"
   },
@@ -95,7 +93,7 @@ export default function CartPage() {
                 Continue Shopping
               </Button>
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">Shopping Cart</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Shopping Cart</h1>
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
             {items.length} {items.length === 1 ? 'item' : 'items'}

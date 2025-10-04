@@ -135,15 +135,6 @@ export default function HeroSection() {
 
     
 
-      {/* Quick Actions */}
-            <div className="flex flex-col md:flex-row gap-4">
-              <Button size="lg" className="flex-1 bg-green-900 hover:bg-green-800 text-white">
-                Start Selling
-              </Button>
-              <Button size="lg" variant="outline" className="flex-1 border-green-900 text-green-900 hover:bg-green-50 dark:border-green-400 dark:text-green-400">
-                Explore Marketplace
-              </Button>
-            </div>
     </div>
   );
 }

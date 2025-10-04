@@ -45,9 +45,24 @@ const serviceCategories = [
 
 interface CategoryGridProps {
   activeTab: 'products' | 'services';
+  categoryStats?: {
+    products: Record<string, number>;
+    services: Record<string, number>;
+  };
+  loading?: boolean;
 }
 
-export default function CategoryGrid({ activeTab }: CategoryGridProps) {
+export default function CategoryGrid({ activeTab, categoryStats, loading }: CategoryGridProps) {
+  // Use dynamic counts if available, otherwise fall back to static counts
+  const getCategoryCount = (categoryId: string) => {
+    if (categoryStats && activeTab === 'products') {
+      return categoryStats.products[categoryId] || 0;
+    } else if (categoryStats && activeTab === 'services') {
+      return categoryStats.services[categoryId] || 0;
+    }
+    return 0;
+  };
+
   const categories = activeTab === 'products' ? productCategories : serviceCategories;
 
   return (
@@ -75,7 +90,7 @@ export default function CategoryGrid({ activeTab }: CategoryGridProps) {
                 {category.name}
               </h3>
               <Badge variant="secondary" className="text-xs">
-                {category.count} items
+                {loading ? '...' : getCategoryCount(category.id)} items
               </Badge>
             </div>
           </div>

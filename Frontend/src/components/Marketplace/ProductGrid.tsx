@@ -20,7 +20,6 @@ const sampleProducts = [
     brand: "WebCraft",
     delivery: "Instant Download",
     badge: "Best Seller",
-    inStock: true,
     type: "Template",
     fileFormat: "HTML/CSS",
     fileSize: "25.4 MB",
@@ -37,7 +36,6 @@ const sampleProducts = [
     brand: "DesignPro",
     delivery: "Instant Download",
     badge: "Sale",
-    inStock: true,
     type: "Design Assets",
     fileFormat: "Figma/Sketch",
     fileSize: "12.8 MB",
@@ -54,7 +52,6 @@ const sampleProducts = [
     brand: "PhotoStock",
     delivery: "Instant Download",
     badge: "New",
-    inStock: true,
     type: "Stock Photos",
     fileFormat: "JPG/PNG",
     fileSize: "45.2 MB",
@@ -71,7 +68,6 @@ const sampleProducts = [
     brand: "CryptoEdu",
     delivery: "Instant Download",
     badge: "Hot",
-    inStock: true,
     type: "E-book",
     fileFormat: "PDF",
     fileSize: "8.7 MB",
@@ -88,7 +84,6 @@ const sampleProducts = [
     brand: "CodeMaster",
     delivery: "Instant Download",
     badge: "Trending",
-    inStock: true,
     type: "Code Template",
     fileFormat: "React Native",
     fileSize: "156.3 MB",
@@ -105,7 +100,6 @@ const sampleProducts = [
     brand: "TypeCraft",
     delivery: "Instant Download",
     badge: "Popular",
-    inStock: true,
     type: "Fonts",
     fileFormat: "TTF/OTF",
     fileSize: "12.1 MB",
@@ -117,10 +111,16 @@ interface ProductGridProps {
   viewMode: 'grid' | 'list';
   searchQuery: string;
   onQuickView?: (product: any) => void;
+  products?: any[];
+  loading?: boolean;
+  hasActiveSearch?: boolean;
 }
 
-export default function ProductGrid({ viewMode, searchQuery, onQuickView }: ProductGridProps) {
+export default function ProductGrid({ viewMode, searchQuery, onQuickView, products, loading, hasActiveSearch }: ProductGridProps) {
   const [favorites, setFavorites] = useState<number[]>([]);
+  
+  console.log('ProductGrid received products:', products);
+  console.log('ProductGrid loading:', loading);
 
   const toggleFavorite = (productId: number) => {
     setFavorites(prev => 
@@ -130,16 +130,51 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView }: Prod
     );
   };
 
-  const filteredProducts = sampleProducts.filter(product =>
+  // Use dynamic products from API - no fallback to sample data
+  const displayProducts = products || [];
+  
+  const filteredProducts = displayProducts.filter(product =>
     product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.brand.toLowerCase().includes(searchQuery.toLowerCase())
+    product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state when no products AND there's an active search/filter
+  if (!loading && displayProducts.length === 0 && hasActiveSearch) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <ShoppingCart className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No products found</h3>
+          <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filters to find what you're looking for.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no active search and no products, don't show anything (let the parent handle it)
+  if (!loading && displayProducts.length === 0 && !hasActiveSearch) {
+    return null;
+  }
 
   if (viewMode === 'list') {
     return (
       <div className="space-y-4">
-        {filteredProducts.map((product) => (
-          <Card key={product.id} className="hover:shadow-md transition-shadow">
+        {filteredProducts.map((product, index) => (
+          <Card key={product.id || `product-list-${index}`} className="hover:shadow-md transition-shadow">
             <div className="flex">
               <div className="relative w-48 h-32 flex-shrink-0">
                 {product.image ? (
@@ -236,11 +271,10 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView }: Prod
                       </Button>
                       <Button 
                         size="sm" 
-                        disabled={!product.inStock}
                         className="bg-green-900 hover:bg-green-800 text-white"
                       >
                         <Download className="w-4 h-4 mr-2" />
-                        {product.inStock ? 'Get Instant Access' : 'Unavailable'}
+                        Get Instant Access
                       </Button>
                     </div>
                   </div>
@@ -255,8 +289,8 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView }: Prod
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {filteredProducts.map((product) => (
-        <Card key={product.id} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
+      {filteredProducts.map((product, index) => (
+        <Card key={product.id || `product-${index}`} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
           <div className="relative">
             <div className="aspect-square relative overflow-hidden rounded-t-lg">
               {product.image ? (
@@ -356,10 +390,9 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView }: Prod
           <CardFooter className="p-4 pt-0">
           <Button
             className="w-full bg-green-900 hover:bg-green-800 text-white"
-            disabled={!product.inStock}
           >
             <Download className="w-4 h-4 mr-2" />
-            {product.inStock ? 'Get Instant Access' : 'Unavailable'}
+            Get Instant Access
           </Button>
           </CardFooter>
         </Card>

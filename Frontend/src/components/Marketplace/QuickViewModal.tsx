@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Star, Heart, Download, FileText, Shield, Minus, Plus } from 'lucide-react';
+import { X, Star, Heart, Download, FileText, Shield, Minus, Plus, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,7 +21,6 @@ interface QuickViewModalProps {
     image: string;
     description: string;
     features: string[];
-    inStock: boolean;
     seller: string;
   };
 }
@@ -137,10 +136,9 @@ export default function QuickViewModal({ isOpen, onClose, product }: QuickViewMo
               <div className="flex space-x-2">
                 <Button 
                   className="flex-1 bg-green-900 hover:bg-green-800 text-white" 
-                  disabled={!product.inStock}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  {product.inStock ? 'Get Instant Access' : 'Unavailable'}
+                  Get Instant Access
                 </Button>
                 <Button variant="outline" className="flex-1">
                   Buy Now

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Star, Heart, Clock, User, CheckCircle, MessageCircle } from 'lucide-react';
+import { Star, Heart, Clock, User, CheckCircle, MessageCircle, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -134,9 +134,12 @@ const sampleServices = [
 interface ServiceGridProps {
   viewMode: 'grid' | 'list';
   searchQuery: string;
+  services?: any[];
+  loading?: boolean;
+  hasActiveSearch?: boolean;
 }
 
-export default function ServiceGrid({ viewMode, searchQuery }: ServiceGridProps) {
+export default function ServiceGrid({ viewMode, searchQuery, services, loading, hasActiveSearch }: ServiceGridProps) {
   const [favorites, setFavorites] = useState<number[]>([]);
 
   const toggleFavorite = (serviceId: number) => {
@@ -147,25 +150,66 @@ export default function ServiceGrid({ viewMode, searchQuery }: ServiceGridProps)
     );
   };
 
-  const filteredServices = sampleServices.filter(service =>
+  // Use dynamic services from API - no fallback to sample data
+  const displayServices = services || [];
+  
+  const filteredServices = displayServices.filter(service =>
     service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    service.seller.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    service.description.toLowerCase().includes(searchQuery.toLowerCase())
+    service.seller?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    service.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading services...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state when no services AND there's an active search/filter
+  if (!loading && displayServices.length === 0 && hasActiveSearch) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <Briefcase className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No services found</h3>
+          <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filters to find what you're looking for.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no active search and no services, don't show anything (let the parent handle it)
+  if (!loading && displayServices.length === 0 && !hasActiveSearch) {
+    return null;
+  }
 
   if (viewMode === 'list') {
     return (
       <div className="space-y-4">
-        {filteredServices.map((service) => (
-          <Card key={service.id} className="hover:shadow-md transition-shadow">
+        {filteredServices.map((service, index) => (
+          <Card key={service.id || `service-list-${index}`} className="hover:shadow-md transition-shadow">
             <div className="flex">
               <div className="relative w-48 h-32 flex-shrink-0">
-                <Image
-                  src={service.image}
-                  alt={service.title}
-                  fill
-                  className="object-cover rounded-l-lg"
-                />
+                {service.image ? (
+                  <Image
+                    src={service.image}
+                    alt={service.title}
+                    fill
+                    className="object-cover rounded-l-lg"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center rounded-l-lg">
+                    <Briefcase className="w-8 h-8 text-gray-400" />
+                  </div>
+                )}
                 {service.badge && (
                   <Badge className="absolute top-2 left-2 bg-green-500 text-white">
                     {service.badge}
@@ -265,16 +309,22 @@ export default function ServiceGrid({ viewMode, searchQuery }: ServiceGridProps)
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {filteredServices.map((service) => (
-        <Card key={service.id} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
+      {filteredServices.map((service, index) => (
+        <Card key={service.id || `service-${index}`} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
           <div className="relative">
             <div className="aspect-video relative overflow-hidden rounded-t-lg">
-              <Image
-                src={service.image}
-                alt={service.title}
-                fill
-                className="object-cover group-hover:scale-110 transition-transform duration-300"
-              />
+              {service.image ? (
+                <Image
+                  src={service.image}
+                  alt={service.title}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+                  <Briefcase className="w-12 h-12 text-gray-400" />
+                </div>
+              )}
               {service.badge && (
                 <Badge className="absolute top-2 left-2 bg-green-500 text-white">
                   {service.badge}
