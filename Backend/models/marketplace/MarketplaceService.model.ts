@@ -217,12 +217,12 @@ const marketplaceServiceSchema: Schema<IMarketplaceService> = new mongoose.Schem
   },
   isApproved: {
     type: Boolean,
-    default: false
+    default: true
   },
   approvalStatus: {
     type: String,
     enum: ['Pending', 'Approved', 'Rejected', 'Under Review'],
-    default: 'Pending'
+    default: 'Approved'
   },
   rejectionReason: {
     type: String,
