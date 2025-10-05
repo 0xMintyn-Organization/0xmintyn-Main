@@ -36,16 +36,55 @@ export const createMarketplaceService = CatchAsyncError(async (req: Request, res
         const deliveryTime = req.body.deliveryTime || req.body.packages[0]?.deliveryTime || '3 Days';
         const revisions = req.body.revisions || `${req.body.packages[0]?.revisions || 2} Revisions`;
 
+        // Parse JSON fields from form data
+        const parseJsonField = (field: any) => {
+            if (typeof field === 'string') {
+                try {
+                    return JSON.parse(field);
+                } catch {
+                    return field;
+                }
+            }
+            return field;
+        };
+
+        // Handle uploaded images
+        const uploadedImages = req.files as Express.Multer.File[];
+        console.log('Uploaded images:', uploadedImages?.map(img => ({ filename: img.filename, originalname: img.originalname })));
+        const imageUrls = uploadedImages?.map(file => `/uploads/images/${file.filename}`) || [];
+        console.log('Image URLs:', imageUrls);
+        
+        // Ensure we have at least one image for thumbnail
+        if (imageUrls.length === 0) {
+            console.log('No images uploaded');
+            return next(new ErrorHandler("At least one image is required", 400));
+        }
+
         // Prepare service data
         const serviceData = {
             ...req.body,
             sellerId: seller?._id || userId,
-            thumbnailImage: req.body.images?.[0] || req.body.thumbnailImage,
+            thumbnailImage: imageUrls[0], // Use first uploaded image as thumbnail
+            images: imageUrls, // Set all uploaded images
             deliveryTime,
             revisions,
+            // Parse JSON fields
+            whatYouGet: parseJsonField(req.body.whatYouGet),
+            requirements: parseJsonField(req.body.requirements),
+            faqs: parseJsonField(req.body.faqs),
+            tags: parseJsonField(req.body.tags),
+            packages: parseJsonField(req.body.packages),
             approvalStatus: user.role === 'admin' ? 'Approved' : 'Pending',
             isApproved: user.role === 'admin' ? true : false
         };
+
+        console.log('Service data to create:', {
+            title: serviceData.title,
+            category: serviceData.category,
+            thumbnailImage: serviceData.thumbnailImage,
+            images: serviceData.images,
+            sellerId: serviceData.sellerId
+        });
 
         const service = await MarketplaceServiceModel.create(serviceData);
 

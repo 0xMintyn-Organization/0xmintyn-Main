@@ -72,6 +72,7 @@ export default function CreateService() {
     description: "",
     category: "",
     subcategory: "",
+    responseTime: "24 hours",
     tags: [] as string[],
     images: [] as File[],
     imagePreviews: [] as string[],
@@ -106,6 +107,7 @@ export default function CreateService() {
       }
     ] as Package[],
     requirements: [""],
+    whatYouGet: [""],
     faqs: [{ question: "", answer: "" }]
   });
 
@@ -183,6 +185,29 @@ export default function CreateService() {
     }));
   };
 
+  const handleWhatYouGetChange = (index: number, value: string) => {
+    const newWhatYouGet = [...formData.whatYouGet];
+    newWhatYouGet[index] = value;
+    setFormData(prev => ({
+      ...prev,
+      whatYouGet: newWhatYouGet
+    }));
+  };
+
+  const addWhatYouGet = () => {
+    setFormData(prev => ({
+      ...prev,
+      whatYouGet: [...prev.whatYouGet, ""]
+    }));
+  };
+
+  const removeWhatYouGet = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      whatYouGet: prev.whatYouGet.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleFaqChange = (index: number, field: "question" | "answer", value: string) => {
     const newFaqs = [...formData.faqs];
     newFaqs[index][field] = value;
@@ -251,7 +276,7 @@ export default function CreateService() {
     if (!formData.title.trim()) newErrors.title = "Title is required";
     if (!formData.description.trim()) newErrors.description = "Description is required";
     if (!formData.category) newErrors.category = "Category is required";
-    if (formData.images.length === 0) newErrors.images = "At least one image is required";
+    if (formData.images.length < 3) newErrors.images = "At least 3 images are required";
 
     // Validate at least one package has a price
     const hasValidPackage = formData.packages.some(pkg => pkg.price && parseFloat(pkg.price) > 0);
@@ -289,6 +314,7 @@ export default function CreateService() {
       submitData.append("description", formData.description);
       submitData.append("category", formData.category);
       submitData.append("subcategory", formData.subcategory);
+      submitData.append("responseTime", formData.responseTime);
       submitData.append("videoUrl", formData.videoUrl);
       submitData.append("tags", JSON.stringify(formData.tags));
       
@@ -297,26 +323,41 @@ export default function CreateService() {
       submitData.append("packages", JSON.stringify(validPackages));
       
       submitData.append("requirements", JSON.stringify(formData.requirements.filter(r => r.trim())));
+      submitData.append("whatYouGet", JSON.stringify(formData.whatYouGet.filter(w => w.trim())));
       submitData.append("faqs", JSON.stringify(formData.faqs.filter(faq => faq.question.trim() && faq.answer.trim())));
       
       formData.images.forEach((image) => {
         submitData.append("images", image);
       });
 
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setUploadProgress(100);
-      clearInterval(progressInterval);
+      // Make API call to create service
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/services/create`, {
+        method: 'POST',
+        body: submitData,
+        credentials: 'include'
+      });
 
-      setTimeout(() => {
-        router.push("/marketplace");
-      }, 500);
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Service created successfully:', result);
+        
+        setUploadProgress(100);
+        clearInterval(progressInterval);
+
+        setTimeout(() => {
+          router.push("/marketplace");
+        }, 500);
+      } else {
+        const errorData = await response.text();
+        console.error('Service creation failed:', response.status, errorData);
+        throw new Error(`Failed to create service: ${response.status} - ${errorData}`);
+      }
 
     } catch (error: any) {
       clearInterval(progressInterval);
       console.error("Error creating service:", error);
       setErrors({ submit: error.message || "Failed to create service" });
+      setCurrentTab("basic"); // Go to first tab on error
     } finally {
       setLoading(false);
     }
@@ -461,6 +502,31 @@ export default function CreateService() {
                         onChange={(e) => handleInputChange("subcategory", e.target.value)}
                         placeholder="e.g., Logo Design, Brand Identity"
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="responseTime">Response Time</Label>
+                      <Select
+                        value={formData.responseTime}
+                        onValueChange={(value) => handleInputChange("responseTime", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select response time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1 hour">1 hour</SelectItem>
+                          <SelectItem value="2 hours">2 hours</SelectItem>
+                          <SelectItem value="4 hours">4 hours</SelectItem>
+                          <SelectItem value="8 hours">8 hours</SelectItem>
+                          <SelectItem value="12 hours">12 hours</SelectItem>
+                          <SelectItem value="24 hours">24 hours</SelectItem>
+                          <SelectItem value="2 days">2 days</SelectItem>
+                          <SelectItem value="3 days">3 days</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground">
+                        How quickly will you respond to messages?
+                      </p>
                     </div>
                   </div>
 
@@ -711,6 +777,45 @@ export default function CreateService() {
                     </div>
                   </div>
 
+                  {/* What You Get */}
+                  <div className="space-y-2">
+                    <Label>What You'll Get</Label>
+                    <p className="text-sm text-muted-foreground">
+                      What deliverables will the buyer receive?
+                    </p>
+                    <div className="space-y-2">
+                      {formData.whatYouGet.map((item, index) => (
+                        <div key={index} className="flex gap-2">
+                          <Input
+                            value={item}
+                            onChange={(e) => handleWhatYouGetChange(index, e.target.value)}
+                            placeholder="e.g., High-quality logo files in multiple formats"
+                          />
+                          {formData.whatYouGet.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeWhatYouGet(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addWhatYouGet}
+                        className="w-full"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Deliverable
+                      </Button>
+                    </div>
+                  </div>
+
                   {/* FAQs */}
                   <div className="space-y-4">
                     <Label className="flex items-center gap-2">
@@ -779,7 +884,12 @@ export default function CreateService() {
                         <p className="text-sm text-muted-foreground mb-4">
                           Drag and drop images here, or click to select
                         </p>
-                        <Button type="button" variant="outline" disabled={formData.images.length >= 5}>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          disabled={formData.images.length >= 5}
+                          onClick={() => document.getElementById('image-upload')?.click()}
+                        >
                           <ImageIcon className="h-4 w-4 mr-2" />
                           Choose Images
                         </Button>
@@ -794,7 +904,7 @@ export default function CreateService() {
                         disabled={formData.images.length >= 5}
                       />
                       <p className="text-xs text-muted-foreground mt-2">
-                        PNG, JPG up to 5MB each • {formData.images.length}/5 images
+                        PNG, JPG up to 5MB each • {formData.images.length}/5 images (minimum 3 required)
                       </p>
                     </div>
                     {errors.images && (
@@ -847,13 +957,16 @@ export default function CreateService() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <Label htmlFor="videoUrl">YouTube or Vimeo URL</Label>
+                    <Label htmlFor="videoUrl">YouTube URL</Label>
                     <Input
                       id="videoUrl"
                       value={formData.videoUrl}
                       onChange={(e) => handleInputChange("videoUrl", e.target.value)}
                       placeholder="https://youtube.com/watch?v=..."
                     />
+                    <p className="text-sm text-muted-foreground">
+                      Optional: Add a YouTube video to showcase your service
+                    </p>
                   </div>
                 </CardContent>
               </Card>

@@ -294,9 +294,6 @@ export default function ServiceDetailPage() {
                         </div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      View Profile
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -323,7 +320,9 @@ export default function ServiceDetailPage() {
                 <h4 className="font-semibold mb-4">What's Included:</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {service.packages?.map((pkg, index) => (
-                    <div key={index} className="border rounded-lg p-4">
+                    <div key={index} className={`border rounded-lg p-4 ${
+                      selectedPackage === index ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                    }`}>
                       <h5 className="font-medium mb-2">{pkg.name} Package</h5>
                       <ul className="space-y-1 text-sm text-gray-600">
                         {pkg.features.map((feature, featureIndex) => (

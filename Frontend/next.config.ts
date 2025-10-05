@@ -3,7 +3,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    domains: ['localhost', 'yourdomain.com', "static.vecteezy.com", "picsum.photos" ,"images.unsplash.com"],
+    domains: [
+      'localhost', 
+      'yourdomain.com', 
+      'static.vecteezy.com', 
+      'picsum.photos',
+      'images.unsplash.com',
+      'via.placeholder.com',
+      'github.com',
+      '209.74.89.249'
+    ],
   },
    eslint: {
     // ⚠️  This lets the build succeed even if there are ESLint errors.
