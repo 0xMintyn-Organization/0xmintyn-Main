@@ -21,6 +21,22 @@ export default function ServiceDetailPage() {
   const [selectedPackage, setSelectedPackage] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
 
+  // Helper function to construct full image URLs
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) return '/placeholder-product.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    // Handle environment variable with trailing slash
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+    
+    // Ensure imagePath starts with /
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
+
   // Fetch service data
   useEffect(() => {
     const fetchService = async () => {
@@ -98,12 +114,16 @@ export default function ServiceDetailPage() {
           {/* Service Images */}
           <div className="lg:col-span-2 space-y-4">
             <div className="aspect-video relative overflow-hidden rounded-lg bg-card">
-              <Image
-                src={service.images?.[selectedImage] || service.thumbnailImage}
-                alt={service.title}
-                fill
-                className="object-cover"
-              />
+                <Image
+                  src={getFullImageUrl(service.images?.[selectedImage] || service.thumbnailImage)}
+                  alt={service.title}
+                  fill
+                  className="object-cover"
+                  onError={(e) => {
+                    console.error('Service image load error:', e);
+                    e.currentTarget.src = '/placeholder-product.jpg';
+                  }}
+                />
             </div>
             <div className="flex space-x-2">
               {(service.images || [service.thumbnailImage]).map((image, index) => (
@@ -115,10 +135,14 @@ export default function ServiceDetailPage() {
                   }`}
                 >
                   <Image
-                    src={image}
+                    src={getFullImageUrl(image)}
                     alt={`${service.title} ${index + 1}`}
                     fill
                     className="object-cover"
+                    onError={(e) => {
+                      console.error('Service thumbnail image load error:', e);
+                      e.currentTarget.src = '/placeholder-product.jpg';
+                    }}
                   />
                 </button>
               ))}
@@ -487,14 +511,18 @@ export default function ServiceDetailPage() {
                 <Link key={relatedService._id} href={`/marketplace/service/${relatedService._id}`}>
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                     <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                      {relatedService.thumbnailImage ? (
-                        <Image
-                          src={relatedService.thumbnailImage}
-                          alt={relatedService.title}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
+                        {relatedService.thumbnailImage ? (
+                          <Image
+                            src={getFullImageUrl(relatedService.thumbnailImage)}
+                            alt={relatedService.title}
+                            fill
+                            className="object-cover"
+                            onError={(e) => {
+                              console.error('Related service image load error:', e);
+                              e.currentTarget.src = '/placeholder-product.jpg';
+                            }}
+                          />
+                        ) : (
                         <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                           <Briefcase className="w-12 h-12 text-gray-400" />
                         </div>

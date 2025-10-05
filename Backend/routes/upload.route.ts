@@ -1,29 +1,37 @@
 import express from "express";
-import videoUpload from "../middleware/multerVideo";
-import path from "path";
+import { uploadFile, uploadMultipleFiles, upload } from "../controllers/upload.controller";
+import { updateAccessTokenMiddleware } from "../controllers/user.controller";
+import { isAthenticated } from "../utils/auth";
 
-const router = express.Router();
+const uploadRouter = express.Router();
 
-import { Request } from "express";
-import type { File as MulterFile } from "multer";
+// Single file upload
+uploadRouter.post(
+    "/file",
+    updateAccessTokenMiddleware,
+    isAthenticated,
+    (req, res, next) => {
+        upload.single('file')(req, res, (err) => {
+            if (err) {
+                console.error('Multer error:', err);
+                return res.status(400).json({
+                    success: false,
+                    message: err.message || 'File upload error'
+                });
+            }
+            next();
+        });
+    },
+    uploadFile
+);
 
-interface MulterRequest extends Request {
-  file?: MulterFile;
-}
+// Multiple files upload
+uploadRouter.post(
+    "/files",
+    updateAccessTokenMiddleware,
+    isAthenticated,
+    upload.array('files', 10), // Max 10 files
+    uploadMultipleFiles
+);
 
-router.post("/upload", videoUpload.single("file"), async (req, res) => {
-  const multerReq = req as MulterRequest;
-  if (!multerReq.file) {
-    return res.status(400).json({ success: false, message: "No file uploaded" });
-  }
-
-  const baseUrl = process.env.SERVER_URL || "http://localhost:8000";
-  const fileUrl = `${baseUrl}/uploads/videos/${multerReq.file.filename}`;
-
-  return res.status(200).json({
-    success: true,
-    url: fileUrl,
-  });
-});
-
-export default router;
+export default uploadRouter;

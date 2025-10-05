@@ -4,28 +4,47 @@ import path from "path";
 // Set storage engine
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/"); // Files will be stored in the "uploads" folder
+        // Store images in uploads/images/ and other files in uploads/files/
+        const dest = file.fieldname === 'images' ? 'uploads/images/' : 'uploads/files/';
+        cb(null, dest);
     },
     filename: (req, file, cb) => {
-        cb(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname));
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
 // File filter to allow only specific file types
 // @ts-ignore
 const fileFilter = (req: any, file: Express.Multer.File, cb: any) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    const allowedTypes = [
+        // Images
+        "image/jpeg", "image/png", "image/jpg", "image/gif", "image/svg+xml",
+        // Documents
+        "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        // Archives
+        "application/zip", "application/x-rar-compressed", "application/x-7z-compressed",
+        // Code files
+        "text/html", "text/css", "text/javascript", "application/javascript",
+        "text/typescript", "application/typescript",
+        // Design files
+        "application/vnd.adobe.illustrator", "application/vnd.adobe.photoshop",
+        // Audio/Video
+        "video/mp4", "audio/mpeg", "audio/mp3",
+        // Fonts
+        "font/ttf", "font/otf", "application/x-font-ttf", "application/x-font-otf"
+    ];
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error("Invalid file type. Only JPEG, PNG, and JPG are allowed."), false);
+        cb(new Error("Invalid file type. Please upload a supported file format."), false);
     }
 };
 
 // Multer configuration
 const upload = multer({
     storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+    limits: { fileSize: 1000 * 1024 * 1024 }, // Limit file size to 100MB
     fileFilter
 });
 

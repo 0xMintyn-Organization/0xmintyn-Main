@@ -122,6 +122,22 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
   console.log('ProductGrid received products:', products);
   console.log('ProductGrid loading:', loading);
 
+  // Helper function to construct full image URLs
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) return '/placeholder-product.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    // Handle environment variable with trailing slash
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+    
+    // Ensure imagePath starts with /
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
+
   // Use dynamic products from API - no fallback to sample data
   const displayProducts = products || [];
   
@@ -281,10 +297,14 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
               <div className="aspect-square relative overflow-hidden rounded-t-lg cursor-pointer">
                 {product.thumbnailImage || product.image ? (
                   <Image
-                    src={product.thumbnailImage || product.image}
+                    src={getFullImageUrl(product.thumbnailImage || product.image)}
                     alt={product.title}
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    onError={(e) => {
+                      console.error('Product image load error:', e);
+                      e.currentTarget.src = '/placeholder-product.jpg';
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">

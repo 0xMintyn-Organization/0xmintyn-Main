@@ -75,6 +75,8 @@ export default function CreateProduct() {
     subcategory: "",
     fileFormat: "",
     fileSize: "",
+    fileUrl: "",
+    previewUrl: "",
     license: "Standard",
     downloadLimit: "5",
     accessDuration: "Lifetime",
@@ -84,11 +86,28 @@ export default function CreateProduct() {
     features: [""],
     whatIncluded: [""],
     requirements: [""],
+    specifications: {} as Record<string, string>,
     instantDownload: true,
     lifetimeUpdates: false,
     supportIncluded: false,
     supportDuration: "No Support",
-    documentation: false
+    supportType: "Email",
+    documentation: false,
+    digitalDelivery: {
+      instant: true,
+      downloadLimit: 5,
+      accessDuration: "Lifetime",
+      returnPolicy: "30-day return policy"
+    },
+    updates: {
+      lifetime: false,
+      duration: "1 Year"
+    },
+    support: {
+      included: false,
+      duration: "No Support",
+      type: "Email"
+    }
   });
 
   const [newTag, setNewTag] = useState("");
@@ -166,6 +185,53 @@ export default function CreateProduct() {
     }));
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        setLoading(true);
+        setUploadProgress(0);
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+        console.log('Upload URL:', `${process.env.NEXT_PUBLIC_SERVER_URI}upload/file`);
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}upload/file`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        console.log('Upload response status:', response.status);
+        console.log('Upload response headers:', response.headers);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Upload success:', data);
+          setFormData(prev => ({
+            ...prev,
+            fileUrl: data.url
+          }));
+        } else {
+          const errorData = await response.text();
+          console.error('Upload failed:', response.status, errorData);
+          throw new Error(`Upload failed: ${response.status} - ${errorData}`);
+        }
+      } catch (error) {
+        console.error('File upload error:', error);
+        setErrors(prev => ({
+          ...prev,
+          fileUrl: `Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }));
+      } finally {
+        setLoading(false);
+        setUploadProgress(0);
+      }
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -175,7 +241,29 @@ export default function CreateProduct() {
     if (!formData.category) newErrors.category = "Category is required";
     if (!formData.fileFormat) newErrors.fileFormat = "File format is required";
     if (!formData.fileSize.trim()) newErrors.fileSize = "File size is required";
-    if (formData.images.length === 0) newErrors.images = "At least one image is required";
+    if (!formData.fileUrl.trim()) newErrors.fileUrl = "File URL is required";
+    if (formData.images.length < 3) newErrors.images = "At least 3 images are required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateCurrentTab = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (currentTab === "basic") {
+      if (!formData.title.trim()) newErrors.title = "Title is required";
+      if (!formData.description.trim()) newErrors.description = "Description is required";
+      if (!formData.category) newErrors.category = "Category is required";
+    } else if (currentTab === "pricing") {
+      if (!formData.price) newErrors.price = "Price is required";
+    } else if (currentTab === "details") {
+      if (!formData.fileFormat) newErrors.fileFormat = "File format is required";
+      if (!formData.fileSize.trim()) newErrors.fileSize = "File size is required";
+      if (!formData.fileUrl.trim()) newErrors.fileUrl = "File URL is required";
+    } else if (currentTab === "media") {
+      if (formData.images.length < 3) newErrors.images = "At least 3 images are required";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -216,11 +304,13 @@ export default function CreateProduct() {
       submitData.append("subcategory", formData.subcategory);
       submitData.append("fileFormat", formData.fileFormat);
       submitData.append("fileSize", formData.fileSize);
+      submitData.append("fileUrl", formData.fileUrl);
+      submitData.append("previewUrl", formData.previewUrl);
       submitData.append("license", formData.license);
       submitData.append("downloadLimit", formData.downloadLimit);
       submitData.append("accessDuration", formData.accessDuration);
       
-      // Append arrays
+      // Append arrays as JSON strings
       submitData.append("tags", JSON.stringify(formData.tags));
       submitData.append("features", JSON.stringify(formData.features.filter(f => f.trim())));
       submitData.append("whatIncluded", JSON.stringify(formData.whatIncluded.filter(w => w.trim())));
@@ -230,21 +320,50 @@ export default function CreateProduct() {
       submitData.append("instantDownload", String(formData.instantDownload));
       submitData.append("documentation", String(formData.documentation));
       
+      // Append complex objects as JSON strings
+      submitData.append("specifications", JSON.stringify(formData.specifications));
+      submitData.append("digitalDelivery", JSON.stringify(formData.digitalDelivery));
+      submitData.append("updates", JSON.stringify(formData.updates));
+      submitData.append("support", JSON.stringify(formData.support));
+      
       // Append images
       formData.images.forEach((image) => {
         submitData.append("images", image);
       });
 
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setUploadProgress(100);
-      clearInterval(progressInterval);
+      // Make API call to create product
+      console.log('Submitting product data:', {
+        title: formData.title,
+        category: formData.category,
+        price: formData.price,
+        imagesCount: formData.images.length,
+        fileUrl: formData.fileUrl
+      });
 
-      // Success - redirect to products page
-      setTimeout(() => {
-        router.push("/marketplace");
-      }, 500);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/products/create`, {
+        method: 'POST',
+        body: submitData,
+        credentials: 'include'
+      });
+
+      console.log('Product creation response status:', response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Product created successfully:', result);
+        
+        setUploadProgress(100);
+        clearInterval(progressInterval);
+
+        // Success - redirect to products page
+        setTimeout(() => {
+          router.push("/marketplace");
+        }, 500);
+      } else {
+        const errorData = await response.text();
+        console.error('Product creation failed:', response.status, errorData);
+        throw new Error(`Failed to create product: ${response.status} - ${errorData}`);
+      }
 
     } catch (error: any) {
       clearInterval(progressInterval);
@@ -309,7 +428,10 @@ export default function CreateProduct() {
         )}
 
         <form onSubmit={handleSubmit}>
-          <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
+          <Tabs value={currentTab} onValueChange={(value) => {
+            // Allow tab change without validation for better UX
+            setCurrentTab(value);
+          }} className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="basic" className="gap-2">
                 <Info className="h-4 w-4" />
@@ -801,8 +923,29 @@ export default function CreateProduct() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <div className="border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-lg p-8 text-center hover:border-green-500 transition-colors">
-                      <label htmlFor="image-upload" className="cursor-pointer block">
+                    <div 
+                      className="border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-lg p-8 text-center hover:border-green-500 transition-colors"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.add('border-green-500', 'bg-green-50');
+                      }}
+                      onDragLeave={(e) => {
+                        e.currentTarget.classList.remove('border-green-500', 'bg-green-50');
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove('border-green-500', 'bg-green-50');
+                        const files = e.dataTransfer.files;
+                        if (files.length > 0) {
+                          const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+                          if (fileInput) {
+                            fileInput.files = files;
+                            handleImageUpload({ target: { files } } as any);
+                          }
+                        }
+                      }}
+                    >
+                      <div className="cursor-pointer" onClick={() => document.getElementById('image-upload')?.click()}>
                         <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                         <p className="text-sm text-muted-foreground mb-4">
                           Drag and drop images here, or click to select
@@ -811,14 +954,14 @@ export default function CreateProduct() {
                           <ImageIcon className="h-4 w-4 mr-2" />
                           Choose Images
                         </Button>
-                      </label>
+                      </div>
                       <input
+                        id="image-upload"
                         type="file"
                         multiple
                         accept="image/*"
                         onChange={handleImageUpload}
                         className="hidden"
-                        id="image-upload"
                         disabled={formData.images.length >= 5}
                       />
                       <p className="text-xs text-muted-foreground mt-2">
@@ -865,6 +1008,105 @@ export default function CreateProduct() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Product File Upload */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Product File</CardTitle>
+                  <CardDescription>
+                    Upload the actual product file that customers will download
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    {/* File Upload Section */}
+                    <div className="space-y-2">
+                      <Label>Upload Product File</Label>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-lg p-6 text-center hover:border-green-500 transition-colors"
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.add('border-green-500', 'bg-green-50');
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.classList.remove('border-green-500', 'bg-green-50');
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.remove('border-green-500', 'bg-green-50');
+                          const files = e.dataTransfer.files;
+                          if (files.length > 0) {
+                            const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+                            if (fileInput) {
+                              fileInput.files = files;
+                              handleFileUpload({ target: { files } } as any);
+                            }
+                          }
+                        }}
+                      >
+                        <div className="cursor-pointer" onClick={() => document.getElementById('file-upload')?.click()}>
+                          <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Drag and drop your file here, or click to select
+                          </p>
+                          <Button type="button" variant="outline" size="sm">
+                            <FileText className="h-4 w-4 mr-2" />
+                            Choose File
+                          </Button>
+                        </div>
+                        <input
+                          id="file-upload"
+                          type="file"
+                          accept=".zip,.pdf,.figma,.sketch,.psd,.ai,.html,.css,.js,.ts,.jsx,.tsx,.mp4,.mp3,.ttf,.otf"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        <p className="text-xs text-muted-foreground mt-2">
+                          ZIP, PDF, Figma, Sketch, PSD, AI, HTML, CSS, JS, TS, MP4, MP3, TTF, OTF up to 100MB
+                        </p>
+                      </div>
+                      {errors.fileUrl && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {errors.fileUrl}
+                        </p>
+                      )}
+                      {formData.fileUrl && (
+                        <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <p className="text-sm text-green-700 dark:text-green-300">
+                            ✓ File uploaded successfully: {formData.fileUrl.split('/').pop()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Manual URL Input (Alternative) */}
+                    <div className="space-y-2">
+                      <Label htmlFor="fileUrl">Or Enter File URL Manually</Label>
+                      <Input
+                        id="fileUrl"
+                        value={formData.fileUrl}
+                        onChange={(e) => handleInputChange("fileUrl", e.target.value)}
+                        placeholder="https://example.com/product-file.zip"
+                        className={errors.fileUrl ? "border-red-500" : ""}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="previewUrl">Preview URL (Optional)</Label>
+                      <Input
+                        id="previewUrl"
+                        value={formData.previewUrl}
+                        onChange={(e) => handleInputChange("previewUrl", e.target.value)}
+                        placeholder="https://example.com/preview"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Link to preview or demo of your product
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
 
@@ -894,9 +1136,15 @@ export default function CreateProduct() {
                 <Button
                   type="button"
                   onClick={() => {
-                    const tabs = ["basic", "pricing", "details", "media"];
-                    const currentIndex = tabs.indexOf(currentTab);
-                    if (currentIndex < tabs.length - 1) setCurrentTab(tabs[currentIndex + 1]);
+                    console.log('Next button clicked, current tab:', currentTab);
+                    if (validateCurrentTab()) {
+                      const tabs = ["basic", "pricing", "details", "media"];
+                      const currentIndex = tabs.indexOf(currentTab);
+                      console.log('Current index:', currentIndex, 'Next tab:', tabs[currentIndex + 1]);
+                      if (currentIndex < tabs.length - 1) setCurrentTab(tabs[currentIndex + 1]);
+                    } else {
+                      console.log('Validation failed for current tab:', currentTab);
+                    }
                   }}
                   disabled={loading}
                   className="bg-green-600 hover:bg-green-700"

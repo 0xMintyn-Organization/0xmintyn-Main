@@ -23,6 +23,7 @@ import marketplaceProductRouter from './routes/marketplace/marketplaceProduct.ro
 import marketplaceServiceRouter from './routes/marketplace/marketplaceService.route';
 import marketplaceSellerRouter from './routes/marketplace/marketplaceSeller.route';
 import marketplaceSearchRouter from './routes/marketplace/marketplaceSearch.route';
+import uploadRouter from './routes/upload.route';
 require('dotenv').config();
 export const app = express();
 
@@ -30,12 +31,8 @@ export const app = express();
 // bodyparser
 app.use(express.json({ limit: '50mb' }));
 
-
 // cookie parser
 app.use(cookieParser());
-
-
-
 
 // cors
 app.use(cors({ 
@@ -43,7 +40,8 @@ app.use(cors({
     credentials: true 
 }));
 
-app.use("/uploads", express.static(path.join(__dirname, "./uploads"))); // Serve static files
+// Serve static files
+app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
 
 // Rate limiter
 const limiter = rateLimit({
@@ -101,6 +99,7 @@ app.use('/api/v1/marketplace/products', marketplaceProductRouter);
 app.use('/api/v1/marketplace/services', marketplaceServiceRouter);
 app.use('/api/v1/marketplace/sellers', marketplaceSellerRouter);
 app.use('/api/v1/marketplace', marketplaceSearchRouter);
+app.use('/api/v1/upload', uploadRouter);
 app.use('/api/v1/proposal', proposalRoutes);
 app.use('/api/v1/vote', voteRoutes);
 

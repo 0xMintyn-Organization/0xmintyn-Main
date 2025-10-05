@@ -24,6 +24,32 @@ export default function ProductDetailPage() {
   
   // UI state
   const [selectedImage, setSelectedImage] = useState(0);
+  const [downloading, setDownloading] = useState(false);
+
+  // Helper function to construct full image URLs
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) {
+      console.log('No image path provided, using placeholder');
+      return '/placeholder-product.jpg';
+    }
+    if (imagePath.startsWith('http')) {
+      console.log('Image already has full URL:', imagePath);
+      return imagePath;
+    }
+    
+    // Handle environment variable with trailing slash
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+    
+    // Ensure imagePath starts with /
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    const fullUrl = `${baseUrl}${normalizedPath}`;
+    
+    console.log('Constructed image URL:', fullUrl, 'from path:', imagePath, 'baseUrl:', baseUrl);
+    return fullUrl;
+  };
 
   // Fetch product data
   useEffect(() => {
@@ -37,6 +63,21 @@ export default function ProductDetailPage() {
         });
         
         if (response.data.success) {
+          console.log('Product data received:', response.data.product);
+          console.log('Product images:', response.data.product.images);
+          console.log('Thumbnail image:', response.data.product.thumbnailImage);
+          console.log('Environment NEXT_PUBLIC_SERVER_URI:', process.env.NEXT_PUBLIC_SERVER_URI);
+          console.log('Full image URLs:', response.data.product.images?.map((img: string) => getFullImageUrl(img)));
+          
+          // Test image accessibility
+          if (response.data.product.images && response.data.product.images.length > 0) {
+            const testUrl = getFullImageUrl(response.data.product.images[0]);
+            console.log('Testing image accessibility for:', testUrl);
+            fetch(testUrl, { method: 'HEAD' })
+              .then(res => console.log('Image accessibility test:', res.status, res.ok ? 'SUCCESS' : 'FAILED'))
+              .catch(err => console.error('Image accessibility test failed:', err));
+          }
+          
           setProduct(response.data.product);
           setRelatedProducts(response.data.relatedProducts || []);
         }
@@ -59,6 +100,30 @@ export default function ProductDetailPage() {
     setLoading(true);
     // Re-fetch product
     window.location.reload();
+  };
+
+  const handleDownload = async () => {
+    if (!product?.fileUrl) {
+      console.error('No file URL available');
+      return;
+    }
+
+    try {
+      setDownloading(true);
+      
+      // Create a temporary link to download the file
+      const link = document.createElement('a');
+      link.href = getFullImageUrl(product.fileUrl); // Use full URL for file download too
+      link.download = `${product.title}.${product.fileFormat?.toLowerCase() || 'zip'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (error) {
+      console.error('Download failed:', error);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   // Loading state
@@ -148,10 +213,24 @@ export default function ProductDetailPage() {
           <div className="space-y-4">
             <div className="aspect-square relative overflow-hidden rounded-lg bg-card">
               <Image
-                src={product.images?.[selectedImage] || product.thumbnailImage || '/placeholder-product.jpg'}
+                src={getFullImageUrl(product.images?.[selectedImage] || product.thumbnailImage)}
                 alt={product.title}
                 fill
                 className="object-cover"
+                onError={(e) => {
+                  console.error('Main image load error:', {
+                    error: e,
+                    src: e.currentTarget.src,
+                    alt: e.currentTarget.alt,
+                    originalPath: product.images?.[selectedImage] || product.thumbnailImage
+                  });
+                  // Try fallback to thumbnail if main image fails
+                  if (product.thumbnailImage && e.currentTarget.src !== getFullImageUrl(product.thumbnailImage)) {
+                    e.currentTarget.src = getFullImageUrl(product.thumbnailImage);
+                  } else {
+                    e.currentTarget.src = '/placeholder-product.jpg';
+                  }
+                }}
               />
             </div>
             {product.images && product.images.length > 1 && (
@@ -165,10 +244,19 @@ export default function ProductDetailPage() {
                     }`}
                   >
                     <Image
-                      src={image}
+                      src={getFullImageUrl(image)}
                       alt={`${product.title} ${index + 1}`}
                       fill
                       className="object-cover"
+                      onError={(e) => {
+                        console.error('Thumbnail image load error:', {
+                          error: e,
+                          src: e.currentTarget.src,
+                          alt: e.currentTarget.alt,
+                          originalPath: image
+                        });
+                        e.currentTarget.src = '/placeholder-product.jpg';
+                      }}
                     />
                   </button>
                 ))}
@@ -225,9 +313,14 @@ export default function ProductDetailPage() {
                 {/* Digital Product Actions */}
                 <div className="space-y-4">
                   <div className="flex space-x-4">
-                    <Button size="lg" className="flex-1 bg-green-900 hover:bg-green-800 text-white">
+                    <Button 
+                      size="lg" 
+                      className="flex-1 bg-green-900 hover:bg-green-800 text-white"
+                      onClick={handleDownload}
+                      disabled={downloading || !product?.fileUrl}
+                    >
                       <Download className="w-5 h-5 mr-2" />
-                      Get Instant Access
+                      {downloading ? 'Downloading...' : 'Get Instant Access'}
                     </Button>
                   </div>
                 </div>
@@ -337,7 +430,12 @@ export default function ProductDetailPage() {
                         </div>
                         <div className="flex justify-between py-2 border-b">
                           <span className="font-medium text-gray-600">Support</span>
-                          <span className="text-gray-900 dark:text-gray-200">{String(product?.support || 'Email Support')}</span>
+                          <span className="text-gray-900 dark:text-gray-200">
+                            {product?.support?.included ? 
+                              `${product.support.type} Support (${product.support.duration})` : 
+                              'No Support'
+                            }
+                          </span>
                         </div>
                         <div className="flex justify-between py-2 border-b">
                           <span className="font-medium text-gray-600">Compatibility</span>
@@ -413,12 +511,16 @@ export default function ProductDetailPage() {
                 <Link key={relatedProduct._id} href={`/marketplace/product/${relatedProduct._id}`}>
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                     <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                      <Image
-                        src={relatedProduct.thumbnailImage || '/placeholder-product.jpg'}
-                        alt={relatedProduct.title}
-                        fill
-                        className="object-cover"
-                      />
+                        <Image
+                          src={getFullImageUrl(relatedProduct.thumbnailImage)}
+                          alt={relatedProduct.title}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            console.error('Related product image load error:', e);
+                            e.currentTarget.src = '/placeholder-product.jpg';
+                          }}
+                        />
                     </div>
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-gray-900 dark:text-gray-200 mb-2">{relatedProduct.title}</h3>
