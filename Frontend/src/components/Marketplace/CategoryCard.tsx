@@ -75,11 +75,11 @@ function CategoryCard({
                     </div>
                 ) : (
                     <Button
-                        aria-label="buynow"
+                        aria-label="getaccess"
                         className="w-full mt-5 bg-green-900 font-semibold text-white hover:bg-green-800 rounded-3xl"
                         onClick={onBuyNowClick}
                     >
-                        Buy Now
+                        Get Instant Access
                     </Button>
                 )}
             </div>

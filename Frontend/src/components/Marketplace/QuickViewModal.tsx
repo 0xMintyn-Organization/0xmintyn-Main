@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Star, Heart, Download, FileText, Shield, Minus, Plus, Truck } from 'lucide-react';
+import { X, Star, Download, FileText, Shield, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,19 +21,11 @@ interface QuickViewModalProps {
     image: string;
     description: string;
     features: string[];
-    seller: string;
   };
 }
 
 export default function QuickViewModal({ isOpen, onClose, product }: QuickViewModalProps) {
-  const [quantity, setQuantity] = useState(1);
-  const [isFavorite, setIsFavorite] = useState(false);
-
   if (!isOpen) return null;
-
-  const handleQuantityChange = (change: number) => {
-    setQuantity(Math.max(1, quantity + change));
-  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -140,16 +132,6 @@ export default function QuickViewModal({ isOpen, onClose, product }: QuickViewMo
                   <Download className="w-4 h-4 mr-2" />
                   Get Instant Access
                 </Button>
-                <Button variant="outline" className="flex-1">
-                  Buy Now
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsFavorite(!isFavorite)}
-                  className={isFavorite ? 'text-red-500' : ''}
-                >
-                  <Heart className="w-4 h-4" />
-                </Button>
               </div>
 
               {/* Shipping Info */}
@@ -164,20 +146,6 @@ export default function QuickViewModal({ isOpen, onClose, product }: QuickViewMo
                 </div>
               </div>
 
-              {/* Seller Info */}
-              <Card>
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">Sold by {product.seller}</p>
-                      <p className="text-xs text-gray-600">Top-rated seller</p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      View Store
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>

@@ -573,9 +573,9 @@ The 0xMintyn platform features a comprehensive digital marketplace that allows u
 
 **Service Features:**
 - Service packages (Basic, Standard, Premium)
-- Seller profiles with ratings and portfolios
+- Seller profiles with ratings and reviews
 - Delivery timelines and revision policies
-- Portfolio showcases with examples
+- Service showcases with examples
 - Order management and communication
 
 ### User Seller Status
@@ -660,7 +660,7 @@ export const toggleSellerStatus = CatchAsyncError(async (req: Request, res: Resp
 - Service listings with packages
 - Seller information and ratings
 - Delivery timelines
-- Portfolio previews
+- Service previews
 
 **4. CategoryGrid**
 - Digital product categories

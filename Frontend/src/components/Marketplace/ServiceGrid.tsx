@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Star, Heart, Clock, User, CheckCircle, MessageCircle, Briefcase } from 'lucide-react';
+import { Star, Clock, User, CheckCircle, MessageCircle, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import Image from 'next/image';
+import Link from 'next/link';
 
 // Sample service data
 const sampleServices = [
@@ -140,22 +141,12 @@ interface ServiceGridProps {
 }
 
 export default function ServiceGrid({ viewMode, searchQuery, services, loading, hasActiveSearch }: ServiceGridProps) {
-  const [favorites, setFavorites] = useState<number[]>([]);
-
-  const toggleFavorite = (serviceId: number) => {
-    setFavorites(prev => 
-      prev.includes(serviceId) 
-        ? prev.filter(id => id !== serviceId)
-        : [...prev, serviceId]
-    );
-  };
 
   // Use dynamic services from API - no fallback to sample data
   const displayServices = services || [];
   
   const filteredServices = displayServices.filter(service =>
     service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    service.seller?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     service.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -197,45 +188,42 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
         {filteredServices.map((service, index) => (
           <Card key={service.id || `service-list-${index}`} className="hover:shadow-md transition-shadow">
             <div className="flex">
-              <div className="relative w-48 h-32 flex-shrink-0">
-                {service.image ? (
-                  <Image
-                    src={service.image}
-                    alt={service.title}
-                    fill
-                    className="object-cover rounded-l-lg"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center rounded-l-lg">
-                    <Briefcase className="w-8 h-8 text-gray-400" />
-                  </div>
-                )}
-                {service.badge && (
-                  <Badge className="absolute top-2 left-2 bg-green-500 text-white">
-                    {service.badge}
-                  </Badge>
-                )}
-                {service.isOnline && (
-                  <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                )}
-              </div>
+              <Link href={`/marketplace/service/${service._id || service.id}`}>
+                <div className="relative w-48 h-32 flex-shrink-0 cursor-pointer">
+                  {service.image ? (
+                    <Image
+                      src={service.image}
+                      alt={service.title}
+                      fill
+                      className="object-cover rounded-l-lg"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center rounded-l-lg">
+                      <Briefcase className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                  {service.badge && (
+                    <Badge className="absolute top-2 left-2 bg-green-500 text-white">
+                      {service.badge}
+                    </Badge>
+                  )}
+                  {service.isOnline && (
+                    <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                  )}
+                </div>
+              </Link>
               
               <div className="flex-1 p-6">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-2">
-                      {service.title}
-                    </h3>
+                    <Link href={`/marketplace/service/${service._id || service.id}`}>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-2 hover:text-green-600 dark:hover:text-green-400 transition-colors cursor-pointer">
+                        {service.title}
+                      </h3>
+                    </Link>
                     <p className="text-sm text-gray-600 mb-2">{service.description}</p>
                     
                     <div className="flex items-center space-x-4 mb-3">
-                      <div className="flex items-center">
-                        <User className="w-4 h-4 text-gray-400 mr-1" />
-                        <span className="text-sm text-gray-600">{service.seller}</span>
-                        <Badge variant="secondary" className="ml-2 text-xs">
-                          {service.sellerLevel}
-                        </Badge>
-                      </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 text-gray-400 mr-1" />
                         <span className="text-sm text-gray-600">{service.deliveryTime}</span>
@@ -282,14 +270,6 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
                     </div>
                     
                     <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleFavorite(service.id)}
-                        className={favorites.includes(service.id) ? 'text-red-500' : ''}
-                      >
-                        <Heart className="w-4 h-4" />
-                      </Button>
                       <Button variant="outline" size="sm">
                         <MessageCircle className="w-4 h-4" />
                       </Button>
@@ -312,60 +292,45 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
       {filteredServices.map((service, index) => (
         <Card key={service.id || `service-${index}`} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
           <div className="relative">
-            <div className="aspect-video relative overflow-hidden rounded-t-lg">
-              {service.image ? (
-                <Image
-                  src={service.image}
-                  alt={service.title}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
-                  <Briefcase className="w-12 h-12 text-gray-400" />
-                </div>
-              )}
-              {service.badge && (
-                <Badge className="absolute top-2 left-2 bg-green-500 text-white">
-                  {service.badge}
-                </Badge>
-              )}
-              {service.isOnline && (
-                <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-              )}
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleFavorite(service.id)}
-                  className={`bg-background shadow-md ${
-                    favorites.includes(service.id) ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  <Heart className="w-4 h-4" />
-                </Button>
+            <Link href={`/marketplace/service/${service._id || service.id}`}>
+              <div className="aspect-video relative overflow-hidden rounded-t-lg cursor-pointer">
+                {service.image ? (
+                  <Image
+                    src={service.image}
+                    alt={service.title}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+                    <Briefcase className="w-12 h-12 text-gray-400" />
+                  </div>
+                )}
+                {service.badge && (
+                  <Badge className="absolute top-2 left-2 bg-green-500 text-white">
+                    {service.badge}
+                  </Badge>
+                )}
+                {service.isOnline && (
+                  <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                )}
               </div>
-            </div>
+            </Link>
           </div>
 
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2">
-                <User className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{service.seller}</span>
-                <Badge variant="secondary" className="text-xs">
-                  {service.sellerLevel}
-                </Badge>
-              </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <Clock className="w-4 h-4 mr-1" />
                 {service.deliveryTime}
               </div>
             </div>
             
-            <h3 className="font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-heading transition-colors">
-              {service.title}
-            </h3>
+            <Link href={`/marketplace/service/${service._id || service.id}`}>
+              <h3 className="font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-heading transition-colors cursor-pointer hover:text-green-600 dark:hover:text-green-400">
+                {service.title}
+              </h3>
+            </Link>
 
             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
               {service.description}

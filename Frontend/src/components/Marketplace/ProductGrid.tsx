@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState } from 'react';
-import { Star, Heart, ShoppingCart, Eye, Download, FileText, Image as ImageIcon, Code, Music } from 'lucide-react';
+import { Star, ShoppingCart, Eye, Download, FileText, Image as ImageIcon, Code, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import Image from 'next/image';
+import Link from 'next/link';
 
 // Sample digital product data
 const sampleProducts = [
@@ -117,25 +119,14 @@ interface ProductGridProps {
 }
 
 export default function ProductGrid({ viewMode, searchQuery, onQuickView, products, loading, hasActiveSearch }: ProductGridProps) {
-  const [favorites, setFavorites] = useState<number[]>([]);
-  
   console.log('ProductGrid received products:', products);
   console.log('ProductGrid loading:', loading);
-
-  const toggleFavorite = (productId: number) => {
-    setFavorites(prev => 
-      prev.includes(productId) 
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
-  };
 
   // Use dynamic products from API - no fallback to sample data
   const displayProducts = products || [];
   
   const filteredProducts = displayProducts.filter(product =>
-    product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
+    product.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Show loading state
@@ -159,7 +150,7 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
             <ShoppingCart className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No products found</h3>
-          <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filters to find what you're looking for.</p>
+          <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filters to find what you&apos;re looking for.</p>
         </div>
       </div>
     );
@@ -202,7 +193,6 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-2">
                       {product.title}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-2">by {product.brand}</p>
                     
                     <div className="flex items-center space-x-2 mb-3">
                       <div className="flex items-center">
@@ -254,14 +244,6 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
                     </div>
                     
                     <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleFavorite(product.id)}
-                        className={favorites.includes(product.id) ? 'text-red-500' : ''}
-                      >
-                        <Heart className="w-4 h-4" />
-                      </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -290,57 +272,53 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {filteredProducts.map((product, index) => (
-        <Card key={product.id || `product-${index}`} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
+        <Card
+          key={product._id || product.id || `product-${index}`}
+          className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700"
+        >
           <div className="relative">
-            <div className="aspect-square relative overflow-hidden rounded-t-lg">
-              {product.image ? (
-                <Image
-                  src={product.image}
-                  alt={product.title}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
-                  <FileText className="w-12 h-12 text-gray-400" />
-                </div>
-              )}
-              {product.badge && (
-                <Badge className="absolute top-2 left-2 bg-red-500 text-white">
-                  {product.badge}
-                </Badge>
-              )}
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleFavorite(product.id)}
-                  className={`bg-background/90 shadow-md border ${
-                    favorites.includes(product.id) ? 'text-red-500' : 'text-foreground'
-                  }`}
-                >
-                  <Heart className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onQuickView?.(product)}
-                  className="bg-background/90 shadow-md text-foreground border"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
+            <Link href={`/marketplace/product/${product._id || product.id}`}>
+              <div className="aspect-square relative overflow-hidden rounded-t-lg cursor-pointer">
+                {product.thumbnailImage || product.image ? (
+                  <Image
+                    src={product.thumbnailImage || product.image}
+                    alt={product.title}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
+                    <FileText className="w-12 h-12 text-gray-400" />
+                  </div>
+                )}
               </div>
-            </div>
+            </Link>
+            {product.badge && (
+              <Badge className="absolute top-2 left-2 bg-red-500 text-white">
+                {product.badge}
+              </Badge>
+            )}
+             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+               <Button
+                 variant="ghost"
+                 size="sm"
+                 onClick={() => onQuickView?.(product)}
+                 className="bg-background/90 shadow-md text-foreground border"
+               >
+                 <Eye className="w-4 h-4" />
+               </Button>
+             </div>
           </div>
 
           <CardContent className="p-4">
             <div className="mb-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">{product.brand}</span>
             </div>
-            
-            <h3 className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white mb-2 line-clamp-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-              {product.title}
-            </h3>
+
+            <Link href={`/marketplace/product/${product._id || product.id}`}>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white mb-2 line-clamp-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors cursor-pointer">
+                {product.title}
+              </h3>
+            </Link>
 
             <div className="flex items-center space-x-1 mb-2">
               <div className="flex items-center">
@@ -373,27 +351,27 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
               </div>
             </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    <div className="flex items-center">
-                      <Download className="w-4 h-4 mr-1" />
-                      {product.delivery}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="text-xs">
-                        {product.fileFormat}
-                      </Badge>
-                      <span className="text-xs">{product.fileSize}</span>
-                    </div>
-                  </div>
+            <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
+              <div className="flex items-center">
+                <Download className="w-4 h-4 mr-1" />
+                {product.delivery}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-xs">
+                  {product.fileFormat}
+                </Badge>
+                <span className="text-xs">{product.fileSize}</span>
+              </div>
+            </div>
           </CardContent>
 
           <CardFooter className="p-4 pt-0">
-          <Button
-            className="w-full bg-green-900 hover:bg-green-800 text-white"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Get Instant Access
-          </Button>
+            <Link href={`/marketplace/product/${product._id || product.id}`} className="w-full">
+              <Button className="w-full bg-green-900 hover:bg-green-800 text-white">
+                <Download className="w-4 h-4 mr-2" />
+                Get Instant Access
+              </Button>
+            </Link>
           </CardFooter>
         </Card>
       ))}

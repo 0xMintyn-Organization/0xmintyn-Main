@@ -768,7 +768,7 @@ export default function CreateService() {
                 <CardHeader>
                   <CardTitle>Service Images</CardTitle>
                   <CardDescription>
-                    Showcase your work with portfolio images (Max 5 images)
+                    Showcase your work with service images (Max 5 images)
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">

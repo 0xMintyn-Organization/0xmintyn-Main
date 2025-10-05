@@ -56,6 +56,46 @@ export const createMarketplaceProduct = CatchAsyncError(async (req: Request, res
     }
 });
 
+// Get Single Marketplace Product by ID (Public)
+export const getMarketplaceProductById = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { productId } = req.params;
+
+        const product = await MarketplaceProductModel.findById(productId)
+            .populate('sellerId', 'sellerName storeName storeLogo contactEmail')
+            .lean();
+
+        if (!product) {
+            return next(new ErrorHandler("Product not found", 404));
+        }
+
+        // Check if product is approved and active
+        if (!product.isApproved || !product.isActive) {
+            return next(new ErrorHandler("Product not available", 404));
+        }
+
+        // Get related products (same category, excluding current product)
+        const relatedProducts = await MarketplaceProductModel.find({
+            category: product.category,
+            _id: { $ne: productId },
+            isApproved: true,
+            isActive: true
+        })
+        .select('title price thumbnailImage rating reviewCount')
+        .limit(4)
+        .lean();
+
+        res.status(200).json({
+            success: true,
+            product,
+            relatedProducts
+        });
+
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
 // Get All Marketplace Products (Public + Filters)
 export const getAllMarketplaceProducts = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {

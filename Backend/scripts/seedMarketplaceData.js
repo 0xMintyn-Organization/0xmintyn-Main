@@ -224,25 +224,6 @@ const sampleServices = [
         isPopular: false
       }
     ],
-    addOns: [
-      { name: "Rush Delivery", description: "24-hour delivery", price: 20 },
-      { name: "Social Media Kit", description: "Social media templates", price: 30 },
-      { name: "Business Card Design", description: "Matching business card", price: 25 }
-    ],
-    portfolio: [
-      {
-        title: "Tech Startup Logo",
-        description: "Modern logo for a fintech startup",
-        image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop",
-        category: "Technology"
-      },
-      {
-        title: "Restaurant Brand Identity",
-        description: "Complete brand identity for a fine dining restaurant",
-        image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop",
-        category: "Food & Beverage"
-      }
-    ],
     whatYouGet: ["High-quality logo files", "Brand guidelines document", "Source files", "Commercial usage rights", "Lifetime support"],
     requirements: ["Business name", "Industry description", "Color preferences", "Style references", "Target audience"],
     faqs: [
@@ -265,7 +246,7 @@ const sampleServices = [
   },
   {
     title: "Website Development - React/Next.js Full Stack",
-    description: "I will build a modern, responsive website using React and Next.js with full backend integration. Perfect for businesses, portfolios, and e-commerce sites.",
+    description: "I will build a modern, responsive website using React and Next.js with full backend integration. Perfect for businesses and e-commerce sites.",
     category: "Development",
     subcategory: "Web Development",
     images: ["https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop"],
@@ -301,25 +282,6 @@ const sampleServices = [
         revisions: 5,
         features: ["Unlimited Pages", "Custom Features", "Advanced SEO", "Performance Optimization", "6 Months Support"],
         isPopular: false
-      }
-    ],
-    addOns: [
-      { name: "E-commerce Integration", description: "Online store functionality", price: 200 },
-      { name: "Mobile App", description: "React Native mobile app", price: 500 },
-      { name: "SEO Optimization", description: "Advanced SEO setup", price: 100 }
-    ],
-    portfolio: [
-      {
-        title: "E-commerce Platform",
-        description: "Full-stack e-commerce with payment integration",
-        image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop",
-        category: "E-commerce"
-      },
-      {
-        title: "Corporate Website",
-        description: "Professional corporate website with CMS",
-        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop",
-        category: "Corporate"
       }
     ],
     whatYouGet: ["Fully functional website", "Source code", "Documentation", "Deployment assistance", "Training session"],

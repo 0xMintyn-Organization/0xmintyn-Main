@@ -1,150 +1,190 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Star, Heart, Download, FileText, Shield, CheckCircle, Minus, Plus, Share2, Clock, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Star, Download, FileText, Shield, CheckCircle, Clock, Users, Loader2, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
-
-// Sample digital product data
-const productData = {
-  id: 1,
-  title: "Premium Website Template Pack",
-  brand: "WebCraft",
-  price: 49,
-  originalPrice: 99,
-  rating: 4.8,
-  reviewCount: 124,
-  images: [
-    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1558655146-d09347e92766?w=800&h=600&fit=crop"
-  ],
-  description: "A comprehensive collection of premium website templates designed for modern businesses. This pack includes 10 responsive HTML/CSS templates with clean code, modern design, and mobile-first approach.",
-  features: [
-    "10 Responsive HTML/CSS Templates",
-    "Mobile-First Design Approach",
-    "Clean, Semantic HTML5 Code",
-    "CSS3 Animations & Transitions",
-    "Cross-Browser Compatible",
-    "SEO Optimized Structure",
-    "Easy to Customize",
-    "Well Documented Code",
-    "Free Fonts & Icons Included"
-  ],
-  specifications: {
-    "File Format": "HTML/CSS",
-    "File Size": "25.4 MB",
-    "Templates": "10 Responsive Templates",
-    "Browser Support": "Chrome, Firefox, Safari, Edge",
-    "Framework": "Pure HTML/CSS",
-    "License": "Commercial License",
-    "Updates": "Lifetime Updates",
-    "Support": "6 Months Email Support",
-    "Documentation": "Included"
-  },
-  digitalDelivery: {
-    instant: true,
-    downloadLimit: 5,
-    accessDuration: "Lifetime",
-    returnPolicy: "30-day return policy"
-  },
-  seller: {
-    name: "WebCraft",
-    rating: 4.9,
-    reviewCount: 1250,
-    verified: true
-  },
-  reviews: [
-    {
-      id: 1,
-      user: "John D.",
-      rating: 5,
-      date: "2024-01-15",
-      title: "Excellent templates!",
-      comment: "These templates are exactly what I needed for my client projects. Clean code, modern design, and easy to customize. The documentation is very helpful."
-    },
-    {
-      id: 2,
-      user: "Sarah M.",
-      rating: 4,
-      date: "2024-01-10",
-      title: "Great value for money",
-      comment: "Good collection of templates with responsive design. The code quality is high and the templates are well-structured. Minor issues with some browser compatibility."
-    }
-  ],
-  relatedProducts: [
-    {
-      id: 2,
-      title: "Professional UI/UX Design Kit",
-      price: 29,
-      image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=300&h=200&fit=crop",
-      rating: 4.7
-    },
-    {
-      id: 3,
-      title: "React Native App Template",
-      price: 199,
-      image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=300&h=200&fit=crop",
-      rating: 4.8
-    }
-  ]
-};
+import { useParams, useRouter } from 'next/navigation';
+import axios from 'axios';
+import Link from 'next/link';
 
 export default function ProductDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const productId = params.id as string;
+  
+  // State management
+  const [product, setProduct] = useState<any>(null);
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // UI state
   const [selectedImage, setSelectedImage] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [isFavorite, setIsFavorite] = useState(false);
 
-  const handleQuantityChange = (change: number) => {
-    setQuantity(Math.max(1, quantity + change));
+  // Fetch product data
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/products/${productId}`, {
+          withCredentials: true
+        });
+        
+        if (response.data.success) {
+          setProduct(response.data.product);
+          setRelatedProducts(response.data.relatedProducts || []);
+        }
+      } catch (error: any) {
+        console.error('Error fetching product:', error);
+        setError(error.response?.data?.message || 'Failed to load product');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId]);
+
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    // Re-fetch product
+    window.location.reload();
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-green-600" />
+              <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">Loading product...</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Please wait while we fetch the product details</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Failed to load product</h2>
+              <p className="text-red-600 mb-4">{error}</p>
+              <div className="flex gap-4 justify-center">
+                <Button onClick={handleRetry} variant="outline" className="gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  Try Again
+                </Button>
+                <Link href="/marketplace">
+                  <Button variant="outline" className="gap-2">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Marketplace
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No product found
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Product not found</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">The product you're looking for doesn't exist or has been removed.</p>
+              <Link href="/marketplace">
+                <Button variant="outline" className="gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Marketplace
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        {/* Back button */}
+        <div className="mb-6">
+          <Link href="/marketplace">
+            <Button variant="outline" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Marketplace
+            </Button>
+          </Link>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Product Images */}
           <div className="space-y-4">
             <div className="aspect-square relative overflow-hidden rounded-lg bg-card">
               <Image
-                src={productData.images[selectedImage]}
-                alt={productData.title}
+                src={product.images?.[selectedImage] || product.thumbnailImage || '/placeholder-product.jpg'}
+                alt={product.title}
                 fill
                 className="object-cover"
               />
             </div>
-            <div className="flex space-x-2">
-              {productData.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                    selectedImage === index ? 'border-blue-500' : 'border-gray-200'
-                  }`}
-                >
-                  <Image
-                    src={image}
-                    alt={`${productData.title} ${index + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+            {product.images && product.images.length > 1 && (
+              <div className="flex space-x-2">
+                {product.images.map((image: string, index: number) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImage(index)}
+                    className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 ${
+                      selectedImage === index ? 'border-blue-500' : 'border-gray-200'
+                    }`}
+                  >
+                    <Image
+                      src={image}
+                      alt={`${product.title} ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
           <div className="space-y-6">
             <div>
               <div className="flex items-center space-x-2 mb-2">
-                <span className="text-sm text-gray-600">{productData.brand}</span>
-                <Badge className="bg-green-500 text-white">Best Seller</Badge>
+                {product.isFeatured && <Badge className="bg-green-500 text-white">Featured</Badge>}
+                {product.discount > 0 && <Badge className="bg-red-500 text-white">Sale</Badge>}
               </div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 mb-4">
-                {productData.title}
+                {product.title}
               </h1>
               
               <div className="flex items-center space-x-4 mb-4">
@@ -153,7 +193,7 @@ export default function ProductDetailPage() {
                     <Star
                       key={i}
                       className={`w-5 h-5 ${
-                        i < Math.floor(productData.rating)
+                        i < Math.floor(product.rating || 0)
                           ? 'text-yellow-400 fill-current'
                           : 'text-gray-300'
                       }`}
@@ -161,68 +201,36 @@ export default function ProductDetailPage() {
                   ))}
                 </div>
                 <span className="text-gray-600">
-                  {productData.rating} ({productData.reviewCount} reviews)
+                  {product.rating || 0} ({product.reviewCount || 0} reviews)
                 </span>
               </div>
 
               <div className="flex items-center space-x-4 mb-6">
                 <span className="text-3xl font-bold text-gray-900 dark:text-gray-200">
-                  ${productData.price}
+                  ${product.price}
                 </span>
-                <span className="text-xl text-gray-500 line-through">
-                  ${productData.originalPrice}
-                </span>
-                <Badge className="bg-red-500 text-white">
-                  Save ${productData.originalPrice - productData.price}
-                </Badge>
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <>
+                    <span className="text-xl text-gray-500 line-through">
+                      ${product.originalPrice}
+                    </span>
+                    <Badge className="bg-red-500 text-white">
+                      Save ${product.originalPrice - product.price}
+                    </Badge>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Quantity and Actions */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium">Quantity:</span>
-                <div className="flex items-center border rounded-lg">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleQuantityChange(-1)}
-                    disabled={quantity <= 1}
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                  <span className="px-4 py-2 border-x">{quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleQuantityChange(1)}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                {/* Digital Product Actions */}
+                <div className="space-y-4">
+                  <div className="flex space-x-4">
+                    <Button size="lg" className="flex-1 bg-green-900 hover:bg-green-800 text-white">
+                      <Download className="w-5 h-5 mr-2" />
+                      Get Instant Access
+                    </Button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex space-x-4">
-                <Button size="lg" className="flex-1 bg-green-900 hover:bg-green-800 text-white">
-                  <Download className="w-5 h-5 mr-2" />
-                  Get Instant Access
-                </Button>
-                <Button size="lg" variant="outline" className="flex-1">
-                  Buy Now
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => setIsFavorite(!isFavorite)}
-                  className={isFavorite ? 'text-red-500' : ''}
-                >
-                  <Heart className="w-5 h-5" />
-                </Button>
-                <Button variant="outline" size="lg">
-                  <Share2 className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
 
             {/* Digital Delivery Info */}
             <Card>
@@ -241,59 +249,22 @@ export default function ProductDetailPage() {
                   <div>
                     <p className="font-medium text-blue-600">30-day returns</p>
                     <p className="text-sm text-gray-600">
-                      Free returns within 30 days
+                      Full refund if not satisfied
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4 mt-2">
                   <FileText className="w-5 h-5 text-purple-600" />
                   <div>
-                    <p className="font-medium text-purple-600">Lifetime Access</p>
+                    <p className="font-medium text-purple-600">Unlimited Downloads</p>
                     <p className="text-sm text-gray-600">
-                      Download up to {productData.digitalDelivery.downloadLimit} times
+                      Download as many times as you need
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Seller Info */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium">
-                        {productData.seller.name.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{productData.seller.name}</p>
-                      <div className="flex items-center space-x-1">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-3 h-3 ${
-                                i < Math.floor(productData.seller.rating)
-                                  ? 'text-yellow-400 fill-current'
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-600">
-                          {productData.seller.rating} ({productData.seller.reviewCount})
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    View Store
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
 
@@ -312,16 +283,20 @@ export default function ProductDetailPage() {
                 <CardTitle>Product Description</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 mb-4">{productData.description}</p>
-                <h4 className="font-semibold mb-2">Key Features:</h4>
-                <ul className="space-y-1">
-                  {productData.features.map((feature, index) => (
-                    <li key={index} className="flex items-center space-x-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-gray-700 mb-4">{product.description}</p>
+                {product.features && product.features.length > 0 && (
+                  <>
+                    <h4 className="font-semibold mb-2">Key Features:</h4>
+                    <ul className="space-y-1">
+                      {product.features.map((feature: string, index: number) => (
+                        <li key={index} className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -332,14 +307,57 @@ export default function ProductDetailPage() {
                 <CardTitle>Technical Specifications</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(productData.specifications).map(([key, value]) => (
-                    <div key={key} className="flex justify-between py-2 border-b">
-                      <span className="font-medium text-gray-600">{key}</span>
-                      <span className="text-gray-900 dark:text-gray-200">{value}</span>
-                    </div>
-                  ))}
-                </div>
+                {(() => {
+                  try {
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="font-medium text-gray-600">File Format</span>
+                          <span className="text-gray-900 dark:text-gray-200">{String(product?.fileFormat || 'N/A')}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="font-medium text-gray-600">File Size</span>
+                          <span className="text-gray-900 dark:text-gray-200">{String(product?.fileSize || 'N/A')}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="font-medium text-gray-600">Category</span>
+                          <span className="text-gray-900 dark:text-gray-200">{String(product?.category || 'N/A')}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="font-medium text-gray-600">License</span>
+                          <span className="text-gray-900 dark:text-gray-200">{String(product?.license || 'Standard')}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="font-medium text-gray-600">Updates</span>
+                          <span className="text-gray-900 dark:text-gray-200">
+                            {product?.updates?.lifetime ? 'Lifetime' : 
+                             product?.updates?.duration ? String(product.updates.duration) : 
+                             product?.updates?.type ? String(product.updates.type) : 'Limited'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="font-medium text-gray-600">Support</span>
+                          <span className="text-gray-900 dark:text-gray-200">{String(product?.support || 'Email Support')}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="font-medium text-gray-600">Compatibility</span>
+                          <span className="text-gray-900 dark:text-gray-200">{String(product?.compatibility || 'All Modern Browsers')}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="font-medium text-gray-600">Version</span>
+                          <span className="text-gray-900 dark:text-gray-200">{String(product?.version || '1.0')}</span>
+                        </div>
+                      </div>
+                    );
+                  } catch (error) {
+                    console.error('Error rendering specifications:', error);
+                    return (
+                      <div className="text-center py-8">
+                        <p className="text-red-600">Error loading specifications</p>
+                      </div>
+                    );
+                  }
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
@@ -350,31 +368,8 @@ export default function ProductDetailPage() {
                 <CardTitle>Customer Reviews</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {productData.reviews.map((review) => (
-                    <div key={review.id} className="border-b pb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium">{review.user}</span>
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${
-                                  i < review.rating
-                                    ? 'text-yellow-400 fill-current'
-                                    : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <span className="text-sm text-gray-500">{review.date}</span>
-                      </div>
-                      <h4 className="font-medium mb-1">{review.title}</h4>
-                      <p className="text-gray-700">{review.comment}</p>
-                    </div>
-                  ))}
+                <div className="text-center py-8">
+                  <p className="text-gray-600 dark:text-gray-400">No reviews yet. Be the first to review this product!</p>
                 </div>
               </CardContent>
             </Card>
@@ -391,14 +386,14 @@ export default function ProductDetailPage() {
                     <h4 className="font-semibold mb-2">Digital Delivery Information</h4>
                     <ul className="space-y-1 text-gray-700">
                       <li>• Instant download after purchase</li>
-                      <li>• Access duration: {productData.digitalDelivery.accessDuration}</li>
-                      <li>• Download limit: {productData.digitalDelivery.downloadLimit} times</li>
+                      <li>• Access duration: {product.digitalDelivery?.accessDuration || 'Lifetime'}</li>
+                      <li>• Download limit: {product.digitalDelivery?.downloadLimit || 5} times</li>
                     </ul>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Return Policy</h4>
                     <ul className="space-y-1 text-gray-700">
-                      <li>• {productData.digitalDelivery.returnPolicy}</li>
+                      <li>• {product.digitalDelivery?.returnPolicy || '30-day return policy'}</li>
                       <li>• Digital product returns accepted</li>
                       <li>• Full refund or exchange</li>
                     </ul>
@@ -410,42 +405,46 @@ export default function ProductDetailPage() {
         </Tabs>
 
         {/* Related Products */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-200 mb-6">Related Products</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {productData.relatedProducts.map((product) => (
-              <Card key={product.id} className="hover:shadow-lg transition-shadow">
-                <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                  <Image
-                    src={product.image}
-                    alt={product.title}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-200 mb-2">{product.title}</h3>
-                  <div className="flex items-center space-x-1 mb-2">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < Math.floor(product.rating)
-                              ? 'text-yellow-400 fill-current'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
+        {relatedProducts && relatedProducts.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-200 mb-6">Related Products</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedProducts.map((relatedProduct) => (
+                <Link key={relatedProduct._id} href={`/marketplace/product/${relatedProduct._id}`}>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <div className="aspect-square relative overflow-hidden rounded-t-lg">
+                      <Image
+                        src={relatedProduct.thumbnailImage || '/placeholder-product.jpg'}
+                        alt={relatedProduct.title}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
-                    <span className="text-sm text-gray-600">{product.rating}</span>
-                  </div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-gray-200">${product.price}</div>
-                </CardContent>
-              </Card>
-            ))}
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-200 mb-2">{relatedProduct.title}</h3>
+                      <div className="flex items-center space-x-1 mb-2">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < Math.floor(relatedProduct.rating || 0)
+                                  ? 'text-yellow-400 fill-current'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-600">{relatedProduct.rating || 0}</span>
+                      </div>
+                      <div className="text-lg font-bold text-gray-900 dark:text-gray-200">${relatedProduct.price}</div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

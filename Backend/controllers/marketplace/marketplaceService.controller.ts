@@ -137,11 +137,28 @@ export const getMarketplaceServiceById = CatchAsyncError(async (req: Request, re
         const { serviceId } = req.params;
 
         const service = await MarketplaceServiceModel.findById(serviceId)
-            .populate('sellerId', 'sellerName storeName storeLogo rating reviewCount verified responseTime totalSales sellerLevel');
+            .populate('sellerId', 'sellerName storeName storeLogo rating reviewCount verified responseTime totalSales sellerLevel description skills languages location joinDate')
+            .lean();
 
         if (!service) {
             return next(new ErrorHandler("Service not found", 404));
         }
+
+        // Check if service is approved and active
+        if (!service.isApproved || !service.isActive) {
+            return next(new ErrorHandler("Service not available", 404));
+        }
+
+        // Get related services (same seller, excluding current service)
+        const relatedServices = await MarketplaceServiceModel.find({
+            sellerId: service.sellerId,
+            _id: { $ne: serviceId },
+            isApproved: true,
+            isActive: true
+        })
+        .select('title price thumbnailImage rating reviewCount deliveryTime')
+        .limit(4)
+        .lean();
 
         // Increment view count
         await MarketplaceServiceModel.findByIdAndUpdate(serviceId, {
@@ -150,7 +167,8 @@ export const getMarketplaceServiceById = CatchAsyncError(async (req: Request, re
 
         res.status(200).json({
             success: true,
-            service
+            service,
+            relatedServices
         });
 
     } catch (error: any) {

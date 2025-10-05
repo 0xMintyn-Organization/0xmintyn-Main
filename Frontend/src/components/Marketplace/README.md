@@ -22,11 +22,10 @@ A comprehensive marketplace frontend UI for the 0xMintyn platform that seamlessl
 - Shopping cart with quantity management
 
 ### Service Features (Fiverr-style)
-- Service listings with portfolio previews
+- Service listings with service previews
 - Service packages (Basic, Standard, Premium)
 - Seller profiles with ratings and reviews
 - Service delivery tracking
-- Add-ons and extras
 - Service booking and messaging
 
 ### User Experience

@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Filter, Grid, List, Search, SortAsc, SortDesc, Package } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Filter, Grid, List, Search, SortAsc, SortDesc, Package, ChevronLeft, ChevronRight, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
+import axios from 'axios';
 
 export default function AllProductsPage() {
   const { searchQuery, setSearchQuery } = useMarketplace();
@@ -19,8 +20,25 @@ export default function AllProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [sortBy, setSortBy] = useState('newest');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  
+  // Dynamic data state
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage] = useState(12);
+  
+  // Stats state
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalServices: 0,
+    totalSellers: 0,
+    successRate: 0
+  });
 
   // Categories for filtering
   const categories = [
@@ -46,22 +64,50 @@ export default function AllProductsPage() {
     { value: 'rating', label: 'Highest Rated' }
   ];
 
-  useEffect(() => {
-    fetchProducts();
-  }, [searchQuery, sortBy, selectedCategories]);
-
-  const fetchProducts = async () => {
+  // API Functions
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      // TODO: Implement API call to fetch products with filters
-      // For now, using mock data
-      setProducts([]);
-    } catch (error) {
+      setError(null);
+
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchQuery,
+        categories: selectedCategories.join(','),
+        sortBy,
+        type: 'products'
+      };
+
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/search`, {
+        params,
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        console.log('Products API Response:', response.data);
+        setProducts(response.data.data.items || []);
+        setTotalPages(response.data.data.pagination.totalPages || 1);
+        setTotalItems(response.data.data.pagination.totalItems || 0);
+        setStats(response.data.stats || {
+          totalProducts: 0,
+          totalServices: 0,
+          totalSellers: 0,
+          successRate: 0
+        });
+      }
+    } catch (error: unknown) {
       console.error('Error fetching products:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch products');
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, currentPage, selectedCategories, sortBy, itemsPerPage]);
+
+  // Fetch products when dependencies change
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleQuickView = (product: any) => {
     setSelectedProduct(product);
@@ -69,8 +115,9 @@ export default function AllProductsPage() {
   };
 
   const handleApplyFilters = (filters: any) => {
-    console.log('Applied filters:', filters);
-    // Implement filter logic here
+    setSelectedCategories(filters.categories || []);
+    setSortBy(filters.sortBy || 'newest');
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
   const handleCategoryToggle = (category: string) => {
@@ -79,11 +126,23 @@ export default function AllProductsPage() {
         ? prev.filter(c => c !== category)
         : [...prev, category]
     );
+    setCurrentPage(1); // Reset to first page when category changes
   };
 
   const clearFilters = () => {
     setSelectedCategories([]);
     setSortBy('newest');
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    fetchProducts();
   };
 
   return (
@@ -105,13 +164,13 @@ export default function AllProductsPage() {
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Dynamic Stats */}
           <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
-            <span>2,500+ Products Available</span>
+            <span>{stats.totalProducts.toLocaleString()}+ Products Available</span>
             <span>•</span>
-            <span>1,200+ Active Sellers</span>
+            <span>{stats.totalSellers.toLocaleString()}+ Active Sellers</span>
             <span>•</span>
-            <span>98% Success Rate</span>
+            <span>{stats.successRate}% Success Rate</span>
           </div>
         </div>
 
@@ -225,23 +284,103 @@ export default function AllProductsPage() {
           </Card>
         </div>
 
-        {/* Products Grid */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+        {/* Results Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {loading ? 'Loading products...' : `${products.length} Products Found`}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Loading products...
+                </div>
+              ) : error ? (
+                <span className="text-red-600">Error loading products</span>
+              ) : (
+                `${totalItems} Products Found`
+              )}
             </h2>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <span>Showing all products</span>
-            </div>
+            {!loading && !error && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} results
+              </p>
+            )}
           </div>
-
-          <ProductGrid 
-            viewMode={viewMode} 
-            searchQuery={searchQuery}
-            onQuickView={handleQuickView}
-          />
         </div>
+
+        {/* Error State */}
+        {error && (
+          <Card className="mb-8">
+            <CardContent className="p-6 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <AlertCircle className="h-12 w-12 text-red-500" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Failed to load products</h3>
+                  <p className="text-red-600 mb-4">{error}</p>
+                  <Button onClick={handleRetry} variant="outline" className="gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    Try Again
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Products Grid */}
+        {!error && (
+          <div className="mb-8">
+            <ProductGrid 
+              viewMode={viewMode} 
+              searchQuery={searchQuery}
+              onQuickView={handleQuickView}
+              products={products}
+              loading={loading}
+              hasActiveSearch={!!searchQuery || selectedCategories.length > 0 || sortBy !== 'newest'}
+            />
+
+            {/* Pagination */}
+            {!loading && totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const page = i + 1;
+                    return (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(page)}
+                        className={currentPage === page ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
+                      >
+                        {page}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Search Filters Modal */}

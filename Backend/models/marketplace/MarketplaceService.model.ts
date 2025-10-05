@@ -19,17 +19,6 @@ export interface IMarketplaceService extends Document {
     features: string[];
     isPopular: boolean;
   }[];
-  addOns: {
-    name: string;
-    description: string;
-    price: number;
-  }[];
-  portfolio: {
-    title: string;
-    description: string;
-    image: string;
-    category: string;
-  }[];
   whatYouGet: string[];
   requirements: string[];
   faqs: {
@@ -149,40 +138,6 @@ const marketplaceServiceSchema: Schema<IMarketplaceService> = new mongoose.Schem
     isPopular: {
       type: Boolean,
       default: false
-    }
-  }],
-  addOns: [{
-    name: {
-      type: String,
-      required: [true, 'Add-on name is required'],
-      trim: true
-    },
-    description: {
-      type: String,
-      required: [true, 'Add-on description is required'],
-      trim: true
-    },
-    price: {
-      type: Number,
-      required: [true, 'Add-on price is required'],
-      min: [0, 'Price cannot be negative']
-    }
-  }],
-  portfolio: [{
-    title: {
-      type: String,
-      trim: true
-    },
-    description: {
-      type: String,
-      trim: true
-    },
-    image: {
-      type: String
-    },
-    category: {
-      type: String,
-      trim: true
     }
   }],
   whatYouGet: [{

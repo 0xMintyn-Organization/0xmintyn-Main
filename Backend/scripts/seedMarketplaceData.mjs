@@ -113,25 +113,6 @@ const sampleServices = [
         isPopular: false
       }
     ],
-    addOns: [
-      { name: "Rush Delivery", description: "24-hour delivery", price: 20 },
-      { name: "Social Media Kit", description: "Social media templates", price: 30 },
-      { name: "Business Card Design", description: "Matching business card", price: 25 }
-    ],
-    portfolio: [
-      {
-        title: "Tech Startup Logo",
-        description: "Modern logo for a fintech startup",
-        image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop",
-        category: "Technology"
-      },
-      {
-        title: "Restaurant Brand Identity",
-        description: "Complete brand identity for a fine dining restaurant",
-        image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop",
-        category: "Food & Beverage"
-      }
-    ],
     whatYouGet: ["High-quality logo files", "Brand guidelines document", "Source files", "Commercial usage rights", "Lifetime support"],
     requirements: ["Business name", "Industry description", "Color preferences", "Style references", "Target audience"],
     faqs: [
