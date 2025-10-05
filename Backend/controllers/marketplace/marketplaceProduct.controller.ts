@@ -146,9 +146,12 @@ export const getMarketplaceProductById = CatchAsyncError(async (req: Request, re
         .limit(4)
         .lean();
 
+        // Remove sensitive fields from product response
+        const { fileUrl, previewUrl, ...safeProduct } = product;
+        
         res.status(200).json({
             success: true,
-            product,
+            product: safeProduct,
             relatedProducts
         });
 
@@ -208,6 +211,7 @@ export const getAllMarketplaceProducts = CatchAsyncError(async (req: Request, re
 
         // Execute query with pagination
         const products = await MarketplaceProductModel.find(filter)
+            .select('-fileUrl -previewUrl') // Exclude sensitive fields
             .populate('sellerId', 'sellerName storeName rating reviewCount verified')
             .sort(sortOptions)
             .limit(Number(limit))

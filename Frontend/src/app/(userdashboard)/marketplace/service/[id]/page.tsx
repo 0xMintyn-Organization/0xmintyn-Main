@@ -10,16 +10,18 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
+import PurchaseModal from '@/components/Marketplace/PurchaseModal';
 
 export default function ServiceDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [service, setService] = useState(null);
-  const [relatedServices, setRelatedServices] = useState([]);
+  const [service, setService] = useState<any>(null);
+  const [relatedServices, setRelatedServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [selectedPackage, setSelectedPackage] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
   // Helper function to construct full image URLs
   const getFullImageUrl = (imagePath: string) => {
@@ -243,7 +245,11 @@ export default function ServiceDetailPage() {
 
 
             {/* Order Button */}
-            <Button size="lg" className="w-full bg-green-600 hover:bg-green-700">
+            <Button 
+              size="lg" 
+              className="w-full bg-green-600 hover:bg-green-700"
+              onClick={() => setShowPurchaseModal(true)}
+            >
               Order Now - ${service.packages?.[selectedPackage]?.price || service.price}
             </Button>
 
@@ -580,6 +586,22 @@ export default function ServiceDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Purchase Modal */}
+      {service && (
+        <PurchaseModal
+          isOpen={showPurchaseModal}
+          onClose={() => setShowPurchaseModal(false)}
+          item={{
+            id: service._id,
+            title: service.title,
+            price: service.packages?.[selectedPackage]?.price || service.price,
+            image: getFullImageUrl(service.thumbnailImage),
+            type: 'service',
+            sellerName: service.sellerId?.sellerName
+          }}
+        />
+      )}
     </div>
   );
 }

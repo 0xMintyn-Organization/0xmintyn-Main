@@ -78,6 +78,7 @@ export const searchMarketplace = async (req: Request, res: Response) => {
     // Execute query with pagination
     const [itemsResult, totalItemsResult] = await Promise.all([
       Model.find(query)
+        .select('-fileUrl -previewUrl') // Exclude sensitive fields for products
         .populate('sellerId', 'sellerName storeName storeLogo')
         .sort(sortOptions)
         .skip(skip)

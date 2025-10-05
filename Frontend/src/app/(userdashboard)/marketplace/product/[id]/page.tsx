@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
+import PurchaseModal from '@/components/Marketplace/PurchaseModal';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -25,6 +26,7 @@ export default function ProductDetailPage() {
   // UI state
   const [selectedImage, setSelectedImage] = useState(0);
   const [downloading, setDownloading] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
   // Helper function to construct full image URLs
   const getFullImageUrl = (imagePath: string) => {
@@ -103,24 +105,44 @@ export default function ProductDetailPage() {
   };
 
   const handleDownload = async () => {
-    if (!product?.fileUrl) {
-      console.error('No file URL available');
+    if (!product?._id) {
+      console.error('No product ID available');
       return;
     }
 
     try {
       setDownloading(true);
       
-      // Create a temporary link to download the file
-      const link = document.createElement('a');
-      link.href = getFullImageUrl(product.fileUrl); // Use full URL for file download too
-      link.download = `${product.title}.${product.fileFormat?.toLowerCase() || 'zip'}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Use secure file access endpoint
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/purchase/product/${product._id}/file`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        // Create blob from response
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${product.title}.${product.fileFormat?.toLowerCase() || 'zip'}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up
+        window.URL.revokeObjectURL(url);
+      } else {
+        const errorData = await response.text();
+        console.error('Download failed:', response.status, errorData);
+        alert('You must purchase this product to download the file');
+      }
       
     } catch (error) {
       console.error('Download failed:', error);
+      alert('Download failed. Please try again.');
     } finally {
       setDownloading(false);
     }
@@ -316,8 +338,8 @@ export default function ProductDetailPage() {
                     <Button 
                       size="lg" 
                       className="flex-1 bg-green-900 hover:bg-green-800 text-white"
-                      onClick={handleDownload}
-                      disabled={downloading || !product?.fileUrl}
+                      onClick={() => setShowPurchaseModal(true)}
+                      disabled={downloading}
                     >
                       <Download className="w-5 h-5 mr-2" />
                       {downloading ? 'Downloading...' : 'Get Instant Access'}
@@ -546,6 +568,22 @@ export default function ProductDetailPage() {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Purchase Modal */}
+        {product && (
+          <PurchaseModal
+            isOpen={showPurchaseModal}
+            onClose={() => setShowPurchaseModal(false)}
+            item={{
+              id: product._id,
+              title: product.title,
+              price: product.price,
+              image: getFullImageUrl(product.thumbnailImage),
+              type: 'product',
+              sellerName: product.sellerId?.sellerName
+            }}
+          />
         )}
       </div>
     </div>

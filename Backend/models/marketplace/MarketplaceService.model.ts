@@ -232,6 +232,7 @@ const marketplaceServiceSchema: Schema<IMarketplaceService> = new mongoose.Schem
   timestamps: true
 });
 
+
 // Indexes for better query performance
 marketplaceServiceSchema.index({ sellerId: 1, isActive: 1 });
 marketplaceServiceSchema.index({ category: 1, isActive: 1, isApproved: 1 });
