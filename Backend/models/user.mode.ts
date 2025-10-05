@@ -14,6 +14,15 @@ export interface IUser extends Document {
     purchasedProducts: {
         productId: string;
     }[];
+    purchasedServices: {
+        serviceId: string;
+    }[];
+    purchasedItems: {
+        itemId: string;
+        itemType: 'product' | 'service';
+        purchaseDate: Date;
+        orderId: string;
+    }[];
     email: string;
     username: string;
     contactNumber: string;
@@ -122,6 +131,32 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     purchasedProducts: [
         {
             productId: String,
+        }
+    ],
+    purchasedServices: [
+        {
+            serviceId: String,
+        }
+    ],
+    purchasedItems: [
+        {
+            itemId: {
+                type: String,
+                required: true
+            },
+            itemType: {
+                type: String,
+                enum: ['product', 'service'],
+                required: true
+            },
+            purchaseDate: {
+                type: Date,
+                default: Date.now
+            },
+            orderId: {
+                type: String,
+                required: true
+            }
         }
     ],
 }, { timestamps: true });

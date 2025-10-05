@@ -145,27 +145,6 @@ export default function DynamicHeader() {
               1000 OXM
             </Button>
 
-            {/* Marketplace specific actions (only on marketplace pages) */}
-            {isMarketplace && (
-              <>
-                {/* Favorites */}
-                <Button variant="ghost" size="sm" className="relative">
-                  <Heart className="w-5 h-5" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                    12
-                  </Badge>
-                </Button>
-
-                {/* Shopping Cart */}
-                <Button variant="ghost" size="sm" className="relative">
-                  <ShoppingCart className="w-5 h-5" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                    5
-                  </Badge>
-                </Button>
-              </>
-            )}
-
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

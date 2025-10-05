@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShoppingCart, CreditCard, Wallet, Coins, Shield, CheckCircle, Clock, Loader2 } from 'lucide-react';
+import { ShoppingCart, CreditCard, Wallet, Coins, Shield, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface PurchaseModalProps {
   isOpen: boolean;
@@ -22,16 +23,107 @@ interface PurchaseModalProps {
 
 export default function PurchaseModal({ isOpen, onClose, item }: PurchaseModalProps) {
   const [loading, setLoading] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit_card');
+  const [billingInfo, setBillingInfo] = useState({
+    fullName: '',
+    email: '',
+    address: '',
+    city: '',
+    zipCode: '',
+    country: ''
+  });
+  const { toast } = useToast();
 
   const handlePurchase = async () => {
     setLoading(true);
     
-    // TODO: Implement actual purchase logic
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setLoading(false);
-    onClose();
-    alert('Purchase successful!');
+    try {
+      // Validate required fields
+      if (!billingInfo.fullName || !billingInfo.email) {
+        toast({
+          variant: "error",
+          title: "Missing Information",
+          description: "Please fill in your full name and email address",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Prepare order data
+      const orderData = {
+        items: [{
+          itemId: item.id,
+          itemType: item.type,
+          quantity: 1,
+          // For services, include package index if available
+          ...(item.type === 'service' && { packageIndex: 0 })
+        }],
+        shippingAddress: {
+          fullName: billingInfo.fullName || 'N/A',
+          email: billingInfo.email || 'N/A',
+          address: billingInfo.address || 'N/A',
+          city: billingInfo.city || 'N/A',
+          zipCode: billingInfo.zipCode || 'N/A',
+          country: billingInfo.country || 'N/A'
+        },
+        notes: `Purchase via ${selectedPaymentMethod}`
+      };
+
+      // Create order via API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/orders/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(orderData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Order created successfully:', result);
+        
+        // Show success message
+        toast({
+          variant: "success",
+          title: "🎉 Order Created Successfully!",
+          description: `Order #${result.order.orderNumber} • Total: $${result.order.orderTotal}`,
+        });
+        
+        // Close modal
+        onClose();
+        
+        // Optionally redirect to order details or user's orders page
+        // You can uncomment this line to redirect to orders page
+        // window.location.href = '/marketplace/orders';
+        
+      } else {
+        const errorData = await response.json();
+        console.error('Order creation failed:', errorData);
+        
+        // Handle specific error cases
+        if (response.status === 401) {
+          throw new Error('Please log in to complete your purchase');
+        } else if (response.status === 400) {
+          throw new Error(errorData.message || 'Invalid order data. Please check your information.');
+        } else if (response.status === 404) {
+          throw new Error('Product or service not found. It may have been removed.');
+        } else {
+          throw new Error(errorData.message || 'Failed to create order. Please try again.');
+        }
+      }
+      
+    } catch (error: unknown) {
+      console.error('Purchase failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Please try again';
+      toast({
+        variant: "error",
+        title: "❌ Purchase Failed",
+        description: errorMessage,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const paymentMethods = [
@@ -118,6 +210,82 @@ export default function PurchaseModal({ isOpen, onClose, item }: PurchaseModalPr
             </div>
           </div>
 
+          {/* Billing Information */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg">Billing Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="fullName" className="text-sm font-medium">Full Name</label>
+                <input 
+                  id="fullName"
+                  type="text"
+                  value={billingInfo.fullName}
+                  onChange={(e) => setBillingInfo(prev => ({ ...prev, fullName: e.target.value }))}
+                  placeholder="John Doe"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium">Email</label>
+                <input 
+                  id="email"
+                  type="email"
+                  value={billingInfo.email}
+                  onChange={(e) => setBillingInfo(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="john@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="address" className="text-sm font-medium">Address</label>
+                <input 
+                  id="address"
+                  type="text"
+                  value={billingInfo.address}
+                  onChange={(e) => setBillingInfo(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="123 Main St"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="city" className="text-sm font-medium">City</label>
+                <input 
+                  id="city"
+                  type="text"
+                  value={billingInfo.city}
+                  onChange={(e) => setBillingInfo(prev => ({ ...prev, city: e.target.value }))}
+                  placeholder="New York"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="zipCode" className="text-sm font-medium">ZIP Code</label>
+                <input 
+                  id="zipCode"
+                  type="text"
+                  value={billingInfo.zipCode}
+                  onChange={(e) => setBillingInfo(prev => ({ ...prev, zipCode: e.target.value }))}
+                  placeholder="10001"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="country" className="text-sm font-medium">Country</label>
+                <select 
+                  id="country"
+                  value={billingInfo.country}
+                  onChange={(e) => setBillingInfo(prev => ({ ...prev, country: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Select country</option>
+                  <option value="US">United States</option>
+                  <option value="CA">Canada</option>
+                  <option value="UK">United Kingdom</option>
+                  <option value="AU">Australia</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
           {/* Security Features */}
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
