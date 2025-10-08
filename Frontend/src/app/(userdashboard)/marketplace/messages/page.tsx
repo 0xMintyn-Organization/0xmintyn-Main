@@ -35,7 +35,6 @@ export default function MessengerPage() {
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   // States
-  const [activeTab, setActiveTab] = useState<'inbox' | 'sent'>('inbox');
   const [conversations, setConversations] = useState<any[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -45,6 +44,7 @@ export default function MessengerPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 
   // Check for conversation parameter (when redirected from service page)
   useEffect(() => {
@@ -60,8 +60,7 @@ export default function MessengerPage() {
   // Fetch conversations
   useEffect(() => {
     fetchConversations();
-    fetchUnreadCount();
-  }, [activeTab]);
+  }, []);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -77,15 +76,24 @@ export default function MessengerPage() {
       setLoading(true);
       setError(null);
 
-      const endpoint = activeTab === 'inbox' 
-        ? `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/inbox`
-        : `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/sent`;
+      // Fetch both inbox and sent messages
+      const [inboxResponse, sentResponse] = await Promise.all([
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/inbox`, { withCredentials: true }),
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/sent`, { withCredentials: true })
+      ]);
 
-      const response = await axios.get(endpoint, { withCredentials: true });
-
-      if (response.data.success) {
+      if (inboxResponse.data.success && sentResponse.data.success) {
+        // Combine all messages from both inbox and sent
+        const allMessages = [
+          ...inboxResponse.data.messages,
+          ...sentResponse.data.messages
+        ];
+        
+        // Get unread count from inbox response
+        setUnreadCount(inboxResponse.data.unreadCount || 0);
+        
         // Group messages by conversation (sender/receiver pair)
-        const groupedMessages = groupMessagesByConversation(response.data.messages);
+        const groupedMessages = groupMessagesByConversation(allMessages);
         setConversations(groupedMessages);
         
         // Auto-select first conversation if none selected
@@ -101,43 +109,34 @@ export default function MessengerPage() {
     }
   };
 
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/unread-count`,
-        { withCredentials: true }
-      );
-      if (response.data.success) {
-        setUnreadCount(response.data.unreadCount);
-      }
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
-  };
-
   const groupMessagesByConversation = (messages: any[]) => {
     const conversationMap = new Map();
 
     messages.forEach((message: any) => {
-      const otherUser = activeTab === 'inbox' ? message.senderId : message.receiverId;
-      const conversationKey = otherUser?._id;
+      // Determine the other user (not the current user)
+      const isReceived = message.receiverId?._id === user?._id || message.receiverId === user?._id;
+      const otherUser = isReceived ? message.senderId : message.receiverId;
+      const conversationKey = otherUser?._id || otherUser;
 
       if (!conversationMap.has(conversationKey)) {
         conversationMap.set(conversationKey, {
-          _id: message._id,
+          _id: conversationKey,
           otherUser,
           lastMessage: message,
           messages: [message],
-          unreadCount: !message.isRead && activeTab === 'inbox' ? 1 : 0,
+          unreadCount: !message.isRead && isReceived ? 1 : 0,
           serviceId: message.serviceId,
           productId: message.productId
         });
       } else {
         const conversation = conversationMap.get(conversationKey);
         conversation.messages.push(message);
-        if (!message.isRead && activeTab === 'inbox') {
+        
+        // Count unread messages (only messages TO current user)
+        if (!message.isRead && isReceived) {
           conversation.unreadCount++;
         }
+        
         // Update last message if this is more recent
         if (new Date(message.createdAt) > new Date(conversation.lastMessage.createdAt)) {
           conversation.lastMessage = message;
@@ -145,7 +144,7 @@ export default function MessengerPage() {
       }
     });
 
-    // Convert map to array and sort by last message date
+    // Convert map to array and sort by last message date (most recent first)
     return Array.from(conversationMap.values()).sort((a, b) => 
       new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
     );
@@ -157,23 +156,36 @@ export default function MessengerPage() {
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     ));
 
-    // Mark messages as read if inbox
-    if (activeTab === 'inbox') {
-      conversation.messages.forEach(async (msg: any) => {
-        if (!msg.isRead) {
-          try {
-            await axios.patch(
-              `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/${msg._id}/read`,
-              {},
-              { withCredentials: true }
-            );
-          } catch (error) {
-            console.error('Error marking message as read:', error);
-          }
+    // Mark unread messages as read (only messages TO current user)
+    const unreadMessages = conversation.messages.filter((msg: any) => {
+      const isReceived = msg.receiverId?._id === user?._id || msg.receiverId === user?._id;
+      return !msg.isRead && isReceived;
+    });
+
+    if (unreadMessages.length > 0) {
+      unreadMessages.forEach(async (msg: any) => {
+        try {
+          await axios.patch(
+            `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/${msg._id}/read`,
+            {},
+            { withCredentials: true }
+          );
+        } catch (error) {
+          console.error('Error marking message as read:', error);
         }
       });
-      // Refresh unread count
-      fetchUnreadCount();
+      
+      // Update local state to reflect read status
+      setConversations(prevConversations =>
+        prevConversations.map(conv =>
+          conv._id === conversation._id
+            ? { ...conv, unreadCount: 0 }
+            : conv
+        )
+      );
+      
+      // Update unread count
+      setUnreadCount(prev => Math.max(0, prev - unreadMessages.length));
     }
   };
 
@@ -212,11 +224,18 @@ export default function MessengerPage() {
     }
   };
 
-  const filteredConversations = conversations.filter(conversation =>
-    conversation.otherUser?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conversation.otherUser?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conversation.lastMessage?.subject?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter conversations based on search and unread status
+  const filteredConversations = conversations.filter(conversation => {
+    // Search filter
+    const matchesSearch = conversation.otherUser?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conversation.otherUser?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conversation.lastMessage?.subject?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Unread filter
+    const matchesUnread = !showUnreadOnly || conversation.unreadCount > 0;
+    
+    return matchesSearch && matchesUnread;
+  });
 
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return null;
@@ -244,28 +263,14 @@ export default function MessengerPage() {
         <Card className="lg:col-span-1 flex flex-col h-full">
           <CardHeader className="border-b pb-4">
             <div className="flex items-center justify-between mb-4">
-              <CardTitle className="text-lg">Conversations</CardTitle>
+              <CardTitle className="text-lg">Messages</CardTitle>
               {unreadCount > 0 && (
-                <Badge className="bg-green-500">{unreadCount} unread</Badge>
+                <Badge className="bg-red-500 text-white">{unreadCount} unread</Badge>
               )}
             </div>
 
-            {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'inbox' | 'sent')}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="inbox" className="flex items-center gap-2">
-                  <Inbox className="w-4 h-4" />
-                  Inbox
-                </TabsTrigger>
-                <TabsTrigger value="sent" className="flex items-center gap-2">
-                  <SendIcon className="w-4 h-4" />
-                  Sent
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
             {/* Search */}
-            <div className="relative mt-4">
+            <div className="relative mb-3">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 placeholder="Search conversations..."
@@ -273,6 +278,26 @@ export default function MessengerPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
+            </div>
+
+            {/* Filter Buttons */}
+            <div className="flex gap-2">
+              <Button
+                variant={!showUnreadOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowUnreadOnly(false)}
+                className={!showUnreadOnly ? 'bg-green-600 hover:bg-green-700' : ''}
+              >
+                All ({conversations.length})
+              </Button>
+              <Button
+                variant={showUnreadOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowUnreadOnly(true)}
+                className={showUnreadOnly ? 'bg-green-600 hover:bg-green-700' : ''}
+              >
+                Unread ({unreadCount})
+              </Button>
             </div>
           </CardHeader>
 
@@ -294,58 +319,70 @@ export default function MessengerPage() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y">
-                {filteredConversations.map((conversation) => (
-                  <button
-                    key={conversation._id}
-                    onClick={() => handleSelectConversation(conversation)}
-                    className={`w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left ${
-                      selectedConversation?._id === conversation._id
-                        ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500'
-                        : ''
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="relative w-10 h-10 flex-shrink-0">
-                        {conversation.otherUser?.avatar ? (
-                          <Image
-                            src={conversation.otherUser.avatar}
-                            alt={conversation.otherUser.firstName || 'User'}
-                            fill
-                            className="object-cover rounded-full"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-medium">
-                              {conversation.otherUser?.firstName?.charAt(0) || 'U'}
+              <div className="divide-y dark:divide-gray-700">
+                {filteredConversations.map((conversation) => {
+                  const isUnread = conversation.unreadCount > 0;
+                  const isSelected = selectedConversation?._id === conversation._id;
+                  
+                  return (
+                    <button
+                      key={conversation._id}
+                      onClick={() => handleSelectConversation(conversation)}
+                      className={`w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left relative ${
+                        isSelected
+                          ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500'
+                          : isUnread
+                          ? 'bg-blue-50/50 dark:bg-blue-900/10'
+                          : ''
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="relative w-12 h-12 flex-shrink-0">
+                          {conversation.otherUser?.avatar ? (
+                            <Image
+                              src={conversation.otherUser.avatar}
+                              alt={conversation.otherUser.firstName || 'User'}
+                              fill
+                              className="object-cover rounded-full"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                              <span className="text-white font-semibold">
+                                {conversation.otherUser?.firstName?.charAt(0) || 'U'}
+                              </span>
+                            </div>
+                          )}
+                          {isUnread && (
+                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-900">
+                              <span className="text-xs font-bold text-white">{conversation.unreadCount}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className={`text-sm truncate ${isUnread ? 'font-bold text-gray-900 dark:text-white' : 'font-medium text-gray-900 dark:text-white'}`}>
+                              {conversation.otherUser?.firstName} {conversation.otherUser?.lastName}
+                            </h4>
+                            <span className={`text-xs flex-shrink-0 ml-2 ${isUnread ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-gray-500'}`}>
+                              {formatDistanceToNow(new Date(conversation.lastMessage.createdAt), { addSuffix: true })}
                             </span>
                           </div>
-                        )}
-                        {conversation.unreadCount > 0 && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                            <span className="text-xs text-white">{conversation.unreadCount}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                            {conversation.otherUser?.firstName} {conversation.otherUser?.lastName}
-                          </h4>
-                          <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                            {formatDistanceToNow(new Date(conversation.lastMessage.createdAt), { addSuffix: true })}
-                          </span>
+                          <p className={`text-xs text-gray-600 dark:text-gray-400 truncate mb-1`}>
+                            @{conversation.otherUser?.username}
+                          </p>
+                          <p className={`text-sm truncate ${isUnread ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>
+                            {conversation.lastMessage.message}
+                          </p>
+                          {(conversation.serviceId || conversation.productId) && (
+                            <Badge variant="outline" className="text-xs mt-2">
+                              {conversation.serviceId ? '🎯 Service' : '📦 Product'}
+                            </Badge>
+                          )}
                         </div>
-                        <p className={`text-sm truncate ${conversation.unreadCount > 0 ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>
-                          {conversation.lastMessage.subject}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 truncate mt-1">
-                          {conversation.lastMessage.message}
-                        </p>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -356,39 +393,42 @@ export default function MessengerPage() {
           {selectedConversation ? (
             <>
               {/* Conversation Header */}
-              <CardHeader className="border-b">
-                <div className="flex items-center space-x-3">
-                  <div className="relative w-12 h-12">
-                    {selectedConversation.otherUser?.avatar ? (
-                      <Image
-                        src={selectedConversation.otherUser.avatar}
-                        alt={selectedConversation.otherUser.firstName || 'User'}
-                        fill
-                        className="object-cover rounded-full"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                        <span className="text-lg font-medium">
-                          {selectedConversation.otherUser?.firstName?.charAt(0) || 'U'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                      {selectedConversation.otherUser?.firstName} {selectedConversation.otherUser?.lastName}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      @{selectedConversation.otherUser?.username}
-                    </p>
+              <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="relative w-14 h-14">
+                      {selectedConversation.otherUser?.avatar ? (
+                        <Image
+                          src={selectedConversation.otherUser.avatar}
+                          alt={selectedConversation.otherUser.firstName || 'User'}
+                          fill
+                          className="object-cover rounded-full border-2 border-green-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center border-2 border-green-500">
+                          <span className="text-white text-xl font-bold">
+                            {selectedConversation.otherUser?.firstName?.charAt(0) || 'U'}
+                          </span>
+                        </div>
+                      )}
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                        {selectedConversation.otherUser?.firstName} {selectedConversation.otherUser?.lastName}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        @{selectedConversation.otherUser?.username}
+                      </p>
+                    </div>
                   </div>
                   {(selectedConversation.serviceId || selectedConversation.productId) && (
                     <div className="text-right">
-                      <Badge variant="outline" className="text-xs">
-                        {selectedConversation.serviceId ? 'Service' : 'Product'} Inquiry
+                      <Badge className="bg-green-600 text-white">
+                        {selectedConversation.serviceId ? '🎯 Service Inquiry' : '📦 Product Inquiry'}
                       </Badge>
-                      {selectedConversation.serviceId && (
-                        <p className="text-xs text-gray-600 mt-1 truncate max-w-[200px]">
+                      {selectedConversation.serviceId?.title && (
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 max-w-[200px] truncate">
                           {selectedConversation.serviceId.title}
                         </p>
                       )}
@@ -398,83 +438,144 @@ export default function MessengerPage() {
               </CardHeader>
 
               {/* Messages */}
-              <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
-                {messages.map((message, index) => {
-                  const isOwnMessage = message.senderId?._id === user?._id || message.senderId === user?._id;
-                  
-                  return (
-                    <div
-                      key={message._id || index}
-                      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`max-w-[70%] ${isOwnMessage ? 'order-2' : 'order-1'}`}>
-                        <div
-                          className={`rounded-lg p-4 ${
-                            isOwnMessage
-                              ? 'bg-green-600 text-white'
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-                          }`}
-                        >
-                          {index === 0 && (
-                            <p className="font-semibold text-sm mb-2 opacity-90">
-                              {message.subject}
-                            </p>
-                          )}
-                          <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                          <div className="flex items-center justify-end mt-2 space-x-2">
-                            <span className={`text-xs ${isOwnMessage ? 'text-green-100' : 'text-gray-500'}`}>
-                              {new Date(message.createdAt).toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </span>
-                            {isOwnMessage && (
-                              message.isRead ? (
-                                <CheckCheck className="w-3 h-3 text-green-100" />
-                              ) : (
-                                <Check className="w-3 h-3 text-green-100" />
-                              )
+              <CardContent className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900/50">
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <MessageSquare className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">No messages in this conversation</p>
+                  </div>
+                ) : (
+                  messages.map((message, index) => {
+                    const isOwnMessage = message.senderId?._id === user?._id || message.senderId === user?._id;
+                    const showDate = index === 0 || 
+                      new Date(message.createdAt).toDateString() !== new Date(messages[index - 1].createdAt).toDateString();
+                    
+                    return (
+                      <div key={message._id || index}>
+                        {/* Date Separator */}
+                        {showDate && (
+                          <div className="flex items-center justify-center my-4">
+                            <div className="bg-gray-200 dark:bg-gray-700 rounded-full px-4 py-1">
+                              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                {new Date(message.createdAt).toLocaleDateString('en-US', { 
+                                  weekday: 'long',
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Message Bubble */}
+                        <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-2`}>
+                          <div className={`max-w-[75%] ${isOwnMessage ? '' : 'flex items-start gap-2'}`}>
+                            {/* Other user's avatar */}
+                            {!isOwnMessage && (
+                              <div className="relative w-8 h-8 flex-shrink-0">
+                                {selectedConversation.otherUser?.avatar ? (
+                                  <Image
+                                    src={selectedConversation.otherUser.avatar}
+                                    alt={selectedConversation.otherUser.firstName || 'User'}
+                                    fill
+                                    className="object-cover rounded-full"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs font-semibold">
+                                      {selectedConversation.otherUser?.firstName?.charAt(0) || 'U'}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             )}
+
+                            {/* Message Content */}
+                            <div>
+                              {/* Show subject only on first message */}
+                              {index === 0 && (
+                                <div className={`mb-2 ${isOwnMessage ? 'text-right' : 'text-left'}`}>
+                                  <Badge variant="outline" className="text-xs">
+                                    📧 {message.subject}
+                                  </Badge>
+                                </div>
+                              )}
+                              
+                              <div
+                                className={`rounded-2xl px-4 py-3 shadow-sm ${
+                                  isOwnMessage
+                                    ? 'bg-green-600 text-white rounded-br-none'
+                                    : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-none'
+                                }`}
+                              >
+                                <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
+                                <div className="flex items-center justify-end mt-2 gap-1">
+                                  <span className={`text-xs ${isOwnMessage ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                                    {new Date(message.createdAt).toLocaleTimeString([], { 
+                                      hour: '2-digit', 
+                                      minute: '2-digit' 
+                                    })}
+                                  </span>
+                                  {isOwnMessage && (
+                                    message.isRead ? (
+                                      <CheckCheck className="w-4 h-4 text-blue-200" title="Read" />
+                                    ) : (
+                                      <Check className="w-4 h-4 text-green-100" title="Sent" />
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
                 <div ref={messageEndRef} />
               </CardContent>
 
               {/* Message Input */}
-              <div className="border-t p-4">
-                <div className="flex items-end space-x-2">
-                  <Textarea
-                    placeholder="Type your message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    rows={2}
-                    className="flex-1 resize-none"
-                  />
+              <div className="border-t bg-white dark:bg-gray-800 p-4">
+                <div className="flex items-end gap-3">
+                  <div className="flex-1 relative">
+                    <Textarea
+                      placeholder="Type a message..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      rows={2}
+                      className="resize-none pr-12 rounded-2xl border-gray-300 dark:border-gray-600 focus:border-green-500 focus:ring-green-500"
+                      maxLength={1000}
+                    />
+                    <div className="absolute bottom-2 right-3 text-xs text-gray-400">
+                      {newMessage.length}/1000
+                    </div>
+                  </div>
                   <Button
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim() || sending}
-                    className="bg-green-600 hover:bg-green-700"
+                    size="lg"
+                    className="bg-green-600 hover:bg-green-700 rounded-full h-12 w-12 p-0"
                   >
                     {sending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <Send className="w-5 h-5" />
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Press Enter to send, Shift + Enter for new line
-                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    💡 Press <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">Shift+Enter</kbd> for new line
+                  </p>
+                </div>
               </div>
             </>
           ) : (
