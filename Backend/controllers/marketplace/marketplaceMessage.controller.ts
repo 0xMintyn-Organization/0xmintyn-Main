@@ -58,6 +58,22 @@ export const sendMessageToSeller = CatchAsyncError(async (req: Request, res: Res
             }
         }
 
+        // Handle file attachments
+        const attachments: any[] = [];
+        if (req.files && Array.isArray(req.files)) {
+            const uploadedFiles = req.files as Express.Multer.File[];
+            uploadedFiles.forEach(file => {
+                attachments.push({
+                    filename: file.filename,
+                    originalName: file.originalname,
+                    fileUrl: `/uploads/files/${file.filename}`,
+                    fileSize: file.size,
+                    mimeType: file.mimetype,
+                    uploadedAt: new Date()
+                });
+            });
+        }
+
         // Create message
         const newMessage = await MarketplaceMessageModel.create({
             senderId: userId,
@@ -66,6 +82,7 @@ export const sendMessageToSeller = CatchAsyncError(async (req: Request, res: Res
             productId: productId || undefined,
             subject: subject.trim(),
             message: message.trim(),
+            attachments,
             isRead: false,
             senderDeleted: false,
             receiverDeleted: false

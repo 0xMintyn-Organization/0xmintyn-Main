@@ -20,7 +20,15 @@ import {
   SendIcon,
   Archive,
   CheckCheck,
-  Check
+  Check,
+  Paperclip,
+  X,
+  File,
+  FileText,
+  FileImage,
+  FileVideo,
+  FileAudio,
+  Download
 } from 'lucide-react';
 import Image from 'next/image';
 import axios from 'axios';
@@ -45,6 +53,8 @@ export default function MessengerPage() {
   const [error, setError] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check for conversation parameter (when redirected from service page)
   useEffect(() => {
@@ -189,22 +199,63 @@ export default function MessengerPage() {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    // Limit to 5 files
+    if (selectedFiles.length + files.length > 5) {
+      alert('You can only attach up to 5 files per message');
+      return;
+    }
+
+    // Check file sizes (max 10MB per file)
+    const invalidFiles = files.filter(file => file.size > 10 * 1024 * 1024);
+    if (invalidFiles.length > 0) {
+      alert('Each file must be less than 10MB');
+      return;
+    }
+
+    setSelectedFiles([...selectedFiles, ...files]);
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+  };
+
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation) return;
+    if (!newMessage.trim() && selectedFiles.length === 0) return;
+    if (!selectedConversation) return;
 
     try {
       setSending(true);
 
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('receiverId', selectedConversation.otherUser._id);
+      formData.append('subject', `Re: ${selectedConversation.lastMessage.subject}`);
+      formData.append('message', newMessage.trim() || '(File attachment)');
+      
+      if (selectedConversation.serviceId?._id) {
+        formData.append('serviceId', selectedConversation.serviceId._id);
+      }
+      if (selectedConversation.productId?._id) {
+        formData.append('productId', selectedConversation.productId._id);
+      }
+
+      // Append files
+      selectedFiles.forEach(file => {
+        formData.append('attachments', file);
+      });
+
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/send`,
-        {
-          receiverId: selectedConversation.otherUser._id,
-          subject: `Re: ${selectedConversation.lastMessage.subject}`,
-          message: newMessage.trim(),
-          serviceId: selectedConversation.serviceId?._id || null,
-          productId: selectedConversation.productId?._id || null
-        },
-        { withCredentials: true }
+        formData,
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
       );
 
       if (response.data.success) {
@@ -212,6 +263,7 @@ export default function MessengerPage() {
         const newMsg = response.data.data;
         setMessages([...messages, newMsg]);
         setNewMessage('');
+        setSelectedFiles([]);
         
         // Refresh conversations to update last message
         fetchConversations();
@@ -244,6 +296,32 @@ export default function MessengerPage() {
     let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith('image/')) return <FileImage className="w-5 h-5" />;
+    if (mimeType.startsWith('video/')) return <FileVideo className="w-5 h-5" />;
+    if (mimeType.startsWith('audio/')) return <FileAudio className="w-5 h-5" />;
+    if (mimeType.includes('pdf')) return <FileText className="w-5 h-5" />;
+    return <File className="w-5 h-5" />;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const getFullFileUrl = (fileUrl: string) => {
+    if (!fileUrl) return '';
+    if (fileUrl.startsWith('http')) return fileUrl;
+    
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const normalizedPath = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
     return `${baseUrl}${normalizedPath}`;
   };
 
@@ -509,7 +587,66 @@ export default function MessengerPage() {
                                     : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-none'
                                 }`}
                               >
-                                <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
+                                {message.message && (
+                                  <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
+                                )}
+                                
+                                {/* Attachments */}
+                                {message.attachments && message.attachments.length > 0 && (
+                                  <div className={`space-y-2 ${message.message ? 'mt-3 pt-3 border-t' : ''} ${isOwnMessage ? 'border-green-500' : 'border-gray-200 dark:border-gray-600'}`}>
+                                    {message.attachments.map((file: any, fileIndex: number) => {
+                                      const isImage = file.mimeType.startsWith('image/');
+                                      
+                                      return (
+                                        <div key={fileIndex}>
+                                          {isImage ? (
+                                            <div className="relative rounded-lg overflow-hidden max-w-xs">
+                                              <Image
+                                                src={getFullFileUrl(file.fileUrl)}
+                                                alt={file.originalName}
+                                                width={300}
+                                                height={200}
+                                                className="rounded-lg"
+                                              />
+                                              <a
+                                                href={getFullFileUrl(file.fileUrl)}
+                                                download={file.originalName}
+                                                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+                                                title="Download"
+                                              >
+                                                <Download className="w-4 h-4" />
+                                              </a>
+                                            </div>
+                                          ) : (
+                                            <a
+                                              href={getFullFileUrl(file.fileUrl)}
+                                              download={file.originalName}
+                                              className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                                                isOwnMessage
+                                                  ? 'bg-green-700 hover:bg-green-800'
+                                                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                              }`}
+                                            >
+                                              <div className={isOwnMessage ? 'text-white' : 'text-gray-600 dark:text-gray-300'}>
+                                                {getFileIcon(file.mimeType)}
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                <p className={`text-sm font-medium truncate ${isOwnMessage ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                                                  {file.originalName}
+                                                </p>
+                                                <p className={`text-xs ${isOwnMessage ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                  {formatFileSize(file.fileSize)}
+                                                </p>
+                                              </div>
+                                              <Download className={`w-4 h-4 flex-shrink-0 ${isOwnMessage ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`} />
+                                            </a>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
                                 <div className="flex items-center justify-end mt-2 gap-1">
                                   <span className={`text-xs ${isOwnMessage ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
                                     {new Date(message.createdAt).toLocaleTimeString([], { 
@@ -538,7 +675,58 @@ export default function MessengerPage() {
 
               {/* Message Input */}
               <div className="border-t bg-white dark:bg-gray-800 p-4">
-                <div className="flex items-end gap-3">
+                {/* File Preview */}
+                {selectedFiles.length > 0 && (
+                  <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Attachments ({selectedFiles.length}/5)
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded-lg border">
+                          {getFileIcon(file.type)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{file.name}</p>
+                            <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(index)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-end gap-2">
+                  {/* Attach File Button */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,application/pdf,.doc,.docx,.zip,.rar"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={sending || selectedFiles.length >= 5}
+                    className="rounded-full h-12 w-12 p-0"
+                    title="Attach files (max 5)"
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </Button>
+
+                  {/* Message Input */}
                   <div className="flex-1 relative">
                     <Textarea
                       placeholder="Type a message..."
@@ -558,9 +746,11 @@ export default function MessengerPage() {
                       {newMessage.length}/1000
                     </div>
                   </div>
+
+                  {/* Send Button */}
                   <Button
                     onClick={handleSendMessage}
-                    disabled={!newMessage.trim() || sending}
+                    disabled={(!newMessage.trim() && selectedFiles.length === 0) || sending}
                     size="lg"
                     className="bg-green-600 hover:bg-green-700 rounded-full h-12 w-12 p-0"
                   >
@@ -571,9 +761,10 @@ export default function MessengerPage() {
                     )}
                   </Button>
                 </div>
+                
                 <div className="flex items-center justify-between mt-2">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    💡 Press <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">Shift+Enter</kbd> for new line
+                    📎 Max 5 files, 10MB each • 💡 <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">Shift+Enter</kbd> for new line
                   </p>
                 </div>
               </div>

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Star, Send, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Star, Send, X, CheckCircle, AlertCircle, Loader2, Paperclip, File, FileText, FileImage, Download } from 'lucide-react';
 import Image from 'next/image';
 import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,6 +44,8 @@ export default function ContactSellerModal({
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Pre-fill subject if service is provided
   React.useEffect(() => {
@@ -52,10 +54,46 @@ export default function ContactSellerModal({
     }
   }, [serviceTitle, subject]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    if (selectedFiles.length + files.length > 5) {
+      setError('You can only attach up to 5 files');
+      return;
+    }
+
+    const invalidFiles = files.filter(file => file.size > 10 * 1024 * 1024);
+    if (invalidFiles.length > 0) {
+      setError('Each file must be less than 10MB');
+      return;
+    }
+
+    setSelectedFiles([...selectedFiles, ...files]);
+    setError(null);
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return <FileImage className="w-4 h-4" />;
+    if (type.includes('pdf')) return <FileText className="w-4 h-4" />;
+    return <File className="w-4 h-4" />;
+  };
+
   const handleSendMessage = async () => {
     // Validation
-    if (!message.trim()) {
-      setError('Please enter a message');
+    if (!message.trim() && selectedFiles.length === 0) {
+      setError('Please enter a message or attach a file');
       return;
     }
 
@@ -73,16 +111,31 @@ export default function ContactSellerModal({
       setSending(true);
       setError(null);
 
-      // API call to send message (you'll need to create this endpoint)
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('sellerId', seller._id);
+      formData.append('subject', subject.trim());
+      formData.append('message', message.trim() || '(File attachment)');
+      
+      if (serviceId) {
+        formData.append('serviceId', serviceId);
+      }
+
+      // Append files
+      selectedFiles.forEach(file => {
+        formData.append('attachments', file);
+      });
+
+      // API call to send message
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/send`,
-        {
-          sellerId: seller._id,
-          subject: subject.trim(),
-          message: message.trim(),
-          serviceId: serviceId || null,
-        },
-        { withCredentials: true }
+        formData,
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
       );
 
       if (response.data.success) {
@@ -91,6 +144,7 @@ export default function ContactSellerModal({
         setTimeout(() => {
           setMessage('');
           setSubject('');
+          setSelectedFiles([]);
           setSent(false);
           onClose();
           // Redirect to messenger with conversation parameter
@@ -109,6 +163,7 @@ export default function ContactSellerModal({
     if (!sending) {
       setMessage('');
       setSubject('');
+      setSelectedFiles([]);
       setError(null);
       setSent(false);
       onClose();
@@ -244,6 +299,52 @@ export default function ContactSellerModal({
                 </p>
               </div>
 
+              {/* File Attachments */}
+              <div className="space-y-2">
+                <Label htmlFor="attachments">Attachments (optional)</Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,application/pdf,.doc,.docx,.zip,.rar"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={sending || selectedFiles.length >= 5}
+                  className="w-full"
+                >
+                  <Paperclip className="w-4 h-4 mr-2" />
+                  Attach Files ({selectedFiles.length}/5)
+                </Button>
+                
+                {selectedFiles.length > 0 && (
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                        {getFileIcon(file.type)}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{file.name}</p>
+                          <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Quick Message Templates */}
               <div className="space-y-2">
                 <Label className="text-xs">Quick templates:</Label>
@@ -300,7 +401,7 @@ export default function ContactSellerModal({
               </Button>
               <Button
                 onClick={handleSendMessage}
-                disabled={sending || !message.trim() || !subject.trim()}
+                disabled={sending || (!message.trim() && selectedFiles.length === 0) || !subject.trim()}
                 className="bg-green-600 hover:bg-green-700"
               >
                 {sending ? (
@@ -312,6 +413,7 @@ export default function ContactSellerModal({
                   <>
                     <Send className="w-4 h-4 mr-2" />
                     Send Message
+                    {selectedFiles.length > 0 && ` (${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''})`}
                   </>
                 )}
               </Button>

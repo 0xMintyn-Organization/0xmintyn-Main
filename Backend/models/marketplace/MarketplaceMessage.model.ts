@@ -7,6 +7,14 @@ export interface IMarketplaceMessage extends Document {
   productId?: mongoose.Types.ObjectId;
   subject: string;
   message: string;
+  attachments: {
+    filename: string;
+    originalName: string;
+    fileUrl: string;
+    fileSize: number;
+    mimeType: string;
+    uploadedAt: Date;
+  }[];
   isRead: boolean;
   readAt?: Date;
   senderDeleted: boolean;
@@ -48,6 +56,32 @@ const marketplaceMessageSchema: Schema<IMarketplaceMessage> = new mongoose.Schem
     trim: true,
     maxlength: [2000, 'Message cannot exceed 2000 characters']
   },
+  attachments: [{
+    filename: {
+      type: String,
+      required: true
+    },
+    originalName: {
+      type: String,
+      required: true
+    },
+    fileUrl: {
+      type: String,
+      required: true
+    },
+    fileSize: {
+      type: Number,
+      required: true
+    },
+    mimeType: {
+      type: String,
+      required: true
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   isRead: {
     type: Boolean,
     default: false

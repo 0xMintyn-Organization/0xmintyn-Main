@@ -9,14 +9,15 @@ import {
 } from "../../controllers/marketplace/marketplaceMessage.controller";
 import { updateAccessTokenMiddleware } from "../../controllers/user.controller";
 import { isAthenticated } from "../../utils/auth";
+import upload from "../../middleware/multerConfig";
 
 const marketplaceMessageRouter = express.Router();
 
 // All routes require authentication
 marketplaceMessageRouter.use(updateAccessTokenMiddleware, isAthenticated);
 
-// Send message to seller
-marketplaceMessageRouter.post("/send", sendMessageToSeller);
+// Send message to seller (with optional file attachments)
+marketplaceMessageRouter.post("/send", upload.array("attachments", 5), sendMessageToSeller);
 
 // Get sent messages
 marketplaceMessageRouter.get("/sent", getSentMessages);
