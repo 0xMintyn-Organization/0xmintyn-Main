@@ -15,11 +15,16 @@ import {
   BarChart3,
   DollarSign,
   Star,
-  Clock
+  Clock,
+  MessageSquare,
+  Mail,
+  Send
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import axios from 'axios';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function SellerDashboardPage() {
   const { user } = useAuth();
@@ -34,6 +39,8 @@ export default function SellerDashboardPage() {
   });
   const [recentProducts, setRecentProducts] = useState([]);
   const [recentServices, setRecentServices] = useState([]);
+  const [recentMessages, setRecentMessages] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     // Check if user is a seller
@@ -71,10 +78,39 @@ export default function SellerDashboardPage() {
         { id: 2, name: 'UI/UX Design', price: 300, status: 'Active', orders: 3 },
         { id: 3, name: 'Consulting', price: 150, status: 'Active', orders: 2 }
       ]);
+
+      // Fetch recent messages
+      await fetchRecentMessages();
     } catch (error) {
       console.error('Error fetching seller data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRecentMessages = async () => {
+    try {
+      // Fetch inbox messages
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/inbox?limit=5`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setRecentMessages(response.data.messages || []);
+      }
+
+      // Fetch unread count
+      const unreadResponse = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/unread-count`,
+        { withCredentials: true }
+      );
+
+      if (unreadResponse.data.success) {
+        setUnreadCount(unreadResponse.data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
     }
   };
 
@@ -119,7 +155,7 @@ export default function SellerDashboardPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -167,6 +203,25 @@ export default function SellerDashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Link href="/marketplace/messages" className="block">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Messages</p>
+                    <p className="text-2xl font-bold text-indigo-600">
+                      {unreadCount > 0 ? unreadCount : recentMessages.length}
+                    </p>
+                    {unreadCount > 0 && (
+                      <Badge className="bg-red-500 text-white mt-1">New</Badge>
+                    )}
+                  </div>
+                  <MessageSquare className="h-8 w-8 text-indigo-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Rating and Reviews */}
@@ -227,6 +282,90 @@ export default function SellerDashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Recent Messages from Buyers */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-indigo-600" />
+                Recent Messages
+                {unreadCount > 0 && (
+                  <Badge className="bg-red-500 text-white ml-2">{unreadCount} New</Badge>
+                )}
+              </span>
+              <Link href="/marketplace/messages">
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Mail className="h-4 w-4" />
+                  View All Messages
+                </Button>
+              </Link>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentMessages.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-600 dark:text-gray-400">No messages yet</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                  Buyers will be able to contact you about your services
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentMessages.slice(0, 5).map((message: any) => (
+                  <Link 
+                    key={message._id} 
+                    href={`/marketplace/messages?conversation=${message._id}`}
+                    className="block"
+                  >
+                    <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border">
+                      <div className="relative w-10 h-10 flex-shrink-0">
+                        {message.senderId?.avatar ? (
+                          <img
+                            src={message.senderId.avatar}
+                            alt={message.senderId.firstName || 'User'}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium">
+                              {message.senderId?.firstName?.charAt(0) || 'U'}
+                            </span>
+                          </div>
+                        )}
+                        {!message.isRead && (
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-medium text-sm text-gray-900 dark:text-white">
+                            {message.senderId?.firstName} {message.senderId?.lastName}
+                          </h4>
+                          <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                            {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <p className={`text-sm truncate ${!message.isRead ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>
+                          {message.subject}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 truncate mt-1">
+                          {message.message}
+                        </p>
+                        {message.serviceId && (
+                          <Badge variant="outline" className="text-xs mt-1">
+                            About: {message.serviceId.title}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Recent Products and Services */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

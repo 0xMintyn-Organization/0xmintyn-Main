@@ -58,6 +58,14 @@ const getNavItems = (userRole: string, bookmarkCount: number) => {
       description: "Digital Products & Services"
     },
     { 
+      name: "Messenger", 
+      href: "/marketplace/messages", 
+      icon: MessageSquare,
+      badge: null,
+      badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+      description: "Messages & Conversations"
+    },
+    { 
       name: "Governance", 
       href: "/governance", 
       icon: Vote,

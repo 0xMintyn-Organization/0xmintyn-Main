@@ -11,6 +11,7 @@ import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
 import PurchaseModal from '@/components/Marketplace/PurchaseModal';
+import ContactSellerModal from '@/components/Marketplace/ContactSellerModal';
 
 export default function ServiceDetailPage() {
   const { id } = useParams();
@@ -22,6 +23,7 @@ export default function ServiceDetailPage() {
   const [selectedPackage, setSelectedPackage] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   // Helper function to construct full image URLs
   const getFullImageUrl = (imagePath: string) => {
@@ -254,9 +256,13 @@ export default function ServiceDetailPage() {
             </Button>
 
             <div className="flex space-x-2">
-              <Button variant="outline" className="flex-1">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowContactModal(true)}
+              >
                 <MessageCircle className="w-4 h-4 mr-2" />
-                Contact
+                Contact Seller
               </Button>
             </div>
 
@@ -490,7 +496,11 @@ export default function ServiceDetailPage() {
 
                     {/* Contact Button */}
                     <div className="pt-4 border-t">
-                      <Button variant="outline" className="w-full">
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => setShowContactModal(true)}
+                      >
                         <MessageCircle className="w-4 h-4 mr-2" />
                         Contact {service.sellerId.sellerName}
                       </Button>
@@ -600,6 +610,27 @@ export default function ServiceDetailPage() {
             type: 'service',
             sellerName: service.sellerId?.sellerName
           }}
+        />
+      )}
+
+      {/* Contact Seller Modal */}
+      {service && service.sellerId && (
+        <ContactSellerModal
+          isOpen={showContactModal}
+          onClose={() => setShowContactModal(false)}
+          seller={{
+            _id: service.sellerId._id,
+            sellerName: service.sellerId.sellerName || service.sellerId.storeName,
+            storeName: service.sellerId.storeName,
+            storeLogo: service.sellerId.storeLogo,
+            sellerLevel: service.sellerId.sellerLevel,
+            rating: service.sellerId.rating,
+            reviewCount: service.sellerId.reviewCount,
+            verified: service.sellerId.verified,
+            responseTime: service.sellerId.responseTime
+          }}
+          serviceTitle={service.title}
+          serviceId={service._id}
         />
       )}
     </div>
