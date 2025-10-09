@@ -18,16 +18,34 @@ import {
   Clock,
   MessageSquare,
   Mail,
-  Send
+  Send,
+  Menu,
+  ChevronDown,
+  ShoppingBag,
+  FileText,
+  Settings,
+  Truck,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function SellerDashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -129,7 +147,103 @@ export default function SellerDashboardPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex flex-col gap-4 mb-8">
+          {/* Navigation Menu Bar */}
+          <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-lg border shadow-sm">
+            {/* Quick Navigation Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Menu className="h-4 w-4" />
+                  Quick Navigation
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>Orders</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/orders/seller')}>
+                  <Truck className="h-4 w-4 mr-2" />
+                  All Orders
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/orders/seller?status=in_progress')}>
+                  <Clock className="h-4 w-4 mr-2 text-blue-600" />
+                  Active Orders
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/orders/seller?status=delivered')}>
+                  <Package className="h-4 w-4 mr-2 text-purple-600" />
+                  Delivered Orders
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/orders/seller?status=completed')}>
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                  Completed Orders
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuLabel>Services</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/my-services')}>
+                  <Users className="h-4 w-4 mr-2" />
+                  My Services
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/create-service')}>
+                  <Plus className="h-4 w-4 mr-2 text-green-600" />
+                  Create Service
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuLabel>Products</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/my-products')}>
+                  <Package className="h-4 w-4 mr-2" />
+                  My Products
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/create-product')}>
+                  <Plus className="h-4 w-4 mr-2 text-green-600" />
+                  Create Product
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuLabel>Other</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/messages')}>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Messages
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/analytics')}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Analytics
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/marketplace/seller-settings')}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Seller Settings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Direct Action Buttons */}
+            <div className="flex gap-2 ml-auto">
+              <Link href="/marketplace/messages">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Messages
+                </Button>
+              </Link>
+              <Link href="/marketplace/create-product">
+                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Product
+                </Button>
+              </Link>
+              <Link href="/marketplace/create-service">
+                <Button size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Service
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Title Section */}
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Seller Dashboard
@@ -137,20 +251,6 @@ export default function SellerDashboardPage() {
             <p className="text-muted-foreground mt-1">
               Manage your products, services, and track your performance
             </p>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/marketplace/create-product">
-              <Button className="bg-green-600 hover:bg-green-700 text-white gap-2">
-                <Plus className="h-4 w-4" />
-                Create Product
-              </Button>
-            </Link>
-            <Link href="/marketplace/create-service">
-              <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 gap-2">
-                <Plus className="h-4 w-4" />
-                Create Service
-              </Button>
-            </Link>
           </div>
         </div>
 
