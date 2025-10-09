@@ -35,6 +35,8 @@ import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
+import CreateOfferModal from '@/components/Marketplace/CreateOfferModal';
+import OfferCard from '@/components/Marketplace/OfferCard';
 
 export default function MessengerPage() {
   const { user } = useAuth();
@@ -55,6 +57,9 @@ export default function MessengerPage() {
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [offers, setOffers] = useState<any[]>([]);
+  const [showCreateOffer, setShowCreateOffer] = useState(false);
+  const [isServiceOwner, setIsServiceOwner] = useState(false);
 
   // Check for conversation parameter (when redirected from service page)
   useEffect(() => {
@@ -160,11 +165,168 @@ export default function MessengerPage() {
     );
   };
 
+  const fetchConversationOffers = async (conversationId: string) => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/offers/conversation/${conversationId}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setOffers(response.data.offers || []);
+      }
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+    }
+  };
+
+  const determineConversationRoles = (conversation: any) => {
+    // Determine if current user is the service/product owner
+    if (conversation.serviceId) {
+      // For services, need to check the service owner
+      // This will be handled by checking sellerId in the service
+      // For now, we'll fetch this when selecting conversation
+      return false;
+    }
+    return false;
+  };
+
   const handleSelectConversation = async (conversation: any) => {
     setSelectedConversation(conversation);
     setMessages(conversation.messages.sort((a: any, b: any) => 
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     ));
+
+    // Fetch offers for this conversation
+    if (conversation._id) {
+      await fetchConversationOffers(conversation._id);
+    }
+
+    // Determine if current user is service/product owner
+    let isOwner = false;
+    
+    if (conversation.serviceId) {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/services/${conversation.serviceId._id || conversation.serviceId}`,
+          { withCredentials: true }
+        );
+        
+        if (response.data.success) {
+          const service = response.data.service;
+          console.log('Service data:', service);
+          
+          // Try to get the user's seller profile first
+          try {
+            const sellerResponse = await axios.get(
+              `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/seller/profile/me`,
+              { withCredentials: true }
+            );
+            
+            if (sellerResponse.data.success && sellerResponse.data.seller) {
+              const userSellerId = sellerResponse.data.seller._id;
+              const serviceSellerId = service.sellerId?._id || service.sellerId;
+              isOwner = userSellerId === serviceSellerId;
+              console.log('Service ownership check (with seller profile):', { 
+                userSellerId, 
+                serviceSellerId, 
+                currentUserId: user?._id, 
+                isOwner 
+              });
+            }
+          } catch (sellerError) {
+            console.log('No seller profile found, using conversation context approach');
+            // Alternative approach: Check conversation context
+            // If the conversation has messages and the other user is the one who initiated
+            // the service inquiry, then current user is likely the service owner
+            const messages = conversation.messages || [];
+            if (messages.length > 0) {
+              const firstMessage = messages[0];
+              // If the first message was sent TO the current user (meaning someone contacted them about their service)
+              const isFirstMessageReceived = firstMessage.receiverId?._id === user?._id || firstMessage.receiverId === user?._id;
+              isOwner = isFirstMessageReceived;
+              console.log('Service ownership check (conversation context):', { 
+                firstMessageReceiver: firstMessage.receiverId?._id || firstMessage.receiverId,
+                currentUserId: user?._id, 
+                isFirstMessageReceived,
+                isOwner,
+                reason: 'Based on first message receiver'
+              });
+            } else {
+              isOwner = false;
+              console.log('Service ownership check (fallback):', { 
+                currentUserId: user?._id, 
+                isOwner: false,
+                reason: 'No messages to analyze'
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching service:', error);
+        isOwner = false;
+      }
+    } else if (conversation.productId) {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/products/${conversation.productId._id || conversation.productId}`,
+          { withCredentials: true }
+        );
+        
+        if (response.data.success) {
+          const product = response.data.product;
+          console.log('Product data:', product);
+          
+          // Try to get the user's seller profile first
+          try {
+            const sellerResponse = await axios.get(
+              `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/seller/profile/me`,
+              { withCredentials: true }
+            );
+            
+            if (sellerResponse.data.success && sellerResponse.data.seller) {
+              const userSellerId = sellerResponse.data.seller._id;
+              const productSellerId = product.sellerId?._id || product.sellerId;
+              isOwner = userSellerId === productSellerId;
+              console.log('Product ownership check (with seller profile):', { 
+                userSellerId, 
+                productSellerId, 
+                currentUserId: user?._id, 
+                isOwner 
+              });
+            }
+          } catch (sellerError) {
+            console.log('No seller profile found, using conversation context approach');
+            // Alternative approach: Check conversation context
+            const messages = conversation.messages || [];
+            if (messages.length > 0) {
+              const firstMessage = messages[0];
+              const isFirstMessageReceived = firstMessage.receiverId?._id === user?._id || firstMessage.receiverId === user?._id;
+              isOwner = isFirstMessageReceived;
+              console.log('Product ownership check (conversation context):', { 
+                firstMessageReceiver: firstMessage.receiverId?._id || firstMessage.receiverId,
+                currentUserId: user?._id, 
+                isFirstMessageReceived,
+                isOwner,
+                reason: 'Based on first message receiver'
+              });
+            } else {
+              isOwner = false;
+              console.log('Product ownership check (fallback):', { 
+                currentUserId: user?._id, 
+                isOwner: false,
+                reason: 'No messages to analyze'
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        isOwner = false;
+      }
+    }
+    
+    setIsServiceOwner(isOwner);
 
     // Mark unread messages as read (only messages TO current user)
     const unreadMessages = conversation.messages.filter((msg: any) => {
@@ -472,7 +634,7 @@ export default function MessengerPage() {
             <>
               {/* Conversation Header */}
               <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     <div className="relative w-14 h-14">
                       {selectedConversation.otherUser?.avatar ? (
@@ -513,11 +675,26 @@ export default function MessengerPage() {
                     </div>
                   )}
                 </div>
+
               </CardHeader>
 
               {/* Messages */}
               <CardContent className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900/50">
-                {messages.length === 0 ? (
+                {/* Display Offers First */}
+                {offers.length > 0 && (
+                  <div className="mb-4">
+                    {offers.map((offer: any) => (
+                      <OfferCard
+                        key={offer._id}
+                        offer={offer}
+                        currentUserId={user?._id || ''}
+                        onOfferUpdate={() => fetchConversationOffers(selectedConversation._id)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {messages.length === 0 && offers.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full">
                     <MessageSquare className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
                     <p className="text-gray-500 dark:text-gray-400">No messages in this conversation</p>
@@ -726,6 +903,41 @@ export default function MessengerPage() {
                     <Paperclip className="w-5 h-5" />
                   </Button>
 
+                  {/* Offer Button - Dynamic based on user role */}
+                  {selectedConversation && (selectedConversation.serviceId || selectedConversation.productId) && (
+                    <>
+                      {/* For Sellers: Create Custom Offer */}
+                      {isServiceOwner && (
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          onClick={() => setShowCreateOffer(true)}
+                          className="rounded-full h-12 px-4 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300"
+                          title="Create custom offer"
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          Create Offer
+                        </Button>
+                      )}
+                      
+                      {/* For Buyers: Request Custom Offer */}
+                      {!isServiceOwner && (
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          onClick={() => {
+                            setNewMessage('Hi, could you please send me a custom offer with pricing and details? Thank you!');
+                          }}
+                          className="rounded-full h-12 px-4 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300"
+                          title="Request custom offer"
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          Request Offer
+                        </Button>
+                      )}
+                    </>
+                  )}
+
                   {/* Message Input */}
                   <div className="flex-1 relative">
                     <Textarea
@@ -782,6 +994,24 @@ export default function MessengerPage() {
           )}
         </Card>
       </div>
+
+      {/* Create Offer Modal */}
+      {selectedConversation && (
+        <CreateOfferModal
+          isOpen={showCreateOffer}
+          onClose={() => setShowCreateOffer(false)}
+          conversationId={selectedConversation._id}
+          buyerId={selectedConversation.otherUser._id}
+          buyerName={`${selectedConversation.otherUser.firstName} ${selectedConversation.otherUser.lastName}`}
+          serviceId={selectedConversation.serviceId?._id}
+          serviceTitle={selectedConversation.serviceId?.title}
+          productId={selectedConversation.productId?._id}
+          productTitle={selectedConversation.productId?.title}
+          onOfferCreated={() => {
+            fetchConversationOffers(selectedConversation._id);
+          }}
+        />
+      )}
     </div>
   );
 }
