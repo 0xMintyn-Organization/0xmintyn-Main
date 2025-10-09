@@ -35,8 +35,8 @@ import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import CreateOfferModal from '@/components/Marketplace/CreateOfferModal';
-import OfferCard from '@/components/Marketplace/OfferCard';
+import SimpleOfferModal from '@/components/Marketplace/SimpleOfferModal';
+import OfferBubble from '@/components/Marketplace/OfferBubble';
 
 export default function MessengerPage() {
   const { user } = useAuth();
@@ -131,11 +131,17 @@ export default function MessengerPage() {
       // Determine the other user (not the current user)
       const isReceived = message.receiverId?._id === user?._id || message.receiverId === user?._id;
       const otherUser = isReceived ? message.senderId : message.receiverId;
-      const conversationKey = otherUser?._id || otherUser;
+      const otherUserId = otherUser?._id || otherUser;
+      const currentUserId = user?._id;
+      
+      // Create a consistent conversationId by sorting user IDs alphabetically
+      // This ensures both users use the same conversationId
+      const conversationKey = otherUserId;
+      const conversationId = [currentUserId, otherUserId].sort().join('-');
 
       if (!conversationMap.has(conversationKey)) {
         conversationMap.set(conversationKey, {
-          _id: conversationKey,
+          _id: conversationId, // Use consistent ID for both users
           otherUser,
           lastMessage: message,
           messages: [message],
@@ -171,7 +177,7 @@ export default function MessengerPage() {
         `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/offers/conversation/${conversationId}`,
         { withCredentials: true }
       );
-
+      
       if (response.data.success) {
         setOffers(response.data.offers || []);
       }
@@ -680,173 +686,200 @@ export default function MessengerPage() {
 
               {/* Messages */}
               <CardContent className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900/50">
-                {/* Display Offers First */}
-                {offers.length > 0 && (
-                  <div className="mb-4">
-                    {offers.map((offer: any) => (
-                      <OfferCard
-                        key={offer._id}
-                        offer={offer}
-                        currentUserId={user?._id || ''}
-                        onOfferUpdate={() => fetchConversationOffers(selectedConversation._id)}
-                      />
-                    ))}
-                  </div>
-                )}
+                {(() => {
+                  // Combine messages and offers into a single timeline
+                  const timeline = [
+                    ...messages.map(msg => ({ ...msg, type: 'message' })),
+                    ...offers.map(offer => ({ ...offer, type: 'offer', createdAt: offer.createdAt }))
+                  ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                  
 
-                {messages.length === 0 && offers.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <MessageSquare className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">No messages in this conversation</p>
-                  </div>
-                ) : (
-                  messages.map((message, index) => {
-                    const isOwnMessage = message.senderId?._id === user?._id || message.senderId === user?._id;
-                    const showDate = index === 0 || 
-                      new Date(message.createdAt).toDateString() !== new Date(messages[index - 1].createdAt).toDateString();
-                    
+                  if (timeline.length === 0) {
                     return (
-                      <div key={message._id || index}>
-                        {/* Date Separator */}
-                        {showDate && (
-                          <div className="flex items-center justify-center my-4">
-                            <div className="bg-gray-200 dark:bg-gray-700 rounded-full px-4 py-1">
-                              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                                {new Date(message.createdAt).toLocaleDateString('en-US', { 
-                                  weekday: 'long',
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                        )}
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <MessageSquare className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+                        <p className="text-gray-500 dark:text-gray-400">No messages in this conversation</p>
+                      </div>
+                    );
+                  }
 
-                        {/* Message Bubble */}
-                        <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-2`}>
-                          <div className={`max-w-[75%] ${isOwnMessage ? '' : 'flex items-start gap-2'}`}>
-                            {/* Other user's avatar */}
-                            {!isOwnMessage && (
-                              <div className="relative w-8 h-8 flex-shrink-0">
-                                {selectedConversation.otherUser?.avatar ? (
-                                  <Image
-                                    src={selectedConversation.otherUser.avatar}
-                                    alt={selectedConversation.otherUser.firstName || 'User'}
-                                    fill
-                                    className="object-cover rounded-full"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs font-semibold">
-                                      {selectedConversation.otherUser?.firstName?.charAt(0) || 'U'}
-                                    </span>
-                                  </div>
-                                )}
+                  return timeline.map((item, index) => {
+                    const showDate = index === 0 || 
+                      new Date(item.createdAt).toDateString() !== new Date(timeline[index - 1].createdAt).toDateString();
+                    
+                    if (item.type === 'offer') {
+                      // Render offer using the professional OfferBubble component
+                      return (
+                        <div key={`offer-${item._id}`}>
+                          {/* Date Separator */}
+                          {showDate && (
+                            <div className="flex items-center justify-center my-6">
+                              <div className="bg-gray-200 dark:bg-gray-700 rounded-full px-4 py-2">
+                                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                  {new Date(item.createdAt).toLocaleDateString('en-US', { 
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })}
+                                </span>
                               </div>
-                            )}
+                            </div>
+                          )}
 
-                            {/* Message Content */}
-                            <div>
-                              {/* Show subject only on first message */}
-                              {index === 0 && (
-                                <div className={`mb-2 ${isOwnMessage ? 'text-right' : 'text-left'}`}>
-                                  <Badge variant="outline" className="text-xs">
-                                    📧 {message.subject}
-                                  </Badge>
+                          {/* Offer Bubble */}
+                          <OfferBubble
+                            offer={item}
+                            currentUserId={user?._id || ''}
+                            onOfferUpdate={() => fetchConversationOffers(selectedConversation._id)}
+                          />
+                        </div>
+                      );
+                    } else {
+                      // Render regular message
+                      return (
+                        <div key={item._id || index}>
+                          {/* Date Separator */}
+                          {showDate && (
+                            <div className="flex items-center justify-center my-6">
+                              <div className="bg-gray-200 dark:bg-gray-700 rounded-full px-4 py-2">
+                                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                  {new Date(item.createdAt).toLocaleDateString('en-US', { 
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Message Bubble */}
+                          <div className={`flex ${item.senderId?._id === user?._id || item.senderId === user?._id ? 'justify-end' : 'justify-start'} mb-4`}>
+                            <div className={`max-w-[75%] ${item.senderId?._id === user?._id || item.senderId === user?._id ? '' : 'flex items-start gap-3'}`}>
+                              {/* Other user's avatar */}
+                              {!(item.senderId?._id === user?._id || item.senderId === user?._id) && (
+                                <div className="relative w-10 h-10 flex-shrink-0">
+                                  {selectedConversation.otherUser?.avatar ? (
+                                    <Image
+                                      src={selectedConversation.otherUser.avatar}
+                                      alt={selectedConversation.otherUser.firstName || 'User'}
+                                      fill
+                                      className="object-cover rounded-full"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                                      <span className="text-white text-sm font-semibold">
+                                        {selectedConversation.otherUser?.firstName?.charAt(0) || 'U'}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
-                              
-                              <div
-                                className={`rounded-2xl px-4 py-3 shadow-sm ${
-                                  isOwnMessage
-                                    ? 'bg-green-600 text-white rounded-br-none'
-                                    : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-none'
-                                }`}
-                              >
-                                {message.message && (
-                                  <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
+
+                              {/* Message Content */}
+                              <div>
+                                {/* Show subject only on first message */}
+                                {index === 0 && (
+                                  <div className={`mb-2 ${item.senderId?._id === user?._id || item.senderId === user?._id ? 'text-right' : 'text-left'}`}>
+                                    <Badge variant="outline" className="text-xs">
+                                      📧 {item.subject}
+                                    </Badge>
+                                  </div>
                                 )}
                                 
-                                {/* Attachments */}
-                                {message.attachments && message.attachments.length > 0 && (
-                                  <div className={`space-y-2 ${message.message ? 'mt-3 pt-3 border-t' : ''} ${isOwnMessage ? 'border-green-500' : 'border-gray-200 dark:border-gray-600'}`}>
-                                    {message.attachments.map((file: any, fileIndex: number) => {
-                                      const isImage = file.mimeType.startsWith('image/');
-                                      
-                                      return (
-                                        <div key={fileIndex}>
-                                          {isImage ? (
-                                            <div className="relative rounded-lg overflow-hidden max-w-xs">
-                                              <Image
-                                                src={getFullFileUrl(file.fileUrl)}
-                                                alt={file.originalName}
-                                                width={300}
-                                                height={200}
-                                                className="rounded-lg"
-                                              />
+                                <div
+                                  className={`rounded-2xl px-4 py-3 shadow-sm ${
+                                    item.senderId?._id === user?._id || item.senderId === user?._id
+                                      ? 'bg-green-600 text-white rounded-br-none'
+                                      : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-none'
+                                  }`}
+                                >
+                                  {item.message && (
+                                    <p className="text-sm whitespace-pre-wrap break-words">{item.message}</p>
+                                  )}
+                                  
+                                  {/* Attachments */}
+                                  {item.attachments && item.attachments.length > 0 && (
+                                    <div className={`space-y-2 ${item.message ? 'mt-3 pt-3 border-t' : ''} ${item.senderId?._id === user?._id || item.senderId === user?._id ? 'border-green-500' : 'border-gray-200 dark:border-gray-600'}`}>
+                                      {item.attachments.map((file: any, fileIndex: number) => {
+                                        const isImage = file.mimeType.startsWith('image/');
+                                        
+                                        return (
+                                          <div key={fileIndex}>
+                                            {isImage ? (
+                                              <div className="relative rounded-lg overflow-hidden max-w-xs">
+                                                <Image
+                                                  src={getFullFileUrl(file.fileUrl)}
+                                                  alt={file.originalName}
+                                                  width={300}
+                                                  height={200}
+                                                  className="rounded-lg"
+                                                />
+                                                <a
+                                                  href={getFullFileUrl(file.fileUrl)}
+                                                  download={file.originalName}
+                                                  className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+                                                  title="Download"
+                                                >
+                                                  <Download className="w-4 h-4" />
+                                                </a>
+                                              </div>
+                                            ) : (
                                               <a
                                                 href={getFullFileUrl(file.fileUrl)}
                                                 download={file.originalName}
-                                                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
-                                                title="Download"
+                                                className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                                                  item.senderId?._id === user?._id || item.senderId === user?._id
+                                                    ? 'bg-green-700 hover:bg-green-800'
+                                                    : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                                }`}
                                               >
-                                                <Download className="w-4 h-4" />
+                                                <div className={item.senderId?._id === user?._id || item.senderId === user?._id ? 'text-white' : 'text-gray-600 dark:text-gray-300'}>
+                                                  {getFileIcon(file.mimeType)}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                  <p className={`text-sm font-medium truncate ${item.senderId?._id === user?._id || item.senderId === user?._id ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                                                    {file.originalName}
+                                                  </p>
+                                                  <p className={`text-xs ${item.senderId?._id === user?._id || item.senderId === user?._id ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                    {formatFileSize(file.fileSize)}
+                                                  </p>
+                                                </div>
+                                                <Download className={`w-4 h-4 flex-shrink-0 ${item.senderId?._id === user?._id || item.senderId === user?._id ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`} />
                                               </a>
-                                            </div>
-                                          ) : (
-                                            <a
-                                              href={getFullFileUrl(file.fileUrl)}
-                                              download={file.originalName}
-                                              className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                                                isOwnMessage
-                                                  ? 'bg-green-700 hover:bg-green-800'
-                                                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                              }`}
-                                            >
-                                              <div className={isOwnMessage ? 'text-white' : 'text-gray-600 dark:text-gray-300'}>
-                                                {getFileIcon(file.mimeType)}
-                                              </div>
-                                              <div className="flex-1 min-w-0">
-                                                <p className={`text-sm font-medium truncate ${isOwnMessage ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                                                  {file.originalName}
-                                                </p>
-                                                <p className={`text-xs ${isOwnMessage ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                                                  {formatFileSize(file.fileSize)}
-                                                </p>
-                                              </div>
-                                              <Download className={`w-4 h-4 flex-shrink-0 ${isOwnMessage ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`} />
-                                            </a>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-
-                                <div className="flex items-center justify-end mt-2 gap-1">
-                                  <span className={`text-xs ${isOwnMessage ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                                    {new Date(message.createdAt).toLocaleTimeString([], { 
-                                      hour: '2-digit', 
-                                      minute: '2-digit' 
-                                    })}
-                                  </span>
-                                  {isOwnMessage && (
-                                    message.isRead ? (
-                                      <CheckCheck className="w-4 h-4 text-blue-200" title="Read" />
-                                    ) : (
-                                      <Check className="w-4 h-4 text-green-100" title="Sent" />
-                                    )
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
                                   )}
+
+                                  <div className="flex items-center justify-end mt-2 gap-1">
+                                    <span className={`text-xs ${item.senderId?._id === user?._id || item.senderId === user?._id ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                                      {new Date(item.createdAt).toLocaleTimeString([], { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      })}
+                                    </span>
+                                    {(item.senderId?._id === user?._id || item.senderId === user?._id) && (
+                                      item.isRead ? (
+                                        <CheckCheck className="w-4 h-4 text-blue-200" title="Read" />
+                                      ) : (
+                                        <Check className="w-4 h-4 text-green-100" title="Sent" />
+                                      )
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })
-                )}
+                      );
+                    }
+                  });
+                })()}
                 <div ref={messageEndRef} />
               </CardContent>
 
@@ -997,16 +1030,15 @@ export default function MessengerPage() {
 
       {/* Create Offer Modal */}
       {selectedConversation && (
-        <CreateOfferModal
+        <SimpleOfferModal
           isOpen={showCreateOffer}
           onClose={() => setShowCreateOffer(false)}
           conversationId={selectedConversation._id}
           buyerId={selectedConversation.otherUser._id}
           buyerName={`${selectedConversation.otherUser.firstName} ${selectedConversation.otherUser.lastName}`}
-          serviceId={selectedConversation.serviceId?._id}
-          serviceTitle={selectedConversation.serviceId?.title}
-          productId={selectedConversation.productId?._id}
-          productTitle={selectedConversation.productId?.title}
+          serviceTitle={selectedConversation.serviceId?.title || selectedConversation.productId?.title}
+          serviceId={selectedConversation.serviceId?._id || selectedConversation.serviceId}
+          productId={selectedConversation.productId?._id || selectedConversation.productId}
           onOfferCreated={() => {
             fetchConversationOffers(selectedConversation._id);
           }}
