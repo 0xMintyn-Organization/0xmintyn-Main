@@ -1,6 +1,7 @@
 import express from "express";
 import { updateAccessTokenMiddleware } from "../../controllers/user.controller";
 import { isAthenticated } from "../../utils/auth";
+import upload from "../../middleware/multerConfig";
 import { 
   createMarketplaceOrder,
   getBuyerOrders,
@@ -10,7 +11,10 @@ import {
   cancelOrder,
   getPurchasedItems,
   getUserPurchasedItems,
-  getOrderStatistics
+  getOrderStatistics,
+  deliverOrder,
+  downloadDeliveryFile,
+  getDeliveryFiles
 } from "../../controllers/marketplace/marketplaceOrder.controller";
 
 const marketplaceOrderRouter = express.Router();
@@ -85,6 +89,31 @@ marketplaceOrderRouter.get(
   updateAccessTokenMiddleware,
   isAthenticated,
   getOrderStatistics
+);
+
+// Deliver order (seller only)
+marketplaceOrderRouter.post(
+  "/:orderId/deliver",
+  updateAccessTokenMiddleware,
+  isAthenticated,
+  upload.array("deliveryFiles", 10),
+  deliverOrder
+);
+
+// Get delivery files (buyer only)
+marketplaceOrderRouter.get(
+  "/:orderId/delivery-files",
+  updateAccessTokenMiddleware,
+  isAthenticated,
+  getDeliveryFiles
+);
+
+// Download delivery file (buyer only)
+marketplaceOrderRouter.get(
+  "/:orderId/download/:fileId",
+  updateAccessTokenMiddleware,
+  isAthenticated,
+  downloadDeliveryFile
 );
 
 export default marketplaceOrderRouter;

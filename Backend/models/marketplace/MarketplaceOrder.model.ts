@@ -40,7 +40,7 @@ export interface IMarketplaceOrder extends Document {
     fees: number;
     netAmount: number;
   };
-  orderStatus: 'pending' | 'confirmed' | 'processing' | 'completed' | 'cancelled' | 'refunded';
+  orderStatus: 'pending' | 'confirmed' | 'processing' | 'delivered' | 'completed' | 'cancelled' | 'refunded';
   shippingAddress?: {
     fullName: string;
     email: string;
@@ -54,6 +54,15 @@ export interface IMarketplaceOrder extends Document {
   notes?: string;
   // Delivery tracking fields
   deliveryDate?: Date;
+  deliveryMessage?: string;
+  deliveryFiles?: {
+    filename: string;
+    originalName: string;
+    fileUrl: string;
+    fileSize: number;
+    mimeType: string;
+    uploadedAt: Date;
+  }[];
   estimatedDeliveryDate?: Date;
   startedAt?: Date;
   completedAt?: Date;
@@ -209,7 +218,7 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
   orderStatus: {
     type: String,
     required: [true, 'Order status is required'],
-    enum: ['pending', 'confirmed', 'processing', 'completed', 'cancelled', 'refunded'],
+    enum: ['pending', 'confirmed', 'processing', 'delivered', 'completed', 'cancelled', 'refunded'],
     default: 'pending'
   },
   shippingAddress: {
@@ -259,6 +268,37 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
     type: Date,
     required: false
   },
+  deliveryMessage: {
+    type: String,
+    trim: true,
+    maxlength: [2000, 'Delivery message cannot exceed 2000 characters']
+  },
+  deliveryFiles: [{
+    filename: {
+      type: String,
+      required: true
+    },
+    originalName: {
+      type: String,
+      required: true
+    },
+    fileUrl: {
+      type: String,
+      required: true
+    },
+    fileSize: {
+      type: Number,
+      required: true
+    },
+    mimeType: {
+      type: String,
+      required: true
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   estimatedDeliveryDate: {
     type: Date,
     required: false

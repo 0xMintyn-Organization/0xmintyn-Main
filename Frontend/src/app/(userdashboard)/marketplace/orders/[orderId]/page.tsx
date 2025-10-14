@@ -19,6 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 import OrderStatusTimeline from '@/components/Marketplace/OrderStatusTimeline';
+import DeliveryModal from '@/components/Marketplace/DeliveryModal';
+import DeliveryFiles from '@/components/Marketplace/DeliveryFiles';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -30,6 +32,7 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
 
   useEffect(() => {
     if (orderId) {
@@ -79,6 +82,7 @@ export default function OrderDetailPage() {
       'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
       'confirmed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
       'processing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      'delivered': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
       'completed': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
       'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
       'refunded': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
@@ -91,6 +95,7 @@ export default function OrderDetailPage() {
       case 'pending': return <Clock className="h-5 w-5" />;
       case 'confirmed': return <CheckCircle className="h-5 w-5" />;
       case 'processing': return <TrendingUp className="h-5 w-5" />;
+      case 'delivered': return <Truck className="h-5 w-5" />;
       case 'completed': return <CheckCircle className="h-5 w-5" />;
       case 'cancelled': return <XCircle className="h-5 w-5" />;
       default: return <Package className="h-5 w-5" />;
@@ -113,6 +118,11 @@ export default function OrderDetailPage() {
     // If already completed or cancelled
     if (order.orderStatus === 'completed' || order.orderStatus === 'cancelled') {
       return { text: 'Completed', color: 'text-green-500', progress: 100 };
+    }
+    
+    // If delivered, show delivered status
+    if (order.orderStatus === 'delivered') {
+      return { text: 'Delivered', color: 'text-orange-500', progress: 90 };
     }
     
     // Calculate time remaining
@@ -232,7 +242,7 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Delivery Progress Bar */}
-      {deliveryCountdown && order.orderStatus !== 'cancelled' && order.orderStatus !== 'completed' && (
+      {deliveryCountdown && !['cancelled', 'completed'].includes(order.orderStatus) && (
         <Card className="mb-6 border-green-200 dark:border-green-800">
           <CardContent className="p-6">
             <div className="space-y-3">
@@ -349,6 +359,16 @@ export default function OrderDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Delivery Files Section (for buyers when order is delivered) */}
+          {!isSellerByOwnership && (order.orderStatus === 'delivered' || order.orderStatus === 'completed') && (
+            <div data-delivery-files>
+              <DeliveryFiles 
+                orderId={orderId}
+                orderStatus={order.orderStatus}
+              />
+            </div>
+          )}
+
           {/* Seller Delivery Section */}
           {isSellerByOwnership && order.orderStatus === 'processing' && (
             <Card className="border-blue-200 dark:border-blue-800">
@@ -370,13 +390,7 @@ export default function OrderDetailPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Button 
                       className="bg-blue-600 hover:bg-blue-700 text-white"
-                      onClick={() => {
-                        // TODO: Implement delivery modal
-                        toast({
-                          title: "Delivery Feature",
-                          description: "File upload and delivery functionality coming soon!",
-                        });
-                      }}
+                      onClick={() => setDeliveryModalOpen(true)}
                     >
                       <Truck className="h-4 w-4 mr-2" />
                       Deliver Order
@@ -707,12 +721,7 @@ export default function OrderDetailPage() {
                 <>
                   <Button 
                     className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => {
-                      toast({
-                        title: "Delivery Feature",
-                        description: "File upload and delivery functionality coming soon!",
-                      });
-                    }}
+                    onClick={() => setDeliveryModalOpen(true)}
                   >
                     <Truck className="h-4 w-4 mr-2" />
                     Deliver Order
@@ -754,20 +763,35 @@ export default function OrderDetailPage() {
               )}
 
               {/* Post-Delivery Actions for Buyers */}
-              {!isSellerByOwnership && order.orderStatus === 'completed' && (
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-green-600 hover:text-green-700 hover:bg-green-50"
-                  onClick={() => {
-                    toast({
-                      title: "Request Revision",
-                      description: "Revision request functionality coming soon!",
-                    });
-                  }}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Request Revision
-                </Button>
+              {!isSellerByOwnership && (order.orderStatus === 'delivered' || order.orderStatus === 'completed') && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                    onClick={() => {
+                      // Scroll to delivery files section
+                      const deliverySection = document.querySelector('[data-delivery-files]');
+                      deliverySection?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Files
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start text-green-600 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => {
+                      toast({
+                        title: "Request Revision",
+                        description: "Revision request functionality coming soon!",
+                      });
+                    }}
+                  >
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Request Revision
+                  </Button>
+                </>
               )}
             </CardContent>
           </Card>
@@ -790,6 +814,18 @@ export default function OrderDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Delivery Modal */}
+      <DeliveryModal
+        isOpen={deliveryModalOpen}
+        onClose={() => setDeliveryModalOpen(false)}
+        orderId={orderId}
+        orderItems={order?.items || []}
+        onDeliverySuccess={() => {
+          // Refresh order data after successful delivery
+          fetchOrderDetails();
+        }}
+      />
     </div>
   );
 }

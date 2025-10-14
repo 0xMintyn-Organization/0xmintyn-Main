@@ -643,3 +643,188 @@ export const getOrderStatistics = CatchAsyncError(async (req: Request, res: Resp
     return next(new ErrorHandler(error.message, 500));
   }
 });
+
+// Deliver order (seller only)
+export const deliverOrder = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user?._id;
+    const { deliveryMessage } = req.body;
+
+    if (!userId) {
+      return next(new ErrorHandler("User not authenticated", 401));
+    }
+
+    // Find the seller profile
+    const seller = await MarketplaceSellerModel.findOne({ userId });
+    if (!seller) {
+      return next(new ErrorHandler("Seller profile not found", 404));
+    }
+
+    // Find the order
+    const order = await MarketplaceOrderModel.findOne({
+      _id: orderId,
+      sellerId: seller._id,
+      isActive: true
+    });
+
+    if (!order) {
+      return next(new ErrorHandler("Order not found or you don't have permission to deliver this order", 404));
+    }
+
+    // Check if order can be delivered
+    if (order.orderStatus !== 'processing') {
+      return next(new ErrorHandler(`Cannot deliver order with status: ${order.orderStatus}`, 400));
+    }
+
+    // Handle file uploads
+    const deliveryFiles = [];
+    if (req.files && Array.isArray(req.files)) {
+      for (const file of req.files) {
+        deliveryFiles.push({
+          filename: file.filename,
+          originalName: file.originalname,
+          fileUrl: file.path,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          uploadedAt: new Date()
+        });
+      }
+    }
+
+    // Update order with delivery information
+    const updatedOrder = await MarketplaceOrderModel.findByIdAndUpdate(
+      orderId,
+      {
+        orderStatus: 'delivered',
+        deliveryDate: new Date(),
+        deliveryMessage,
+        deliveryFiles,
+        $push: {
+          statusHistory: {
+            status: 'delivered',
+            timestamp: new Date(),
+            note: 'Order delivered by seller'
+          }
+        }
+      },
+      { new: true }
+    ).populate([
+      { path: 'buyerId', select: 'firstName lastName email' },
+      { path: 'sellerId', select: 'userId sellerName storeName storeLogo email' }
+    ]);
+
+    // Update seller stats
+    await MarketplaceSellerModel.findByIdAndUpdate(
+      seller._id,
+      {
+        $inc: { totalSales: 1 }
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Order delivered successfully",
+      order: updatedOrder
+    });
+
+  } catch (error: any) {
+    console.error('Error delivering order:', error);
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
+// Download delivery file (buyer only)
+export const downloadDeliveryFile = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { orderId, fileId } = req.params;
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return next(new ErrorHandler("User not authenticated", 401));
+    }
+
+    // Find the order
+    const order = await MarketplaceOrderModel.findOne({
+      _id: orderId,
+      buyerId: userId,
+      isActive: true,
+      orderStatus: { $in: ['delivered', 'completed'] }
+    }).populate([
+      { path: 'buyerId', select: 'firstName lastName email' },
+      { path: 'sellerId', select: 'userId sellerName storeName storeLogo email' }
+    ]);
+
+    if (!order) {
+      return next(new ErrorHandler("Order not found or you don't have permission to download this file", 404));
+    }
+
+    // Find the specific delivery file
+    const deliveryFile = order.deliveryFiles?.find(file => file.filename === fileId);
+    if (!deliveryFile) {
+      return next(new ErrorHandler("File not found in this order", 404));
+    }
+
+    // Set headers for file download
+    res.setHeader('Content-Disposition', `attachment; filename="${deliveryFile.originalName}"`);
+    res.setHeader('Content-Type', deliveryFile.mimeType);
+    res.setHeader('Content-Length', deliveryFile.fileSize);
+
+    // Stream the file
+    const fs = require('fs');
+    const path = require('path');
+    
+    const filePath = path.join(process.cwd(), deliveryFile.fileUrl);
+    
+    if (!fs.existsSync(filePath)) {
+      return next(new ErrorHandler("File not found on server", 404));
+    }
+
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+
+    fileStream.on('error', (error: any) => {
+      console.error('File stream error:', error);
+      return next(new ErrorHandler("Error streaming file", 500));
+    });
+
+  } catch (error: any) {
+    console.error('Error downloading delivery file:', error);
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
+// Get delivery files list (buyer only)
+export const getDeliveryFiles = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return next(new ErrorHandler("User not authenticated", 401));
+    }
+
+    // Find the order
+    const order = await MarketplaceOrderModel.findOne({
+      _id: orderId,
+      buyerId: userId,
+      isActive: true,
+      orderStatus: { $in: ['delivered', 'completed'] }
+    }).select('deliveryFiles deliveryMessage deliveryDate');
+
+    if (!order) {
+      return next(new ErrorHandler("Order not found or you don't have permission to access delivery files", 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      deliveryFiles: order.deliveryFiles || [],
+      deliveryMessage: order.deliveryMessage,
+      deliveryDate: order.deliveryDate
+    });
+
+  } catch (error: any) {
+    console.error('Error fetching delivery files:', error);
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
