@@ -4,102 +4,55 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { 
-  Package, Clock, CheckCircle, RefreshCw, MessageSquare, 
-  Upload, Download, Star, AlertCircle, ArrowLeft, User,
-  Calendar, DollarSign, Truck, FileText, XCircle, Image as ImageIcon
+  Package, Clock, CheckCircle, MessageSquare, 
+  Download, Star, AlertCircle, ArrowLeft, 
+  Calendar, DollarSign, Truck, FileText, XCircle, Loader2,
+  TrendingUp, Award, Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { formatDistanceToNow, format, differenceInMilliseconds } from 'date-fns';
+import { formatDistanceToNow, format, differenceInMilliseconds, differenceInDays, differenceInHours } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import axios from 'axios';
+import OrderStatusTimeline from '@/components/Marketplace/OrderStatusTimeline';
 
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
-  const orderId = params.orderId as string;
+  const orderId = params?.orderId as string;
 
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<any>(null);
-  const [deliveryMessage, setDeliveryMessage] = useState('');
-  const [deliveryFiles, setDeliveryFiles] = useState<File[]>([]);
-  const [revisionMessage, setRevisionMessage] = useState('');
-  const [rating, setRating] = useState(0);
-  const [review, setReview] = useState('');
-  const [submittingDelivery, setSubmittingDelivery] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchOrderDetails();
+    if (orderId) {
+      fetchOrderDetails();
+    }
   }, [orderId]);
 
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
-      // Mock data based on order ID
-      setOrder({
-        id: orderId,
-        serviceTitle: 'Professional Logo Design',
-        serviceType: 'Graphic Design',
-        thumbnailImage: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=400&h=300&fit=crop',
-        
-        // Buyer info
-        buyerId: 'buyer123',
-        buyerName: 'John Doe',
-        buyerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-        buyerEmail: 'john@example.com',
-        
-        // Seller info
-        sellerId: 'seller456',
-        sellerName: 'DesignPro Studio',
-        sellerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face',
-        
-        // Order details
-        price: 150,
-        status: 'in_progress', // in_progress, delivered, revision_requested, completed, cancelled
-        createdAt: '2024-01-20T10:00:00Z',
-        deadline: '2024-01-25T10:00:00Z',
-        deliveryTime: '3 Days',
-        revisions: 3,
-        revisionsUsed: 0,
-        
-        // Requirements
-        requirements: 'I need a modern, minimalist logo for my tech startup. The company name is "TechFlow" and we work in AI/ML space. Prefer blue and white colors. Need both light and dark versions.',
-        
-        // Delivery info
-        deliveredAt: null,
-        deliveryFiles: [],
-        deliveryNotes: '',
-        
-        // Revision info
-        revisionHistory: [],
-        
-        // Completion info
-        completedAt: null,
-        rating: null,
-        reviewText: null,
-        
-        // Payment info
-        paymentStatus: 'paid',
-        transactionId: 'TXN-2024-001'
-      });
-    } catch (error) {
+      setError(null);
+      
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/orders/${orderId}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setOrder(response.data.order);
+      }
+    } catch (error: any) {
       console.error('Error fetching order:', error);
+      setError(error.response?.data?.message || 'Failed to load order details');
       toast({
         variant: "destructive",
         title: "Error",
@@ -110,153 +63,35 @@ export default function OrderDetailPage() {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setDeliveryFiles(Array.from(e.target.files));
-    }
-  };
-
-  const handleDeliverOrder = async () => {
-    if (!deliveryMessage && deliveryFiles.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Missing Information",
-        description: "Please provide a delivery message or upload files",
-      });
-      return;
-    }
-
-    setSubmittingDelivery(true);
-    try {
-      // TODO: API call to deliver order
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "✅ Order Delivered!",
-        description: "Your delivery has been submitted successfully. The buyer will review it soon.",
-      });
-      
-      // Update order status
-      setOrder({
-        ...order,
-        status: 'delivered',
-        deliveredAt: new Date().toISOString(),
-        deliveryNotes: deliveryMessage,
-        deliveryFiles: deliveryFiles.map(f => ({
-          name: f.name,
-          size: f.size,
-          url: URL.createObjectURL(f)
-        }))
-      });
-      
-      setDeliveryMessage('');
-      setDeliveryFiles([]);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Delivery Failed",
-        description: "Failed to submit delivery. Please try again.",
-      });
-    } finally {
-      setSubmittingDelivery(false);
-    }
-  };
-
-  const handleRequestRevision = async () => {
-    if (!revisionMessage) {
-      toast({
-        variant: "destructive",
-        title: "Missing Information",
-        description: "Please provide revision details",
-      });
-      return;
-    }
-
-    try {
-      // TODO: API call to request revision
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Revision Requested",
-        description: "The seller has been notified of your revision request.",
-      });
-      
-      setOrder({
-        ...order,
-        status: 'revision_requested',
-        revisionsUsed: order.revisionsUsed + 1,
-        revisionHistory: [
-          ...order.revisionHistory,
-          {
-            message: revisionMessage,
-            requestedAt: new Date().toISOString(),
-            requestedBy: user?._id
-          }
-        ]
-      });
-      
-      setRevisionMessage('');
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Request Failed",
-        description: "Failed to request revision. Please try again.",
-      });
-    }
-  };
-
-  const handleAcceptDelivery = async () => {
-    if (rating === 0) {
-      toast({
-        variant: "destructive",
-        title: "Rating Required",
-        description: "Please provide a rating before accepting",
-      });
-      return;
-    }
-
-    try {
-      // TODO: API call to accept delivery
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "✅ Order Completed!",
-        description: "Thank you for your review. The order is now complete.",
-      });
-      
-      setOrder({
-        ...order,
-        status: 'completed',
-        completedAt: new Date().toISOString(),
-        rating,
-        reviewText: review
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed",
-        description: "Failed to complete order. Please try again.",
-      });
-    }
+  // Helper function to construct full image URLs
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) return '/placeholder-product.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
   };
 
   const getStatusColor = (status: string) => {
     const colors: any = {
-      'in_progress': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-      'delivered': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'confirmed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      'processing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
       'completed': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      'revision_requested': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-      'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+      'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      'refunded': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     };
-    return colors[status] || colors['in_progress'];
+    return colors[status] || colors['pending'];
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'in_progress': return <Clock className="h-5 w-5" />;
-      case 'delivered': return <Truck className="h-5 w-5" />;
+      case 'pending': return <Clock className="h-5 w-5" />;
+      case 'confirmed': return <CheckCircle className="h-5 w-5" />;
+      case 'processing': return <TrendingUp className="h-5 w-5" />;
       case 'completed': return <CheckCircle className="h-5 w-5" />;
-      case 'revision_requested': return <RefreshCw className="h-5 w-5" />;
       case 'cancelled': return <XCircle className="h-5 w-5" />;
       default: return <Package className="h-5 w-5" />;
     }
@@ -266,411 +101,398 @@ export default function OrderDetailPage() {
     return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  const getRemainingTime = () => {
-    if (!order || order.status === 'completed' || order.status === 'cancelled') {
-      return { text: 'N/A', color: 'text-gray-500' };
+  const getDeliveryCountdown = () => {
+    if (!order?.estimatedDeliveryDate) {
+      return { text: 'Not set', color: 'text-gray-500', progress: 0 };
     }
     
     const now = new Date();
-    const due = new Date(order.deadline);
-    const diff = differenceInMilliseconds(due, now);
-
-    if (diff <= 0) {
-      return { text: 'Overdue', color: 'text-red-500' };
+    const deliveryDate = new Date(order.estimatedDeliveryDate);
+    const startDate = order.startedAt ? new Date(order.startedAt) : new Date(order.createdAt);
+    
+    // If already completed or cancelled
+    if (order.orderStatus === 'completed' || order.orderStatus === 'cancelled') {
+      return { text: 'Completed', color: 'text-green-500', progress: 100 };
     }
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
+    
+    // Calculate time remaining
+    const totalTime = differenceInMilliseconds(deliveryDate, startDate);
+    const elapsed = differenceInMilliseconds(now, startDate);
+    const remaining = differenceInMilliseconds(deliveryDate, now);
+    
+    // Calculate progress percentage
+    const progress = Math.min(100, Math.max(0, (elapsed / totalTime) * 100));
+    
+    // If overdue
+    if (remaining <= 0) {
+      const overdueHours = Math.abs(differenceInHours(now, deliveryDate));
+      return { 
+        text: `Overdue by ${overdueHours}h`, 
+        color: 'text-red-500', 
+        progress: 100 
+      };
+    }
+    
+    // Calculate remaining time
+    const days = differenceInDays(deliveryDate, now);
+    const hours = differenceInHours(deliveryDate, now) % 24;
+    
     let text = '';
-    if (days > 0) text += `${days}d `;
-    if (hours > 0) text += `${hours}h `;
-    text += `${minutes}m`;
-
+    if (days > 0) {
+      text = `${days}d ${hours}h remaining`;
+    } else if (hours > 0) {
+      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      text = `${hours}h ${minutes}m remaining`;
+    } else {
+      const minutes = Math.floor(remaining / (1000 * 60));
+      text = `${minutes}m remaining`;
+    }
+    
+    // Determine color based on urgency
     let color = 'text-green-500';
-    if (days < 2 && days >= 1) color = 'text-yellow-500';
-    if (days < 1) color = 'text-red-500';
-
-    return { text: text.trim(), color };
+    if (days < 2) color = 'text-yellow-500';
+    if (days < 1) color = 'text-orange-500';
+    if (hours < 6) color = 'text-red-500';
+    
+    return { text, color, progress: Math.round(progress) };
   };
 
-  // Determine if current user is seller
-  const isSeller = user?._id === order?.sellerId;
-  const timeRemaining = getRemainingTime();
+  // Determine if current user is seller and owns this order
+  const isSellerByOwnership = user?.isSeller && order && (
+    user._id === order.sellerId?.userId || 
+    user._id === order.sellerId?._id ||
+    user._id === order.sellerId
+  );
+  
+  const deliveryCountdown = order ? getDeliveryCountdown() : null;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-green-600" />
+          <p className="text-gray-600 dark:text-gray-400">Loading order details...</p>
+        </div>
       </div>
     );
   }
 
-  if (!order) {
+  if (error || !order) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <Package className="h-16 w-16 text-gray-400 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Order Not Found</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
-          The order you're looking for doesn't exist or you don't have access to it.
+        <AlertCircle className="h-16 w-16 text-red-400 mb-4" />
+        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Order Not Found</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4 text-center max-w-md">
+          {error || "The order you're looking for doesn't exist or you don't have access to it."}
         </p>
-        <Link href={isSeller ? '/marketplace/orders/seller' : '/marketplace/user-dashboard'}>
-          <Button>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Orders
+        <div className="flex gap-3">
+          <Link href="/marketplace/user-dashboard">
+            <Button variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </Link>
+          <Button onClick={fetchOrderDetails}>
+            <Download className="h-4 w-4 mr-2" />
+            Retry
           </Button>
-        </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <div className="container mx-auto p-4 md:p-6 max-w-7xl">
+
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
         <Button
           variant="outline"
           size="sm"
           onClick={() => router.back()}
+          className="shrink-0"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Order #{order.id}
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            {isSellerByOwnership ? 'Sell Order' : 'Order'} #{order.orderNumber || order._id?.slice(-8)}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {order.serviceTitle}
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            {isSellerByOwnership ? 'Customer order' : 'Your order'} • Created {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}
           </p>
         </div>
-        <Badge className={getStatusColor(order.status)}>
+        <Badge className={`${getStatusColor(order.orderStatus)} text-base px-4 py-2`}>
           <span className="flex items-center gap-2">
-            {getStatusIcon(order.status)}
-            {formatStatus(order.status)}
+            {getStatusIcon(order.orderStatus)}
+            {formatStatus(order.orderStatus)}
           </span>
         </Badge>
       </div>
 
+      {/* Delivery Progress Bar */}
+      {deliveryCountdown && order.orderStatus !== 'cancelled' && order.orderStatus !== 'completed' && (
+        <Card className="mb-6 border-green-200 dark:border-green-800">
+          <CardContent className="p-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-green-600" />
+                  Delivery Progress
+                </h3>
+                <span className={`font-bold ${deliveryCountdown.color}`}>
+                  {deliveryCountdown.text}
+                </span>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="relative w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="absolute h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-500 rounded-full"
+                  style={{ width: `${deliveryCountdown.progress}%` }}
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                <span>Started: {order.startedAt ? format(new Date(order.startedAt), 'MMM dd, hh:mm a') : format(new Date(order.createdAt), 'MMM dd, hh:mm a')}</span>
+                <span className="font-medium">{deliveryCountdown.progress}% Complete</span>
+                <span>Due: {format(new Date(order.estimatedDeliveryDate), 'MMM dd, hh:mm a')}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Service Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Service Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
-                <div className="relative w-32 h-24 rounded-lg overflow-hidden flex-shrink-0">
-                  <Image
-                    src={order.thumbnailImage}
-                    alt={order.serviceTitle}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-1">{order.serviceTitle}</h3>
-                  <Badge variant="outline" className="mb-2">{order.serviceType}</Badge>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">Price</p>
-                      <p className="font-semibold text-green-600">${order.price}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">Delivery Time</p>
-                      <p className="font-semibold">{order.deliveryTime}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">Revisions</p>
-                      <p className="font-semibold">{order.revisionsUsed}/{order.revisions}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">Time Remaining</p>
-                      <p className={`font-semibold ${timeRemaining.color}`}>
-                        {timeRemaining.text}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Requirements */}
+          {/* Order Items */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Order Requirements
+                <Package className="h-5 w-5 text-green-600" />
+                Order Items
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                {order.requirements}
-              </p>
+            <CardContent className="space-y-4">
+              {order.items?.map((item: any, index: number) => (
+                <div key={index} className="flex gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                    {item.itemImage ? (
+                      <Image
+                        src={getFullImageUrl(item.itemImage)}
+                        alt={item.itemTitle}
+                        fill
+                        className="object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder-product.jpg';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <Package className="h-8 w-8 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{item.itemTitle}</h3>
+                        <Badge variant="outline" className="mt-1">
+                          {item.itemType === 'service' ? '🎯 Service' : '📦 Product'}
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-green-600">${item.itemPrice}</p>
+                        <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Package Details for Services */}
+                    {item.packageDetails && (
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {item.packageDetails.deliveryTime}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Download className="h-4 w-4" />
+                            {item.packageDetails.revisions} Revisions
+                          </div>
+                        </div>
+                        {item.packageDetails.features && item.packageDetails.features.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Includes:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {item.packageDetails.features.slice(0, 3).map((feature: string, idx: number) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {feature}
+                                </Badge>
+                              ))}
+                              {item.packageDetails.features.length > 3 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{item.packageDetails.features.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
-          {/* Delivery Section - For Sellers */}
-          {isSeller && (order.status === 'in_progress' || order.status === 'revision_requested') && (
-            <Card className="border-green-200 dark:border-green-800">
+          {/* Seller Delivery Section */}
+          {isSellerByOwnership && order.orderStatus === 'processing' && (
+            <Card className="border-blue-200 dark:border-blue-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
-                  <Upload className="h-5 w-5" />
-                  Deliver Your Work
+                <CardTitle className="flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-blue-600" />
+                  Deliver Order
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="deliveryMessage">Delivery Message *</Label>
-                  <Textarea
-                    id="deliveryMessage"
-                    placeholder="Describe what you're delivering and any important notes..."
-                    value={deliveryMessage}
-                    onChange={(e) => setDeliveryMessage(e.target.value)}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="deliveryFiles">Attach Files</Label>
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      id="deliveryFiles"
-                      multiple
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <label htmlFor="deliveryFiles" className="cursor-pointer">
-                      <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Click to upload or drag and drop
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        PNG, JPG, PDF, ZIP (max 100MB each)
-                      </p>
-                    </label>
-                  </div>
-                  {deliveryFiles.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {deliveryFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                          <span className="text-sm">{file.name}</span>
-                          <span className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  onClick={handleDeliverOrder}
-                  disabled={submittingDelivery}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  size="lg"
-                >
-                  {submittingDelivery ? (
-                    <>
-                      <Clock className="h-5 w-5 mr-2 animate-spin" />
-                      Submitting Delivery...
-                    </>
-                  ) : (
-                    <>
-                      <Truck className="h-5 w-5 mr-2" />
-                      Submit Delivery
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Delivered Work - For Buyers */}
-          {!isSeller && order.status === 'delivered' && (
-            <Card className="border-purple-200 dark:border-purple-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
-                  <Package className="h-5 w-5" />
-                  Delivered Work
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="mb-2 block">Delivery Message</Label>
-                  <p className="text-gray-700 dark:text-gray-300 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    {order.deliveryNotes || 'No message provided'}
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                    Ready to deliver your work?
+                  </h4>
+                  <p className="text-blue-700 dark:text-blue-300 text-sm mb-4">
+                    Upload your completed files and deliver the order to the buyer. The buyer will have 3 days to review and request revisions if needed.
                   </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button 
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => {
+                        // TODO: Implement delivery modal
+                        toast({
+                          title: "Delivery Feature",
+                          description: "File upload and delivery functionality coming soon!",
+                        });
+                      }}
+                    >
+                      <Truck className="h-4 w-4 mr-2" />
+                      Deliver Order
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        // TODO: Implement message functionality
+                        toast({
+                          title: "Message Buyer",
+                          description: "Messaging functionality coming soon!",
+                        });
+                      }}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Message Buyer
+                    </Button>
+                  </div>
                 </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Upload completed files</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Add delivery message</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Mark as delivered</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-                {order.deliveryFiles && order.deliveryFiles.length > 0 && (
-                  <div>
-                    <Label className="mb-2 block">Delivered Files</Label>
-                    <div className="space-y-2">
-                      {order.deliveryFiles.map((file: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-gray-400" />
-                            <span className="font-medium">{file.name}</span>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </Button>
-                        </div>
-                      ))}
+          {/* Status Timeline Component */}
+          <OrderStatusTimeline 
+            currentStatus={order.orderStatus}
+            statusHistory={order.statusHistory}
+            createdAt={order.createdAt}
+            startedAt={order.startedAt}
+            completedAt={order.completedAt}
+            cancelledAt={order.cancelledAt}
+          />
+
+          {/* Payment Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                Payment Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Order Total</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">${order.orderTotal}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Payment Status</p>
+                  <Badge className={order.paymentStatus === 'completed' ? 'bg-green-500' : 'bg-yellow-500'}>
+                    {formatStatus(order.paymentStatus)}
+                  </Badge>
+                </div>
+              </div>
+              
+              {order.paymentDetails && (
+                <>
+                  <Separator />
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
+                      <span className="font-medium">${order.paymentDetails.amount?.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Platform Fee (10%)</span>
+                      <span className="font-medium">${order.paymentDetails.fees?.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-base font-bold pt-2 border-t">
+                      <span>Seller Receives</span>
+                      <span className="text-green-600">${order.paymentDetails.netAmount?.toFixed(2)}</span>
                     </div>
                   </div>
-                )}
-
-                <Separator />
-
-                {/* Accept or Request Revision */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="w-full" disabled={order.revisionsUsed >= order.revisions}>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Request Revision ({order.revisions - order.revisionsUsed} left)
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Request Revision</DialogTitle>
-                        <DialogDescription>
-                          Describe what changes you need
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <Textarea
-                          placeholder="Please explain what needs to be revised..."
-                          value={revisionMessage}
-                          onChange={(e) => setRevisionMessage(e.target.value)}
-                          rows={5}
-                        />
-                        <Button onClick={handleRequestRevision} className="w-full">
-                          Submit Revision Request
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button className="w-full bg-green-600 hover:bg-green-700">
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Accept Delivery
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Accept Delivery & Complete Order</DialogTitle>
-                        <DialogDescription>
-                          Please rate your experience
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="mb-2 block">Rating *</Label>
-                          <div className="flex gap-2">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <button
-                                key={star}
-                                onClick={() => setRating(star)}
-                                className="focus:outline-none"
-                              >
-                                <Star
-                                  className={`h-8 w-8 ${
-                                    star <= rating
-                                      ? 'text-yellow-500 fill-current'
-                                      : 'text-gray-300'
-                                  }`}
-                                />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <Label htmlFor="review">Review (Optional)</Label>
-                          <Textarea
-                            id="review"
-                            placeholder="Share your experience with this seller..."
-                            value={review}
-                            onChange={(e) => setReview(e.target.value)}
-                            rows={4}
-                          />
-                        </div>
-                        <Button onClick={handleAcceptDelivery} className="w-full bg-green-600 hover:bg-green-700">
-                          Complete Order
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Completed Order - Show Review */}
-          {order.status === 'completed' && order.rating && (
-            <Card className="border-green-200 dark:border-green-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
-                  <CheckCircle className="h-5 w-5" />
-                  Order Completed
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="mb-2 block">Rating</Label>
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-5 w-5 ${
-                          i < order.rating
-                            ? 'text-yellow-500 fill-current'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
+                </>
+              )}
+              
+              {order.paymentMethod && order.paymentMethod !== 'pending' && (
+                <>
+                  <Separator />
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Payment Method</span>
+                    <span className="font-medium capitalize">{order.paymentMethod}</span>
                   </div>
-                </div>
-                {order.reviewText && (
-                  <div>
-                    <Label className="mb-2 block">Review</Label>
-                    <p className="text-gray-700 dark:text-gray-300 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      {order.reviewText}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-          {/* Revision History */}
-          {order.revisionHistory && order.revisionHistory.length > 0 && (
+          {/* Order Notes */}
+          {order.notes && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <RefreshCw className="h-5 w-5" />
-                  Revision History
+                  <FileText className="h-5 w-5 text-gray-600" />
+                  Order Notes
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {order.revisionHistory.map((revision: any, index: number) => (
-                    <div key={index} className="border-l-2 border-orange-500 pl-4">
-                      <p className="text-sm text-gray-500 mb-1">
-                        {formatDistanceToNow(new Date(revision.requestedAt), { addSuffix: true })}
-                      </p>
-                      <p className="text-gray-700 dark:text-gray-300">{revision.message}</p>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  {order.notes}
+                </p>
               </CardContent>
             </Card>
           )}
@@ -678,109 +500,292 @@ export default function OrderDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Order Info */}
-          <Card>
+          {/* Delivery Information */}
+          <Card className="border-blue-200 dark:border-blue-800">
             <CardHeader>
-              <CardTitle>Order Information</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                <Calendar className="h-5 w-5" />
+                Delivery Information
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Order ID</span>
-                <span className="font-medium">#{order.id}</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Price</span>
-                <span className="font-bold text-green-600 text-lg">${order.price}</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Status</span>
-                <Badge className={getStatusColor(order.status)}>
-                  {formatStatus(order.status)}
-                </Badge>
-              </div>
-              <Separator />
-              <div>
-                <span className="text-gray-600 dark:text-gray-400 block mb-1">Ordered</span>
-                <span className="font-medium">
-                  {format(new Date(order.createdAt), 'MMM dd, yyyy • hh:mm a')}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-600 dark:text-gray-400 block mb-1">Deadline</span>
-                <span className="font-medium">
-                  {format(new Date(order.deadline), 'MMM dd, yyyy • hh:mm a')}
-                </span>
-              </div>
-              {order.deliveredAt && (
+              {order.estimatedDeliveryDate && (
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400 block mb-1">Delivered</span>
-                  <span className="font-medium">
-                    {format(new Date(order.deliveredAt), 'MMM dd, yyyy • hh:mm a')}
-                  </span>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Estimated Delivery</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {format(new Date(order.estimatedDeliveryDate), 'EEEE, MMMM dd, yyyy')}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formatDistanceToNow(new Date(order.estimatedDeliveryDate), { addSuffix: true })}
+                  </p>
                 </div>
               )}
-              {order.completedAt && (
-                <div>
-                  <span className="text-gray-600 dark:text-gray-400 block mb-1">Completed</span>
-                  <span className="font-medium">
-                    {format(new Date(order.completedAt), 'MMM dd, yyyy • hh:mm a')}
-                  </span>
-                </div>
+              
+              {order.deliveryDate && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Actual Delivery</p>
+                    <p className="font-semibold text-green-600">
+                      {format(new Date(order.deliveryDate), 'EEEE, MMMM dd, yyyy')}
+                    </p>
+                    <Badge className="mt-2 bg-green-500">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Delivered On Time
+                    </Badge>
+                  </div>
+                </>
+              )}
+              
+              {order.startedAt && (
+                <>
+                  <Separator />
+                  <div className="text-sm">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-gray-600 dark:text-gray-400">Started</span>
+                      <span className="font-medium">{formatDistanceToNow(new Date(order.startedAt), { addSuffix: true })}</span>
+                    </div>
+                    {order.completedAt && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Completed</span>
+                        <span className="font-medium">{formatDistanceToNow(new Date(order.completedAt), { addSuffix: true })}</span>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
 
-          {/* User Info */}
+          {/* Seller/Buyer Info */}
           <Card>
             <CardHeader>
-              <CardTitle>{isSeller ? 'Buyer' : 'Seller'} Information</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {isSellerByOwnership ? (
+                  <>
+                    <Package className="h-5 w-5 text-blue-600" />
+                    Buyer Information
+                  </>
+                ) : (
+                  <>
+                    <Award className="h-5 w-5 text-purple-600" />
+                    Seller Information
+                  </>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="relative w-12 h-12 rounded-full overflow-hidden">
-                  <Image
-                    src={isSeller ? order.buyerAvatar : order.sellerAvatar}
-                    alt={isSeller ? order.buyerName : order.sellerName}
-                    fill
-                    className="object-cover"
-                  />
+              {isSellerByOwnership ? (
+                // Buyer Info for Seller
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden">
+                      {order.buyerId?.avatar ? (
+                        <Image
+                          src={order.buyerId.avatar}
+                          alt={order.buyerId.firstName || 'Buyer'}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                          <span className="text-white font-semibold">
+                            {order.buyerId?.firstName?.charAt(0) || 'B'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {order.buyerId?.firstName} {order.buyerId?.lastName}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        @{order.buyerId?.username}
+                      </p>
+                    </div>
+                  </div>
+                  <Link href={`/marketplace/messages`}>
+                    <Button variant="outline" className="w-full" size="sm">
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Send Message
+                    </Button>
+                  </Link>
                 </div>
-                <div>
-                  <p className="font-semibold">{isSeller ? order.buyerName : order.sellerName}</p>
-                  {!isSeller && order.buyerEmail && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{order.buyerEmail}</p>
+              ) : (
+                // Seller Info for Buyer
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden">
+                      {order.sellerId?.storeLogo ? (
+                        <Image
+                          src={getFullImageUrl(order.sellerId.storeLogo)}
+                          alt={order.sellerId.sellerName || 'Seller'}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                          <span className="text-white font-semibold">
+                            {order.sellerId?.sellerName?.charAt(0) || 'S'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {order.sellerId?.sellerName || order.sellerId?.storeName}
+                      </p>
+                      {order.sellerId?.sellerLevel && (
+                        <Badge className="bg-green-500 text-white text-xs mt-1">
+                          {order.sellerId.sellerLevel}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {order.sellerId?.rating && (
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="font-medium">{order.sellerId.rating}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Award className="h-4 w-4 text-blue-500" />
+                        <span>{order.sellerId.totalSales || 0} sales</span>
+                      </div>
+                    </div>
                   )}
+                  
+                  <Link href={`/marketplace/messages`}>
+                    <Button variant="outline" className="w-full" size="sm">
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Contact Seller
+                    </Button>
+                  </Link>
                 </div>
-              </div>
-              <Link href={`/marketplace/messages?conversation=${order.id}`}>
-                <Button variant="outline" className="w-full">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Send Message
-                </Button>
-              </Link>
+              )}
             </CardContent>
           </Card>
 
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {isSellerByOwnership ? (
+                  <>
+                    <Truck className="h-5 w-5 text-blue-600" />
+                    Seller Actions
+                  </>
+                ) : (
+                  <>
+                    <Package className="h-5 w-5 text-green-600" />
+                    Quick Actions
+                  </>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Link href={`/marketplace/messages?conversation=${order.id}`}>
+              {/* Common Actions */}
+              <Link href="/marketplace/messages">
                 <Button variant="outline" className="w-full justify-start">
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  Message {isSeller ? 'Buyer' : 'Seller'}
+                  {isSellerByOwnership ? 'Message Buyer' : 'Message Seller'}
                 </Button>
               </Link>
-              {order.status !== 'cancelled' && (
-                <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700">
+              
+              {order.offerId && (
+                <Link href={`/marketplace/messages`}>
+                  <Button variant="outline" className="w-full justify-start">
+                    <FileText className="h-4 w-4 mr-2" />
+                    View Original Offer
+                  </Button>
+                </Link>
+              )}
+
+              {/* Seller-Specific Actions */}
+              {isSellerByOwnership && order.orderStatus === 'processing' && (
+                <>
+                  <Button 
+                    className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => {
+                      toast({
+                        title: "Delivery Feature",
+                        description: "File upload and delivery functionality coming soon!",
+                      });
+                    }}
+                  >
+                    <Truck className="h-4 w-4 mr-2" />
+                    Deliver Order
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                    onClick={() => {
+                      toast({
+                        title: "Request Extension",
+                        description: "Extension request functionality coming soon!",
+                      });
+                    }}
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    Request Extension
+                  </Button>
+                </>
+              )}
+
+              {/* Buyer-Specific Actions */}
+              {!isSellerByOwnership && order.orderStatus !== 'cancelled' && order.orderStatus !== 'completed' && (
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => {
+                    if (confirm('Are you sure you want to cancel this order?')) {
+                      toast({
+                        title: "Order Cancellation",
+                        description: "Please contact the seller to discuss cancellation.",
+                      });
+                    }
+                  }}
+                >
                   <XCircle className="h-4 w-4 mr-2" />
                   Cancel Order
                 </Button>
               )}
+
+              {/* Post-Delivery Actions for Buyers */}
+              {!isSellerByOwnership && order.orderStatus === 'completed' && (
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start text-green-600 hover:text-green-700 hover:bg-green-50"
+                  onClick={() => {
+                    toast({
+                      title: "Request Revision",
+                      description: "Revision request functionality coming soon!",
+                    });
+                  }}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Request Revision
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Payment Security */}
+          <Card className="border-green-200 dark:border-green-800">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                  <Zap className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900 dark:text-white">Secure Transaction</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Your payment is protected until delivery is accepted
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -788,4 +793,3 @@ export default function OrderDetailPage() {
     </div>
   );
 }
-

@@ -41,89 +41,52 @@ export default function SellerOrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
-      // Mock data
-      setOrders([
-        {
-          id: 'ORD-2024-001',
-          serviceTitle: 'Logo Design Package',
-          serviceType: 'Graphic Design',
-          buyerName: 'John Doe',
-          buyerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
-          price: 150,
-          status: 'in_progress',
-          createdAt: '2024-01-20T10:00:00Z',
-          deadline: '2024-01-25T10:00:00Z',
-          deliveryTime: '3 Days',
-          revisions: 3,
-          revisionsUsed: 0,
-          thumbnailImage: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=200&h=150&fit=crop'
-        },
-        {
-          id: 'ORD-2024-002',
-          serviceTitle: 'Website Development',
-          serviceType: 'Web Development',
-          buyerName: 'Jane Smith',
-          buyerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=40&h=40&fit=crop&crop=face',
-          price: 500,
-          status: 'in_progress',
-          createdAt: '2024-01-18T14:30:00Z',
-          deadline: '2024-01-28T14:30:00Z',
-          deliveryTime: '1 Week',
-          revisions: 2,
-          revisionsUsed: 0,
-          thumbnailImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&h=150&fit=crop'
-        },
-        {
-          id: 'ORD-2024-003',
-          serviceTitle: 'Social Media Content',
-          serviceType: 'Content Writing',
-          buyerName: 'Mike Johnson',
-          buyerAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face',
-          price: 75,
-          status: 'delivered',
-          createdAt: '2024-01-15T09:15:00Z',
-          deadline: '2024-01-20T09:15:00Z',
-          deliveredAt: '2024-01-19T15:30:00Z',
-          deliveryTime: '2 Days',
-          revisions: 1,
-          revisionsUsed: 0,
-          thumbnailImage: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=200&h=150&fit=crop'
-        },
-        {
-          id: 'ORD-2024-004',
-          serviceTitle: 'SEO Optimization',
-          serviceType: 'Digital Marketing',
-          buyerName: 'Sarah Wilson',
-          buyerAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face',
-          price: 200,
-          status: 'revision_requested',
-          createdAt: '2024-01-12T11:00:00Z',
-          deadline: '2024-01-22T11:00:00Z',
-          deliveryTime: '5 Days',
-          revisions: 3,
-          revisionsUsed: 1,
-          thumbnailImage: 'https://images.unsplash.com/photo-1432888622747-4eb9a8f2c293?w=200&h=150&fit=crop'
-        },
-        {
-          id: 'ORD-2024-005',
-          serviceTitle: 'Brand Identity Design',
-          serviceType: 'Graphic Design',
-          buyerName: 'Tom Brown',
-          buyerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face',
-          price: 300,
-          status: 'completed',
-          createdAt: '2024-01-10T08:00:00Z',
-          completedAt: '2024-01-14T08:00:00Z',
-          deadline: '2024-01-15T08:00:00Z',
-          deliveryTime: '5 Days',
-          revisions: 2,
-          revisionsUsed: 0,
-          rating: 5,
-          thumbnailImage: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=200&h=150&fit=crop'
-        }
-      ]);
-    } catch (error) {
+      
+      // Fetch orders from real API
+      const response = await import('axios').then(axios => 
+        axios.default.get(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/orders/seller`,
+          {
+            withCredentials: true,
+            params: {
+              page: currentPage,
+              limit: ordersPerPage,
+              status: activeTab !== 'all' ? activeTab : undefined
+            }
+          }
+        )
+      );
+
+      if (response.data.success) {
+        const apiOrders = response.data.orders || [];
+        
+        // Transform API data to match component expectations
+        const transformedOrders = apiOrders.map((order: any) => {
+          const firstItem = order.items?.[0] || {};
+          return {
+            id: order._id,
+            orderNumber: order.orderNumber,
+            serviceTitle: firstItem.itemTitle || 'Order',
+            serviceType: firstItem.packageDetails?.packageName || firstItem.itemType || 'Service',
+            buyerName: `${order.buyerId?.firstName || ''} ${order.buyerId?.lastName || ''}`.trim() || 'Buyer',
+            buyerAvatar: order.buyerId?.avatar || '',
+            price: order.orderTotal,
+            status: order.orderStatus,
+            createdAt: order.createdAt,
+            deadline: order.estimatedDeliveryDate,
+            deliveredAt: order.deliveryDate,
+            completedAt: order.completedAt,
+            deliveryTime: firstItem.packageDetails?.deliveryTime || 'N/A',
+            revisions: firstItem.packageDetails?.revisions || 0,
+            revisionsUsed: 0, // TODO: Track this
+            thumbnailImage: firstItem.itemImage || '',
+            rating: null // TODO: Get from reviews
+          };
+        });
+        
+        setOrders(transformedOrders);
+      }
+    } catch (error: any) {
       console.error('Error fetching orders:', error);
     } finally {
       setLoading(false);
@@ -132,22 +95,24 @@ export default function SellerOrdersPage() {
 
   const getStatusColor = (status: string) => {
     const colors: any = {
-      'in_progress': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-      'delivered': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'confirmed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      'processing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
       'completed': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      'revision_requested': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-      'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+      'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      'refunded': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     };
-    return colors[status] || colors['in_progress'];
+    return colors[status] || colors['pending'];
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'in_progress': return <Clock className="h-4 w-4" />;
-      case 'delivered': return <Truck className="h-4 w-4" />;
+      case 'pending': return <Clock className="h-4 w-4" />;
+      case 'confirmed': return <CheckCircle className="h-4 w-4" />;
+      case 'processing': return <TrendingUp className="h-4 w-4" />;
       case 'completed': return <CheckCircle className="h-4 w-4" />;
-      case 'revision_requested': return <RefreshCw className="h-4 w-4" />;
       case 'cancelled': return <XCircle className="h-4 w-4" />;
+      case 'refunded': return <RefreshCw className="h-4 w-4" />;
       default: return <Package className="h-4 w-4" />;
     }
   };
@@ -194,10 +159,11 @@ export default function SellerOrdersPage() {
   // Calculate stats
   const stats = {
     all: orders.length,
-    in_progress: orders.filter(o => o.status === 'in_progress').length,
-    delivered: orders.filter(o => o.status === 'delivered').length,
-    revision_requested: orders.filter(o => o.status === 'revision_requested').length,
+    pending: orders.filter(o => o.status === 'pending').length,
+    confirmed: orders.filter(o => o.status === 'confirmed').length,
+    processing: orders.filter(o => o.status === 'processing').length,
     completed: orders.filter(o => o.status === 'completed').length,
+    cancelled: orders.filter(o => o.status === 'cancelled').length,
     totalEarnings: orders.reduce((sum, o) => sum + o.price, 0)
   };
 
@@ -226,15 +192,27 @@ export default function SellerOrdersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-yellow-600 dark:text-yellow-400">Pending</p>
+                <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{stats.pending}</p>
+              </div>
+              <Clock className="h-8 w-8 text-yellow-600" />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-600 dark:text-blue-400">In Progress</p>
-                <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.in_progress}</p>
+                <p className="text-sm text-blue-600 dark:text-blue-400">Confirmed</p>
+                <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.confirmed}</p>
               </div>
-              <Clock className="h-8 w-8 text-blue-600" />
+              <CheckCircle className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
@@ -243,22 +221,10 @@ export default function SellerOrdersPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-purple-600 dark:text-purple-400">Delivered</p>
-                <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.delivered}</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400">Processing</p>
+                <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.processing}</p>
               </div>
-              <Truck className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-orange-600 dark:text-orange-400">Revisions</p>
-                <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.revision_requested}</p>
-              </div>
-              <RefreshCw className="h-8 w-8 text-orange-600" />
+              <TrendingUp className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
@@ -275,11 +241,23 @@ export default function SellerOrdersPage() {
           </CardContent>
         </Card>
 
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-red-600 dark:text-red-400">Cancelled</p>
+                <p className="text-2xl font-bold text-red-700 dark:text-red-300">{stats.cancelled}</p>
+              </div>
+              <XCircle className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">All Orders</p>
                 <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">{stats.all}</p>
               </div>
               <Package className="h-8 w-8 text-gray-600" />
@@ -314,12 +292,13 @@ export default function SellerOrdersPage() {
 
       {/* Tabs and Orders */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 bg-gray-200 dark:bg-gray-800">
+        <TabsList className="grid w-full grid-cols-6 bg-gray-100 dark:bg-gray-800">
           <TabsTrigger value="all">All ({stats.all})</TabsTrigger>
-          <TabsTrigger value="in_progress">In Progress ({stats.in_progress})</TabsTrigger>
-          <TabsTrigger value="delivered">Delivered ({stats.delivered})</TabsTrigger>
-          <TabsTrigger value="revision_requested">Revisions ({stats.revision_requested})</TabsTrigger>
+          <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
+          <TabsTrigger value="confirmed">Confirmed ({stats.confirmed})</TabsTrigger>
+          <TabsTrigger value="processing">Processing ({stats.processing})</TabsTrigger>
           <TabsTrigger value="completed">Completed ({stats.completed})</TabsTrigger>
+          <TabsTrigger value="cancelled">Cancelled ({stats.cancelled})</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab}>
@@ -343,16 +322,23 @@ export default function SellerOrdersPage() {
                       <CardContent className="p-6">
                         <div className="flex gap-4">
                           {/* Thumbnail */}
-                          {order.thumbnailImage && (
-                            <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                          <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                            {order.thumbnailImage ? (
                               <Image
                                 src={order.thumbnailImage}
                                 alt={order.serviceTitle}
                                 fill
                                 className="object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                                }}
                               />
+                            ) : null}
+                            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center" style={{ display: order.thumbnailImage ? 'none' : 'flex' }}>
+                              <Package className="h-8 w-8 text-gray-400" />
                             </div>
-                          )}
+                          </div>
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
@@ -383,13 +369,21 @@ export default function SellerOrdersPage() {
 
                             {/* Buyer Info */}
                             <div className="flex items-center gap-2 mb-3">
-                              <Image
-                                src={order.buyerAvatar}
-                                alt={order.buyerName}
-                                width={24}
-                                height={24}
-                                className="rounded-full"
-                              />
+                              {order.buyerAvatar ? (
+                                <Image
+                                  src={order.buyerAvatar}
+                                  alt={order.buyerName}
+                                  width={24}
+                                  height={24}
+                                  className="rounded-full"
+                                />
+                              ) : (
+                                <div className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                    {order.buyerName?.charAt(0) || 'B'}
+                                  </span>
+                                </div>
+                              )}
                               <span className="text-sm text-gray-600 dark:text-gray-400">
                                 Buyer: <span className="font-medium">{order.buyerName}</span>
                               </span>
@@ -433,18 +427,18 @@ export default function SellerOrdersPage() {
                                   Message Buyer
                                 </Button>
                               </Link>
-                              {(order.status === 'in_progress' || order.status === 'revision_requested') && (
+                              {(order.status === 'processing' || order.status === 'confirmed') && (
                                 <Link href={`/marketplace/orders/${order.id}`}>
                                   <Button size="sm" className="bg-green-600 hover:bg-green-700">
                                     <Upload className="h-4 w-4 mr-1" />
-                                    Deliver Order
+                                    View Order
                                   </Button>
                                 </Link>
                               )}
-                              {order.status === 'delivered' && (
-                                <div className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-md text-sm">
-                                  <AlertCircle className="h-4 w-4 text-purple-600" />
-                                  <span className="text-purple-600 dark:text-purple-400">Awaiting buyer review</span>
+                              {order.status === 'pending' && (
+                                <div className="flex items-center gap-1 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 rounded-md text-sm">
+                                  <Clock className="h-4 w-4 text-yellow-600" />
+                                  <span className="text-yellow-600 dark:text-yellow-400">Awaiting confirmation</span>
                                 </div>
                               )}
                               {order.rating && (

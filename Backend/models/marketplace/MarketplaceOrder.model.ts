@@ -4,6 +4,7 @@ export interface IMarketplaceOrder extends Document {
   orderNumber: string;
   buyerId: mongoose.Types.ObjectId;
   sellerId: mongoose.Types.ObjectId;
+  offerId?: mongoose.Types.ObjectId;
   items: {
     itemId: mongoose.Types.ObjectId;
     itemType: 'product' | 'service';
@@ -51,6 +52,18 @@ export interface IMarketplaceOrder extends Document {
     country: string;
   };
   notes?: string;
+  // Delivery tracking fields
+  deliveryDate?: Date;
+  estimatedDeliveryDate?: Date;
+  startedAt?: Date;
+  completedAt?: Date;
+  cancelledAt?: Date;
+  // Status timeline
+  statusHistory?: {
+    status: string;
+    timestamp: Date;
+    note?: string;
+  }[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -237,6 +250,45 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
     type: String,
     trim: true
   },
+  offerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MarketplaceOffer',
+    required: false
+  },
+  deliveryDate: {
+    type: Date,
+    required: false
+  },
+  estimatedDeliveryDate: {
+    type: Date,
+    required: false
+  },
+  startedAt: {
+    type: Date,
+    required: false
+  },
+  completedAt: {
+    type: Date,
+    required: false
+  },
+  cancelledAt: {
+    type: Date,
+    required: false
+  },
+  statusHistory: [{
+    status: {
+      type: String,
+      required: true
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    note: {
+      type: String,
+      trim: true
+    }
+  }],
   isActive: {
     type: Boolean,
     default: true

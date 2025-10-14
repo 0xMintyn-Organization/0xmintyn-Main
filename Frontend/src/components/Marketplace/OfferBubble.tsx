@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Clock, CheckCircle, XCircle, Loader2, FileText, User } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 interface OfferBubbleProps {
   offer: {
@@ -222,14 +223,23 @@ export default function OfferBubble({ offer, currentUserId, onOfferUpdate }: Off
 
             {/* Status Messages */}
             {offer.status === 'accepted' && (
-              <div className="flex items-center gap-3 p-4 bg-green-900/20 rounded-lg border border-green-700">
-                <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-green-300">Offer Accepted!</p>
-                  <p className="text-sm text-green-400">
-                    {isBuyer ? 'Great choice! Proceed to payment to get started.' : 'The buyer has accepted your offer. You can now proceed with the work.'}
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-4 bg-green-900/20 rounded-lg border border-green-700">
+                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-green-300">Offer Accepted!</p>
+                    <p className="text-sm text-green-400">
+                      {isBuyer ? 'Order has been created and is now in progress.' : 'The buyer has accepted your offer. You can now proceed with the work.'}
+                    </p>
+                  </div>
                 </div>
+                {isBuyer && (
+                  <Link href="/marketplace/user-dashboard">
+                    <Button className="w-full bg-green-600 hover:bg-green-700">
+                      View My Orders
+                    </Button>
+                  </Link>
+                )}
               </div>
             )}
 

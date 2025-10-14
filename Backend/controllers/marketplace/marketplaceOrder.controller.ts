@@ -267,16 +267,28 @@ export const getOrderById = CatchAsyncError(async (req: Request, res: Response, 
       return next(new ErrorHandler("User not authenticated", 401));
     }
 
-    const order = await MarketplaceOrderModel.findOne({
+    // First try to find the order
+    let order = await MarketplaceOrderModel.findOne({
       _id: orderId,
       isActive: true,
-      $or: [
-        { buyerId: userId },
-        { sellerId: userId }
-      ]
+      buyerId: userId
     })
-      .populate('buyerId', 'name email')
-      .populate('sellerId', 'sellerName storeName storeLogo email');
+      .populate('buyerId', 'firstName lastName email')
+      .populate('sellerId', 'userId sellerName storeName storeLogo email');
+
+    // If not found as buyer, check if user is the seller
+    if (!order) {
+      const seller = await MarketplaceSellerModel.findOne({ userId });
+      if (seller) {
+        order = await MarketplaceOrderModel.findOne({
+          _id: orderId,
+          isActive: true,
+          sellerId: seller._id
+        })
+          .populate('buyerId', 'firstName lastName email')
+          .populate('sellerId', 'userId sellerName storeName storeLogo email');
+      }
+    }
 
     if (!order) {
       return next(new ErrorHandler("Order not found", 404));

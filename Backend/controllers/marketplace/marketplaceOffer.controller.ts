@@ -4,7 +4,37 @@ import { MarketplaceOfferModel } from "../../models/marketplace/MarketplaceOffer
 import { MarketplaceMessageModel } from "../../models/marketplace/MarketplaceMessage.model";
 import { MarketplaceServiceModel } from "../../models/marketplace/MarketplaceService.model";
 import { MarketplaceProductModel } from "../../models/marketplace/MarketplaceProduct.model";
+import { MarketplaceOrderModel } from "../../models/marketplace/MarketplaceOrder.model";
+import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
+import UserModel from "../../models/user.mode";
 import ErrorHandler from "../../utils/errorHandler";
+
+// Helper function to calculate estimated delivery date from delivery time string
+const calculateDeliveryDate = (deliveryTime: string): Date => {
+    const now = new Date();
+    const deliveryDate = new Date(now);
+    
+    // Parse delivery time string (e.g., "3 Days", "1 Week", "2 Weeks", "1 Month")
+    const match = deliveryTime.match(/(\d+)\s*(Day|Days|Week|Weeks|Month|Months)/i);
+    
+    if (match) {
+        const amount = parseInt(match[1]);
+        const unit = match[2].toLowerCase();
+        
+        if (unit.startsWith('day')) {
+            deliveryDate.setDate(now.getDate() + amount);
+        } else if (unit.startsWith('week')) {
+            deliveryDate.setDate(now.getDate() + (amount * 7));
+        } else if (unit.startsWith('month')) {
+            deliveryDate.setMonth(now.getMonth() + amount);
+        }
+    } else {
+        // Default to 3 days if parsing fails
+        deliveryDate.setDate(now.getDate() + 3);
+    }
+    
+    return deliveryDate;
+};
 
 // Create custom offer (Seller only - service/product owner)
 export const createCustomOffer = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
@@ -147,7 +177,10 @@ export const acceptOffer = CatchAsyncError(async (req: Request, res: Response, n
         const userId = req.user?._id;
         const { offerId } = req.params;
 
-        const offer = await MarketplaceOfferModel.findById(offerId);
+        const offer = await MarketplaceOfferModel.findById(offerId)
+            .populate('serviceId')
+            .populate('productId')
+            .populate('sellerId');
         
         if (!offer) {
             return next(new ErrorHandler("Offer not found", 404));
@@ -174,18 +207,134 @@ export const acceptOffer = CatchAsyncError(async (req: Request, res: Response, n
         offer.acceptedAt = new Date();
         await offer.save();
 
-        // TODO: Create order/payment flow here
+        // Create order automatically after offer acceptance
+        const now = new Date();
+        const estimatedDeliveryDate = calculateDeliveryDate(offer.deliveryTime);
+        
+        // Calculate payment numbers (for future payment integration)
+        const platformFeePercentage = 0.10; // 10% platform fee
+        const platformFee = offer.price * platformFeePercentage;
+        const sellerNetAmount = offer.price - platformFee;
+
+        // Get item details
+        let itemDetails: any = null;
+        let itemImage = '';
+        let itemTitle = offer.offerTitle;
+        
+        if (offer.serviceId) {
+            itemDetails = offer.serviceId;
+            itemImage = itemDetails.thumbnailImage || (itemDetails.images && itemDetails.images[0]) || '';
+            itemTitle = itemDetails.title || offer.offerTitle;
+        } else if (offer.productId) {
+            itemDetails = offer.productId;
+            itemImage = itemDetails.thumbnailImage || (itemDetails.images && itemDetails.images[0]) || '';
+            itemTitle = itemDetails.title || offer.offerTitle;
+        }
+
+        // Get seller document to use seller._id instead of userId
+        const sellerDoc = await MarketplaceSellerModel.findOne({ userId: offer.sellerId });
+        if (!sellerDoc) {
+            return next(new ErrorHandler("Seller profile not found", 404));
+        }
+
+        // Create order
+        const orderData = {
+            buyerId: offer.buyerId,
+            sellerId: sellerDoc._id,
+            offerId: offer._id,
+            items: [{
+                itemId: offer.serviceId || offer.productId,
+                itemType: offer.serviceId ? 'service' as const : 'product' as const,
+                itemTitle: itemTitle,
+                itemPrice: offer.price,
+                itemImage: itemImage,
+                quantity: 1,
+                totalPrice: offer.price,
+                packageDetails: offer.serviceId ? {
+                    packageName: offer.offerTitle,
+                    features: offer.deliverables || [],
+                    deliveryTime: offer.deliveryTime,
+                    revisions: offer.revisions
+                } : undefined
+            }],
+            orderTotal: offer.price,
+            currency: 'USD',
+            paymentStatus: 'pending' as const,
+            paymentMethod: 'pending', // Will be updated when payment is processed
+            paymentDetails: {
+                amount: offer.price,
+                fees: platformFee,
+                netAmount: sellerNetAmount
+            },
+            orderStatus: 'processing' as const, // Start with processing since offer is accepted
+            estimatedDeliveryDate: estimatedDeliveryDate,
+            startedAt: now,
+            statusHistory: [{
+                status: 'processing',
+                timestamp: now,
+                note: `Order created from accepted offer. Estimated delivery: ${estimatedDeliveryDate.toLocaleDateString()}`
+            }],
+            notes: offer.additionalTerms || '',
+            isActive: true
+        };
+
+        const order = await MarketplaceOrderModel.create(orderData);
+
+        // Update user's purchased items
+        await UserModel.findByIdAndUpdate(
+            userId,
+            {
+                $push: {
+                    purchasedItems: {
+                        itemId: offer.serviceId || offer.productId,
+                        itemType: offer.serviceId ? 'service' : 'product',
+                        purchaseDate: now,
+                        orderId: order._id
+                    }
+                }
+            }
+        );
+
+        // Update seller's order count
+        await MarketplaceSellerModel.findByIdAndUpdate(
+            sellerDoc._id,
+            {
+                $inc: { totalSales: 1 }
+            }
+        );
+
+        // Update service/product order count
+        if (offer.serviceId) {
+            await MarketplaceServiceModel.findByIdAndUpdate(
+                offer.serviceId,
+                {
+                    $inc: { orderCount: 1, inQueueCount: 1 }
+                }
+            );
+        } else if (offer.productId) {
+            await MarketplaceProductModel.findByIdAndUpdate(
+                offer.productId,
+                {
+                    $inc: { salesCount: 1 }
+                }
+            );
+        }
 
         const populatedOffer = await MarketplaceOfferModel.findById(offer._id)
             .populate('sellerId', 'firstName lastName email avatar username')
             .populate('buyerId', 'firstName lastName email avatar username')
-            .populate('serviceId', 'title category')
-            .populate('productId', 'title category');
+            .populate('serviceId', 'title category thumbnailImage')
+            .populate('productId', 'title category thumbnailImage');
+
+        const populatedOrder = await MarketplaceOrderModel.findById(order._id)
+            .populate('buyerId', 'firstName lastName email username')
+            .populate('sellerId', 'sellerName storeName storeLogo');
 
         res.status(200).json({
             success: true,
-            message: "Offer accepted successfully",
-            offer: populatedOffer
+            message: "Offer accepted successfully. Order has been created and is now in progress.",
+            offer: populatedOffer,
+            order: populatedOrder
         });
 
     } catch (error: any) {

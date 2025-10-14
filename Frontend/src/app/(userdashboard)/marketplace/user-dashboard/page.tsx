@@ -78,165 +78,114 @@ export default function UserDashboardPage() {
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      // TODO: Implement API calls to fetch user data
-      // For now, using mock data
-      setStats({
-        totalOrders: 12,
-        activeOrders: 2,
-        completedOrders: 10,
-        totalSpent: 1425.50,
-        favoriteItems: 5,
-        reviewsGiven: 8,
-        totalProducts: 7,
-        totalServices: 5
-      });
       
-      // Mock purchased products
-      setPurchasedProducts([
-        {
-          id: 'PRD-001',
-          productTitle: 'React Dashboard Template',
+      // Fetch real order data from API
+      const [ordersResponse, statsResponse] = await Promise.all([
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/orders/buyer`, {
+          withCredentials: true,
+          params: { limit: 50 } // Get more orders for better stats
+        }),
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/orders/statistics/overview`, {
+          withCredentials: true,
+          params: { period: '30d' }
+        })
+      ]);
+
+      if (ordersResponse.data.success) {
+        const orders = ordersResponse.data.orders || [];
+        
+        // Separate orders into services and products
+        const serviceOrders = orders.filter((order: any) => 
+          order.items?.some((item: any) => item.itemType === 'service')
+        );
+        const productOrders = orders.filter((order: any) => 
+          order.items?.some((item: any) => item.itemType === 'product')
+        );
+        
+        setPurchasedServices(serviceOrders.map((order: any) => ({
+          id: order._id,
+          orderNumber: order.orderNumber,
+          serviceTitle: order.items[0]?.itemTitle || 'Service Order',
+          serviceType: order.items[0]?.packageDetails?.packageName || 'Service',
+          sellerName: order.sellerId?.sellerName || order.sellerId?.storeName || 'Seller',
+          price: order.orderTotal,
+          status: order.orderStatus,
+          isComplete: order.orderStatus === 'completed',
+          createdAt: order.createdAt,
+          completedAt: order.completedAt,
+          deadline: order.estimatedDeliveryDate,
+          deliveryTime: order.items[0]?.packageDetails?.deliveryTime || 'N/A',
+          revisions: order.items[0]?.packageDetails?.revisions || 0,
+          revisionsUsed: 0, // TODO: Track this
+          thumbnailImage: order.items[0]?.itemImage || '',
+          hasDelivery: order.orderStatus === 'completed' || order.deliveryDate,
+          rating: null // TODO: Get from reviews
+        })));
+        
+        setPurchasedProducts(productOrders.map((order: any) => ({
+          id: order._id,
+          orderNumber: order.orderNumber,
+          productTitle: order.items[0]?.itemTitle || 'Product Order',
           productType: 'Digital Product',
-          sellerName: 'CodeMaster Pro',
-          price: 49.99,
-          purchaseDate: '2024-01-20T10:00:00Z',
-          status: 'completed',
-          downloadLink: '#',
-          thumbnailImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&h=150&fit=crop',
-          rating: 5,
-          hasReview: true
-        },
-        {
-          id: 'PRD-002',
-          productTitle: 'E-commerce UI Kit',
-          productType: 'Digital Product',
-          sellerName: 'DesignPro Studio',
-          price: 29.99,
-          purchaseDate: '2024-01-18T14:30:00Z',
-          status: 'completed',
-          downloadLink: '#',
-          thumbnailImage: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=200&h=150&fit=crop',
-          rating: null,
+          sellerName: order.sellerId?.sellerName || order.sellerId?.storeName || 'Seller',
+          price: order.orderTotal,
+          purchaseDate: order.createdAt,
+          status: order.orderStatus,
+          downloadLink: '#', // TODO: Implement download
+          thumbnailImage: order.items[0]?.itemImage || '',
+          rating: null, // TODO: Get from reviews
           hasReview: false
-        },
-        {
-          id: 'PRD-003',
-          productTitle: 'Mobile App Template',
-          productType: 'Digital Product',
-          sellerName: 'AppCrafters',
-          price: 79.99,
-          purchaseDate: '2024-01-15T09:15:00Z',
-          status: 'completed',
-          downloadLink: '#',
-          thumbnailImage: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=200&h=150&fit=crop',
-          rating: 4,
-          hasReview: true
-        }
-      ]);
+        })));
+        
+        // Calculate stats from real data
+        const completedOrders = orders.filter((o: any) => o.orderStatus === 'completed').length;
+        const activeOrders = orders.filter((o: any) => 
+          o.orderStatus === 'processing' || o.orderStatus === 'confirmed'
+        ).length;
+        const totalSpent = orders.reduce((sum: number, o: any) => sum + (o.orderTotal || 0), 0);
+        
+        setStats({
+          totalOrders: orders.length,
+          activeOrders,
+          completedOrders,
+          totalSpent,
+          favoriteItems: 0, // TODO: Implement favorites
+          reviewsGiven: 0, // TODO: Get from reviews
+          totalProducts: productOrders.length,
+          totalServices: serviceOrders.length
+        });
+      }
 
-      // Mock purchased services (orders)
-      setPurchasedServices([
-        { 
-          id: 'ORD-2024-001', 
-          serviceTitle: 'Logo Design Package',
-          serviceType: 'Graphic Design',
-          sellerName: 'DesignPro Studio',
-          price: 150, 
-          status: 'completed', 
-          isComplete: true,
-          createdAt: '2024-01-20T10:00:00Z',
-          completedAt: '2024-01-24T10:00:00Z',
-          deadline: '2024-01-25T10:00:00Z',
-          deliveryTime: '3 Days',
-          revisions: 3,
-          revisionsUsed: 1,
-          thumbnailImage: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=200&h=150&fit=crop',
-          hasDelivery: true,
-          rating: 5
-        },
-        { 
-          id: 'ORD-2024-002', 
-          serviceTitle: 'Website Development',
-          serviceType: 'Web Development',
-          sellerName: 'CodeMaster Dev',
-          price: 500, 
-          status: 'in_progress', 
-          isComplete: false,
-          createdAt: '2024-01-18T14:30:00Z',
-          deadline: '2024-01-28T14:30:00Z',
-          deliveryTime: '1 Week',
-          revisions: 2,
-          revisionsUsed: 0,
-          thumbnailImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&h=150&fit=crop',
-          hasDelivery: false,
-          rating: null
-        },
-        { 
-          id: 'ORD-2024-003', 
-          serviceTitle: 'Social Media Content Package',
-          serviceType: 'Content Writing',
-          sellerName: 'ContentCreator',
-          price: 75, 
-          status: 'completed', 
-          isComplete: true,
-          createdAt: '2024-01-15T09:15:00Z',
-          completedAt: '2024-01-19T09:15:00Z',
-          deadline: '2024-01-20T09:15:00Z',
-          deliveryTime: '2 Days',
-          revisions: 1,
-          revisionsUsed: 0,
-          thumbnailImage: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=200&h=150&fit=crop',
-          hasDelivery: true,
-          rating: 5
-        },
-        { 
-          id: 'ORD-2024-004', 
-          serviceTitle: 'SEO Optimization',
-          serviceType: 'Digital Marketing',
-          sellerName: 'SEO Expert',
-          price: 200, 
-          status: 'in_progress', 
-          isComplete: false,
-          createdAt: '2024-01-12T11:00:00Z',
-          deadline: '2024-01-22T11:00:00Z',
-          deliveryTime: '5 Days',
-          revisions: 3,
-          revisionsUsed: 1,
-          thumbnailImage: 'https://images.unsplash.com/photo-1432888622747-4eb9a8f2c293?w=200&h=150&fit=crop',
-          hasDelivery: false,
-          rating: null
-        },
-        { 
-          id: 'ORD-2024-005', 
-          serviceTitle: 'Brand Identity Design',
-          serviceType: 'Graphic Design',
-          sellerName: 'BrandMaster',
-          price: 300, 
-          status: 'completed', 
-          isComplete: true,
-          createdAt: '2024-01-10T08:00:00Z',
-          completedAt: '2024-01-14T08:00:00Z',
-          deadline: '2024-01-15T08:00:00Z',
-          deliveryTime: '5 Days',
-          revisions: 2,
-          revisionsUsed: 0,
-          thumbnailImage: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=200&h=150&fit=crop',
-          hasDelivery: true,
-          rating: 4
-        }
-      ]);
-
-      // Recent orders (combined view)
-      setRecentOrders([...purchasedProducts.slice(0, 2), ...purchasedServices.slice(0, 2)]);
-
+      
       // Fetch recent messages
       await fetchRecentMessages();
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('Error fetching user data:', error);
+      
+      // Fallback to basic stats on error
+      setStats({
+        totalOrders: 0,
+        activeOrders: 0,
+        completedOrders: 0,
+        totalSpent: 0,
+        favoriteItems: 0,
+        reviewsGiven: 0,
+        totalProducts: 0,
+        totalServices: 0
+      });
+      
+      // Still try to fetch messages even if orders fail
+      try {
+        await fetchRecentMessages();
+      } catch (msgError) {
+        console.error('Error fetching messages:', msgError);
+      }
     } finally {
       setLoading(false);
     }
   };
+
 
   const fetchRecentMessages = async () => {
     try {
