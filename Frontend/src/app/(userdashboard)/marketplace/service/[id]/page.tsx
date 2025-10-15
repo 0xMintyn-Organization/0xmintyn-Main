@@ -12,6 +12,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import PurchaseModal from '@/components/Marketplace/PurchaseModal';
 import ContactSellerModal from '@/components/Marketplace/ContactSellerModal';
+import SellerReviews from '@/components/Marketplace/SellerReviews';
 
 export default function ServiceDetailPage() {
   const { id } = useParams();
@@ -353,44 +354,9 @@ export default function ServiceDetailPage() {
 
 
           <TabsContent value="reviews" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer Reviews</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {service.reviews?.map((review) => (
-                    <div key={review.id} className="border-b pb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium">{review.user}</span>
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${
-                                  i < review.rating
-                                    ? 'text-yellow-400 fill-current'
-                                    : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <span className="text-sm text-gray-500">{review.date}</span>
-                      </div>
-                      <h4 className="font-medium mb-1">{review.title}</h4>
-                      <p className="text-gray-700">{review.comment}</p>
-                      {review.package && (
-                        <Badge variant="secondary" className="mt-2">
-                          {review.package} Package
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {service.sellerId?._id && (
+              <SellerReviews sellerId={service.sellerId._id} />
+            )}
           </TabsContent>
 
           <TabsContent value="seller" className="mt-6">

@@ -27,6 +27,7 @@ import marketplacePurchaseRouter from './routes/marketplace/marketplacePurchase.
 import marketplaceOrderRouter from './routes/marketplace/marketplaceOrder.route';
 import marketplaceMessageRouter from './routes/marketplace/marketplaceMessage.route';
 import marketplaceOfferRouter from './routes/marketplace/marketplaceOffer.route';
+import marketplaceReviewRouter from './routes/marketplace/marketplaceReview.route';
 import uploadRouter from './routes/upload.route';
 require('dotenv').config();
 export const app = express();
@@ -107,6 +108,7 @@ app.use('/api/v1/marketplace/purchase', marketplacePurchaseRouter);
 app.use('/api/v1/marketplace/orders', marketplaceOrderRouter);
 app.use('/api/v1/marketplace/messages', marketplaceMessageRouter);
 app.use('/api/v1/marketplace/offers', marketplaceOfferRouter);
+app.use('/api/v1/marketplace/reviews', marketplaceReviewRouter);
 app.use('/api/v1/upload', uploadRouter);
 app.use('/api/v1/proposal', proposalRoutes);
 app.use('/api/v1/vote', voteRoutes);

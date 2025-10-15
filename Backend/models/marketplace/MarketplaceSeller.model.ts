@@ -30,6 +30,13 @@ export interface IMarketplaceSeller extends Document {
   verified: boolean;
   rating: number;
   reviewCount: number;
+  reviews?: {
+    orderId?: mongoose.Types.ObjectId;
+    buyerId: mongoose.Types.ObjectId;
+    rating: number;
+    review: string;
+    createdAt: Date;
+  }[];
   totalSales: number;
   totalEarnings: number;
   responseTime: string;
@@ -163,6 +170,33 @@ const marketplaceSellerSchema: Schema<IMarketplaceSeller> = new mongoose.Schema(
     default: 0,
     min: [0, 'Review count cannot be negative']
   },
+  reviews: [{
+    orderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'MarketplaceOrder'
+    },
+    buyerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: [1, 'Rating must be at least 1'],
+      max: [5, 'Rating cannot exceed 5']
+    },
+    review: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: [1000, 'Review cannot exceed 1000 characters']
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   totalSales: {
     type: Number,
     default: 0,

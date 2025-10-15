@@ -1,19 +1,22 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Upload, X, FileText, Image as ImageIcon, File, CheckCircle, 
-  AlertCircle, Loader2, Paperclip, Trash2 
-} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import axios from 'axios';
+import {
+  CheckCircle,
+  File,
+  FileText, Image as ImageIcon,
+  Loader2, Paperclip, Trash2,
+  Upload
+} from 'lucide-react';
 import Image from 'next/image';
+import { useRef, useState } from 'react';
 
 interface DeliveryModalProps {
   isOpen: boolean;

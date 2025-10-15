@@ -149,9 +149,9 @@ export default function SellerOrdersPage() {
 
   // Filter orders by tab
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.serviceTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         order.buyerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         order.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = order.serviceTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         order.buyerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         order._id?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTab = activeTab === 'all' || order.status === activeTab;
     return matchesSearch && matchesTab;
   });
@@ -159,13 +159,15 @@ export default function SellerOrdersPage() {
   // Calculate stats
   const stats = {
     all: orders.length,
-    pending: orders.filter(o => o.status === 'pending').length,
     confirmed: orders.filter(o => o.status === 'confirmed').length,
     processing: orders.filter(o => o.status === 'processing').length,
+    delivered: orders.filter(o => o.status === 'delivered').length,
+    revision_requested: orders.filter(o => o.status === 'revision_requested').length,
     completed: orders.filter(o => o.status === 'completed').length,
     cancelled: orders.filter(o => o.status === 'cancelled').length,
-    totalEarnings: orders.reduce((sum, o) => sum + o.price, 0)
+    totalEarnings: orders.reduce((sum, o) => sum + (o.orderTotal || 0), 0)
   };
+
 
   // Paginate
   const indexOfLastOrder = currentPage * ordersPerPage;
@@ -192,19 +194,7 @@ export default function SellerOrdersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-yellow-600 dark:text-yellow-400">Pending</p>
-                <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{stats.pending}</p>
-              </div>
-              <Clock className="h-8 w-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -225,6 +215,30 @@ export default function SellerOrdersPage() {
                 <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.processing}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-orange-600 dark:text-orange-400">Delivered</p>
+                <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.delivered}</p>
+              </div>
+              <Truck className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-amber-600 dark:text-amber-400">Revision</p>
+                <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{stats.revision_requested}</p>
+              </div>
+              <RefreshCw className="h-8 w-8 text-amber-600" />
             </div>
           </CardContent>
         </Card>
@@ -292,11 +306,12 @@ export default function SellerOrdersPage() {
 
       {/* Tabs and Orders */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 bg-gray-100 dark:bg-gray-800">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 bg-gray-100 dark:bg-gray-800">
           <TabsTrigger value="all">All ({stats.all})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
           <TabsTrigger value="confirmed">Confirmed ({stats.confirmed})</TabsTrigger>
           <TabsTrigger value="processing">Processing ({stats.processing})</TabsTrigger>
+          <TabsTrigger value="delivered">Delivered ({stats.delivered})</TabsTrigger>
+          <TabsTrigger value="revision_requested">Revision ({stats.revision_requested})</TabsTrigger>
           <TabsTrigger value="completed">Completed ({stats.completed})</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled ({stats.cancelled})</TabsTrigger>
         </TabsList>

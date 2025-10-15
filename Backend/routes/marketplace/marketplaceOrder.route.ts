@@ -14,7 +14,10 @@ import {
   getOrderStatistics,
   deliverOrder,
   downloadDeliveryFile,
-  getDeliveryFiles
+  getDeliveryFiles,
+  requestRevision,
+  acceptDelivery,
+  respondToRevision
 } from "../../controllers/marketplace/marketplaceOrder.controller";
 
 const marketplaceOrderRouter = express.Router();
@@ -114,6 +117,31 @@ marketplaceOrderRouter.get(
   updateAccessTokenMiddleware,
   isAthenticated,
   downloadDeliveryFile
+);
+
+// Request revision (buyer only)
+marketplaceOrderRouter.post(
+  "/:orderId/request-revision",
+  updateAccessTokenMiddleware,
+  isAthenticated,
+  requestRevision
+);
+
+// Accept delivery (buyer only)
+marketplaceOrderRouter.post(
+  "/:orderId/accept-delivery",
+  updateAccessTokenMiddleware,
+  isAthenticated,
+  acceptDelivery
+);
+
+// Respond to revision (seller only)
+marketplaceOrderRouter.post(
+  "/:orderId/respond-revision",
+  updateAccessTokenMiddleware,
+  isAthenticated,
+  upload.array("revisionFiles", 10),
+  respondToRevision
 );
 
 export default marketplaceOrderRouter;

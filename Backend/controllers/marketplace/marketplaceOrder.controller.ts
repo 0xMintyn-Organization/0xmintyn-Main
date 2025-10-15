@@ -749,7 +749,7 @@ export const downloadDeliveryFile = CatchAsyncError(async (req: Request, res: Re
       _id: orderId,
       buyerId: userId,
       isActive: true,
-      orderStatus: { $in: ['delivered', 'completed'] }
+      orderStatus: { $in: ['delivered', 'completed', 'revision_requested'] }
     }).populate([
       { path: 'buyerId', select: 'firstName lastName email' },
       { path: 'sellerId', select: 'userId sellerName storeName storeLogo email' }
@@ -759,8 +759,14 @@ export const downloadDeliveryFile = CatchAsyncError(async (req: Request, res: Re
       return next(new ErrorHandler("Order not found or you don't have permission to download this file", 404));
     }
 
-    // Find the specific delivery file
-    const deliveryFile = order.deliveryFiles?.find(file => file.filename === fileId);
+    // First try to find the file in delivery files
+    let deliveryFile = order.deliveryFiles?.find(file => file.filename === fileId);
+    
+    // If not found in delivery files, check revision files
+    if (!deliveryFile && order.revisionRequest?.revisionFiles) {
+      deliveryFile = order.revisionRequest.revisionFiles.find(file => file.filename === fileId);
+    }
+    
     if (!deliveryFile) {
       return next(new ErrorHandler("File not found in this order", 404));
     }
@@ -809,8 +815,8 @@ export const getDeliveryFiles = CatchAsyncError(async (req: Request, res: Respon
       _id: orderId,
       buyerId: userId,
       isActive: true,
-      orderStatus: { $in: ['delivered', 'completed'] }
-    }).select('deliveryFiles deliveryMessage deliveryDate');
+      orderStatus: { $in: ['delivered', 'completed', 'revision_requested'] }
+    }).select('deliveryFiles deliveryMessage deliveryDate revisionRequest');
 
     if (!order) {
       return next(new ErrorHandler("Order not found or you don't have permission to access delivery files", 404));
@@ -820,11 +826,291 @@ export const getDeliveryFiles = CatchAsyncError(async (req: Request, res: Respon
       success: true,
       deliveryFiles: order.deliveryFiles || [],
       deliveryMessage: order.deliveryMessage,
-      deliveryDate: order.deliveryDate
+      deliveryDate: order.deliveryDate,
+      revisionFiles: order.revisionRequest?.revisionFiles || []
     });
 
   } catch (error: any) {
     console.error('Error fetching delivery files:', error);
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
+// Request revision (buyer only)
+export const requestRevision = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user?._id;
+    const { revisionReason, revisionDetails, requestedChanges } = req.body;
+
+    if (!userId) {
+      return next(new ErrorHandler("User not authenticated", 401));
+    }
+
+    // Find the order
+    const order = await MarketplaceOrderModel.findOne({
+      _id: orderId,
+      buyerId: userId,
+      isActive: true,
+      orderStatus: { $in: ['delivered', 'revision_requested'] }
+    });
+
+    if (!order) {
+      return next(new ErrorHandler("Order not found or you don't have permission to request revision", 404));
+    }
+
+    // Debug logging
+    console.log('🔍 Revision Request Debug:');
+    console.log('Order ID:', orderId);
+    console.log('Order Status:', order.orderStatus);
+    console.log('Revision Count:', order.revisionCount);
+    console.log('Max Revisions:', order.maxRevisions);
+    console.log('Existing Revision Request:', order.revisionRequest);
+
+    // Check if revision is allowed
+    if (order.revisionCount >= order.maxRevisions) {
+      return next(new ErrorHandler(`Maximum revisions (${order.maxRevisions}) have been reached`, 400));
+    }
+
+    // Handle existing revision requests
+    if (order.revisionRequest) {
+      if (order.revisionRequest.status === 'pending') {
+        // Check if this is a stale/incomplete revision request
+        if (order.orderStatus === 'delivered' && 
+            (!order.revisionRequest.requestedChanges || order.revisionRequest.requestedChanges.length === 0)) {
+          console.log('🔄 Clearing stale/incomplete revision request to allow new one');
+          // Clear the stale revision request first
+          await MarketplaceOrderModel.findByIdAndUpdate(orderId, {
+            $unset: { revisionRequest: 1 }
+          });
+          // Refresh the order data
+          const refreshedOrder = await MarketplaceOrderModel.findById(orderId);
+          order.revisionRequest = undefined;
+        } else {
+          return next(new ErrorHandler("You already have a pending revision request", 400));
+        }
+      } else if (order.revisionRequest.status === 'in_progress') {
+        return next(new ErrorHandler("Seller is currently working on your revision request", 400));
+      } else if (['completed', 'rejected'].includes(order.revisionRequest.status) && order.orderStatus === 'delivered') {
+        console.log('🔄 Clearing old completed/rejected revision request to allow new one');
+        // Clear the old revision request
+        await MarketplaceOrderModel.findByIdAndUpdate(orderId, {
+          $unset: { revisionRequest: 1 }
+        });
+        order.revisionRequest = undefined;
+      } else {
+        return next(new ErrorHandler("Cannot request revision at this time", 400));
+      }
+    }
+
+    // Create revision request
+    const revisionRequest = {
+      requestedAt: new Date(),
+      requestedBy: userId,
+      revisionReason: revisionReason.trim(),
+      revisionDetails: revisionDetails.trim(),
+      requestedChanges: requestedChanges.filter((change: string) => change.trim()),
+      status: 'pending'
+    };
+
+    // Update order with revision request
+    const updatedOrder = await MarketplaceOrderModel.findByIdAndUpdate(
+      orderId,
+      {
+        orderStatus: 'revision_requested',
+        revisionRequest,
+        revisionCount: order.revisionCount + 1,
+        $push: {
+          statusHistory: {
+            status: 'revision_requested',
+            timestamp: new Date(),
+            note: `Revision requested: ${revisionReason}`
+          }
+        }
+      },
+      { new: true }
+    ).populate([
+      { path: 'buyerId', select: 'firstName lastName email' },
+      { path: 'sellerId', select: 'userId sellerName storeName storeLogo email' }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "Revision request sent successfully",
+      order: updatedOrder
+    });
+
+  } catch (error: any) {
+    console.error('Error requesting revision:', error);
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
+// Respond to revision (seller only)
+// Accept delivery (buyer only)
+export const acceptDelivery = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return next(new ErrorHandler("User not authenticated", 401));
+    }
+
+    // Find the order
+    const order = await MarketplaceOrderModel.findOne({
+      _id: orderId,
+      buyerId: userId,
+      isActive: true,
+      orderStatus: { $in: ['delivered', 'revision_requested'] }
+    });
+
+    if (!order) {
+      return next(new ErrorHandler("Order not found or you don't have permission to accept this delivery", 404));
+    }
+
+    // Check if order can be accepted
+    if (!['delivered', 'revision_requested'].includes(order.orderStatus)) {
+      return next(new ErrorHandler(`Cannot accept delivery with status: ${order.orderStatus}`, 400));
+    }
+
+    // Update order status to completed
+    const updatedOrder = await MarketplaceOrderModel.findByIdAndUpdate(
+      orderId,
+      {
+        orderStatus: 'completed',
+        completedAt: new Date(),
+        paymentStatus: 'completed', // Release payment to seller
+        $push: {
+          statusHistory: {
+            status: 'completed',
+            timestamp: new Date(),
+            note: 'Delivery accepted by buyer'
+          }
+        }
+      },
+      { new: true }
+    ).populate([
+      { path: 'buyerId', select: 'firstName lastName email' },
+      { path: 'sellerId', select: 'userId sellerName storeName storeLogo email' }
+    ]);
+
+    // Update seller stats
+    if (updatedOrder && updatedOrder.sellerId) {
+      await MarketplaceSellerModel.findByIdAndUpdate(
+        updatedOrder.sellerId._id,
+        {
+          $inc: { 
+            totalEarnings: updatedOrder.orderTotal
+          }
+        }
+      );
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Delivery accepted successfully",
+      order: updatedOrder
+    });
+
+  } catch (error: any) {
+    console.error('Error accepting delivery:', error);
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
+export const respondToRevision = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user?._id;
+    const { responseMessage, action } = req.body; // action: 'accept' or 'reject'
+
+    if (!userId) {
+      return next(new ErrorHandler("User not authenticated", 401));
+    }
+
+    // Find the seller profile
+    const seller = await MarketplaceSellerModel.findOne({ userId });
+    if (!seller) {
+      return next(new ErrorHandler("Seller profile not found", 404));
+    }
+
+    // Find the order
+    const order = await MarketplaceOrderModel.findOne({
+      _id: orderId,
+      sellerId: seller._id,
+      isActive: true,
+      orderStatus: 'revision_requested'
+    });
+
+    if (!order) {
+      return next(new ErrorHandler("Order not found or you don't have permission to respond to this revision", 404));
+    }
+
+    // Check if there's a pending revision request
+    if (!order.revisionRequest || order.revisionRequest.status !== 'pending') {
+      return next(new ErrorHandler("No pending revision request found", 400));
+    }
+
+    let updateData: any = {
+      'revisionRequest.respondedAt': new Date(),
+      'revisionRequest.responseMessage': responseMessage?.trim() || ''
+    };
+
+    // Handle file uploads for accepted revisions
+    const revisionFiles = [];
+    if (req.files && Array.isArray(req.files) && action === 'accept') {
+      for (const file of req.files) {
+        revisionFiles.push({
+          filename: file.filename,
+          originalName: file.originalname,
+          fileUrl: file.path,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          uploadedAt: new Date()
+        });
+      }
+      updateData['revisionRequest.revisionFiles'] = revisionFiles;
+    }
+
+    if (action === 'accept') {
+      updateData['revisionRequest.status'] = 'completed';
+      updateData.orderStatus = 'delivered';
+      updateData.$push = {
+        statusHistory: {
+          status: 'delivered',
+          timestamp: new Date(),
+          note: 'Revision completed and order re-delivered'
+        }
+      };
+    } else if (action === 'reject') {
+      updateData['revisionRequest.status'] = 'rejected';
+      updateData.$push = {
+        statusHistory: {
+          status: 'revision_requested',
+          timestamp: new Date(),
+          note: 'Revision request rejected by seller'
+        }
+      };
+    }
+
+    const updatedOrder = await MarketplaceOrderModel.findByIdAndUpdate(
+      orderId,
+      updateData,
+      { new: true }
+    ).populate([
+      { path: 'buyerId', select: 'firstName lastName email' },
+      { path: 'sellerId', select: 'userId sellerName storeName storeLogo email' }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: `Revision request ${action}ed successfully`,
+      order: updatedOrder
+    });
+
+  } catch (error: any) {
+    console.error('Error responding to revision:', error);
     return next(new ErrorHandler(error.message, 500));
   }
 });

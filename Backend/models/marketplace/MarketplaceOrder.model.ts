@@ -40,7 +40,7 @@ export interface IMarketplaceOrder extends Document {
     fees: number;
     netAmount: number;
   };
-  orderStatus: 'pending' | 'confirmed' | 'processing' | 'delivered' | 'completed' | 'cancelled' | 'refunded';
+  orderStatus: 'pending' | 'confirmed' | 'processing' | 'delivered' | 'revision_requested' | 'completed' | 'cancelled' | 'refunded';
   shippingAddress?: {
     fullName: string;
     email: string;
@@ -67,6 +67,27 @@ export interface IMarketplaceOrder extends Document {
   startedAt?: Date;
   completedAt?: Date;
   cancelledAt?: Date;
+  // Revision tracking
+  revisionRequest?: {
+    requestedAt: Date;
+    requestedBy: mongoose.Types.ObjectId;
+    revisionReason: string;
+    revisionDetails: string;
+    requestedChanges: string[];
+    status: 'pending' | 'in_progress' | 'completed' | 'rejected';
+    respondedAt?: Date;
+    responseMessage?: string;
+    revisionFiles?: {
+      filename: string;
+      originalName: string;
+      fileUrl: string;
+      fileSize: number;
+      mimeType: string;
+      uploadedAt: Date;
+    }[];
+  };
+  revisionCount: number;
+  maxRevisions: number;
   // Status timeline
   statusHistory?: {
     status: string;
@@ -218,7 +239,7 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
   orderStatus: {
     type: String,
     required: [true, 'Order status is required'],
-    enum: ['pending', 'confirmed', 'processing', 'delivered', 'completed', 'cancelled', 'refunded'],
+    enum: ['pending', 'confirmed', 'processing', 'delivered', 'revision_requested', 'completed', 'cancelled', 'refunded'],
     default: 'pending'
   },
   shippingAddress: {
@@ -314,6 +335,80 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
   cancelledAt: {
     type: Date,
     required: false
+  },
+  revisionRequest: {
+    requestedAt: {
+      type: Date,
+      default: Date.now
+    },
+    requestedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    revisionReason: {
+      type: String,
+      trim: true,
+      maxlength: [500, 'Revision reason cannot exceed 500 characters']
+    },
+    revisionDetails: {
+      type: String,
+      trim: true,
+      maxlength: [2000, 'Revision details cannot exceed 2000 characters']
+    },
+    requestedChanges: [{
+      type: String,
+      trim: true
+    }],
+    status: {
+      type: String,
+      enum: ['pending', 'in_progress', 'completed', 'rejected'],
+      default: 'pending'
+    },
+    respondedAt: {
+      type: Date,
+      required: false
+    },
+    responseMessage: {
+      type: String,
+      trim: true,
+      maxlength: [2000, 'Response message cannot exceed 2000 characters']
+    },
+    revisionFiles: [{
+      filename: {
+        type: String,
+        required: true
+      },
+      originalName: {
+        type: String,
+        required: true
+      },
+      fileUrl: {
+        type: String,
+        required: true
+      },
+      fileSize: {
+        type: Number,
+        required: true
+      },
+      mimeType: {
+        type: String,
+        required: true
+      },
+      uploadedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }]
+  },
+  revisionCount: {
+    type: Number,
+    default: 0,
+    min: [0, 'Revision count cannot be negative']
+  },
+  maxRevisions: {
+    type: Number,
+    default: 3,
+    min: [0, 'Max revisions cannot be negative']
   },
   statusHistory: [{
     status: {

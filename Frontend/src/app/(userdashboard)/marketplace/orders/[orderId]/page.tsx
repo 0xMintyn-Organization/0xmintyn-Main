@@ -9,7 +9,7 @@ import {
   Package, Clock, CheckCircle, MessageSquare, 
   Download, Star, AlertCircle, ArrowLeft, 
   Calendar, DollarSign, Truck, FileText, XCircle, Loader2,
-  TrendingUp, Award, Zap
+  TrendingUp, Award, Zap, AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -21,6 +21,10 @@ import axios from 'axios';
 import OrderStatusTimeline from '@/components/Marketplace/OrderStatusTimeline';
 import DeliveryModal from '@/components/Marketplace/DeliveryModal';
 import DeliveryFiles from '@/components/Marketplace/DeliveryFiles';
+import RevisionRequestModal from '@/components/Marketplace/RevisionRequestModal';
+import RevisionStatus from '@/components/Marketplace/RevisionStatus';
+import AcceptDeliveryModal from '@/components/Marketplace/AcceptDeliveryModal';
+import ReviewModal from '@/components/Marketplace/ReviewModal';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -33,12 +37,41 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [revisionModalOpen, setRevisionModalOpen] = useState(false);
+  const [acceptDeliveryModalOpen, setAcceptDeliveryModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [checkingReview, setCheckingReview] = useState(false);
 
   useEffect(() => {
     if (orderId) {
       fetchOrderDetails();
+      checkReviewStatus();
     }
   }, [orderId]);
+
+  // Check if user has already reviewed this order
+  const checkReviewStatus = async () => {
+    try {
+      setCheckingReview(true);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/reviews/check/${orderId}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setHasReviewed(response.data.hasReviewed);
+        setCanReview(response.data.canReview);
+      }
+    } catch (error: any) {
+      console.error('Error checking review status:', error);
+      // If error, assume not reviewed and can review if completed
+      setHasReviewed(false);
+    } finally {
+      setCheckingReview(false);
+    }
+  };
 
   const fetchOrderDetails = async () => {
     try {
@@ -83,6 +116,7 @@ export default function OrderDetailPage() {
       'confirmed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
       'processing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
       'delivered': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+      'revision_requested': 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
       'completed': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
       'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
       'refunded': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
@@ -96,6 +130,7 @@ export default function OrderDetailPage() {
       case 'confirmed': return <CheckCircle className="h-5 w-5" />;
       case 'processing': return <TrendingUp className="h-5 w-5" />;
       case 'delivered': return <Truck className="h-5 w-5" />;
+      case 'revision_requested': return <TrendingUp className="h-5 w-5" />;
       case 'completed': return <CheckCircle className="h-5 w-5" />;
       case 'cancelled': return <XCircle className="h-5 w-5" />;
       default: return <Package className="h-5 w-5" />;
@@ -360,11 +395,27 @@ export default function OrderDetailPage() {
           </Card>
 
           {/* Delivery Files Section (for buyers when order is delivered) */}
-          {!isSellerByOwnership && (order.orderStatus === 'delivered' || order.orderStatus === 'completed') && (
+          {!isSellerByOwnership && ['delivered', 'completed', 'revision_requested'].includes(order.orderStatus) && (
             <div data-delivery-files>
               <DeliveryFiles 
                 orderId={orderId}
                 orderStatus={order.orderStatus}
+                revisionRequest={order.revisionRequest}
+              />
+            </div>
+          )}
+
+          {/* Revision Status Section */}
+          {order.revisionRequest && (
+            <div data-revision-status>
+              <RevisionStatus
+                orderId={orderId}
+                revisionRequest={order.revisionRequest}
+                isSeller={isSellerByOwnership}
+                onResponseSuccess={() => {
+                  // Refresh order data after revision response
+                  fetchOrderDetails();
+                }}
               />
             </div>
           )}
@@ -743,6 +794,20 @@ export default function OrderDetailPage() {
                 </>
               )}
 
+              {/* Seller Revision Response Action */}
+              {isSellerByOwnership && order.revisionRequest && order.revisionRequest.status === 'pending' && (
+                <Button 
+                  className="w-full justify-start bg-amber-600 hover:bg-amber-700 text-white"
+                  onClick={() => {
+                    const revisionSection = document.querySelector('[data-revision-status]');
+                    revisionSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Respond to Revision
+                </Button>
+              )}
+
               {/* Buyer-Specific Actions */}
               {!isSellerByOwnership && order.orderStatus !== 'cancelled' && order.orderStatus !== 'completed' && (
                 <Button 
@@ -763,7 +828,7 @@ export default function OrderDetailPage() {
               )}
 
               {/* Post-Delivery Actions for Buyers */}
-              {!isSellerByOwnership && (order.orderStatus === 'delivered' || order.orderStatus === 'completed') && (
+              {!isSellerByOwnership && ['delivered', 'revision_requested'].includes(order.orderStatus) && (
                 <>
                   <Button 
                     variant="outline" 
@@ -781,16 +846,65 @@ export default function OrderDetailPage() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start text-green-600 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => setAcceptDeliveryModalOpen(true)}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Accept Delivery
+                  </Button>
+                  
+                  {!order.revisionRequest && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                      onClick={() => setRevisionModalOpen(true)}
+                    >
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Request Revision
+                    </Button>
+                  )}
+                </>
+              )}
+
+              {/* Post-Acceptance Actions for Buyers */}
+              {!isSellerByOwnership && order.orderStatus === 'completed' && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                     onClick={() => {
-                      toast({
-                        title: "Request Revision",
-                        description: "Revision request functionality coming soon!",
-                      });
+                      // Scroll to delivery files section
+                      const deliverySection = document.querySelector('[data-delivery-files]');
+                      deliverySection?.scrollIntoView({ behavior: 'smooth' });
                     }}
                   >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Request Revision
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Files
                   </Button>
+                  
+                  {/* Only show Leave Review button if user hasn't reviewed yet */}
+                  {!hasReviewed && canReview && !checkingReview && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                      onClick={() => setReviewModalOpen(true)}
+                      data-open-review
+                    >
+                      <Star className="h-4 w-4 mr-2" />
+                      Leave a Review
+                    </Button>
+                  )}
+
+                  {/* Show "Already Reviewed" message if user has reviewed */}
+                  {hasReviewed && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start text-green-600 cursor-not-allowed opacity-60"
+                      disabled
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Review Submitted
+                    </Button>
+                  )}
                 </>
               )}
             </CardContent>
@@ -824,6 +938,47 @@ export default function OrderDetailPage() {
         onDeliverySuccess={() => {
           // Refresh order data after successful delivery
           fetchOrderDetails();
+        }}
+      />
+
+      {/* Revision Request Modal */}
+      <RevisionRequestModal
+        isOpen={revisionModalOpen}
+        onClose={() => setRevisionModalOpen(false)}
+        orderId={orderId}
+        orderItems={order?.items || []}
+        maxRevisions={order?.maxRevisions || 3}
+        currentRevisions={order?.revisionCount || 0}
+        onRevisionSuccess={() => {
+          fetchOrderDetails();
+        }}
+      />
+
+      <AcceptDeliveryModal
+        isOpen={acceptDeliveryModalOpen}
+        onClose={() => setAcceptDeliveryModalOpen(false)}
+        orderId={orderId}
+        orderItems={order?.items || []}
+        onAcceptSuccess={() => {
+          fetchOrderDetails();
+          checkReviewStatus(); // Check if user can now review
+        }}
+      />
+
+      <ReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        orderId={orderId}
+        sellerId={order?.sellerId?._id || order?.sellerId}
+        sellerName={order?.sellerId?.storeName || order?.sellerId?.sellerName || 'Seller'}
+        orderItems={order?.items || []}
+        onReviewSuccess={() => {
+          toast({
+            title: "Thank You!",
+            description: "Your review has been submitted successfully.",
+          });
+          fetchOrderDetails();
+          checkReviewStatus(); // Refresh review status
         }}
       />
     </div>

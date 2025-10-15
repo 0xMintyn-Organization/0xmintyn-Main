@@ -160,9 +160,10 @@ export default function BuyerOrdersPage() {
   // Calculate stats
   const stats = {
     all: orders.length,
-    pending: orders.filter(o => o.orderStatus === 'pending').length,
     confirmed: orders.filter(o => o.orderStatus === 'confirmed').length,
     processing: orders.filter(o => o.orderStatus === 'processing').length,
+    delivered: orders.filter(o => o.orderStatus === 'delivered').length,
+    revision_requested: orders.filter(o => o.orderStatus === 'revision_requested').length,
     completed: orders.filter(o => o.orderStatus === 'completed').length,
     cancelled: orders.filter(o => o.orderStatus === 'cancelled').length,
     totalSpent: orders.reduce((sum, o) => sum + (o.orderTotal || 0), 0)
@@ -208,7 +209,7 @@ export default function BuyerOrdersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -233,6 +234,30 @@ export default function BuyerOrdersPage() {
           </CardContent>
         </Card>
 
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-orange-600 dark:text-orange-400">Delivered</p>
+                <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.delivered}</p>
+              </div>
+              <Truck className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-amber-600 dark:text-amber-400">Revision</p>
+                <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{stats.revision_requested}</p>
+              </div>
+              <RefreshCw className="h-8 w-8 text-amber-600" />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -245,14 +270,14 @@ export default function BuyerOrdersPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
+        <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-orange-600 dark:text-orange-400">Total Spent</p>
-                <p className="text-xl font-bold text-orange-700 dark:text-orange-300">${stats.totalSpent.toFixed(0)}</p>
+                <p className="text-sm text-yellow-600 dark:text-yellow-400">Total Spent</p>
+                <p className="text-xl font-bold text-yellow-700 dark:text-yellow-300">${stats.totalSpent.toFixed(0)}</p>
               </div>
-              <DollarSign className="h-8 w-8 text-orange-600" />
+              <DollarSign className="h-8 w-8 text-yellow-600" />
             </div>
           </CardContent>
         </Card>
@@ -314,11 +339,12 @@ export default function BuyerOrdersPage() {
           setActiveTab(value);
           setCurrentPage(1);
         }} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-gray-100 dark:bg-gray-800">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 bg-gray-100 dark:bg-gray-800">
             <TabsTrigger value="all">All ({stats.all})</TabsTrigger>
-            <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
             <TabsTrigger value="confirmed">Confirmed ({stats.confirmed})</TabsTrigger>
-            <TabsTrigger value="processing">In Progress ({stats.processing})</TabsTrigger>
+            <TabsTrigger value="processing">Processing ({stats.processing})</TabsTrigger>
+            <TabsTrigger value="delivered">Delivered ({stats.delivered})</TabsTrigger>
+            <TabsTrigger value="revision_requested">Revision ({stats.revision_requested})</TabsTrigger>
             <TabsTrigger value="completed">Completed ({stats.completed})</TabsTrigger>
             <TabsTrigger value="cancelled">Cancelled ({stats.cancelled})</TabsTrigger>
           </TabsList>

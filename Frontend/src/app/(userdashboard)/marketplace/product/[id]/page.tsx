@@ -11,6 +11,7 @@ import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
 import PurchaseModal from '@/components/Marketplace/PurchaseModal';
+import SellerReviews from '@/components/Marketplace/SellerReviews';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -483,16 +484,9 @@ export default function ProductDetailPage() {
           </TabsContent>
 
           <TabsContent value="reviews" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer Reviews</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-gray-600 dark:text-gray-400">No reviews yet. Be the first to review this product!</p>
-                </div>
-              </CardContent>
-            </Card>
+            {product.sellerId?._id && (
+              <SellerReviews sellerId={product.sellerId._id} />
+            )}
           </TabsContent>
 
           <TabsContent value="shipping" className="mt-6">

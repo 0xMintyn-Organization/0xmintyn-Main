@@ -16,6 +16,7 @@ import Image from 'next/image';
 interface DeliveryFilesProps {
   orderId: string;
   orderStatus: string;
+  revisionRequest?: any;
 }
 
 interface DeliveryFile {
@@ -27,8 +28,9 @@ interface DeliveryFile {
   uploadedAt: string;
 }
 
-export default function DeliveryFiles({ orderId, orderStatus }: DeliveryFilesProps) {
+export default function DeliveryFiles({ orderId, orderStatus, revisionRequest }: DeliveryFilesProps) {
   const [deliveryFiles, setDeliveryFiles] = useState<DeliveryFile[]>([]);
+  const [revisionFiles, setRevisionFiles] = useState<DeliveryFile[]>([]);
   const [deliveryMessage, setDeliveryMessage] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,10 +38,10 @@ export default function DeliveryFiles({ orderId, orderStatus }: DeliveryFilesPro
   const { toast } = useToast();
 
   useEffect(() => {
-    if (orderStatus === 'delivered' || orderStatus === 'completed') {
+    if (['delivered', 'completed', 'revision_requested'].includes(orderStatus)) {
       fetchDeliveryFiles();
     }
-  }, [orderId, orderStatus]);
+  }, [orderId, orderStatus, revisionRequest]);
 
   const fetchDeliveryFiles = async () => {
     try {
@@ -53,6 +55,7 @@ export default function DeliveryFiles({ orderId, orderStatus }: DeliveryFilesPro
         setDeliveryFiles(response.data.deliveryFiles || []);
         setDeliveryMessage(response.data.deliveryMessage || '');
         setDeliveryDate(response.data.deliveryDate || '');
+        setRevisionFiles(response.data.revisionFiles || []);
       }
     } catch (error: any) {
       console.error('Error fetching delivery files:', error);
@@ -128,7 +131,7 @@ export default function DeliveryFiles({ orderId, orderStatus }: DeliveryFilesPro
     });
   };
 
-  if (!['delivered', 'completed'].includes(orderStatus)) {
+  if (!['delivered', 'completed', 'revision_requested'].includes(orderStatus)) {
     return null;
   }
 
@@ -187,11 +190,11 @@ export default function DeliveryFiles({ orderId, orderStatus }: DeliveryFilesPro
         {deliveryFiles.length > 0 ? (
           <div className="space-y-3">
             <h4 className="font-semibold text-gray-900 dark:text-white">
-              Delivered Files ({deliveryFiles.length})
+              Original Delivery Files ({deliveryFiles.length})
             </h4>
             <div className="space-y-2">
               {deliveryFiles.map((file, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <div key={`delivery-${index}`} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   {/* File Icon */}
                   <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center flex-shrink-0">
                     {getFileIcon(file.mimeType)}
@@ -241,16 +244,75 @@ export default function DeliveryFiles({ orderId, orderStatus }: DeliveryFilesPro
           </div>
         )}
 
+        {/* Revision Files Section */}
+        {revisionFiles.length > 0 && (
+          <div className="space-y-3 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <h4 className="font-semibold text-gray-900 dark:text-white">
+                Revision Files ({revisionFiles.length})
+              </h4>
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                Updated
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {revisionFiles.map((file, index) => (
+                <div key={`revision-${index}`} className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors border border-green-200 dark:border-green-800">
+                  {/* File Icon */}
+                  <div className="w-10 h-10 bg-green-200 dark:bg-green-800 rounded flex items-center justify-center flex-shrink-0">
+                    {getFileIcon(file.mimeType)}
+                  </div>
+                  
+                  {/* File Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">
+                      {file.originalName}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                      <span>{formatFileSize(file.fileSize)}</span>
+                      <span>•</span>
+                      <span>{formatDate(file.uploadedAt)}</span>
+                      <span>•</span>
+                      <span className="text-green-600 dark:text-green-400 font-medium">Revised</span>
+                    </div>
+                  </div>
+                  
+                  {/* Download Button */}
+                  <Button
+                    size="sm"
+                    onClick={() => handleDownload(file)}
+                    disabled={downloading === file.filename}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {downloading === file.filename ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
-        {deliveryFiles.length > 0 && (
+        {(deliveryFiles.length > 0 || revisionFiles.length > 0) && (
           <div className="flex gap-3 pt-4 border-t">
             <Button
               variant="outline"
               className="flex-1"
               onClick={() => {
-                // Download all files
-                deliveryFiles.forEach(file => {
-                  setTimeout(() => handleDownload(file), 100);
+                // Download all files (both delivery and revision files)
+                const allFiles = [...deliveryFiles, ...revisionFiles];
+                allFiles.forEach((file, index) => {
+                  setTimeout(() => handleDownload(file), index * 100);
                 });
               }}
               disabled={downloading !== null}
@@ -258,19 +320,21 @@ export default function DeliveryFiles({ orderId, orderStatus }: DeliveryFilesPro
               <Download className="h-4 w-4 mr-2" />
               Download All
             </Button>
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => {
-                toast({
-                  title: "Request Revision",
-                  description: "Revision request functionality coming soon!",
-                });
-              }}
-            >
-              <AlertCircle className="h-4 w-4 mr-2" />
-              Request Revision
-            </Button>
+            {!revisionRequest && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  toast({
+                    title: "Request Revision",
+                    description: "Revision request functionality coming soon!",
+                  });
+                }}
+              >
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Request Revision
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
