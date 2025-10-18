@@ -3,6 +3,9 @@ import { CatchAsyncError } from "../../middleware/catchAsyncError";
 import ErrorHandler from "../../utils/errorHandler";
 import { MarketplaceOrderModel } from "../../models/marketplace/MarketplaceOrder.model";
 import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
+import { MarketplaceServiceModel } from "../../models/marketplace/MarketplaceService.model";
+import { MarketplaceProductModel } from "../../models/marketplace/MarketplaceProduct.model";
+import { MarketplaceReviewModel } from "../../models/marketplace/MarketplaceReview.model";
 import mongoose from "mongoose";
 
 // Interface for review
@@ -40,22 +43,12 @@ export const checkUserReview = CatchAsyncError(async (req: Request, res: Respons
       return next(new ErrorHandler("Order not found", 404));
     }
 
-    // Check if seller exists
-    const sellerId = (order.sellerId as any)?._id || order.sellerId;
-    
-    const seller = await MarketplaceSellerModel.findById(sellerId);
-    if (!seller) {
-      return res.status(200).json({
-        success: true,
-        hasReviewed: false,
-        canReview: order.orderStatus === 'completed'
-      });
-    }
-
     // Check if user already reviewed this order
-    const existingReview = seller.reviews?.find(
-      r => r.orderId?.toString() === orderId && r.buyerId.toString() === userId.toString()
-    );
+    const existingReview = await MarketplaceReviewModel.findOne({
+      orderId: orderId,
+      buyerId: userId,
+      isActive: true
+    });
 
     res.status(200).json({
       success: true,
@@ -103,51 +96,81 @@ export const createReview = CatchAsyncError(async (req: Request, res: Response, 
     }
 
     // Check if review already exists for this order
-    const seller = await MarketplaceSellerModel.findById(sellerId);
-    if (!seller) {
-      return next(new ErrorHandler("Seller not found", 404));
-    }
+    const existingReview = await MarketplaceReviewModel.findOne({
+      orderId: orderId,
+      buyerId: userId,
+      isActive: true
+    });
 
-    // Check if user already reviewed this order
-    const existingReview = seller.reviews?.find(r => r.orderId?.toString() === orderId);
     if (existingReview) {
       return next(new ErrorHandler("You have already reviewed this order", 400));
     }
 
-    // Add review to seller's reviews array
-    const newReview = {
+    // Create new review
+    const newReview = await MarketplaceReviewModel.create({
       orderId: new mongoose.Types.ObjectId(orderId),
       buyerId: userId,
+      sellerId: new mongoose.Types.ObjectId(sellerId),
+      serviceId: order.serviceId ? new mongoose.Types.ObjectId(order.serviceId) : undefined,
+      productId: order.productId ? new mongoose.Types.ObjectId(order.productId) : undefined,
       rating,
-      review: review.trim(),
-      createdAt: new Date()
-    };
+      review: review.trim()
+    });
 
-    // Update seller with new review
-    const updatedSeller = await MarketplaceSellerModel.findByIdAndUpdate(
-      sellerId,
-      {
-        $push: { reviews: newReview },
-        $inc: { reviewCount: 1 }
-      },
-      { new: true }
-    );
+    // Update seller's overall rating and review count
+    const sellerReviews = await MarketplaceReviewModel.find({
+      sellerId: sellerId,
+      isActive: true
+    });
 
-    if (!updatedSeller) {
-      return next(new ErrorHandler("Failed to add review", 500));
-    }
+    const sellerTotalRating = sellerReviews.reduce((sum, r) => sum + r.rating, 0);
+    const sellerAvgRating = sellerReviews.length > 0 ? sellerTotalRating / sellerReviews.length : 0;
 
-    // Calculate new average rating
-    const totalRating = updatedSeller.reviews?.reduce((sum, r) => sum + r.rating, 0) || 0;
-    const avgRating = updatedSeller.reviews && updatedSeller.reviews.length > 0
-      ? totalRating / updatedSeller.reviews.length
-      : 0;
-
-    // Update seller rating
     await MarketplaceSellerModel.findByIdAndUpdate(
       sellerId,
-      { rating: avgRating }
+      { 
+        rating: sellerAvgRating,
+        reviewCount: sellerReviews.length
+      }
     );
+
+    // Update service rating if applicable
+    if (order.serviceId) {
+      const serviceReviews = await MarketplaceReviewModel.find({
+        serviceId: order.serviceId,
+        isActive: true
+      });
+
+      const serviceTotalRating = serviceReviews.reduce((sum, r) => sum + r.rating, 0);
+      const serviceAvgRating = serviceReviews.length > 0 ? serviceTotalRating / serviceReviews.length : 0;
+
+      await MarketplaceServiceModel.findByIdAndUpdate(
+        order.serviceId,
+        { 
+          rating: serviceAvgRating,
+          reviewCount: serviceReviews.length
+        }
+      );
+    }
+
+    // Update product rating if applicable
+    if (order.productId) {
+      const productReviews = await MarketplaceReviewModel.find({
+        productId: order.productId,
+        isActive: true
+      });
+
+      const productTotalRating = productReviews.reduce((sum, r) => sum + r.rating, 0);
+      const productAvgRating = productReviews.length > 0 ? productTotalRating / productReviews.length : 0;
+
+      await MarketplaceProductModel.findByIdAndUpdate(
+        order.productId,
+        { 
+          rating: productAvgRating,
+          reviewCount: productReviews.length
+        }
+      );
+    }
 
     res.status(201).json({
       success: true,
@@ -167,32 +190,136 @@ export const getSellerReviews = CatchAsyncError(async (req: Request, res: Respon
     const { sellerId } = req.params;
     const { page = 1, limit = 10 } = req.query;
 
-    const seller = await MarketplaceSellerModel.findById(sellerId)
-      .populate({
-        path: 'reviews.buyerId',
-        select: 'firstName lastName avatar'
-      });
-
+    const seller = await MarketplaceSellerModel.findById(sellerId);
     if (!seller) {
       return next(new ErrorHandler("Seller not found", 404));
     }
 
-    // Paginate reviews
-    const startIndex = (Number(page) - 1) * Number(limit);
-    const endIndex = startIndex + Number(limit);
-    const paginatedReviews = seller.reviews?.slice(startIndex, endIndex) || [];
+    // Get reviews for this seller
+    const reviews = await MarketplaceReviewModel.find({
+      sellerId: sellerId,
+      isActive: true
+    })
+    .populate({
+      path: 'buyerId',
+      select: 'firstName lastName avatar'
+    })
+    .populate({
+      path: 'serviceId',
+      select: 'title'
+    })
+    .populate({
+      path: 'productId',
+      select: 'title'
+    })
+    .sort({ createdAt: -1 })
+    .limit(Number(limit))
+    .skip((Number(page) - 1) * Number(limit));
+
+    const totalReviews = await MarketplaceReviewModel.countDocuments({
+      sellerId: sellerId,
+      isActive: true
+    });
 
     res.status(200).json({
       success: true,
-      reviews: paginatedReviews,
-      totalReviews: seller.reviews?.length || 0,
+      reviews: reviews,
+      totalReviews: totalReviews,
       averageRating: seller.rating,
       currentPage: Number(page),
-      totalPages: Math.ceil((seller.reviews?.length || 0) / Number(limit))
+      totalPages: Math.ceil(totalReviews / Number(limit))
     });
 
   } catch (error: any) {
     console.error('Error fetching reviews:', error);
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
+// Get service reviews
+export const getServiceReviews = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { serviceId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    const service = await MarketplaceServiceModel.findById(serviceId);
+    if (!service) {
+      return next(new ErrorHandler("Service not found", 404));
+    }
+
+    // Get reviews for this service
+    const reviews = await MarketplaceReviewModel.find({
+      serviceId: serviceId,
+      isActive: true
+    })
+    .populate({
+      path: 'buyerId',
+      select: 'firstName lastName avatar'
+    })
+    .sort({ createdAt: -1 })
+    .limit(Number(limit))
+    .skip((Number(page) - 1) * Number(limit));
+
+    const totalReviews = await MarketplaceReviewModel.countDocuments({
+      serviceId: serviceId,
+      isActive: true
+    });
+
+    res.status(200).json({
+      success: true,
+      reviews: reviews,
+      totalReviews: totalReviews,
+      averageRating: service.rating,
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalReviews / Number(limit))
+    });
+
+  } catch (error: any) {
+    console.error('Error fetching service reviews:', error);
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
+// Get product reviews
+export const getProductReviews = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { productId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    const product = await MarketplaceProductModel.findById(productId);
+    if (!product) {
+      return next(new ErrorHandler("Product not found", 404));
+    }
+
+    // Get reviews for this product
+    const reviews = await MarketplaceReviewModel.find({
+      productId: productId,
+      isActive: true
+    })
+    .populate({
+      path: 'buyerId',
+      select: 'firstName lastName avatar'
+    })
+    .sort({ createdAt: -1 })
+    .limit(Number(limit))
+    .skip((Number(page) - 1) * Number(limit));
+
+    const totalReviews = await MarketplaceReviewModel.countDocuments({
+      productId: productId,
+      isActive: true
+    });
+
+    res.status(200).json({
+      success: true,
+      reviews: reviews,
+      totalReviews: totalReviews,
+      averageRating: product.rating,
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalReviews / Number(limit))
+    });
+
+  } catch (error: any) {
+    console.error('Error fetching product reviews:', error);
     return next(new ErrorHandler(error.message, 500));
   }
 });

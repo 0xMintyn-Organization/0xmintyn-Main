@@ -25,7 +25,7 @@ export default function RevisionStatus({
 }: RevisionStatusProps) {
   const [responseModalOpen, setResponseModalOpen] = useState(false);
 
-  if (!revisionRequest) return null;
+  if (!revisionRequest || !revisionRequest.revisionReason || !revisionRequest.requestedBy) return null;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

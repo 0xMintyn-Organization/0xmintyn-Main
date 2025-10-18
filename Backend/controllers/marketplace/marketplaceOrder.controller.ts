@@ -7,6 +7,59 @@ import { MarketplaceServiceModel } from "../../models/marketplace/MarketplaceSer
 import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
 import UserModel from "../../models/user.mode";
 
+// Helper function to update seller stats after order creation
+const updateSellerStatsAfterOrder = async (sellerId: string, orderItems: any[], totalAmount: number) => {
+  try {
+    console.log('🔄 Updating seller stats for sellerId:', sellerId, 'totalAmount:', totalAmount);
+    console.log('📦 Order items:', orderItems.map(item => `${item.itemTitle} (${item.itemType}) x${item.quantity}`));
+    
+    // Update seller's total earnings
+    const sellerUpdate = await MarketplaceSellerModel.findByIdAndUpdate(
+      sellerId,
+      {
+        $inc: {
+          totalEarnings: totalAmount,
+          totalSales: 1
+        }
+      },
+      { new: true }
+    );
+    console.log('💰 Seller earnings updated:', sellerUpdate?.totalEarnings, 'Sales count:', sellerUpdate?.totalSales);
+
+    // Update individual product/service sales count
+    for (const item of orderItems) {
+      if (item.itemType === 'product') {
+        const productUpdate = await MarketplaceProductModel.findByIdAndUpdate(
+          item.itemId,
+          {
+            $inc: {
+              salesCount: item.quantity
+            }
+          },
+          { new: true }
+        );
+        console.log(`📈 Updated product ${item.itemId} (${item.itemTitle}) sales count from ${(productUpdate?.salesCount || 0) - item.quantity} to ${productUpdate?.salesCount}`);
+      } else if (item.itemType === 'service') {
+        const serviceUpdate = await MarketplaceServiceModel.findByIdAndUpdate(
+          item.itemId,
+          {
+            $inc: {
+              orderCount: item.quantity
+            }
+          },
+          { new: true }
+        );
+        console.log(`📈 Updated service ${item.itemId} (${item.itemTitle}) order count from ${(serviceUpdate?.orderCount || 0) - item.quantity} to ${serviceUpdate?.orderCount}`);
+      }
+    }
+
+    console.log('✅ Seller stats updated successfully');
+  } catch (error) {
+    console.error('❌ Error updating seller stats:', error);
+    // Don't throw error to avoid breaking order creation
+  }
+};
+
 // Create a new order
 export const createMarketplaceOrder = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -151,6 +204,8 @@ export const createMarketplaceOrder = CatchAsyncError(async (req: Request, res: 
       },
       { new: true }
     );
+
+    // Note: Seller stats will be updated when order is completed, not when created
 
     // Populate the order with buyer and seller details
     const populatedOrder = await MarketplaceOrderModel.findById(order._id)
@@ -346,6 +401,12 @@ export const updateOrderStatus = CatchAsyncError(async (req: Request, res: Respo
     )
       .populate('buyerId', 'name email')
       .populate('sellerId', 'sellerName storeName storeLogo email');
+
+    // Update seller stats if order is completed
+    if (orderStatus === 'completed' && updatedOrder && updatedOrder.sellerId) {
+      console.log('🎯 Order status updated to completed - updating seller stats');
+      await updateSellerStatsAfterOrder(updatedOrder.sellerId._id, updatedOrder.items, updatedOrder.orderTotal);
+    }
 
     res.status(200).json({
       success: true,
@@ -995,16 +1056,10 @@ export const acceptDelivery = CatchAsyncError(async (req: Request, res: Response
       { path: 'sellerId', select: 'userId sellerName storeName storeLogo email' }
     ]);
 
-    // Update seller stats
+    // Update seller stats when order is completed
     if (updatedOrder && updatedOrder.sellerId) {
-      await MarketplaceSellerModel.findByIdAndUpdate(
-        updatedOrder.sellerId._id,
-        {
-          $inc: { 
-            totalEarnings: updatedOrder.orderTotal
-          }
-        }
-      );
+      console.log('🎯 Order completed - updating seller stats');
+      await updateSellerStatsAfterOrder(updatedOrder.sellerId._id, updatedOrder.items, updatedOrder.orderTotal);
     }
 
     res.status(200).json({

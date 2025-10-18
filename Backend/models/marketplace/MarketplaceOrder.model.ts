@@ -338,8 +338,7 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
   },
   revisionRequest: {
     requestedAt: {
-      type: Date,
-      default: Date.now
+      type: Date
     },
     requestedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -361,8 +360,7 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
     }],
     status: {
       type: String,
-      enum: ['pending', 'in_progress', 'completed', 'rejected'],
-      default: 'pending'
+      enum: ['pending', 'in_progress', 'completed', 'rejected']
     },
     respondedAt: {
       type: Date,

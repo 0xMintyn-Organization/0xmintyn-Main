@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Star, Clock, MessageCircle, Briefcase } from 'lucide-react';
+import { Clock, MessageCircle, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -176,24 +176,7 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(service.rating || 0)
-                                  ? 'text-yellow-400 fill-current'
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {service.rating?.toFixed(1) || '0.0'} ({service.reviewCount || 0} reviews)
-                        </span>
-                      </div>
-
+                    
                       {service.packages && service.packages.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {service.packages.slice(0, 3).map((pkg: any, idx: number) => (
@@ -299,23 +282,6 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
                 {service.description}
               </p>
 
-              <div className="flex items-center space-x-1 mb-3">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < Math.floor(service.rating || 0)
-                          ? 'text-yellow-400 fill-current'
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-muted-foreground ml-1">
-                  {service.rating?.toFixed(1) || '0.0'} ({service.reviewCount || 0})
-                </span>
-              </div>
 
               <div className="flex items-center justify-between mb-3">
                 <div>

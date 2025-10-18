@@ -242,6 +242,28 @@ export default function UserDashboardPage() {
     return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
+  // Helper function to construct full image URLs
+  const getFullImageUrl = (imagePath: string | undefined) => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1/', '') || 'http://localhost:8000';
+    if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+    
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
+
+  // Helper function to get user initials for avatar fallback
+  const getUserInitials = (name: string | undefined) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    return name.charAt(0).toUpperCase();
+  };
+
   // Filter and paginate services
   const filteredServices = useMemo(() => {
     let filtered = purchasedServices;
@@ -324,8 +346,14 @@ export default function UserDashboardPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Link href="/marketplace/orders/buyer">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                <ShoppingBag className="h-4 w-4" />
+                View All Orders
+              </Button>
+            </Link>
             <Link href="/marketplace/services">
-              <Button className="bg-green-600 hover:bg-green-700 text-white gap-2">
+              <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 gap-2">
                 <ShoppingBag className="h-4 w-4" />
                 Browse Services
               </Button>
@@ -409,64 +437,6 @@ export default function UserDashboardPage() {
           </Link>
         </div>
 
-        {/* Order Status Summary */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-600" />
-                Activity Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Favorite Items</span>
-                  <span className="font-semibold">{stats.favoriteItems}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Reviews Given</span>
-                  <span className="font-semibold">{stats.reviewsGiven}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Average Order Value</span>
-                  <span className="font-semibold">${(stats.totalSpent / (stats.totalOrders || 1)).toFixed(2)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-500" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Link href="/marketplace/services">
-                  <Button variant="outline" className="w-full justify-start gap-2">
-                    <ShoppingBag className="h-4 w-4" />
-                    Browse Services
-                  </Button>
-                </Link>
-                <Link href="/marketplace/products">
-                  <Button variant="outline" className="w-full justify-start gap-2">
-                    <Package className="h-4 w-4" />
-                    Browse Products
-                  </Button>
-                </Link>
-                <Link href="/marketplace/favorites">
-                  <Button variant="outline" className="w-full justify-start gap-2">
-                    <Heart className="h-4 w-4" />
-                    View Favorites
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Recent Messages */}
         <Card className="mb-8">
@@ -508,19 +478,27 @@ export default function UserDashboardPage() {
                       <div className="relative w-10 h-10 flex-shrink-0">
                         {message.senderId?.avatar ? (
                           <img
-                            src={message.senderId.avatar}
+                            src={getFullImageUrl(message.senderId.avatar)}
                             alt={message.senderId.firstName || 'User'}
                             className="w-full h-full object-cover rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.nextElementSibling) {
+                                (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                              }
+                            }}
                           />
-                        ) : (
-                          <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-medium">
-                              {message.senderId?.firstName?.charAt(0) || 'U'}
-                            </span>
-                          </div>
-                        )}
+                        ) : null}
+                        <div 
+                          className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center"
+                          style={{ display: message.senderId?.avatar ? 'none' : 'flex' }}
+                        >
+                          <span className="text-sm font-semibold text-white">
+                            {getUserInitials(`${message.senderId?.firstName || ''} ${message.senderId?.lastName || ''}`)}
+                          </span>
+                        </div>
                         {!message.isRead && (
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -670,22 +648,29 @@ export default function UserDashboardPage() {
                       </div>
 
                       <div className="flex items-start gap-4">
-                        {service.thumbnailImage && (
-                          <div className={`relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 ${
-                            service.isComplete ? 'opacity-100' : 'opacity-90'
-                          }`}>
+                        <div className={`relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 ${
+                          service.isComplete ? 'opacity-100' : 'opacity-90'
+                        }`}>
+                          {service.thumbnailImage ? (
                             <img
-                              src={service.thumbnailImage}
+                              src={getFullImageUrl(service.thumbnailImage)}
                               alt={service.serviceTitle}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-product.jpg';
+                              }}
                             />
-                            {service.isComplete && (
-                              <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
-                                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400 drop-shadow-lg" />
-                              </div>
-                            )}
-                          </div>
-                        )}
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                              <Package className="h-8 w-8 text-gray-400" />
+                            </div>
+                          )}
+                          {service.isComplete && (
+                            <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
+                              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400 drop-shadow-lg" />
+                            </div>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0 pr-28">
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div>
@@ -863,15 +848,22 @@ export default function UserDashboardPage() {
                   {paginatedProducts.map((product: any) => (
                     <div key={product.id} className="border rounded-lg p-5 hover:shadow-md transition-shadow">
                       <div className="flex items-start gap-4">
-                        {product.thumbnailImage && (
-                          <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                          {product.thumbnailImage ? (
                             <img
-                              src={product.thumbnailImage}
+                              src={getFullImageUrl(product.thumbnailImage)}
                               alt={product.productTitle}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-product.jpg';
+                              }}
                             />
-                          </div>
-                        )}
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                              <Package className="h-8 w-8 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div>
@@ -917,19 +909,25 @@ export default function UserDashboardPage() {
 
                           {/* Action Buttons */}
                           <div className="flex flex-wrap gap-2">
-                            <Link href={product.downloadLink}>
+                            <Link href={`/marketplace/orders/${product.id}`}>
                               <Button size="sm" variant="default">
-                                <Download className="h-4 w-4 mr-1" />
-                                Download Product
-                              </Button>
-                            </Link>
-                            <Link href={`/marketplace/products/${product.id}`}>
-                              <Button size="sm" variant="outline">
                                 <Eye className="h-4 w-4 mr-1" />
-                                View Details
+                                View Order
                               </Button>
                             </Link>
-                            {!product.hasReview && (
+                            <Link href={`/marketplace/messages?conversation=${product.id}`}>
+                              <Button size="sm" variant="outline">
+                                <MessageSquare className="h-4 w-4 mr-1" />
+                                Message Seller
+                              </Button>
+                            </Link>
+                            {product.status === 'completed' && (
+                              <Button size="sm" variant="outline">
+                                <Download className="h-4 w-4 mr-1" />
+                                Download Files
+                              </Button>
+                            )}
+                            {!product.hasReview && product.status === 'completed' && (
                               <Button size="sm" variant="outline" className="text-yellow-600">
                                 <Star className="h-4 w-4 mr-1" />
                                 Write Review

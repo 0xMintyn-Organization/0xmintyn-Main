@@ -27,6 +27,7 @@ export const isAthenticated = CatchAsyncError(async (req: Request, res: Response
         return next(new ErrorHandler('User not found ', 400));
     }
     req.user = user.toJSON();
+    console.log('User object set in req.user:', req.user);
     next();
 
 })

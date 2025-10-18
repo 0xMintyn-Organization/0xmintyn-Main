@@ -32,7 +32,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // Role-based navigation items
-const getNavItems = (userRole: string, bookmarkCount: number) => {
+const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: boolean = false, isSeller: boolean = false) => {
   const publicItems = [
     { 
       name: "Dashboard", 
@@ -88,6 +88,28 @@ const getNavItems = (userRole: string, bookmarkCount: number) => {
       description: "Personal Settings"
     }
   ];
+
+  // Add User Dashboard only if user has purchased something OR is a seller
+  if (hasPurchases || isSeller) {
+    publicItems.splice(3, 0, { 
+      name: "User Dashboard", 
+      href: "/marketplace/user-dashboard", 
+      icon: ShoppingCart,
+      badge: null,
+      description: "My Orders & Purchases"
+    });
+  }
+
+  // Add Seller Dashboard only if user is a seller
+  if (isSeller) {
+    publicItems.splice(hasPurchases ? 4 : 3, 0, { 
+      name: "Seller Dashboard", 
+      href: "/marketplace/seller-dashboard", 
+      icon: Store,
+      badge: null,
+      description: "My Sales & Orders"
+    });
+  }
 
   const userItems = [
     { 
@@ -246,7 +268,18 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useRole();
   const { bookmarkCount } = useBookmarkCount();
-  const navItems = getNavItems(user?.role || 'user', bookmarkCount);
+  
+  // Check if user has any purchased items
+  const hasPurchases = user && (
+    (user.purchasedItems && user.purchasedItems.length > 0) ||
+    (user.purchasedProducts && user.purchasedProducts.length > 0) ||
+    (user.purchasedServices && user.purchasedServices.length > 0)
+  );
+  
+  // Check if user is a seller
+  const isSeller = user?.isSeller || false;
+  
+  const navItems = getNavItems(user?.role || 'user', bookmarkCount, hasPurchases, isSeller);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   return (

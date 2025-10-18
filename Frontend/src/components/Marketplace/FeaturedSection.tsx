@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Star, TrendingUp, Clock, Award, Users, Zap, FileText } from 'lucide-react';
+import { TrendingUp, Clock, Award, Users, Zap, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -106,10 +106,23 @@ const trendingStats = [
 
 interface FeaturedSectionProps {
   activeTab: 'products' | 'services';
+  featuredItems?: any[];
 }
 
-export default function FeaturedSection({ activeTab }: FeaturedSectionProps) {
-  const featuredItems = activeTab === 'products' ? featuredProducts : featuredServices;
+export default function FeaturedSection({ activeTab, featuredItems }: FeaturedSectionProps) {
+  const staticItems = activeTab === 'products' ? featuredProducts : featuredServices;
+  const displayItems = featuredItems || staticItems;
+
+  // Helper function to construct full image URLs
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) return '/placeholder-product.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
 
   return (
     <div className="mt-16">
@@ -127,16 +140,19 @@ export default function FeaturedSection({ activeTab }: FeaturedSectionProps) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredItems.map((item) => (
-            <Card key={item.id} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
+          {displayItems.map((item, index) => (
+            <Card key={item._id || item.id || `featured-${index}`} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
               <div className="relative">
                 <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                  {item.image ? (
+                  {item.thumbnailImage || item.image ? (
                     <Image
-                      src={item.image}
+                      src={getFullImageUrl(item.thumbnailImage || item.image)}
                       alt={item.title}
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder-product.jpg';
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
@@ -165,23 +181,6 @@ export default function FeaturedSection({ activeTab }: FeaturedSectionProps) {
                   </div>
                 )}
 
-                <div className="flex items-center space-x-1 mb-3">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < Math.floor(item.rating)
-                            ? 'text-yellow-400 fill-current'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400 ml-1">
-                    {item.rating} ({item.reviewCount})
-                  </span>
-                </div>
 
                 <div className="flex items-center justify-between">
                   <div>
@@ -214,38 +213,30 @@ export default function FeaturedSection({ activeTab }: FeaturedSectionProps) {
 
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-zinc-800 dark:to-zinc-700 rounded-2xl p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredItems.slice(0, 3).map((item, index) => (
-              <div key={`new-${item.id}`} className="bg-background rounded-lg p-6 shadow-sm border border-zinc-200 dark:border-zinc-700">
+            {staticItems.slice(0, 3).map((item, index) => (
+              <div key={`new-${item.id || index}`} className="bg-background rounded-lg p-6 shadow-sm border border-zinc-200 dark:border-zinc-700">
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="relative w-16 h-16 flex-shrink-0">
-                    <Image
-                      src={item.image}
-                      alt={item.title}
-                      fill
-                      className="object-cover rounded-lg"
-                    />
+                    {item.image ? (
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        fill
+                        className="object-cover rounded-lg"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder-product.jpg';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                        <FileText className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white mb-1 line-clamp-1">
                       {item.title}
                     </h3>
-                    <div className="flex items-center space-x-1">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3 h-3 ${
-                              i < Math.floor(item.rating)
-                                ? 'text-yellow-400 fill-current'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
-                        {item.rating}
-                      </span>
-                    </div>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-gray-900 dark:text-gray-200 dark:text-white">

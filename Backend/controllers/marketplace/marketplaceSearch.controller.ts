@@ -79,7 +79,7 @@ export const searchMarketplace = async (req: Request, res: Response) => {
     const [itemsResult, totalItemsResult] = await Promise.all([
       Model.find(query)
         .select('-fileUrl -previewUrl') // Exclude sensitive fields for products
-        .populate('sellerId', 'sellerName storeName storeLogo')
+        .populate('sellerId', 'sellerName storeName storeLogo rating reviewCount')
         .sort(sortOptions)
         .skip(skip)
         .limit(limitNum),

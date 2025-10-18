@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
 import UserModel from "../../models/user.mode";
+import { CatchAsyncError } from "../../middleware/catchAsyncError";
 
 // Create marketplace seller profile
 export const createMarketplaceSeller = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?._id;
     
     if (!userId) {
       return res.status(401).json({
@@ -87,7 +88,10 @@ export const createMarketplaceSeller = async (req: Request, res: Response) => {
 // Get seller profile
 export const getMarketplaceSeller = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?._id;
+    
+    console.log('Getting seller profile for user ID:', userId);
+    console.log('User object:', req.user);
     
     if (!userId) {
       return res.status(401).json({
@@ -98,8 +102,11 @@ export const getMarketplaceSeller = async (req: Request, res: Response) => {
 
     const seller = await MarketplaceSellerModel.findOne({ userId })
       .populate('userId', 'name email avatar');
+    
+    console.log('Found seller:', seller ? 'Yes' : 'No');
 
     if (!seller) {
+      console.log('No seller profile found for user ID:', userId);
       return res.status(404).json({
         success: false,
         message: "Seller profile not found"
@@ -123,7 +130,7 @@ export const getMarketplaceSeller = async (req: Request, res: Response) => {
 // Update seller profile
 export const updateMarketplaceSeller = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?._id;
     
     if (!userId) {
       return res.status(401).json({
@@ -187,10 +194,40 @@ export const updateMarketplaceSeller = async (req: Request, res: Response) => {
   }
 };
 
+// Check if user needs to create seller profile
+export const checkSellerProfileStatus = CatchAsyncError(async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated"
+      });
+    }
+
+    const seller = await MarketplaceSellerModel.findOne({ userId });
+    
+    res.status(200).json({
+      success: true,
+      hasProfile: !!seller,
+      needsProfile: !seller,
+      userId: userId
+    });
+
+  } catch (error: any) {
+    console.error("Error checking seller profile status:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Delete seller profile
 export const deleteMarketplaceSeller = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?._id;
     
     if (!userId) {
       return res.status(401).json({

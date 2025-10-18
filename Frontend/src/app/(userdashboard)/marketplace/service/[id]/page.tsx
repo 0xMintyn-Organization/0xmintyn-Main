@@ -42,6 +42,16 @@ export default function ServiceDetailPage() {
     return `${baseUrl}${normalizedPath}`;
   };
 
+  // Helper function to get user initials for avatar fallback
+  const getUserInitials = (name: string | undefined) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    return name.charAt(0).toUpperCase();
+  };
+
   // Fetch service data
   useEffect(() => {
     const fetchService = async () => {
@@ -119,6 +129,7 @@ export default function ServiceDetailPage() {
           {/* Service Images */}
           <div className="lg:col-span-2 space-y-4">
             <div className="aspect-video relative overflow-hidden rounded-lg bg-card">
+              {service.images?.[selectedImage] || service.thumbnailImage ? (
                 <Image
                   src={getFullImageUrl(service.images?.[selectedImage] || service.thumbnailImage)}
                   alt={service.title}
@@ -129,6 +140,11 @@ export default function ServiceDetailPage() {
                     e.currentTarget.src = '/placeholder-product.jpg';
                   }}
                 />
+              ) : (
+                <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <Briefcase className="w-16 h-16 text-gray-400" />
+                </div>
+              )}
             </div>
             <div className="flex space-x-2">
               {(service.images || [service.thumbnailImage]).map((image, index) => (
@@ -139,16 +155,22 @@ export default function ServiceDetailPage() {
                     selectedImage === index ? 'border-green-500' : 'border-gray-200'
                   }`}
                 >
-                  <Image
-                    src={getFullImageUrl(image)}
-                    alt={`${service.title} ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    onError={(e) => {
-                      console.error('Service thumbnail image load error:', e);
-                      e.currentTarget.src = '/placeholder-product.jpg';
-                    }}
-                  />
+                  {image ? (
+                    <Image
+                      src={getFullImageUrl(image)}
+                      alt={`${service.title} ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      onError={(e) => {
+                        console.error('Service thumbnail image load error:', e);
+                        e.currentTarget.src = '/placeholder-product.jpg';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                      <Briefcase className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
@@ -170,23 +192,7 @@ export default function ServiceDetailPage() {
                 {service.title}
               </h1>
               
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${
-                        i < Math.floor(service.rating)
-                          ? 'text-yellow-400 fill-current'
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-gray-600">
-                  {service.rating} ({service.reviewCount} reviews)
-                </span>
-              </div>
+             
 
             <div className="flex items-center space-x-4 mb-6">
               <div className="flex items-center text-gray-600">
@@ -274,19 +280,26 @@ export default function ServiceDetailPage() {
                   <div className="flex items-center space-x-3">
                     <div className="relative w-12 h-12">
                       {service.sellerId.storeLogo ? (
-                        <Image
-                          src={service.sellerId.storeLogo}
+                        <img
+                          src={getFullImageUrl(service.sellerId.storeLogo)}
                           alt={service.sellerId.sellerName}
-                          fill
-                          className="object-cover rounded-full"
+                          className="w-full h-full object-cover rounded-full"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                            }
+                          }}
                         />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                            {service.sellerId.sellerName?.charAt(0) || 'S'}
-                          </span>
-                        </div>
-                      )}
+                      ) : null}
+                      <div 
+                        className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center"
+                        style={{ display: service.sellerId.storeLogo ? 'none' : 'flex' }}
+                      >
+                        <span className="text-sm font-semibold text-white">
+                          {getUserInitials(service.sellerId.sellerName || service.sellerId.storeName || 'S')}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
@@ -371,19 +384,26 @@ export default function ServiceDetailPage() {
                     <div className="flex items-start space-x-4">
                       <div className="relative w-16 h-16">
                         {service.sellerId.storeLogo ? (
-                          <Image
-                            src={service.sellerId.storeLogo}
+                          <img
+                            src={getFullImageUrl(service.sellerId.storeLogo)}
                             alt={service.sellerId.sellerName}
-                            fill
-                            className="object-cover rounded-full"
+                            className="w-full h-full object-cover rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.nextElementSibling) {
+                                (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                              }
+                            }}
                           />
-                        ) : (
-                          <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                            <span className="text-lg font-medium text-gray-600 dark:text-gray-300">
-                              {service.sellerId.sellerName?.charAt(0) || 'S'}
-                            </span>
-                          </div>
-                        )}
+                        ) : null}
+                        <div 
+                          className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center"
+                          style={{ display: service.sellerId.storeLogo ? 'none' : 'flex' }}
+                        >
+                          <span className="text-lg font-semibold text-white">
+                            {getUserInitials(service.sellerId.sellerName || service.sellerId.storeName || 'S')}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
@@ -492,18 +512,18 @@ export default function ServiceDetailPage() {
                 <Link key={relatedService._id} href={`/marketplace/service/${relatedService._id}`}>
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                     <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                        {relatedService.thumbnailImage ? (
-                          <Image
-                            src={getFullImageUrl(relatedService.thumbnailImage)}
-                            alt={relatedService.title}
-                            fill
-                            className="object-cover"
-                            onError={(e) => {
-                              console.error('Related service image load error:', e);
-                              e.currentTarget.src = '/placeholder-product.jpg';
-                            }}
-                          />
-                        ) : (
+                      {relatedService.thumbnailImage ? (
+                        <Image
+                          src={getFullImageUrl(relatedService.thumbnailImage)}
+                          alt={relatedService.title}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            console.error('Related service image load error:', e);
+                            e.currentTarget.src = '/placeholder-product.jpg';
+                          }}
+                        />
+                      ) : (
                         <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                           <Briefcase className="w-12 h-12 text-gray-400" />
                         </div>

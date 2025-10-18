@@ -30,6 +30,17 @@ export default function ProductCard({
   onEdit,
   onDelete,
 }: ProductCardProps) {
+  // Helper function to construct full image URLs
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) return '/placeholder-product.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
+
   const handleEdit = () => {
     onEdit(_id);
     setEditingProduct(product);
@@ -42,7 +53,25 @@ export default function ProductCard({
   return (
     <div className="rounded-2xl shadow-md overflow-hidden border border-slate-100 dark:border-zinc-900 dark:bg-zinc-900 bg-slate-100 flex flex-col">
       <div className="relative w-full h-48">
-        <Image src={coverImage} alt={title} fill className="object-cover" />
+        {coverImage ? (
+          <Image 
+            src={getFullImageUrl(coverImage)} 
+            alt={title} 
+            fill 
+            className="object-cover" 
+            onError={(e) => {
+              console.error('Product image load error:', e);
+              e.currentTarget.src = '/placeholder-product.jpg';
+            }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <div className="text-gray-400 text-center">
+              <div className="text-4xl mb-2">📦</div>
+              <div className="text-sm">No Image</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">

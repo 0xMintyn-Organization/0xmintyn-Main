@@ -176,6 +176,7 @@ export const getMarketplaceServiceById = CatchAsyncError(async (req: Request, re
         const { serviceId } = req.params;
 
         const service = await MarketplaceServiceModel.findById(serviceId)
+            .select('title description category subcategory images thumbnailImage videoUrl packages whatYouGet requirements faqs tags deliveryTime revisions rating reviewCount orderCount inQueueCount viewCount favoriteCount responseTime isActive isFeatured isApproved approvalStatus rejectionReason createdAt updatedAt sellerId')
             .populate('sellerId', 'sellerName storeName storeLogo rating reviewCount verified responseTime totalSales sellerLevel description skills languages location joinDate')
             .lean();
 

@@ -85,6 +85,16 @@ export default function BuyerOrdersPage() {
     return `${baseUrl}${normalizedPath}`;
   };
 
+  // Helper function to get user initials for avatar fallback
+  const getUserInitials = (name: string | undefined) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    return name.charAt(0).toUpperCase();
+  };
+
   const getStatusColor = (status: string) => {
     const colors: any = {
       'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
@@ -437,17 +447,29 @@ export default function BuyerOrdersPage() {
 
                               {/* Seller Info */}
                               <div className="flex items-center gap-2 mb-3">
-                                {sellerInfo.storeLogo ? (
-                                  <Image
-                                    src={getFullImageUrl(sellerInfo.storeLogo)}
-                                    alt={sellerInfo.sellerName || 'Seller'}
-                                    width={24}
-                                    height={24}
-                                    className="rounded-full"
-                                  />
-                                ) : (
-                                  <div className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                                )}
+                                <div className="w-6 h-6 flex-shrink-0">
+                                  {sellerInfo.storeLogo ? (
+                                    <img
+                                      src={getFullImageUrl(sellerInfo.storeLogo)}
+                                      alt={sellerInfo.sellerName || 'Seller'}
+                                      className="w-full h-full object-cover rounded-full"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        if (e.currentTarget.nextElementSibling) {
+                                          (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                                        }
+                                      }}
+                                    />
+                                  ) : null}
+                                  <div 
+                                    className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center"
+                                    style={{ display: sellerInfo.storeLogo ? 'none' : 'flex' }}
+                                  >
+                                    <span className="text-xs font-semibold text-white">
+                                      {getUserInitials(sellerInfo.sellerName || sellerInfo.storeName || 'S')}
+                                    </span>
+                                  </div>
+                                </div>
                                 <span className="text-sm text-gray-600 dark:text-gray-400">
                                   Seller: <span className="font-medium">{sellerInfo.sellerName || sellerInfo.storeName || 'Unknown'}</span>
                                 </span>

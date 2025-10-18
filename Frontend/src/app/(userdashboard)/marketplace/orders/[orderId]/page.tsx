@@ -110,6 +110,16 @@ export default function OrderDetailPage() {
     return `${baseUrl}${normalizedPath}`;
   };
 
+  // Helper function to get user initials for avatar fallback
+  const getUserInitials = (name: string | undefined) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    return name.charAt(0).toUpperCase();
+  };
+
   const getStatusColor = (status: string) => {
     const colors: any = {
       'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
@@ -406,7 +416,7 @@ export default function OrderDetailPage() {
           )}
 
           {/* Revision Status Section */}
-          {order.revisionRequest && (
+          {order.revisionRequest && order.revisionRequest.revisionReason && order.revisionRequest.requestedBy && (
             <div data-revision-status>
               <RevisionStatus
                 orderId={orderId}
@@ -682,19 +692,26 @@ export default function OrderDetailPage() {
                   <div className="flex items-center gap-3">
                     <div className="relative w-12 h-12 rounded-full overflow-hidden">
                       {order.sellerId?.storeLogo ? (
-                        <Image
+                        <img
                           src={getFullImageUrl(order.sellerId.storeLogo)}
                           alt={order.sellerId.sellerName || 'Seller'}
-                          fill
-                          className="object-cover"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                            }
+                          }}
                         />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
-                          <span className="text-white font-semibold">
-                            {order.sellerId?.sellerName?.charAt(0) || 'S'}
-                          </span>
-                        </div>
-                      )}
+                      ) : null}
+                      <div 
+                        className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center"
+                        style={{ display: order.sellerId?.storeLogo ? 'none' : 'flex' }}
+                      >
+                        <span className="text-white font-semibold">
+                          {getUserInitials(order.sellerId?.sellerName || order.sellerId?.storeName || 'S')}
+                        </span>
+                      </div>
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white">

@@ -93,6 +93,27 @@ export default function SellerOrdersPage() {
     }
   };
 
+  // Helper to get full image URL
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) return '/placeholder-product.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
+
+  // Helper function to get user initials for avatar fallback
+  const getUserInitials = (name: string | undefined) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    return name.charAt(0).toUpperCase();
+  };
+
   const getStatusColor = (status: string) => {
     const colors: any = {
       'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
@@ -384,21 +405,29 @@ export default function SellerOrdersPage() {
 
                             {/* Buyer Info */}
                             <div className="flex items-center gap-2 mb-3">
-                              {order.buyerAvatar ? (
-                                <Image
-                                  src={order.buyerAvatar}
-                                  alt={order.buyerName}
-                                  width={24}
-                                  height={24}
-                                  className="rounded-full"
-                                />
-                              ) : (
-                                <div className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                                    {order.buyerName?.charAt(0) || 'B'}
+                              <div className="w-6 h-6 flex-shrink-0">
+                                {order.buyerAvatar ? (
+                                  <img
+                                    src={getFullImageUrl(order.buyerAvatar)}
+                                    alt={order.buyerName}
+                                    className="w-full h-full object-cover rounded-full"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                      if (e.currentTarget.nextElementSibling) {
+                                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                                      }
+                                    }}
+                                  />
+                                ) : null}
+                                <div 
+                                  className="w-full h-full bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center"
+                                  style={{ display: order.buyerAvatar ? 'none' : 'flex' }}
+                                >
+                                  <span className="text-xs font-semibold text-white">
+                                    {getUserInitials(order.buyerName || 'B')}
                                   </span>
                                 </div>
-                              )}
+                              </div>
                               <span className="text-sm text-gray-600 dark:text-gray-400">
                                 Buyer: <span className="font-medium">{order.buyerName}</span>
                               </span>

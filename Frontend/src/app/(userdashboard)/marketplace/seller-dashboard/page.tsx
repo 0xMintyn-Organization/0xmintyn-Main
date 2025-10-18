@@ -26,7 +26,9 @@ import {
   Settings,
   Truck,
   CheckCircle,
-  XCircle
+  XCircle,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -47,6 +49,7 @@ export default function SellerDashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalServices: 0,
@@ -59,6 +62,7 @@ export default function SellerDashboardPage() {
   const [recentServices, setRecentServices] = useState([]);
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [hasSellerProfile, setHasSellerProfile] = useState(false);
 
   useEffect(() => {
     // Check if user is a seller
@@ -74,33 +78,96 @@ export default function SellerDashboardPage() {
   const fetchSellerData = async () => {
     try {
       setLoading(true);
-      // TODO: Implement API calls to fetch seller data
-      // For now, using mock data
-      setStats({
-        totalProducts: 5,
-        totalServices: 3,
-        totalSales: 127,
-        totalEarnings: 2540.50,
-        rating: 4.8,
-        reviewCount: 23
-      });
+      setError(null);
       
-      setRecentProducts([
-        { id: 1, name: 'React Dashboard Template', price: 49.99, status: 'Active', sales: 12 },
-        { id: 2, name: 'E-commerce UI Kit', price: 29.99, status: 'Active', sales: 8 },
-        { id: 3, name: 'Mobile App Template', price: 79.99, status: 'Pending', sales: 0 }
-      ]);
-      
-      setRecentServices([
-        { id: 1, name: 'Web Development', price: 500, status: 'Active', orders: 5 },
-        { id: 2, name: 'UI/UX Design', price: 300, status: 'Active', orders: 3 },
-        { id: 3, name: 'Consulting', price: 150, status: 'Active', orders: 2 }
+      // Fetch seller products, services, and orders in parallel (removed non-existent stats endpoint)
+      const [productsResponse, servicesResponse, ordersResponse] = await Promise.all([
+        // Fetch seller products
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/products/seller/my-products?limit=5`, {
+          withCredentials: true
+        }).catch((error) => {
+          console.error('Error fetching seller products:', error);
+          return { data: { success: false } };
+        }),
+        
+        // Fetch seller services
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/services/seller/my-services?limit=5`, {
+          withCredentials: true
+        }).catch((error) => {
+          console.error('Error fetching seller services:', error);
+          return { data: { success: false } };
+        }),
+        
+        // Fetch seller orders for sales calculation
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/orders/seller`, {
+          withCredentials: true
+        }).catch((error) => {
+          console.error('Error fetching seller orders:', error);
+          return { data: { success: false } };
+        })
       ]);
 
-      // Fetch recent messages
-      await fetchRecentMessages();
+      // Calculate stats from products, services, and orders
+      const products = productsResponse.data.success ? productsResponse.data.products || [] : [];
+      const services = servicesResponse.data.success ? servicesResponse.data.services || [] : [];
+      const orders = ordersResponse.data.success ? ordersResponse.data.orders || [] : [];
+      
+      // Calculate total earnings from completed orders
+      const totalEarnings = orders
+        .filter((order: any) => order.orderStatus === 'completed')
+        .reduce((sum: number, order: any) => sum + (order.orderTotal || 0), 0);
+      
+      // Calculate total sales count
+      const totalSales = orders.filter((order: any) => order.orderStatus === 'completed').length;
+      
+      setStats({
+        totalProducts: products.length,
+        totalServices: services.length,
+        totalSales,
+        totalEarnings,
+        rating: 0, // Will be updated when we fetch seller info
+        reviewCount: 0
+      });
+      
+      // Update recent products
+      if (productsResponse.data.success && productsResponse.data.products) {
+        console.log('Products fetched successfully:', productsResponse.data.products.length);
+        setRecentProducts(productsResponse.data.products.map((product: any) => ({
+          id: product._id,
+          name: product.title,
+          price: product.price,
+          status: product.isActive ? 'Active' : 'Inactive',
+          sales: product.salesCount || 0, // Use actual sales count from product data
+          image: product.thumbnailImage || product.images?.[0]
+        })));
+      } else {
+        console.log('Products response:', productsResponse.data);
+      }
+      
+      // Update recent services
+      if (servicesResponse.data.success && servicesResponse.data.services) {
+        console.log('Services fetched successfully:', servicesResponse.data.services.length);
+        setRecentServices(servicesResponse.data.services.map((service: any) => ({
+          id: service._id,
+          name: service.title,
+          price: service.packages?.[0]?.price || service.startingPrice || 0,
+          status: service.isActive ? 'Active' : 'Inactive',
+          orders: service.orderCount || 0, // Use actual order count from service data
+          image: service.thumbnailImage || service.images?.[0]
+        })));
+      } else {
+        console.log('Services response:', servicesResponse.data);
+      }
+
+      // Fetch recent messages and seller rating
+      await Promise.all([
+        fetchRecentMessages(),
+        fetchSellerRating()
+      ]);
+      
     } catch (error) {
       console.error('Error fetching seller data:', error);
+      setError('Failed to load dashboard data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -129,6 +196,58 @@ export default function SellerDashboardPage() {
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
+    }
+  };
+
+  // Helper function to get full image URL
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) return '/placeholder-product.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
+
+  // Fetch seller rating and reviews
+  const fetchSellerRating = async () => {
+    try {
+      // First check if user has a seller profile
+      const statusResponse = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/sellers/profile/status`,
+        { withCredentials: true }
+      );
+
+      if (statusResponse.data.success) {
+        console.log('Seller profile status:', statusResponse.data);
+        setHasSellerProfile(statusResponse.data.hasProfile);
+        
+        if (statusResponse.data.hasProfile) {
+          // If user has profile, fetch the full profile data
+          const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/sellers/profile/me`,
+            { withCredentials: true }
+          );
+
+          if (response.data.success && response.data.seller) {
+            console.log('Seller profile data:', response.data.seller);
+            setStats(prevStats => ({
+              ...prevStats,
+              rating: response.data.seller.rating || 0,
+              reviewCount: response.data.seller.reviewCount || 0,
+              // Use stored values from seller profile if available
+              totalEarnings: response.data.seller.totalEarnings || prevStats.totalEarnings,
+              totalSales: response.data.seller.totalSales || prevStats.totalSales
+            }));
+          }
+        } else {
+          console.log('User does not have a seller profile yet');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching seller rating:', error);
+      setHasSellerProfile(false);
     }
   };
 
@@ -244,15 +363,63 @@ export default function SellerDashboardPage() {
           </div>
 
           {/* Title Section */}
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Seller Dashboard
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Manage your products, services, and track your performance
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Seller Dashboard
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Manage your products, services, and track your performance
+              </p>
+            </div>
+            <Button 
+              onClick={fetchSellerData} 
+              disabled={loading}
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <p className="text-red-800 dark:text-red-200">{error}</p>
+              <Button 
+                onClick={() => setError(null)} 
+                variant="ghost" 
+                size="sm" 
+                className="ml-auto text-red-600 hover:text-red-700"
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Seller Profile Warning */}
+        {!hasSellerProfile && !loading && (
+          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              <div className="flex-1">
+                <p className="text-yellow-800 dark:text-yellow-200 font-medium">Seller Profile Required</p>
+                <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
+                  You need to create a seller profile to manage products and services. 
+                  <Link href="/marketplace/create-seller-profile" className="underline ml-1">
+                    Create your seller profile now
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
@@ -468,101 +635,175 @@ export default function SellerDashboardPage() {
         </Card>
 
         {/* Recent Products and Services */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Products */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Recent Products
-                </span>
-                <Link href="/marketplace/create-product">
-                  <Button size="sm" variant="outline" className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Product
-                  </Button>
-                </Link>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentProducts.map((product: any) => (
-                  <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{product.name}</h4>
-                      <p className="text-sm text-muted-foreground">${product.price}</p>
+        {hasSellerProfile ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Products */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Recent Products
+                  </span>
+                  <Link href="/marketplace/create-product">
+                    <Button size="sm" variant="outline" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add Product
+                    </Button>
+                  </Link>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentProducts.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600 dark:text-gray-400">No products yet</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                        Create your first product to get started
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={product.status === 'Active' ? 'default' : 'secondary'}>
-                        {product.status}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">{product.sales} sales</span>
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="ghost">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                  ) : (
+                    recentProducts.map((product: any) => (
+                      <div key={product.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                        <div className="relative w-12 h-12 flex-shrink-0">
+                          {product.image ? (
+                            <img
+                              src={getFullImageUrl(product.image)}
+                              alt={product.name}
+                              className="w-full h-full object-cover rounded-lg"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-product.jpg';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                              <Package className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm">{product.name}</h4>
+                          <p className="text-sm text-muted-foreground">${product.price}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={product.status === 'Active' ? 'default' : 'secondary'}>
+                            {product.status}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">{product.sales} sales</span>
+                          <div className="flex gap-1">
+                            <Link href={`/marketplace/product/${product.id}`}>
+                              <Button size="sm" variant="ghost">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            <Link href={`/marketplace/edit-product/${product.id}`}>
+                              <Button size="sm" variant="ghost">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Recent Services */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Recent Services
-                </span>
-                <Link href="/marketplace/create-service">
-                  <Button size="sm" variant="outline" className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Service
-                  </Button>
-                </Link>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentServices.map((service: any) => (
-                  <div key={service.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{service.name}</h4>
-                      <p className="text-sm text-muted-foreground">${service.price}</p>
+            {/* Recent Services */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Recent Services
+                  </span>
+                  <Link href="/marketplace/create-service">
+                    <Button size="sm" variant="outline" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add Service
+                    </Button>
+                  </Link>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentServices.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600 dark:text-gray-400">No services yet</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                        Create your first service to get started
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={service.status === 'Active' ? 'default' : 'secondary'}>
-                        {service.status}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">{service.orders} orders</span>
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="ghost">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                  ) : (
+                    recentServices.map((service: any) => (
+                      <div key={service.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                        <div className="relative w-12 h-12 flex-shrink-0">
+                          {service.image ? (
+                            <img
+                              src={getFullImageUrl(service.image)}
+                              alt={service.name}
+                              className="w-full h-full object-cover rounded-lg"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-service.jpg';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                              <Users className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm">{service.name}</h4>
+                          <p className="text-sm text-muted-foreground">${service.price}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={service.status === 'Active' ? 'default' : 'secondary'}>
+                            {service.status}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">{service.orders} orders</span>
+                          <div className="flex gap-1">
+                            <Link href={`/marketplace/service/${service.id}`}>
+                              <Button size="sm" variant="ghost">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            <Link href={`/marketplace/edit-service/${service.id}`}>
+                              <Button size="sm" variant="ghost">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Store className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Complete Your Seller Profile
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                You need to create a seller profile to start selling products and services on our marketplace.
+              </p>
+              <Link href="/marketplace/create-seller-profile">
+                <Button className="bg-green-600 hover:bg-green-700 text-white gap-2">
+                  <Store className="h-4 w-4" />
+                  Create Seller Profile
+                </Button>
+              </Link>
             </CardContent>
           </Card>
-        </div>
+        )}
       </div>
     </div>
   );

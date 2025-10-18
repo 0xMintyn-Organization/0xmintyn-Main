@@ -7,6 +7,7 @@ import QuickViewModal from '@/components/Marketplace/QuickViewModal';
 import SearchFilters from '@/components/Marketplace/SearchFilters';
 import ServiceGrid from '@/components/Marketplace/ServiceGrid';
 import BecomeSellerModal from '@/components/Marketplace/BecomeSellerModal';
+import FeaturedSection from '@/components/Marketplace/FeaturedSection';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -282,7 +283,7 @@ export default function MarketplacePage(): React.JSX.Element {
                       Create Service
                     </Button>
                     <Button
-                      onClick={() => window.location.href = '/seller-dashboard'}
+                      onClick={() => router.push('/marketplace/seller-dashboard')}
                       variant="outline"
                       className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 gap-2"
                     >
@@ -524,10 +525,13 @@ export default function MarketplacePage(): React.JSX.Element {
           </>
         )}
 
-        {/* Featured Sections - Temporarily disabled to test dynamic data */}
-        {/* {!loading && !error && (
-          <FeaturedSection activeTab={activeTab} />
-        )} */}
+        {/* Featured Sections */}
+        {!loading && !error && (
+          <FeaturedSection 
+            activeTab={activeTab} 
+            featuredItems={activeTab === 'products' ? products.slice(0, 4) : services.slice(0, 4)}
+          />
+        )}
       </div>
 
       {/* Search Filters Modal */}

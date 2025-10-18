@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Star, ShoppingCart, Eye, Download, FileText, Image as ImageIcon, Code, Music } from 'lucide-react';
+import { ShoppingCart, Eye, Download, FileText, Image as ImageIcon, Code, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -210,23 +210,6 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
                       {product.title}
                     </h3>
                     
-                    <div className="flex items-center space-x-2 mb-3">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < Math.floor(product.rating)
-                                ? 'text-yellow-400 fill-current'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-gray-600">
-                        {product.rating} ({product.reviewCount} reviews)
-                      </span>
-                    </div>
 
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                       <div className="flex items-center">
@@ -340,23 +323,6 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
               </h3>
             </Link>
 
-            <div className="flex items-center space-x-1 mb-2">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < Math.floor(product.rating)
-                        ? 'text-yellow-400 fill-current'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-sm text-gray-600 ml-1">
-                ({product.reviewCount})
-              </span>
-            </div>
 
             <div className="flex items-center justify-between mb-3">
               <div>
