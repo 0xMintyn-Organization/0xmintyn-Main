@@ -33,6 +33,54 @@ import { usePathname } from "next/navigation";
 
 // Role-based navigation items
 const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: boolean = false, isSeller: boolean = false) => {
+  // Build marketplace submenu dynamically based on user status
+  const marketplaceChildren = [
+    {
+      name: "Marketplace Home",
+      href: "/marketplace",
+      icon: Store,
+      description: "Browse All"
+    },
+    {
+      name: "Products",
+      href: "/marketplace/products",
+      icon: ShoppingCart,
+      description: "Digital Products"
+    },
+    {
+      name: "Services",
+      href: "/marketplace/services",
+      icon: Store,
+      description: "Professional Services"
+    },
+    {
+      name: "Messages",
+      href: "/marketplace/messages",
+      icon: MessageSquare,
+      description: "Chat with Sellers"
+    }
+  ];
+
+  // Add user dashboard if they have purchases
+  if (hasPurchases || isSeller) {
+    marketplaceChildren.push({
+      name: "User Dashboard",
+      href: "/marketplace/user-dashboard",
+      icon: ShoppingCart,
+      description: "My Orders & Purchases"
+    });
+  }
+
+  // Add seller dashboard if user is a seller
+  if (isSeller) {
+    marketplaceChildren.push({
+      name: "Seller Dashboard",
+      href: "/marketplace/seller-dashboard",
+      icon: Store,
+      description: "My Sales & Orders"
+    });
+  }
+
   const publicItems = [
     { 
       name: "Dashboard", 
@@ -42,28 +90,43 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       description: "Overview & Analytics"
     },
     { 
-      name: "Education Hub", 
-      href: "/educationhub", 
+      name: "Education", 
+      href: "#", 
       icon: GraduationCap,
       badge: "12",
       badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      description: "Courses & Learning"
+      description: "Courses & Learning",
+      hasSubmenu: true,
+      children: [
+        {
+          name: "Education Hub",
+          href: "/educationhub",
+          icon: BookOpen,
+          description: "Browse All Courses"
+        },
+        {
+          name: "My Learning",
+          href: "/my-courses",
+          icon: GraduationCap,
+          description: "Continue Learning"
+        },
+        {
+          name: "Bookmarks",
+          href: "/bookmarks",
+          icon: Bookmark,
+          description: "Saved Courses"
+        }
+      ]
     },
     { 
       name: "Marketplace", 
-      href: "/marketplace", 
+      href: "#", 
       icon: Store,
       badge: "New",
       badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      description: "Digital Products & Services"
-    },
-    { 
-      name: "Messenger", 
-      href: "/marketplace/messages", 
-      icon: MessageSquare,
-      badge: null,
-      badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-      description: "Messages & Conversations"
+      description: "Digital Products & Services",
+      hasSubmenu: true,
+      children: marketplaceChildren
     },
     { 
       name: "Governance", 
@@ -89,96 +152,63 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
     }
   ];
 
-  // Add User Dashboard only if user has purchased something OR is a seller
-  if (hasPurchases || isSeller) {
-    publicItems.splice(3, 0, { 
-      name: "User Dashboard", 
-      href: "/marketplace/user-dashboard", 
-      icon: ShoppingCart,
-      badge: null,
-      description: "My Orders & Purchases"
-    });
-  }
-
-  // Add Seller Dashboard only if user is a seller
-  if (isSeller) {
-    publicItems.splice(hasPurchases ? 4 : 3, 0, { 
-      name: "Seller Dashboard", 
-      href: "/marketplace/seller-dashboard", 
-      icon: Store,
-      badge: null,
-      description: "My Sales & Orders"
-    });
-  }
-
   const userItems = [
-    { 
-      name: "My Learning", 
-      href: "/my-courses", 
-      icon: BookOpen,
-      badge: null,
-      description: "Continue Learning"
-    },
-    { 
-      name: "Bookmarks", 
-      href: "/bookmarks", 
-      icon: Bookmark,
-      badge: bookmarkCount > 0 ? bookmarkCount.toString() : null,
-      badgeColor: bookmarkCount > 0 ? "bg-blue-100 text-blue-800" : null,
-      description: "Saved Content"
-    }
+    // User-specific items are now in submenus
   ];
 
   const instructorItems = [
     { 
       name: "Instructor Hub", 
-      href: "/instructor/dashboard", 
+      href: "#", 
       icon: GraduationCap,
       badge: "Pro",
-      badgeColor: "bg-orange-100 text-orange-800",
-      description: "Teaching Dashboard"
-    },
-    { 
-      name: "My Courses", 
-      href: "/instructor/my_courses", 
-      icon: BookOpen,
-      badge: null,
-      description: "Manage Courses"
-    },
-    { 
-      name: "My Purchased Courses", 
-      href: "/instructor/purchased-courses", 
-      icon: ShoppingCart,
-      badge: null,
-      description: "Courses I Bought"
-    },
-    { 
-      name: "Create Course", 
-      href: "/create-course", 
-      icon: Plus,
-      badge: null,
-      description: "New Course"
-    },
-    { 
-      name: "Students", 
-      href: "/instructor/students", 
-      icon: Users,
-      badge: null,
-      description: "Student Management"
-    },
-    { 
-      name: "Earnings", 
-      href: "/instructor/earnings", 
-      icon: DollarSign,
-      badge: null,
-      description: "Revenue & Payouts"
-    },
-    { 
-      name: "Analytics", 
-      href: "/instructor/analytics", 
-      icon: BarChart3,
-      badge: null,
-      description: "Course Performance"
+      badgeColor: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
+      description: "Teaching Dashboard",
+      hasSubmenu: true,
+      children: [
+        {
+          name: "Dashboard",
+          href: "/instructor/dashboard",
+          icon: LayoutDashboard,
+          description: "Overview & Stats"
+        },
+        {
+          name: "My Courses",
+          href: "/instructor/my_courses",
+          icon: BookOpen,
+          description: "Manage Courses"
+        },
+        {
+          name: "My Purchased Courses",
+          href: "/instructor/purchased-courses",
+          icon: ShoppingCart,
+          description: "Courses I Bought"
+        },
+        {
+          name: "Create Course",
+          href: "/create-course",
+          icon: Plus,
+          description: "New Course"
+        },
+        {
+          name: "Students",
+          href: "/instructor/students",
+          icon: Users,
+          description: "Student Management"
+        },
+        {
+          name: "Earnings",
+          href: "/instructor/earnings",
+          icon: DollarSign,
+          description: "Revenue & Payouts"
+        },
+        {
+          name: "Analytics",
+          href: "/instructor/analytics",
+          icon: BarChart3,
+          description: "Course Performance"
+        }
+      ]
     }
   ];
 
@@ -188,7 +218,7 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       href: "/admin", 
       icon: Shield,
       badge: "Admin",
-      badgeColor: "bg-red-100 text-red-800",
+      badgeColor: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
       description: "System Management"
     },
     { 
@@ -199,14 +229,7 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       description: "Manage Users"
     },
     { 
-      name: "Course Management", 
-      href: "/admin/courses", 
-      icon: BookOpen,
-      badge: null,
-      description: "All Courses"
-    },
-    { 
-      name: "Education Hub Management", 
+      name: "Education Management", 
       href: "#", 
       icon: GraduationCap,
       badge: null,
@@ -214,31 +237,76 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       hasSubmenu: true,
       children: [
         {
-          name: "Handle Reviews",
+          name: "All Courses",
+          href: "/admin/courses",
+          icon: BookOpen,
+          description: "Manage All Courses"
+        },
+        {
+          name: "Course Reviews",
           href: "/admin/reviews",
-          icon: MessageSquare,
-          description: "Manage Course Reviews"
+          icon: Star,
+          description: "Manage Reviews"
         },
         {
-          name: "User Management",
-          href: "/admin/users",
-          icon: Users,
-          description: "Manage Platform Users"
-        },
-        {
-          name: "Order Management",
+          name: "Course Orders",
           href: "/admin/orders",
           icon: ShoppingCart,
-          description: "Manage Orders & Transactions"
+          description: "Orders & Transactions"
         }
       ]
     },
     { 
-      name: "Analytics", 
-      href: "/analytics", 
-      icon: TrendingUp,
+      name: "Marketplace Management", 
+      href: "#", 
+      icon: Store,
       badge: null,
-      description: "Platform Analytics"
+      description: "Marketplace Admin",
+      hasSubmenu: true,
+      children: [
+        {
+          name: "Dashboard",
+          href: "/admin/marketplace",
+          icon: LayoutDashboard,
+          description: "Marketplace Overview"
+        },
+        {
+          name: "Sellers",
+          href: "/admin/marketplace/sellers",
+          icon: Users,
+          description: "Manage Sellers"
+        },
+        {
+          name: "Products",
+          href: "/admin/marketplace/products",
+          icon: ShoppingCart,
+          description: "Manage Products"
+        },
+        {
+          name: "Services",
+          href: "/admin/marketplace/services",
+          icon: Store,
+          description: "Manage Services"
+        },
+        {
+          name: "Orders",
+          href: "/admin/marketplace/orders",
+          icon: FileText,
+          description: "Marketplace Orders"
+        },
+        {
+          name: "Reviews",
+          href: "/admin/marketplace/reviews",
+          icon: Star,
+          description: "Marketplace Reviews"
+        },
+        {
+          name: "Analytics",
+          href: "/admin/marketplace/analytics",
+          icon: BarChart3,
+          description: "Sales Analytics"
+        }
+      ]
     },
     { 
       name: "Governance Management", 
@@ -247,6 +315,13 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       badge: "Admin",
       badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
       description: "Manage Proposals"
+    },
+    { 
+      name: "Analytics", 
+      href: "/analytics", 
+      icon: TrendingUp,
+      badge: null,
+      description: "Platform Analytics"
     }
   ];
 
