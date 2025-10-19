@@ -11,13 +11,18 @@ import {
 } from "../../controllers/marketplace/marketplaceProduct.controller";
 import { updateAccessTokenMiddleware } from "../../controllers/user.controller";
 import { isAthenticated, authorizeRoles } from "../../utils/auth";
+import { optionalAuth } from "../../middleware/authWithRefresh";
 import upload from "../../middleware/multerConfig";
 
 const marketplaceProductRouter = express.Router();
 
-// Public Routes
+// Public Routes (with optional authentication for ownership checks)
 marketplaceProductRouter.get("/", getAllMarketplaceProducts);
-marketplaceProductRouter.get("/:productId", getMarketplaceProductById);
+marketplaceProductRouter.get(
+    "/:productId", 
+    optionalAuth,  // Optional auth - won't fail if no token
+    getMarketplaceProductById
+);
 
 // Protected Routes - Seller & Admin
 marketplaceProductRouter.post(

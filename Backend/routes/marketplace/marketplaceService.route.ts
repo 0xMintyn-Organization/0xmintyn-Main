@@ -11,13 +11,18 @@ import {
 } from "../../controllers/marketplace/marketplaceService.controller";
 import { updateAccessTokenMiddleware } from "../../controllers/user.controller";
 import { isAthenticated, authorizeRoles } from "../../utils/auth";
+import { optionalAuth } from "../../middleware/authWithRefresh";
 import upload from "../../middleware/multerConfig";
 
 const marketplaceServiceRouter = express.Router();
 
-// Public Routes
+// Public Routes (with optional authentication for ownership checks)
 marketplaceServiceRouter.get("/", getAllMarketplaceServices);
-marketplaceServiceRouter.get("/:serviceId", getMarketplaceServiceById);
+marketplaceServiceRouter.get(
+    "/:serviceId", 
+    optionalAuth,  // Optional auth - won't fail if no token
+    getMarketplaceServiceById
+);
 
 // Protected Routes - Seller & Admin
 marketplaceServiceRouter.post(

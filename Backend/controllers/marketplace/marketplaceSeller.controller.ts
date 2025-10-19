@@ -113,6 +113,13 @@ export const getMarketplaceSeller = async (req: Request, res: Response) => {
       });
     }
 
+    console.log('Seller profile data:', {
+      rating: seller.rating,
+      reviewCount: seller.reviewCount,
+      totalEarnings: seller.totalEarnings,
+      totalSales: seller.totalSales
+    });
+
     res.status(200).json({
       success: true,
       seller

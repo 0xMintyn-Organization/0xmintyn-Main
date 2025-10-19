@@ -89,8 +89,9 @@ export const createMarketplaceProduct = CatchAsyncError(async (req: Request, res
             // Other fields
             sellerId: seller?._id || userId,
             discount,
-            approvalStatus: user.role === 'admin' ? 'Approved' : 'Pending',
-            isApproved: user.role === 'admin' ? true : false
+            approvalStatus: 'Approved',
+            isApproved: true,
+            isActive: true
         };
 
         console.log('Product data to create:', {
@@ -121,6 +122,7 @@ export const createMarketplaceProduct = CatchAsyncError(async (req: Request, res
 export const getMarketplaceProductById = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { productId } = req.params;
+        const userId = req.user?._id;
 
         const product = await MarketplaceProductModel.findById(productId)
             .populate('sellerId', 'sellerName storeName storeLogo contactEmail rating reviewCount verified responseTime totalSales sellerLevel')
@@ -130,8 +132,16 @@ export const getMarketplaceProductById = CatchAsyncError(async (req: Request, re
             return next(new ErrorHandler("Product not found", 404));
         }
 
-        // Check if product is approved and active
-        if (!product.isApproved || !product.isActive) {
+        // Check if user is the owner or admin
+        let isOwner = false;
+        if (userId) {
+            const seller = await MarketplaceSellerModel.findOne({ _id: product.sellerId });
+            isOwner = seller && seller.userId.toString() === userId.toString();
+        }
+        const isAdmin = req.user?.role === 'admin';
+
+        // Check if product is approved and active (unless user is owner or admin)
+        if (!isOwner && !isAdmin && (!product.isApproved || !product.isActive)) {
             return next(new ErrorHandler("Product not available", 404));
         }
 
@@ -146,13 +156,26 @@ export const getMarketplaceProductById = CatchAsyncError(async (req: Request, re
         .limit(4)
         .lean();
 
-        // Remove sensitive fields from product response
+        // Check if user has purchased this product
+        let isPurchased = false;
+        if (userId) {
+            const user = await UserModel.findById(userId).select('purchasedProducts');
+            if (user && user.purchasedProducts) {
+                isPurchased = user.purchasedProducts.some((p: any) => 
+                    p.productId?.toString() === productId || p.toString() === productId
+                );
+            }
+        }
+
+        // Remove sensitive fields from product response (unless purchased)
         const { fileUrl, previewUrl, ...safeProduct } = product;
         
         res.status(200).json({
             success: true,
             product: safeProduct,
-            relatedProducts
+            relatedProducts,
+            isPurchased,
+            downloadUrl: isPurchased ? `/marketplace/purchase/product/${productId}/file` : null
         });
 
     } catch (error: any) {
@@ -321,9 +344,17 @@ export const updateMarketplaceProduct = CatchAsyncError(async (req: Request, res
             req.body.isApproved = false;
         }
 
+        // For updates, only validate fields that are being changed
+        const updateData = { ...req.body };
+        
+        // If fileUrl is empty or not provided, don't include it in the update
+        if (!updateData.fileUrl || updateData.fileUrl.trim() === '') {
+            delete updateData.fileUrl;
+        }
+
         const updatedProduct = await MarketplaceProductModel.findByIdAndUpdate(
             productId,
-            req.body,
+            updateData,
             { new: true, runValidators: true }
         );
 

@@ -29,10 +29,17 @@ export const getProductFile = CatchAsyncError(async (req: Request, res: Response
             return next(new ErrorHandler("Product not available", 404));
         }
 
-        // TODO: Implement purchase verification
-        // For now, we'll check if user is the seller or admin
-        if (product.sellerId.toString() !== userId.toString() && user.role !== 'admin') {
-            return next(new ErrorHandler("You must purchase this product to access the file", 403));
+        // Verify purchase: Check if user has purchased this product
+        const hasPurchased = user.purchasedProducts?.some((p: any) => 
+            p.productId?.toString() === productId || p.toString() === productId
+        );
+        
+        // Allow access if: user purchased it, user is the seller, or user is admin
+        const isSeller = product.sellerId.toString() === userId.toString();
+        const isAdmin = user.role === 'admin';
+        
+        if (!hasPurchased && !isSeller && !isAdmin) {
+            return next(new ErrorHandler("You must purchase this product to download the file", 403));
         }
 
         // Check if file exists

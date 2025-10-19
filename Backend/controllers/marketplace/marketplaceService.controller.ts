@@ -74,8 +74,9 @@ export const createMarketplaceService = CatchAsyncError(async (req: Request, res
             faqs: parseJsonField(req.body.faqs),
             tags: parseJsonField(req.body.tags),
             packages: parseJsonField(req.body.packages),
-            approvalStatus: user.role === 'admin' ? 'Approved' : 'Pending',
-            isApproved: user.role === 'admin' ? true : false
+            approvalStatus: 'Approved',
+            isApproved: true,
+            isActive: true
         };
 
         console.log('Service data to create:', {
@@ -174,6 +175,7 @@ export const getAllMarketplaceServices = CatchAsyncError(async (req: Request, re
 export const getMarketplaceServiceById = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { serviceId } = req.params;
+        const userId = req.user?._id;
 
         const service = await MarketplaceServiceModel.findById(serviceId)
             .select('title description category subcategory images thumbnailImage videoUrl packages whatYouGet requirements faqs tags deliveryTime revisions rating reviewCount orderCount inQueueCount viewCount favoriteCount responseTime isActive isFeatured isApproved approvalStatus rejectionReason createdAt updatedAt sellerId')
@@ -184,8 +186,16 @@ export const getMarketplaceServiceById = CatchAsyncError(async (req: Request, re
             return next(new ErrorHandler("Service not found", 404));
         }
 
-        // Check if service is approved and active
-        if (!service.isApproved || !service.isActive) {
+        // Check if user is the owner or admin
+        let isOwner = false;
+        if (userId) {
+            const seller = await MarketplaceSellerModel.findOne({ _id: service.sellerId });
+            isOwner = seller && seller.userId.toString() === userId.toString();
+        }
+        const isAdmin = req.user?.role === 'admin';
+
+        // Check if service is approved and active (unless user is owner or admin)
+        if (!isOwner && !isAdmin && (!service.isApproved || !service.isActive)) {
             return next(new ErrorHandler("Service not available", 404));
         }
 
@@ -296,9 +306,20 @@ export const updateMarketplaceService = CatchAsyncError(async (req: Request, res
             req.body.isApproved = false;
         }
 
+        // For updates, only validate fields that are being changed
+        const updateData = { ...req.body };
+        
+        // If images or thumbnailImage are empty, don't include them in the update
+        if (!updateData.images || (Array.isArray(updateData.images) && updateData.images.length === 0)) {
+            delete updateData.images;
+        }
+        if (!updateData.thumbnailImage || updateData.thumbnailImage.trim() === '') {
+            delete updateData.thumbnailImage;
+        }
+
         const updatedService = await MarketplaceServiceModel.findByIdAndUpdate(
             serviceId,
-            req.body,
+            updateData,
             { new: true, runValidators: true }
         );
 

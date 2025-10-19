@@ -23,6 +23,14 @@ interface Review {
     lastName: string;
     avatar?: string;
   };
+  serviceId?: {
+    _id: string;
+    title: string;
+  };
+  productId?: {
+    _id: string;
+    title: string;
+  };
   rating: number;
   review: string;
   createdAt: string;
@@ -109,8 +117,11 @@ export default function SellerReviews({ sellerId }: SellerReviewsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Star className="h-5 w-5 text-yellow-600" />
-            Reviews & Ratings
+            Seller Reviews & Ratings
           </CardTitle>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Reviews from customers who purchased products and services from this seller
+          </p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -188,6 +199,18 @@ export default function SellerReviews({ sellerId }: SellerReviewsProps) {
                       </Badge>
                     </div>
 
+                    {/* Product/Service Info */}
+                    {(review.productId || review.serviceId) && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                          {review.productId ? '📦 Product' : '🛠️ Service'}
+                        </Badge>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {review.productId?.title || review.serviceId?.title}
+                        </span>
+                      </div>
+                    )}
+
                     {/* Review Text */}
                     <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                       {review.review}
@@ -203,8 +226,11 @@ export default function SellerReviews({ sellerId }: SellerReviewsProps) {
           <CardContent className="p-12">
             <div className="text-center">
               <Star className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                No Reviews Yet
+              </h3>
               <p className="text-gray-500 dark:text-gray-400">
-                No reviews yet. Be the first to review this seller!
+                This seller hasn't received any reviews yet. Be the first to purchase and review their products or services!
               </p>
             </div>
           </CardContent>

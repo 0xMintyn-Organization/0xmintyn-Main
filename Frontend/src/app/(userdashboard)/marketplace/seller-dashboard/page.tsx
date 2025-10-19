@@ -44,6 +44,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
+import DeleteConfirmationModal from '@/components/Marketplace/DeleteConfirmationModal';
 
 export default function SellerDashboardPage() {
   const { user } = useAuth();
@@ -63,6 +64,15 @@ export default function SellerDashboardPage() {
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasSellerProfile, setHasSellerProfile] = useState(false);
+  
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    itemId: '',
+    itemName: '',
+    itemType: 'product' as 'product' | 'service',
+    isLoading: false
+  });
 
   useEffect(() => {
     // Check if user is a seller
@@ -210,6 +220,56 @@ export default function SellerDashboardPage() {
     return `${baseUrl}${normalizedPath}`;
   };
 
+  // Delete functions
+  const handleDeleteClick = (itemId: string, itemName: string, itemType: 'product' | 'service') => {
+    setDeleteModal({
+      isOpen: true,
+      itemId,
+      itemName,
+      itemType,
+      isLoading: false
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleteModal(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const endpoint = deleteModal.itemType === 'product' 
+        ? `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/products/${deleteModal.itemId}`
+        : `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/services/${deleteModal.itemId}`;
+      
+      await axios.delete(endpoint, { withCredentials: true });
+      
+      // Refresh the data
+      await fetchSellerData();
+      
+      // Close modal
+      setDeleteModal({
+        isOpen: false,
+        itemId: '',
+        itemName: '',
+        itemType: 'product',
+        isLoading: false
+      });
+      
+      console.log(`${deleteModal.itemType} deleted successfully`);
+    } catch (error) {
+      console.error(`Error deleting ${deleteModal.itemType}:`, error);
+      setDeleteModal(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({
+      isOpen: false,
+      itemId: '',
+      itemName: '',
+      itemType: 'product',
+      isLoading: false
+    });
+  };
+
   // Fetch seller rating and reviews
   const fetchSellerRating = async () => {
     try {
@@ -232,6 +292,10 @@ export default function SellerDashboardPage() {
 
           if (response.data.success && response.data.seller) {
             console.log('Seller profile data:', response.data.seller);
+            console.log('Rating and Review Count:', {
+              rating: response.data.seller.rating,
+              reviewCount: response.data.seller.reviewCount
+            });
             setStats(prevStats => ({
               ...prevStats,
               rating: response.data.seller.rating || 0,
@@ -702,6 +766,14 @@ export default function SellerDashboardPage() {
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleDeleteClick(product.id, product.name, 'product')}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -776,6 +848,14 @@ export default function SellerDashboardPage() {
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleDeleteClick(service.id, service.name, 'service')}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -805,6 +885,18 @@ export default function SellerDashboardPage() {
           </Card>
         )}
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title={`Delete ${deleteModal.itemType === 'product' ? 'Product' : 'Service'}`}
+        description={`Are you sure you want to delete this ${deleteModal.itemType}? This action cannot be undone.`}
+        itemName={deleteModal.itemName}
+        itemType={deleteModal.itemType}
+        isLoading={deleteModal.isLoading}
+      />
     </div>
   );
 }

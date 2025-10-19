@@ -19,10 +19,10 @@ export const searchMarketplace = async (req: Request, res: Response) => {
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
 
-    // Build query
+    // Build query - show approved and active items
     const query: any = { 
       isApproved: true,
-      approvalStatus: 'Approved'
+      isActive: true
     };
 
     // Add search functionality
@@ -91,8 +91,8 @@ export const searchMarketplace = async (req: Request, res: Response) => {
 
     // Get marketplace stats
     const [totalProducts, totalServices, totalSellers] = await Promise.all([
-      MarketplaceProductModel.countDocuments({ isApproved: true, approvalStatus: 'Approved' }),
-      MarketplaceServiceModel.countDocuments({ isApproved: true, approvalStatus: 'Approved' }),
+      MarketplaceProductModel.countDocuments({ isApproved: true, isActive: true }),
+      MarketplaceServiceModel.countDocuments({ isApproved: true, isActive: true }),
       MarketplaceSellerModel.countDocuments({ isActive: true })
     ]);
 
@@ -135,8 +135,8 @@ export const searchMarketplace = async (req: Request, res: Response) => {
 export const getMarketplaceStats = async (req: Request, res: Response) => {
   try {
     const [totalProducts, totalServices, totalSellers] = await Promise.all([
-      MarketplaceProductModel.countDocuments({ isApproved: true, approvalStatus: 'Approved' }),
-      MarketplaceServiceModel.countDocuments({ isApproved: true, approvalStatus: 'Approved' }),
+      MarketplaceProductModel.countDocuments({ isApproved: true, isActive: true }),
+      MarketplaceServiceModel.countDocuments({ isApproved: true, isActive: true }),
       MarketplaceSellerModel.countDocuments({ isActive: true })
     ]);
 
@@ -164,13 +164,13 @@ export const getCategoryStats = async (req: Request, res: Response) => {
   try {
     // Get product counts by category
     const productCategories = await MarketplaceProductModel.aggregate([
-      { $match: { isApproved: true, approvalStatus: 'Approved' } },
+      { $match: { isApproved: true, isActive: true } },
       { $group: { _id: '$category', count: { $sum: 1 } } }
     ]);
 
     // Get service counts by category
     const serviceCategories = await MarketplaceServiceModel.aggregate([
-      { $match: { isApproved: true, approvalStatus: 'Approved' } },
+      { $match: { isApproved: true, isActive: true } },
       { $group: { _id: '$category', count: { $sum: 1 } } }
     ]);
 

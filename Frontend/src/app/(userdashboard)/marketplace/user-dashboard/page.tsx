@@ -125,13 +125,16 @@ export default function UserDashboardPage() {
         setPurchasedProducts(productOrders.map((order: any) => ({
           id: order._id,
           orderNumber: order.orderNumber,
+          productId: order.items[0]?.itemId, // Get the actual product ID
           productTitle: order.items[0]?.itemTitle || 'Product Order',
           productType: 'Digital Product',
           sellerName: order.sellerId?.sellerName || order.sellerId?.storeName || 'Seller',
           price: order.orderTotal,
           purchaseDate: order.createdAt,
           status: order.orderStatus,
-          downloadLink: '#', // TODO: Implement download
+          downloadLink: order.orderStatus === 'completed' 
+            ? `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/purchase/product/${order.items[0]?.itemId}/file`
+            : null,
           thumbnailImage: order.items[0]?.itemImage || '',
           rating: null, // TODO: Get from reviews
           hasReview: false
@@ -921,11 +924,13 @@ export default function UserDashboardPage() {
                                 Message Seller
                               </Button>
                             </Link>
-                            {product.status === 'completed' && (
-                              <Button size="sm" variant="outline">
-                                <Download className="h-4 w-4 mr-1" />
-                                Download Files
-                              </Button>
+                            {product.status === 'completed' && product.productId && (
+                              <Link href={`/marketplace/product/${product.productId}`}>
+                                <Button size="sm" variant="outline" className="text-green-600">
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Download Product
+                                </Button>
+                              </Link>
                             )}
                             {!product.hasReview && product.status === 'completed' && (
                               <Button size="sm" variant="outline" className="text-yellow-600">

@@ -23,6 +23,8 @@ export default function ProductDetailPage() {
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPurchased, setIsPurchased] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   
   // UI state
   const [selectedImage, setSelectedImage] = useState(0);
@@ -83,6 +85,8 @@ export default function ProductDetailPage() {
           
           setProduct(response.data.product);
           setRelatedProducts(response.data.relatedProducts || []);
+          setIsPurchased(response.data.isPurchased || false);
+          setDownloadUrl(response.data.downloadUrl || null);
         }
       } catch (error: any) {
         console.error('Error fetching product:', error);
@@ -317,17 +321,26 @@ export default function ProductDetailPage() {
               </div>
 
               <div className="flex items-center space-x-4 mb-6">
-                <span className="text-3xl font-bold text-gray-900 dark:text-gray-200">
-                  ${product.price}
-                </span>
-                {product.originalPrice && product.originalPrice > product.price && (
+                {isPurchased ? (
+                  <Badge className="bg-green-600 text-white text-lg px-4 py-2">
+                    <CheckCircle className="w-5 h-5 mr-2 inline" />
+                    Already Purchased
+                  </Badge>
+                ) : (
                   <>
-                    <span className="text-xl text-gray-500 line-through">
-                      ${product.originalPrice}
+                    <span className="text-3xl font-bold text-gray-900 dark:text-gray-200">
+                      ${product.price}
                     </span>
-                    <Badge className="bg-red-500 text-white">
-                      Save ${product.originalPrice - product.price}
-                    </Badge>
+                    {product.originalPrice && product.originalPrice > product.price && (
+                      <>
+                        <span className="text-xl text-gray-500 line-through">
+                          ${product.originalPrice}
+                        </span>
+                        <Badge className="bg-red-500 text-white">
+                          Save ${product.originalPrice - product.price}
+                        </Badge>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -336,14 +349,14 @@ export default function ProductDetailPage() {
                 {/* Digital Product Actions */}
                 <div className="space-y-4">
                   <div className="flex space-x-4">
-                    <Button 
-                      size="lg" 
+                    <Button
+                      size="lg"
                       className="flex-1 bg-green-900 hover:bg-green-800 text-white"
-                      onClick={() => setShowPurchaseModal(true)}
+                      onClick={isPurchased ? handleDownload : () => setShowPurchaseModal(true)}
                       disabled={downloading}
                     >
                       <Download className="w-5 h-5 mr-2" />
-                      {downloading ? 'Downloading...' : 'Get Instant Access'}
+                      {downloading ? 'Downloading...' : isPurchased ? 'Download Product' : 'Get Instant Access'}
                     </Button>
                   </div>
                 </div>
