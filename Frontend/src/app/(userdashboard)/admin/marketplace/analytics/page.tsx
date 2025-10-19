@@ -44,6 +44,9 @@ import {
   Package
 } from 'lucide-react';
 import Protected from '@/hooks/useProtected';
+import { marketplaceAPI } from '@/lib/api';
+import { toast } from 'sonner';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface AnalyticsData {
   revenueData: Array<{
@@ -106,67 +109,145 @@ export default function AdminMarketplaceAnalytics() {
   const fetchAnalyticsData = async () => {
     try {
       setLoading(true);
-      // Simulate API call - replace with actual API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock data - replace with actual API response
+      // Fetch real data from backend APIs
+      const [statsData, sellersData, servicesData, productsData, ordersData] = await Promise.all([
+        marketplaceAPI.getStats(),
+        marketplaceAPI.getSellers({ limit: 1000 }),
+        marketplaceAPI.getServices({ limit: 1000 }),
+        marketplaceAPI.getProducts({ limit: 1000 }),
+        marketplaceAPI.getOrders({ limit: 1000 }).catch(() => ({ orders: [] }))
+      ]);
+
+      const sellers = sellersData.sellers || [];
+      const services = servicesData.services || [];
+      const products = productsData.products || [];
+      const orders = ordersData.orders || [];
+
+      // Calculate top sellers by earnings
+      const topSellers = sellers
+        .sort((a: any, b: any) => (b.totalEarnings || 0) - (a.totalEarnings || 0))
+        .slice(0, 5)
+        .map((seller: any) => ({
+          sellerName: `${seller.sellerName || seller.storeName || 'Unknown'} - ${seller.storeName || 'Store'}`,
+          earnings: seller.totalEarnings || 0,
+          orders: seller.totalSales || 0,
+          rating: seller.rating || 0
+        }));
+
+      // Calculate top services by orders
+      const topServices = services
+        .sort((a: any, b: any) => (b.orderCount || 0) - (a.orderCount || 0))
+        .slice(0, 5)
+        .map((service: any) => ({
+          title: service.title,
+          orders: service.orderCount || 0,
+          revenue: (service.orderCount || 0) * (service.packages?.[0]?.price || 0),
+          rating: service.rating || 0
+        }));
+
+      // Calculate top products by purchases
+      const topProducts = products
+        .sort((a: any, b: any) => (b.salesCount || 0) - (a.salesCount || 0))
+        .slice(0, 5)
+        .map((product: any) => ({
+          title: product.title,
+          purchases: product.salesCount || 0,
+          revenue: (product.salesCount || 0) * (product.price || 0),
+          rating: product.rating || 0
+        }));
+
+      // Calculate category distribution for services
+      const categoryColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00', '#0088fe', '#00c49f', '#ffbb28'];
+      const categoryMap = new Map();
+      services.forEach((service: any) => {
+        const category = service.category || 'Unknown';
+        categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
+      });
+      const totalServices = services.length || 1;
+      const categoryDistribution = Array.from(categoryMap.entries())
+        .map(([category, count], index) => ({
+          category,
+          count: count as number,
+          percentage: Math.round(((count as number) / totalServices) * 100),
+          color: categoryColors[index % categoryColors.length]
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      // Calculate order status distribution
+      const statusColors: any = {
+        'completed': '#10b981',
+        'processing': '#3b82f6',
+        'delivered': '#8b5cf6',
+        'cancelled': '#ef4444',
+        'refunded': '#6b7280',
+        'confirmed': '#f59e0b',
+        'pending': '#64748b'
+      };
+      const statusMap = new Map();
+      orders.forEach((order: any) => {
+        const status = order.orderStatus || 'pending';
+        statusMap.set(status, (statusMap.get(status) || 0) + 1);
+      });
+      const totalOrders = orders.length || 1;
+      const orderStatusDistribution = Array.from(statusMap.entries())
+        .map(([status, count]) => ({
+          status: status.charAt(0).toUpperCase() + status.slice(1),
+          count: count as number,
+          percentage: Math.round(((count as number) / totalOrders) * 100),
+          color: statusColors[status] || '#6b7280'
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      // Calculate monthly stats
+      const totalRevenue = orders.reduce((sum: number, order: any) => 
+        sum + (order.orderTotal || 0), 0
+      );
+      const averageRating = sellers.reduce((sum: number, seller: any) => 
+        sum + (seller.rating || 0), 0
+      ) / (sellers.length || 1);
+
       setAnalyticsData({
         revenueData: [
-          { month: 'Sep 2023', revenue: 8500, orders: 120, growth: 12 },
-          { month: 'Oct 2023', revenue: 9200, orders: 135, growth: 8 },
-          { month: 'Nov 2023', revenue: 10800, orders: 158, growth: 17 },
-          { month: 'Dec 2023', revenue: 12500, orders: 185, growth: 16 },
-          { month: 'Jan 2024', revenue: 14200, orders: 210, growth: 14 },
-          { month: 'Feb 2024', revenue: 16800, orders: 245, growth: 18 },
-          { month: 'Mar 2024', revenue: 18500, orders: 268, growth: 10 }
+          { month: 'Current Month', revenue: totalRevenue, orders: orders.length, growth: 0 }
         ],
-        topSellers: [
-          { sellerName: 'John Doe - Creative Designs', earnings: 12500, orders: 89, rating: 4.8 },
-          { sellerName: 'Jane Smith - Tech Solutions', earnings: 8900, orders: 67, rating: 4.6 },
-          { sellerName: 'Sarah Wilson - Content Studio', earnings: 7800, orders: 45, rating: 4.9 },
-          { sellerName: 'Mike Johnson - Marketing Hub', earnings: 5600, orders: 32, rating: 4.2 },
-          { sellerName: 'Alex Brown - Web Dev Pro', earnings: 4200, orders: 28, rating: 4.7 }
-        ],
-        topServices: [
-          { title: 'Professional Logo Design', orders: 89, revenue: 8900, rating: 4.8 },
-          { title: 'Website Development', orders: 67, revenue: 6700, rating: 4.6 },
-          { title: 'Brand Identity Package', orders: 45, revenue: 11250, rating: 4.9 },
-          { title: 'Social Media Marketing', orders: 32, revenue: 16000, rating: 4.2 },
-          { title: 'Content Writing Services', orders: 28, revenue: 1400, rating: 4.7 }
-        ],
-        topProducts: [
-          { title: 'Premium UI Kit - Modern Design', purchases: 89, revenue: 4361, rating: 4.8 },
-          { title: 'Website Template - Business Pro', purchases: 67, revenue: 5293, rating: 4.6 },
-          { title: 'Digital Marketing Checklist', purchases: 45, revenue: 855, rating: 4.2 },
-          { title: 'Content Writing Templates', purchases: 32, revenue: 928, rating: 4.9 },
-          { title: 'Business Plan Template', purchases: 28, revenue: 840, rating: 4.5 }
-        ],
-        categoryDistribution: [
-          { category: 'Graphics & Design', count: 450, percentage: 35, color: '#8884d8' },
-          { category: 'Programming & Tech', count: 320, percentage: 25, color: '#82ca9d' },
-          { category: 'Digital Marketing', count: 280, percentage: 22, color: '#ffc658' },
-          { category: 'Writing & Translation', count: 180, percentage: 14, color: '#ff7300' },
-          { category: 'Business', count: 50, percentage: 4, color: '#00ff00' }
-        ],
-        orderStatusDistribution: [
-          { status: 'Completed', count: 1850, percentage: 65, color: '#10b981' },
-          { status: 'Processing', count: 520, percentage: 18, color: '#3b82f6' },
-          { status: 'Delivered', count: 380, percentage: 13, color: '#8b5cf6' },
-          { status: 'Cancelled', count: 90, percentage: 3, color: '#ef4444' },
-          { status: 'Refunded', count: 40, percentage: 1, color: '#6b7280' }
-        ],
+        topSellers,
+        topServices,
+        topProducts,
+        categoryDistribution,
+        orderStatusDistribution,
         monthlyStats: {
-          totalRevenue: 18500,
-          totalOrders: 268,
-          totalSellers: 245,
-          averageRating: 4.3,
-          revenueGrowth: 10.1,
-          ordersGrowth: 12.3,
-          sellersGrowth: 8.5
+          totalRevenue,
+          totalOrders: orders.length,
+          totalSellers: sellers.length,
+          averageRating: parseFloat(averageRating.toFixed(1)),
+          revenueGrowth: 0,
+          ordersGrowth: 0,
+          sellersGrowth: 0
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching analytics data:', error);
+      toast.error(error.message || 'Failed to load analytics');
+      
+      // Fallback to empty data
+      setAnalyticsData({
+        revenueData: [],
+        topSellers: [],
+        topServices: [],
+        topProducts: [],
+        categoryDistribution: [],
+        orderStatusDistribution: [],
+        monthlyStats: {
+          totalRevenue: 0,
+          totalOrders: 0,
+          totalSellers: 0,
+          averageRating: 0,
+          revenueGrowth: 0,
+          ordersGrowth: 0,
+          sellersGrowth: 0
+        }
+      });
     } finally {
       setLoading(false);
     }
@@ -213,6 +294,7 @@ export default function AdminMarketplaceAnalytics() {
 
   return (
     <Protected>
+      <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
         {/* Header */}
         <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
@@ -523,6 +605,7 @@ export default function AdminMarketplaceAnalytics() {
           </div>
         </div>
       </div>
+      </ErrorBoundary>
     </Protected>
   );
 }
