@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Protected from '@/hooks/useProtected';
+import { marketplaceAPI } from '@/lib/api';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface MarketplaceStats {
   totalSellers: number;
@@ -72,60 +74,52 @@ export default function AdminMarketplaceDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      // Simulate API call - replace with actual API endpoints
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock data - replace with actual API response
+      // Fetch real data from backend APIs
+      const [statsData, sellersData, productsData, servicesData, ordersData] = await Promise.all([
+        marketplaceAPI.getStats(),
+        marketplaceAPI.getSellers(),
+        marketplaceAPI.getProducts(),
+        marketplaceAPI.getServices(),
+        marketplaceAPI.getOrders().catch(() => ({ orders: [] }))
+      ]);
+
+      // Calculate stats from real data
+      const sellers = sellersData.sellers || [];
+      const products = productsData.products || [];
+      const services = servicesData.services || [];
+      const orders = ordersData.orders || [];
+
+      const activeSellers = sellers.filter((s: any) => s.isActive).length;
+      const pendingProducts = products.filter((p: any) => p.approvalStatus === 'Pending').length;
+      const pendingServices = services.filter((s: any) => s.approvalStatus === 'Pending').length;
+      const totalRevenue = sellers.reduce((sum: number, s: any) => sum + (s.totalEarnings || 0), 0);
+      
+      // Calculate monthly revenue (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const recentOrders = orders.filter((o: any) => 
+        new Date(o.createdAt) >= thirtyDaysAgo && o.orderStatus === 'completed'
+      );
+      const monthlyRevenue = recentOrders.reduce((sum: number, o: any) => sum + (o.orderTotal || 0), 0);
+      
       setStats({
-        totalSellers: 245,
-        totalServices: 1280,
-        totalProducts: 890,
-        totalOrders: 3420,
-        totalRevenue: 125000,
-        pendingApprovals: 23,
-        activeSellers: 198,
-        averageRating: 4.3,
-        monthlyRevenue: 18500,
-        monthlyOrders: 420,
-        revenueGrowth: 12.5,
-        ordersGrowth: 8.3
+        totalSellers: sellers.length,
+        totalServices: services.length,
+        totalProducts: products.length,
+        totalOrders: orders.length,
+        totalRevenue,
+        pendingApprovals: pendingProducts + pendingServices,
+        activeSellers,
+        averageRating: statsData.stats?.averageRating || 4.3,
+        monthlyRevenue,
+        monthlyOrders: recentOrders.length,
+        revenueGrowth: 12.5, // TODO: Calculate actual growth
+        ordersGrowth: 8.3 // TODO: Calculate actual growth
       });
 
-      setRecentActivity([
-        {
-          id: '1',
-          type: 'seller_registration',
-          title: 'New Seller Registration',
-          description: 'John Doe submitted seller application',
-          timestamp: '2 minutes ago',
-          status: 'pending'
-        },
-        {
-          id: '2',
-          type: 'service_created',
-          title: 'New Service Created',
-          description: 'Logo Design Service by Jane Smith',
-          timestamp: '15 minutes ago',
-          status: 'pending'
-        },
-        {
-          id: '3',
-          type: 'order_placed',
-          title: 'New Order Placed',
-          description: 'Order #ORD-001 for Logo Design Service',
-          timestamp: '1 hour ago',
-          status: 'approved'
-        },
-        {
-          id: '4',
-          type: 'review_submitted',
-          title: 'New Review Submitted',
-          description: '5-star review for Web Design Service',
-          timestamp: '2 hours ago',
-          status: 'approved'
-        }
-      ]);
-    } catch (error) {
+      setRecentActivity([]);
+    } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
@@ -182,6 +176,7 @@ export default function AdminMarketplaceDashboard() {
 
   return (
     <Protected>
+      <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
         {/* Header */}
         <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
@@ -400,6 +395,7 @@ export default function AdminMarketplaceDashboard() {
           </Card>
         </div>
       </div>
+      </ErrorBoundary>
     </Protected>
   );
 }

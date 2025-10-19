@@ -34,15 +34,18 @@ import {
   Filter, 
   MoreVertical, 
   Eye, 
-  CheckCircle, 
-  XCircle,
-  Users,
-  MessageSquare,
-  AlertTriangle,
   Trash2,
-  Flag
+  Flag,
+  TrendingUp,
+  AlertTriangle,
+  Users,
+  MessageSquare
 } from 'lucide-react';
 import Protected from '@/hooks/useProtected';
+import { toast } from 'sonner';
+import { marketplaceAPI } from '@/lib/api';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import Link from 'next/link';
 
 interface Review {
   _id: string;
@@ -67,10 +70,8 @@ interface Review {
     title: string;
   };
   rating: number;
-  review: string;
+  reviewText: string;
   isActive: boolean;
-  isFlagged: boolean;
-  flagReason?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -80,7 +81,6 @@ export default function AdminReviewsManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [ratingFilter, setRatingFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
 
   useEffect(() => {
@@ -90,136 +90,30 @@ export default function AdminReviewsManagement() {
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      // Simulate API call - replace with actual API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock data - replace with actual API response
-      setReviews([
-        {
-          _id: '1',
-          orderId: 'ORD-001',
-          buyerId: {
-            _id: 'buyer1',
-            firstName: 'Alice',
-            lastName: 'Johnson',
-            avatar: '/placeholder-avatar.jpg'
-          },
-          sellerId: {
-            _id: 'seller1',
-            sellerName: 'John Doe',
-            storeName: 'Creative Designs Co.'
-          },
-          serviceId: {
-            _id: 'service1',
-            title: 'Professional Logo Design'
-          },
-          rating: 5,
-          review: 'Excellent work! John delivered exactly what I asked for and even exceeded my expectations. The logo is perfect for my business and the communication throughout the process was outstanding.',
-          isActive: true,
-          isFlagged: false,
-          createdAt: '2024-03-16',
-          updatedAt: '2024-03-16'
-        },
-        {
-          _id: '2',
-          orderId: 'ORD-002',
-          buyerId: {
-            _id: 'buyer2',
-            firstName: 'Bob',
-            lastName: 'Smith'
-          },
-          sellerId: {
-            _id: 'seller2',
-            sellerName: 'Jane Smith',
-            storeName: 'Tech Solutions Pro'
-          },
-          productId: {
-            _id: 'product1',
-            title: 'Website Template - Business Pro'
-          },
-          rating: 4,
-          review: 'Good template overall, but the documentation could be better. The design is clean and modern, exactly what I needed for my business website.',
-          isActive: true,
-          isFlagged: false,
-          createdAt: '2024-03-15',
-          updatedAt: '2024-03-15'
-        },
-        {
-          _id: '3',
-          orderId: 'ORD-003',
-          buyerId: {
-            _id: 'buyer3',
-            firstName: 'Carol',
-            lastName: 'Williams'
-          },
-          sellerId: {
-            _id: 'seller3',
-            sellerName: 'Mike Johnson',
-            storeName: 'Digital Marketing Hub'
-          },
-          serviceId: {
-            _id: 'service3',
-            title: 'Social Media Marketing'
-          },
-          rating: 3,
-          review: 'The service was okay, but delivery was delayed by 2 days. The results were decent but not exceptional. Communication could have been better.',
-          isActive: true,
-          isFlagged: false,
-          createdAt: '2024-03-14',
-          updatedAt: '2024-03-14'
-        },
-        {
-          _id: '4',
-          orderId: 'ORD-004',
-          buyerId: {
-            _id: 'buyer4',
-            firstName: 'David',
-            lastName: 'Brown'
-          },
-          sellerId: {
-            _id: 'seller4',
-            sellerName: 'Sarah Wilson',
-            storeName: 'Content Creation Studio'
-          },
-          productId: {
-            _id: 'product4',
-            title: 'Content Writing Templates Pack'
-          },
-          rating: 1,
-          review: 'This is absolutely terrible! The templates are poorly written and contain grammatical errors. Complete waste of money. I demand a refund!',
-          isActive: false,
-          isFlagged: true,
-          flagReason: 'Inappropriate language and false claims',
-          createdAt: '2024-03-13',
-          updatedAt: '2024-03-14'
-        },
-        {
-          _id: '5',
-          orderId: 'ORD-005',
-          buyerId: {
-            _id: 'buyer5',
-            firstName: 'Eva',
-            lastName: 'Davis'
-          },
-          sellerId: {
-            _id: 'seller1',
-            sellerName: 'John Doe',
-            storeName: 'Creative Designs Co.'
-          },
-          serviceId: {
-            _id: 'service5',
-            title: 'Brand Identity Package'
-          },
-          rating: 5,
-          review: 'Outstanding service! The brand identity package was exactly what my startup needed. Professional, creative, and delivered on time. Highly recommended!',
-          isActive: true,
-          isFlagged: false,
-          createdAt: '2024-03-12',
-          updatedAt: '2024-03-12'
+      // Fetch all reviews - we need to get reviews for all sellers
+      const sellersData = await marketplaceAPI.getSellers();
+      const sellers = sellersData.sellers || [];
+      const allReviews: Review[] = [];
+
+      // Fetch reviews for each seller
+      for (const seller of sellers) {
+        try {
+          const reviewsData = await marketplaceAPI.getSellerReviews(seller._id);
+          const sellerReviews = reviewsData.reviews || [];
+          allReviews.push(...sellerReviews);
+        } catch (error) {
+          console.error(`Error fetching reviews for seller ${seller._id}:`, error);
         }
-      ]);
-    } catch (error) {
+      }
+
+      setReviews(allReviews);
+    } catch (error: any) {
       console.error('Error fetching reviews:', error);
+      toast.error(error.message || 'Failed to load reviews');
+      
+      // Fallback to empty array if API fails
+      setReviews([]);
     } finally {
       setLoading(false);
     }
@@ -230,18 +124,26 @@ export default function AdminReviewsManagement() {
       review.buyerId.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       review.buyerId.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       review.sellerId.sellerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.review.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (review.serviceId?.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (review.productId?.title.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+      review.reviewText.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesRating = ratingFilter === 'all' || review.rating.toString() === ratingFilter;
-    
-    const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'active' && review.isActive) ||
-      (statusFilter === 'inactive' && !review.isActive) ||
-      (statusFilter === 'flagged' && review.isFlagged);
-    
-    return matchesSearch && matchesRating && matchesStatus;
+
+    return matchesSearch && matchesRating;
+  });
+
+  const sortedReviews = [...filteredReviews].sort((a, b) => {
+    switch (sortBy) {
+      case 'recent':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'oldest':
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case 'rating-high':
+        return b.rating - a.rating;
+      case 'rating-low':
+        return a.rating - b.rating;
+      default:
+        return 0;
+    }
   });
 
   const getRatingStars = (rating: number) => {
@@ -249,56 +151,48 @@ export default function AdminReviewsManagement() {
       <Star
         key={i}
         className={`w-4 h-4 ${
-          i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+          i < rating 
+            ? 'text-yellow-500 fill-current' 
+            : 'text-gray-300'
         }`}
       />
     ));
   };
 
-  const getStatusBadge = (isActive: boolean, isFlagged: boolean) => {
-    if (isFlagged) {
-      return <Badge className="bg-red-100 text-red-800">Flagged</Badge>;
-    }
-    return isActive ? (
-      <Badge className="bg-green-100 text-green-800">Active</Badge>
-    ) : (
-      <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>
+  const getRatingBadge = (rating: number) => {
+    const colors = {
+      5: 'bg-green-100 text-green-800',
+      4: 'bg-blue-100 text-blue-800',
+      3: 'bg-yellow-100 text-yellow-800',
+      2: 'bg-orange-100 text-orange-800',
+      1: 'bg-red-100 text-red-800'
+    };
+
+    return (
+      <Badge className={`${colors[rating as keyof typeof colors] || colors[1]} border-0`}>
+        {rating} Star{rating !== 1 ? 's' : ''}
+      </Badge>
     );
-  };
-
-  const handleToggleActive = (reviewId: string) => {
-    setReviews(prev => prev.map(review => 
-      review._id === reviewId 
-        ? { ...review, isActive: !review.isActive }
-        : review
-    ));
-  };
-
-  const handleToggleFlag = (reviewId: string) => {
-    setReviews(prev => prev.map(review => 
-      review._id === reviewId 
-        ? { ...review, isFlagged: !review.isFlagged }
-        : review
-    ));
-  };
-
-  const handleDeleteReview = (reviewId: string) => {
-    setReviews(prev => prev.filter(review => review._id !== reviewId));
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading reviews...</p>
+      <Protected>
+        <ErrorBoundary>
+        <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading reviews...</p>
+          </div>
         </div>
-      </div>
+        </ErrorBoundary>
+      </Protected>
     );
   }
 
   return (
     <Protected>
+      <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
         {/* Header */}
         <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
@@ -313,12 +207,8 @@ export default function AdminReviewsManagement() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  onClick={fetchReviews}
-                  className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                >
-                  <Star className="w-4 h-4 mr-2" />
+                <Button onClick={fetchReviews} variant="outline" className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
                   Refresh
                 </Button>
               </div>
@@ -326,11 +216,71 @@ export default function AdminReviewsManagement() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* Stats Cards */}
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Reviews</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">{reviews.length}</p>
+                  </div>
+                  <Star className="w-8 h-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Average Rating</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                      {(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)}
+                    </p>
+                  </div>
+                  <Star className="w-8 h-8 text-yellow-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">5 Star Reviews</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                      {reviews.filter(r => r.rating === 5).length}
+                    </p>
+                  </div>
+                  <Star className="w-8 h-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Low Ratings (1-2)</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                      {reviews.filter(r => r.rating <= 2).length}
+                    </p>
+                  </div>
+                  <AlertTriangle className="w-8 h-8 text-red-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Filters */}
-          <Card>
+          <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Filters & Search</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="w-5 h-5" />
+                Filters & Search
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col md:flex-row gap-4">
@@ -338,17 +288,16 @@ export default function AdminReviewsManagement() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      placeholder="Search reviews by buyer, seller, content, or item..."
+                      placeholder="Search reviews by buyer, seller, or content..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
                   </div>
                 </div>
-                
                 <Select value={ratingFilter} onValueChange={setRatingFilter}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Rating" />
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="All Ratings" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Ratings</SelectItem>
@@ -359,28 +308,15 @@ export default function AdminReviewsManagement() {
                     <SelectItem value="1">1 Star</SelectItem>
                   </SelectContent>
                 </Select>
-
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="flagged">Flagged</SelectItem>
-                  </SelectContent>
-                </Select>
-
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-40">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="recent">Most Recent</SelectItem>
                     <SelectItem value="oldest">Oldest First</SelectItem>
-                    <SelectItem value="rating">Highest Rating</SelectItem>
-                    <SelectItem value="lowest">Lowest Rating</SelectItem>
+                    <SelectItem value="rating-high">Highest Rating</SelectItem>
+                    <SelectItem value="rating-low">Lowest Rating</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -390,18 +326,17 @@ export default function AdminReviewsManagement() {
           {/* Reviews Table */}
           <Card>
             <CardHeader>
-              <CardTitle>All Reviews ({filteredReviews.length})</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="w-5 h-5" />
+                All Reviews ({sortedReviews.length})
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {filteredReviews.length === 0 ? (
+              {sortedReviews.length === 0 ? (
                 <div className="text-center py-12">
-                  <Star className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-2">
-                    No reviews found
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Try adjusting your search or filter criteria.
-                  </p>
+                  <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No reviews found</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Try adjusting your filters or search terms.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -413,117 +348,84 @@ export default function AdminReviewsManagement() {
                         <TableHead>Seller</TableHead>
                         <TableHead>Item</TableHead>
                         <TableHead>Rating</TableHead>
-                        <TableHead>Status</TableHead>
                         <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredReviews.map((review) => (
-                        <TableRow key={review._id} className="hover:bg-gray-50 dark:hover:bg-zinc-800">
+                      {sortedReviews.map((review) => (
+                        <TableRow key={review._id}>
                           <TableCell>
-                            <div className="max-w-md">
-                              <div className="text-sm line-clamp-3 mb-2">{review.review}</div>
-                              {review.isFlagged && review.flagReason && (
-                                <Badge variant="destructive" className="text-xs">
-                                  {review.flagReason}
-                                </Badge>
-                              )}
+                            <div className="max-w-xs">
+                              <p className="text-sm text-gray-900 dark:text-white line-clamp-3">
+                                {review.reviewText}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Order: {review.orderId}
+                              </p>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-2">
                               <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                                <Users className="w-4 h-4 text-gray-500" />
+                                <span className="text-xs font-medium">
+                                  {review.buyerId.firstName[0]}{review.buyerId.lastName[0]}
+                                </span>
                               </div>
                               <div>
-                                <div className="font-medium">{review.buyerId.firstName} {review.buyerId.lastName}</div>
-                                <div className="text-sm text-gray-500">{review.orderId}</div>
+                                <div className="font-medium text-sm">
+                                  {review.buyerId.firstName} {review.buyerId.lastName}
+                                </div>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div>
-                              <div className="font-medium">{review.sellerId.sellerName}</div>
-                              <div className="text-sm text-gray-500">{review.sellerId.storeName}</div>
+                              <div className="font-medium text-sm">{review.sellerId.sellerName}</div>
+                              <div className="text-xs text-gray-500">{review.sellerId.storeName}</div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div>
-                              {review.serviceId ? (
-                                <>
-                                  <div className="font-medium">{review.serviceId.title}</div>
-                                  <Badge variant="outline" className="text-xs">Service</Badge>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="font-medium">{review.productId?.title}</div>
-                                  <Badge variant="outline" className="text-xs">Product</Badge>
-                                </>
-                              )}
+                            <div className="font-medium text-sm">
+                              {review.serviceId ? review.serviceId.title : review.productId?.title}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {review.serviceId ? 'Service' : 'Product'}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-1">
-                              {getRatingStars(review.rating)}
-                              <span className="ml-1 text-sm font-medium">{review.rating}</span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex">
+                                {getRatingStars(review.rating)}
+                              </div>
+                              <div className="text-sm font-medium">
+                                {review.rating}
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(review.isActive, review.isFlagged)}
                           </TableCell>
                           <TableCell>
                             <div className="text-sm">
-                              {new Date(review.createdAt).toLocaleDateString()}
+                              <div>{new Date(review.createdAt).toLocaleDateString()}</div>
+                              <div className="text-gray-500">
+                                {new Date(review.createdAt).toLocaleTimeString()}
+                              </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <MoreVertical className="h-4 w-4" />
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <MessageSquare className="mr-2 h-4 w-4" />
-                                  Contact Buyer
-                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleToggleActive(review._id)}>
-                                  {review.isActive ? (
-                                    <>
-                                      <XCircle className="mr-2 h-4 w-4" />
-                                      Hide Review
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle className="mr-2 h-4 w-4" />
-                                      Show Review
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleToggleFlag(review._id)}>
-                                  {review.isFlagged ? (
-                                    <>
-                                      <CheckCircle className="mr-2 h-4 w-4" />
-                                      Unflag Review
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Flag className="mr-2 h-4 w-4" />
-                                      Flag Review
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDeleteReview(review._id)}>
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete Review
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/marketplace/orders/${review.orderId}`}>
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View Order
+                                  </Link>
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -538,7 +440,7 @@ export default function AdminReviewsManagement() {
           </Card>
         </div>
       </div>
+      </ErrorBoundary>
     </Protected>
   );
 }
-

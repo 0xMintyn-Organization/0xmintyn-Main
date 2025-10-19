@@ -7,6 +7,8 @@ import { SessionProvider } from "next-auth/react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./Provider";
+import { logEnvironmentInfo } from "@/utils/envCheck";
+import { useEffect } from "react";
 
 const inter = Inter({ 
   subsets: ['latin'], 
@@ -20,6 +22,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  useEffect(() => {
+    logEnvironmentInfo();
+  }, []);
+
   return (
     <html lang="en">
       <body

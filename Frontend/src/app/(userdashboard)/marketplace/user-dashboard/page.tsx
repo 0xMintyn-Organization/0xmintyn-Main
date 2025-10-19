@@ -81,11 +81,11 @@ export default function UserDashboardPage() {
       
       // Fetch real order data from API
       const [ordersResponse, statsResponse] = await Promise.all([
-        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/orders/buyer`, {
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/orders/buyer`, {
           withCredentials: true,
           params: { limit: 50 } // Get more orders for better stats
         }),
-        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/orders/statistics/overview`, {
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/orders/statistics/overview`, {
           withCredentials: true,
           params: { period: '30d' }
         })
@@ -133,7 +133,7 @@ export default function UserDashboardPage() {
           purchaseDate: order.createdAt,
           status: order.orderStatus,
           downloadLink: order.orderStatus === 'completed' 
-            ? `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/purchase/product/${order.items[0]?.itemId}/file`
+            ? `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/purchase/product/${order.items[0]?.itemId}/file`
             : null,
           thumbnailImage: order.items[0]?.itemImage || '',
           rating: null, // TODO: Get from reviews
@@ -194,7 +194,7 @@ export default function UserDashboardPage() {
     try {
       // Fetch inbox messages
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/inbox?limit=5`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/messages/inbox?limit=5`,
         { withCredentials: true }
       );
 
@@ -204,7 +204,7 @@ export default function UserDashboardPage() {
 
       // Fetch unread count
       const unreadResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/messages/unread-count`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/messages/unread-count`,
         { withCredentials: true }
       );
 

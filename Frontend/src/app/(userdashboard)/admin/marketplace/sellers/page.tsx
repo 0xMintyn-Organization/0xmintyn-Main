@@ -45,6 +45,19 @@ import {
   Settings
 } from 'lucide-react';
 import Protected from '@/hooks/useProtected';
+import axios from 'axios';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from 'lucide-react';
 
 interface Seller {
   _id: string;
@@ -73,6 +86,8 @@ export default function AdminSellersManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [levelFilter, setLevelFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sellerToDelete, setSellerToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSellers();
@@ -81,90 +96,50 @@ export default function AdminSellersManagement() {
   const fetchSellers = async () => {
     try {
       setLoading(true);
-      // Simulate API call - replace with actual API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock data - replace with actual API response
-      setSellers([
-        {
-          _id: '1',
-          sellerName: 'John Doe',
-          storeName: 'Creative Designs Co.',
-          contactEmail: 'john@creativedesigns.com',
-          businessType: 'Design Agency',
-          sellerLevel: 'Top Rated',
-          verified: true,
-          rating: 4.8,
-          reviewCount: 156,
-          totalSales: 89,
-          totalEarnings: 12500,
-          responseTime: '2 hours',
-          responseRate: 98,
-          isActive: true,
-          joinedDate: '2024-01-15',
-          servicesCount: 12,
-          productsCount: 8
-        },
-        {
-          _id: '2',
-          sellerName: 'Jane Smith',
-          storeName: 'Tech Solutions Pro',
-          contactEmail: 'jane@techsolutions.com',
-          businessType: 'Technology',
-          sellerLevel: 'Pro',
-          verified: true,
-          rating: 4.6,
-          reviewCount: 89,
-          totalSales: 67,
-          totalEarnings: 8900,
-          responseTime: '1 hour',
-          responseRate: 95,
-          isActive: true,
-          joinedDate: '2024-02-20',
-          servicesCount: 15,
-          productsCount: 5
-        },
-        {
-          _id: '3',
-          sellerName: 'Mike Johnson',
-          storeName: 'Digital Marketing Hub',
-          contactEmail: 'mike@digitalmarketing.com',
-          businessType: 'Marketing',
-          sellerLevel: 'New Seller',
-          verified: false,
-          rating: 4.2,
-          reviewCount: 23,
-          totalSales: 12,
-          totalEarnings: 1800,
-          responseTime: '4 hours',
-          responseRate: 85,
-          isActive: true,
-          joinedDate: '2024-03-10',
-          servicesCount: 6,
-          productsCount: 3
-        },
-        {
-          _id: '4',
-          sellerName: 'Sarah Wilson',
-          storeName: 'Content Creation Studio',
-          contactEmail: 'sarah@contentstudio.com',
-          businessType: 'Content Creation',
-          sellerLevel: 'Level 1',
-          verified: true,
-          rating: 4.9,
-          reviewCount: 234,
-          totalSales: 145,
-          totalEarnings: 18900,
-          responseTime: '30 minutes',
-          responseRate: 99,
-          isActive: false,
-          joinedDate: '2023-11-05',
-          servicesCount: 20,
-          productsCount: 12
-        }
-      ]);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/sellers`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        const sellersData = response.data.sellers || [];
+        
+        // Fetch products and services count for each seller
+        const enrichedSellers = await Promise.all(
+          sellersData.map(async (seller: any) => {
+            try {
+              const [productsRes, servicesRes] = await Promise.all([
+                axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/products`, {
+                  params: { sellerId: seller._id },
+                  withCredentials: true
+                }).catch(() => ({ data: { products: [] } })),
+                axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/services`, {
+                  params: { sellerId: seller._id },
+                  withCredentials: true
+                }).catch(() => ({ data: { services: [] } }))
+              ]);
+
+              return {
+                ...seller,
+                servicesCount: servicesRes.data.services?.length || 0,
+                productsCount: productsRes.data.products?.length || 0
+              };
+            } catch {
+              return {
+                ...seller,
+                servicesCount: 0,
+                productsCount: 0
+              };
+            }
+          })
+        );
+
+        setSellers(enrichedSellers);
+      }
     } catch (error) {
       console.error('Error fetching sellers:', error);
+      toast.error('Failed to load sellers');
     } finally {
       setLoading(false);
     }
@@ -229,6 +204,33 @@ export default function AdminSellersManagement() {
         ? { ...seller, verified: !seller.verified }
         : seller
     ));
+  };
+
+  const handleDeleteClick = (sellerId: string) => {
+    setSellerToDelete(sellerId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!sellerToDelete) return;
+
+    try {
+      const response = await axios.delete(
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/sellers/profile/${sellerToDelete}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        toast.success('Seller deleted successfully');
+        setSellers(prev => prev.filter(s => s._id !== sellerToDelete));
+      }
+    } catch (error: any) {
+      console.error('Error deleting seller:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete seller');
+    } finally {
+      setDeleteDialogOpen(false);
+      setSellerToDelete(null);
+    }
   };
 
   if (loading) {
@@ -411,7 +413,7 @@ export default function AdminSellersManagement() {
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <MoreVertical className="h-4 h-4" />
+                                  <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
@@ -459,6 +461,14 @@ export default function AdminSellersManagement() {
                                   <Settings className="mr-2 h-4 w-4" />
                                   Settings
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="text-red-600"
+                                  onClick={() => handleDeleteClick(seller._id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Seller
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -471,6 +481,28 @@ export default function AdminSellersManagement() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the seller profile
+                and remove all associated data from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Protected>
   );

@@ -28,53 +28,67 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   Briefcase, 
   Search, 
   Filter, 
   MoreVertical, 
   Eye, 
-  CheckCircle, 
-  XCircle,
+  Edit, 
+  Trash2,
   Star,
   Clock,
   DollarSign,
   Users,
-  Image as ImageIcon,
+  TrendingUp,
   AlertTriangle
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Protected from '@/hooks/useProtected';
+import { toast } from 'sonner';
+import { marketplaceAPI } from '@/lib/api';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface Service {
   _id: string;
   title: string;
   description: string;
   category: string;
-  subcategory: string;
-  thumbnailImage: string;
+  subcategory?: string;
   sellerId: {
     _id: string;
     sellerName: string;
     storeName: string;
+    storeLogo?: string;
   };
   packages: Array<{
     name: string;
     price: number;
     deliveryTime: string;
+    revisions: string;
+    features: string[];
   }>;
-  deliveryTime: string;
+  images: string[];
+  thumbnailImage: string;
   rating: number;
   reviewCount: number;
   orderCount: number;
-  viewCount: number;
   isActive: boolean;
   isApproved: boolean;
-  approvalStatus: 'Pending' | 'Approved' | 'Rejected';
-  rejectionReason?: string;
-  isFeatured: boolean;
+  approvalStatus: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export default function AdminServicesManagement() {
@@ -84,6 +98,8 @@ export default function AdminServicesManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchServices();
@@ -92,125 +108,39 @@ export default function AdminServicesManagement() {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      // Simulate API call - replace with actual API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock data - replace with actual API response
-      setServices([
-        {
-          _id: '1',
-          title: 'Professional Logo Design',
-          description: 'Custom logo design for your business with unlimited revisions',
-          category: 'Graphics & Design',
-          subcategory: 'Logo Design',
-          thumbnailImage: '/placeholder-service.jpg',
-          sellerId: {
-            _id: 'seller1',
-            sellerName: 'John Doe',
-            storeName: 'Creative Designs Co.'
-          },
-          packages: [
-            { name: 'Basic', price: 50, deliveryTime: '3 Days' },
-            { name: 'Premium', price: 100, deliveryTime: '2 Days' }
-          ],
-          deliveryTime: '3 Days',
-          rating: 4.8,
-          reviewCount: 156,
-          orderCount: 89,
-          viewCount: 1250,
-          isActive: true,
-          isApproved: true,
-          approvalStatus: 'Approved',
-          isFeatured: true,
-          createdAt: '2024-01-15'
-        },
-        {
-          _id: '2',
-          title: 'Website Development',
-          description: 'Responsive website development with modern design',
-          category: 'Programming & Tech',
-          subcategory: 'Web Development',
-          thumbnailImage: '/placeholder-service.jpg',
-          sellerId: {
-            _id: 'seller2',
-            sellerName: 'Jane Smith',
-            storeName: 'Tech Solutions Pro'
-          },
-          packages: [
-            { name: 'Basic Website', price: 500, deliveryTime: '7 Days' },
-            { name: 'Advanced Website', price: 1000, deliveryTime: '14 Days' }
-          ],
-          deliveryTime: '7 Days',
-          rating: 4.6,
-          reviewCount: 89,
-          orderCount: 67,
-          viewCount: 890,
-          isActive: true,
-          isApproved: true,
-          approvalStatus: 'Approved',
-          isFeatured: false,
-          createdAt: '2024-02-20'
-        },
-        {
-          _id: '3',
-          title: 'Social Media Marketing',
-          description: 'Complete social media marketing strategy and management',
-          category: 'Digital Marketing',
-          subcategory: 'Social Media Marketing',
-          thumbnailImage: '/placeholder-service.jpg',
-          sellerId: {
-            _id: 'seller3',
-            sellerName: 'Mike Johnson',
-            storeName: 'Digital Marketing Hub'
-          },
-          packages: [
-            { name: 'Basic Package', price: 200, deliveryTime: '5 Days' },
-            { name: 'Premium Package', price: 500, deliveryTime: '10 Days' }
-          ],
-          deliveryTime: '5 Days',
-          rating: 4.2,
-          reviewCount: 23,
-          orderCount: 12,
-          viewCount: 340,
-          isActive: true,
-          isApproved: false,
-          approvalStatus: 'Pending',
-          isFeatured: false,
-          createdAt: '2024-03-10'
-        },
-        {
-          _id: '4',
-          title: 'Content Writing Services',
-          description: 'High-quality content writing for blogs, websites, and marketing',
-          category: 'Writing & Translation',
-          subcategory: 'Content Writing',
-          thumbnailImage: '/placeholder-service.jpg',
-          sellerId: {
-            _id: 'seller4',
-            sellerName: 'Sarah Wilson',
-            storeName: 'Content Creation Studio'
-          },
-          packages: [
-            { name: 'Basic Content', price: 25, deliveryTime: '2 Days' },
-            { name: 'Premium Content', price: 50, deliveryTime: '3 Days' }
-          ],
-          deliveryTime: '2 Days',
-          rating: 4.9,
-          reviewCount: 234,
-          orderCount: 145,
-          viewCount: 2100,
-          isActive: false,
-          isApproved: false,
-          approvalStatus: 'Rejected',
-          rejectionReason: 'Inappropriate content description',
-          isFeatured: false,
-          createdAt: '2023-11-05'
-        }
-      ]);
-    } catch (error) {
+      // Fetch real services from backend
+      const data = await marketplaceAPI.getServices();
+      setServices(data.services || []);
+    } catch (error: any) {
       console.error('Error fetching services:', error);
+      toast.error(error.message || 'Failed to load services');
+      
+      // Fallback to empty array if API fails
+      setServices([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (serviceId: string) => {
+    setServiceToDelete(serviceId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!serviceToDelete) return;
+
+    try {
+      await marketplaceAPI.deleteService(serviceToDelete);
+      toast.success('Service deleted successfully');
+      setServices(prev => prev.filter(s => s._id !== serviceToDelete));
+    } catch (error: any) {
+      console.error('Error deleting service:', error);
+      toast.error(error.message || 'Failed to delete service');
+    } finally {
+      setDeleteDialogOpen(false);
+      setServiceToDelete(null);
     }
   };
 
@@ -219,85 +149,75 @@ export default function AdminServicesManagement() {
       service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       service.sellerId.sellerName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'pending' && service.approvalStatus === 'Pending') ||
-      (statusFilter === 'approved' && service.approvalStatus === 'Approved') ||
-      (statusFilter === 'rejected' && service.approvalStatus === 'Rejected') ||
-      (statusFilter === 'active' && service.isActive) ||
-      (statusFilter === 'inactive' && !service.isActive);
-    
+
+    const matchesStatus = statusFilter === 'all' || service.approvalStatus.toLowerCase() === statusFilter.toLowerCase();
     const matchesCategory = categoryFilter === 'all' || service.category === categoryFilter;
-    
+
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const getStatusBadge = (status: string, isActive: boolean) => {
-    switch (status) {
-      case 'Approved':
-        return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
-      case 'Pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'Rejected':
-        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+  const sortedServices = [...filteredServices].sort((a, b) => {
+    switch (sortBy) {
+      case 'recent':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'oldest':
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case 'price-high':
+        return Math.max(...b.packages.map(p => p.price)) - Math.max(...a.packages.map(p => p.price));
+      case 'price-low':
+        return Math.max(...a.packages.map(p => p.price)) - Math.max(...b.packages.map(p => p.price));
+      case 'rating':
+        return b.rating - a.rating;
+      case 'orders':
+        return b.orderCount - a.orderCount;
       default:
-        return isActive ? (
-          <Badge className="bg-green-100 text-green-800">Active</Badge>
-        ) : (
-          <Badge className="bg-red-100 text-red-800">Inactive</Badge>
-        );
+        return 0;
     }
+  });
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      approved: { color: 'bg-green-100 text-green-800', icon: '✓' },
+      pending: { color: 'bg-yellow-100 text-yellow-800', icon: '⏳' },
+      rejected: { color: 'bg-red-100 text-red-800', icon: '✗' },
+      'under review': { color: 'bg-blue-100 text-blue-800', icon: '👁' }
+    };
+
+    const config = statusConfig[status.toLowerCase() as keyof typeof statusConfig] || statusConfig.pending;
+
+    return (
+      <Badge className={`${config.color} border-0`}>
+        {config.icon} {status}
+      </Badge>
+    );
   };
 
   const getMinPrice = (packages: any[]) => {
-    return Math.min(...packages.map(pkg => pkg.price));
+    return Math.min(...packages.map(p => p.price));
   };
 
-  const handleApproveService = (serviceId: string) => {
-    setServices(prev => prev.map(service => 
-      service._id === serviceId 
-        ? { ...service, approvalStatus: 'Approved', isApproved: true, isActive: true }
-        : service
-    ));
-  };
-
-  const handleRejectService = (serviceId: string) => {
-    setServices(prev => prev.map(service => 
-      service._id === serviceId 
-        ? { ...service, approvalStatus: 'Rejected', isApproved: false, isActive: false }
-        : service
-    ));
-  };
-
-  const handleToggleActive = (serviceId: string) => {
-    setServices(prev => prev.map(service => 
-      service._id === serviceId 
-        ? { ...service, isActive: !service.isActive }
-        : service
-    ));
-  };
-
-  const handleToggleFeatured = (serviceId: string) => {
-    setServices(prev => prev.map(service => 
-      service._id === serviceId 
-        ? { ...service, isFeatured: !service.isFeatured }
-        : service
-    ));
+  const getMaxPrice = (packages: any[]) => {
+    return Math.max(...packages.map(p => p.price));
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading services...</p>
+      <Protected>
+        <ErrorBoundary>
+        <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading services...</p>
+          </div>
         </div>
-      </div>
+        </ErrorBoundary>
+      </Protected>
     );
   }
 
   return (
     <Protected>
+      <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
         {/* Header */}
         <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
@@ -312,12 +232,8 @@ export default function AdminServicesManagement() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  onClick={fetchServices}
-                  className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                >
-                  <Briefcase className="w-4 h-4 mr-2" />
+                <Button onClick={fetchServices} variant="outline" className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
                   Refresh
                 </Button>
               </div>
@@ -325,11 +241,71 @@ export default function AdminServicesManagement() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* Stats Cards */}
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Services</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">{services.length}</p>
+                  </div>
+                  <Briefcase className="w-8 h-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Approved</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                      {services.filter(s => s.isApproved).length}
+                    </p>
+                  </div>
+                  <Star className="w-8 h-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                      {services.filter(s => s.approvalStatus === 'Pending').length}
+                    </p>
+                  </div>
+                  <Clock className="w-8 h-8 text-yellow-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Orders</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                      {services.reduce((sum, s) => sum + s.orderCount, 0)}
+                    </p>
+                  </div>
+                  <Users className="w-8 h-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Filters */}
-          <Card>
+          <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Filters & Search</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="w-5 h-5" />
+                Filters & Search
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col md:flex-row gap-4">
@@ -344,43 +320,45 @@ export default function AdminServicesManagement() {
                     />
                   </div>
                 </div>
-                
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Status" />
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="rejected">Rejected</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="under review">Under Review</SelectItem>
                   </SelectContent>
                 </Select>
-
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Category" />
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="Graphics & Design">Graphics & Design</SelectItem>
-                    <SelectItem value="Programming & Tech">Programming & Tech</SelectItem>
-                    <SelectItem value="Digital Marketing">Digital Marketing</SelectItem>
+                    <SelectItem value="Design & Creative">Design & Creative</SelectItem>
+                    <SelectItem value="Web Development">Web Development</SelectItem>
+                    <SelectItem value="Mobile Development">Mobile Development</SelectItem>
                     <SelectItem value="Writing & Translation">Writing & Translation</SelectItem>
+                    <SelectItem value="Digital Marketing">Digital Marketing</SelectItem>
+                    <SelectItem value="Video & Animation">Video & Animation</SelectItem>
+                    <SelectItem value="Music & Audio">Music & Audio</SelectItem>
+                    <SelectItem value="Programming & Tech">Programming & Tech</SelectItem>
                   </SelectContent>
                 </Select>
-
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-40">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="recent">Most Recent</SelectItem>
-                    <SelectItem value="rating">Highest Rating</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                    <SelectItem value="price-high">Price High</SelectItem>
+                    <SelectItem value="price-low">Price Low</SelectItem>
+                    <SelectItem value="rating">Highest Rated</SelectItem>
                     <SelectItem value="orders">Most Orders</SelectItem>
-                    <SelectItem value="views">Most Views</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -390,18 +368,17 @@ export default function AdminServicesManagement() {
           {/* Services Table */}
           <Card>
             <CardHeader>
-              <CardTitle>All Services ({filteredServices.length})</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="w-5 h-5" />
+                All Services ({sortedServices.length})
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {filteredServices.length === 0 ? (
+              {sortedServices.length === 0 ? (
                 <div className="text-center py-12">
-                  <Briefcase className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-2">
-                    No services found
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Try adjusting your search or filter criteria.
-                  </p>
+                  <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No services found</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Try adjusting your filters or search terms.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -411,34 +388,30 @@ export default function AdminServicesManagement() {
                         <TableHead>Service</TableHead>
                         <TableHead>Seller</TableHead>
                         <TableHead>Category</TableHead>
-                        <TableHead>Price</TableHead>
+                        <TableHead>Price Range</TableHead>
                         <TableHead>Rating</TableHead>
                         <TableHead>Orders</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Created</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredServices.map((service) => (
-                        <TableRow key={service._id} className="hover:bg-gray-50 dark:hover:bg-zinc-800">
+                      {sortedServices.map((service) => (
+                        <TableRow key={service._id}>
                           <TableCell>
-                            <div className="flex items-center space-x-3">
-                              <div className="relative w-12 h-12 rounded-lg overflow-hidden">
-                                <Image
-                                  src={service.thumbnailImage}
-                                  alt={service.title}
-                                  fill
-                                  className="object-cover"
-                                />
-                              </div>
+                            <div className="flex items-center gap-3">
+                              <Image
+                                src={service.thumbnailImage}
+                                alt={service.title}
+                                width={40}
+                                height={40}
+                                className="rounded-lg object-cover"
+                              />
                               <div>
                                 <div className="font-medium">{service.title}</div>
-                                <div className="text-sm text-gray-500 line-clamp-1">{service.description}</div>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {service.isFeatured && (
-                                    <Badge className="bg-blue-100 text-blue-800 text-xs">Featured</Badge>
-                                  )}
+                                <div className="text-sm text-gray-500 truncate max-w-xs">
+                                  {service.description}
                                 </div>
                               </div>
                             </div>
@@ -450,87 +423,60 @@ export default function AdminServicesManagement() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm">{service.category}</div>
-                            <div className="text-xs text-gray-500">{service.subcategory}</div>
+                            <div className="font-medium">{service.category}</div>
+                            {service.subcategory && (
+                              <div className="text-sm text-gray-500">{service.subcategory}</div>
+                            )}
                           </TableCell>
                           <TableCell>
-                            <div className="font-medium">${getMinPrice(service.packages)}</div>
-                            <div className="text-xs text-gray-500">Starting from</div>
+                            <div className="font-medium">
+                              ${getMinPrice(service.packages)} - ${getMaxPrice(service.packages)}
+                            </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                              <span className="font-medium">{service.rating.toFixed(1)}</span>
+                            <div className="flex items-center gap-1">
+                              <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                              <span className="font-medium">{service.rating}</span>
                               <span className="text-sm text-gray-500">({service.reviewCount})</span>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm font-medium">{service.orderCount}</div>
-                            <div className="text-xs text-gray-500">{service.viewCount} views</div>
+                            <div className="font-medium">{service.orderCount}</div>
                           </TableCell>
                           <TableCell>
-                            {getStatusBadge(service.approvalStatus, service.isActive)}
+                            {getStatusBadge(service.approvalStatus)}
                           </TableCell>
                           <TableCell>
                             <div className="text-sm">
-                              {new Date(service.createdAt).toLocaleDateString()}
+                              <div>{new Date(service.createdAt).toLocaleDateString()}</div>
+                              <div className="text-gray-500">
+                                {new Date(service.createdAt).toLocaleTimeString()}
+                              </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <MoreVertical className="h-4 w-4" />
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <ImageIcon className="mr-2 h-4 w-4" />
-                                  View Images
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/marketplace/service/${service._id}`}>
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View Details
+                                  </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                {service.approvalStatus === 'Pending' && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => handleApproveService(service._id)}>
-                                      <CheckCircle className="mr-2 h-4 w-4" />
-                                      Approve
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleRejectService(service._id)}>
-                                      <XCircle className="mr-2 h-4 w-4" />
-                                      Reject
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                <DropdownMenuItem onClick={() => handleToggleActive(service._id)}>
-                                  {service.isActive ? (
-                                    <>
-                                      <XCircle className="mr-2 h-4 w-4" />
-                                      Deactivate
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle className="mr-2 h-4 w-4" />
-                                      Activate
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleToggleFeatured(service._id)}>
-                                  {service.isFeatured ? (
-                                    <>
-                                      <AlertTriangle className="mr-2 h-4 w-4" />
-                                      Remove Featured
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Star className="mr-2 h-4 w-4" />
-                                      Make Featured
-                                    </>
-                                  )}
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteClick(service._id)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete Service
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -544,8 +490,30 @@ export default function AdminServicesManagement() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Service</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this service? This action cannot be undone.
+                All associated data including orders, reviews, and files will be permanently removed.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
+      </ErrorBoundary>
     </Protected>
   );
 }
-

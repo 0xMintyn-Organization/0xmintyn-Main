@@ -44,6 +44,20 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Protected from '@/hooks/useProtected';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { toast } from 'sonner';
+import { marketplaceAPI } from '@/lib/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from 'lucide-react';
 
 interface Product {
   _id: string;
@@ -82,6 +96,8 @@ export default function AdminProductsManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -90,121 +106,12 @@ export default function AdminProductsManagement() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      // Simulate API call - replace with actual API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock data - replace with actual API response
-      setProducts([
-        {
-          _id: '1',
-          title: 'Premium UI Kit - Modern Design',
-          description: 'Complete UI kit with 50+ components for modern web applications',
-          category: 'Design',
-          subcategory: 'UI Kits',
-          thumbnailImage: '/placeholder-product.jpg',
-          sellerId: {
-            _id: 'seller1',
-            sellerName: 'John Doe',
-            storeName: 'Creative Designs Co.'
-          },
-          price: 49,
-          originalPrice: 99,
-          discount: 50,
-          rating: 4.8,
-          reviewCount: 156,
-          purchaseCount: 89,
-          viewCount: 1250,
-          downloadCount: 89,
-          isActive: true,
-          isApproved: true,
-          approvalStatus: 'Approved',
-          isFeatured: true,
-          fileSize: '25.6 MB',
-          fileFormat: 'Figma, Sketch',
-          createdAt: '2024-01-15'
-        },
-        {
-          _id: '2',
-          title: 'Website Template - Business Pro',
-          description: 'Responsive HTML template perfect for business websites',
-          category: 'Web Templates',
-          subcategory: 'HTML Templates',
-          thumbnailImage: '/placeholder-product.jpg',
-          sellerId: {
-            _id: 'seller2',
-            sellerName: 'Jane Smith',
-            storeName: 'Tech Solutions Pro'
-          },
-          price: 79,
-          rating: 4.6,
-          reviewCount: 89,
-          purchaseCount: 67,
-          viewCount: 890,
-          downloadCount: 67,
-          isActive: true,
-          isApproved: true,
-          approvalStatus: 'Approved',
-          isFeatured: false,
-          fileSize: '15.2 MB',
-          fileFormat: 'HTML, CSS, JS',
-          createdAt: '2024-02-20'
-        },
-        {
-          _id: '3',
-          title: 'Digital Marketing Checklist',
-          description: 'Comprehensive checklist for digital marketing campaigns',
-          category: 'Business',
-          subcategory: 'Marketing',
-          thumbnailImage: '/placeholder-product.jpg',
-          sellerId: {
-            _id: 'seller3',
-            sellerName: 'Mike Johnson',
-            storeName: 'Digital Marketing Hub'
-          },
-          price: 19,
-          rating: 4.2,
-          reviewCount: 23,
-          purchaseCount: 12,
-          viewCount: 340,
-          downloadCount: 12,
-          isActive: true,
-          isApproved: false,
-          approvalStatus: 'Pending',
-          fileSize: '2.1 MB',
-          fileFormat: 'PDF',
-          createdAt: '2024-03-10'
-        },
-        {
-          _id: '4',
-          title: 'Content Writing Templates Pack',
-          description: '50+ professional content writing templates for all purposes',
-          category: 'Writing',
-          subcategory: 'Templates',
-          thumbnailImage: '/placeholder-product.jpg',
-          sellerId: {
-            _id: 'seller4',
-            sellerName: 'Sarah Wilson',
-            storeName: 'Content Creation Studio'
-          },
-          price: 29,
-          originalPrice: 59,
-          discount: 50,
-          rating: 4.9,
-          reviewCount: 234,
-          purchaseCount: 145,
-          viewCount: 2100,
-          downloadCount: 145,
-          isActive: false,
-          isApproved: false,
-          approvalStatus: 'Rejected',
-          rejectionReason: 'Copyright infringement concerns',
-          fileSize: '8.7 MB',
-          fileFormat: 'Word, PDF',
-          createdAt: '2023-11-05'
-        }
-      ]);
-    } catch (error) {
+      const data = await marketplaceAPI.getProducts();
+      setProducts(data.products || []);
+    } catch (error: any) {
       console.error('Error fetching products:', error);
+      toast.error(error.message || 'Failed to load products');
     } finally {
       setLoading(false);
     }
@@ -284,6 +191,27 @@ export default function AdminProductsManagement() {
     ));
   };
 
+  const handleDeleteClick = (productId: string) => {
+    setProductToDelete(productId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!productToDelete) return;
+
+    try {
+      await marketplaceAPI.deleteProduct(productToDelete);
+      toast.success('Product deleted successfully');
+      setProducts(prev => prev.filter(p => p._id !== productToDelete));
+    } catch (error: any) {
+      console.error('Error deleting product:', error);
+      toast.error(error.message || 'Failed to delete product');
+    } finally {
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
@@ -297,6 +225,7 @@ export default function AdminProductsManagement() {
 
   return (
     <Protected>
+      <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
         {/* Header */}
         <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
@@ -545,6 +474,14 @@ export default function AdminProductsManagement() {
                                     </>
                                   )}
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="text-red-600"
+                                  onClick={() => handleDeleteClick(product._id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Product
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -557,7 +494,30 @@ export default function AdminProductsManagement() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the product
+                and remove all associated data from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
+      </ErrorBoundary>
     </Protected>
   );
 }
