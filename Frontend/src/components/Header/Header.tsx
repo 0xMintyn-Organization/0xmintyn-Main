@@ -19,7 +19,7 @@ function Header() {
 
     const handleLogout = async () => {
         setLogout(true);
-        await signOut({ callbackUrl: "http://localhost:3000/login" });
+        await signOut({ callbackUrl: "https://app.0xmintyn.com/login" });
       };
       
 

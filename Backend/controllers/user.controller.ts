@@ -324,7 +324,7 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "http://localhost:8000"; 
+            const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com"; 
             // @ts-ignore
             const avatarUrl = `${serverUrl}/uploads/${req.file.filename}`;
 
@@ -357,7 +357,7 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
+            const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
             // @ts-ignore
             const bannerUrl = `${serverUrl}/uploads/${req.file.filename}`;
 
