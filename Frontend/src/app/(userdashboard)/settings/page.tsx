@@ -1,585 +1,516 @@
-"use client"
+"use client";
 import UpdatePassword from "@/components/Settings/UpdatePassword/UpdatePassword";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Protected from "@/hooks/useProtected";
-import {
-  Bell,
-  ChevronRight,
-  Eye,
-  EyeOff,
-  Lock,
-  Settings as SettingsIcon,
-  Wallet,
-} from "lucide-react";
+import { Bell, ChevronRight, Eye, EyeOff, Lock, Settings as SettingsIcon, Wallet, Shield, Code, Download, Trash2, CheckCircle, AlertCircle, Zap, Globe, Smartphone, Mail, CreditCard, DollarSign, Gauge } from "lucide-react";
 import { useState } from "react";
 
 export default function Settings() {
-  // State for theme preview
-  const [previewTheme, setPreviewTheme] = useState<"light" | "dark" | "system">(
-    "system"
-  );
+  const [previewTheme, setPreviewTheme] = useState<"light" | "dark" | "system">("system");
   const [autoLogoutTime, setAutoLogoutTime] = useState<number>(30);
   const [privateMode, setPrivateMode] = useState<boolean>(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
+
+  const SettingCard = ({ icon: Icon, title, description, children, className = "" }: any) => (
+    <div className={`group relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 hover:shadow-lg hover:border-green-400/50 ${className}`}>
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-green-500/0 via-green-500/0 to-green-500/0 group-hover:from-green-500/5 group-hover:via-green-500/5 group-hover:to-green-500/0 transition-all duration-300 pointer-events-none" />
+      <div className="relative z-10">
+        <div className="flex items-start gap-4 mb-4">
+          <div className="p-3 rounded-lg bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/30 dark:to-green-800/20 group-hover:shadow-lg transition-all duration-300">
+            <Icon className="h-6 w-6 text-green-600 dark:text-green-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
+          </div>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+
+  const ToggleSetting = ({ title, description, defaultChecked = false, onChange }: any) => (
+    <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-green-300/50 transition-all duration-300">
+      <div>
+        <p className="font-medium text-gray-900 dark:text-white">{title}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
+      </div>
+      <Switch defaultChecked={defaultChecked} onChange={onChange} className="scale-110" />
+    </div>
+  );
+
+  const IconButton = ({ icon: Icon, label, onClick, variant = "outline" }: any) => (
+    <Button variant={variant} className={`w-full flex justify-between items-center gap-2 py-6 transition-all duration-300 ${variant === "outline" ? "hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 hover:text-green-600" : ""}`} onClick={onClick}>
+      <span>{label}</span>
+      <ChevronRight className="h-4 w-4" />
+    </Button>
+  );
 
   return (
     <Protected>
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8 px-4 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <div className="max-w-7xl mx-auto mb-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">Settings & Preferences</h1>
+              <p className="text-gray-600 dark:text-gray-400 text-lg">Customize your experience and manage your account</p>
+            </div>
+            <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 rounded-lg font-semibold">
+              <CheckCircle className="h-5 w-5 mr-2" />
+              Save All Changes
+            </Button>
+          </div>
 
-    <div className="container mx-auto py-6 px-4">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">User Settings</h1>
-        <Button variant="outline" className="bg-green-700 hover:bg-green-800 text-white hover:text-white">Save All Changes</Button>
-      </div>
+          {/* Status Bar */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div>
+                <p className="font-semibold text-green-900 dark:text-green-200">Profile Active</p>
+                <p className="text-sm text-green-700 dark:text-green-300">All settings synced</p>
+              </div>
+            </div>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center gap-3">
+              <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div>
+                <p className="font-semibold text-blue-900 dark:text-blue-200">Security Level: High</p>
+                <p className="text-sm text-blue-700 dark:text-blue-300">2FA enabled</p>
+              </div>
+            </div>
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-center gap-3">
+              <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <div>
+                <p className="font-semibold text-purple-900 dark:text-purple-200">Premium Member</p>
+                <p className="text-sm text-purple-700 dark:text-purple-300">All features unlocked</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 md:mb-8 mb-10 gap-2 md:gap-0">
-          <TabsTrigger value="general" className="flex items-center gap-2">
-            <SettingsIcon className="h-4 w-4" />
-            <span>General</span>
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Lock className="h-4 w-4" />
-            <span>Security</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="notifications"
-            className="flex items-center gap-2"
-          >
-            <Bell className="h-4 w-4" />
-            <span>Notifications</span>
-          </TabsTrigger>
-          <TabsTrigger value="wallet" className="flex items-center gap-2">
-            <Wallet className="h-4 w-4" />
-            <span>Wallet</span>
-          </TabsTrigger>
-        </TabsList>
+        {/* Tabs Section */}
+        <div className="max-w-7xl mx-auto">
+          <Tabs defaultValue="general" className="w-full">
+            {/* Tab Navigation - Enhanced */}
+            <div className="mb-8 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-2 shadow-sm sticky">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full gap-2 bg-transparent h-auto p-0">
+                <TabsTrigger value="general" className="flex items-center gap-2 py-3 px-4 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-green-700 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300">
+                  <Globe className="h-5 w-5" />
+                  <span className="hidden sm:inline">General</span>
+                </TabsTrigger>
+                <TabsTrigger value="security" className="flex items-center gap-2 py-3 px-4 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-green-700 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300">
+                  <Lock className="h-5 w-5" />
+                  <span className="hidden sm:inline">Security</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="notifications"
+                  className="flex items-center gap-2 py-3 px-4 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-green-700 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+                >
+                  <Bell className="h-5 w-5" />
+                  <span className="hidden sm:inline">Alerts</span>
+                </TabsTrigger>
+                <TabsTrigger value="wallet" className="flex items-center gap-2 py-3 px-4 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-green-700 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300">
+                  <CreditCard className="h-5 w-5" />
+                  <span className="hidden sm:inline">Wallet</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-        {/* GENERAL SETTINGS */}
-        <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle>General Settings</CardTitle>
-              <CardDescription>
-                Manage your language, theme, and accessibility preferences.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Language Selection */}
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Language Selection</h3>
-                <Select defaultValue="en">
-                  <SelectTrigger>
+            {/* GENERAL SETTINGS */}
+            <TabsContent value="general" className="space-y-6 animate-in fade-in duration-300">
+              <SettingCard icon={Globe} title="Language & Region" description="Choose your preferred language and regional settings">
+                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                  <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 rounded-lg">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                    <SelectItem value="fr">Français</SelectItem>
-                    <SelectItem value="de">Deutsch</SelectItem>
-                    <SelectItem value="zh">中文</SelectItem>
+                    <SelectItem value="en">
+                      <span className="flex items-center gap-2">🇺🇸 English (US)</span>
+                    </SelectItem>
+                    <SelectItem value="es">
+                      <span className="flex items-center gap-2">🇪🇸 Español (Spain)</span>
+                    </SelectItem>
+                    <SelectItem value="fr">
+                      <span className="flex items-center gap-2">🇫🇷 Français (France)</span>
+                    </SelectItem>
+                    <SelectItem value="de">
+                      <span className="flex items-center gap-2">🇩🇪 Deutsch (Germany)</span>
+                    </SelectItem>
+                    <SelectItem value="zh">
+                      <span className="flex items-center gap-2">🇨🇳 中文 (Simplified)</span>
+                    </SelectItem>
+                    <SelectItem value="hi">
+                      <span className="flex items-center gap-2">🇮🇳 हिन्दी (Hindi)</span>
+                    </SelectItem>
+                    <SelectItem value="pt">
+                      <span className="flex items-center gap-2">🇵🇹 Português (Portugal)</span>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </SettingCard>
 
               {/* Theme Preferences */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Theme Preferences</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div
-                    className={`border rounded-lg p-4 cursor-pointer ${
-                      previewTheme === "light" ? "ring-2 ring-primary" : ""
-                    }`}
-                    onClick={() => setPreviewTheme("light")}
-                  >
-                    <div className="bg-white border rounded-md p-2 mb-2">
-                      <div className="h-2 w-16 bg-gray-300 rounded-full mb-1"></div>
-                      <div className="h-2 w-10 bg-gray-200 rounded-full"></div>
+              <SettingCard icon={SettingsIcon} title="Theme & Appearance" description="Customize how the platform looks on your devices">
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { value: "light", label: "Light", icon: "☀️" },
+                    { value: "dark", label: "Dark", icon: "🌙" },
+                    { value: "system", label: "System", icon: "💻" },
+                  ].map((theme) => (
+                    <div
+                      key={theme.value}
+                      onClick={() => setPreviewTheme(theme.value as any)}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${previewTheme === theme.value ? "border-green-600 bg-green-50 dark:bg-green-900/20" : "border-gray-300 dark:border-gray-600 hover:border-green-400"}`}
+                    >
+                      <div className="text-3xl mb-2 text-center">{theme.icon}</div>
+                      <p className="font-medium text-center text-gray-900 dark:text-white">{theme.label}</p>
                     </div>
-                    <span className="text-sm font-medium">Light</span>
-                  </div>
-
-                  <div
-                    className={`border rounded-lg p-4 cursor-pointer ${
-                      previewTheme === "dark" ? "ring-2 ring-primary" : ""
-                    }`}
-                    onClick={() => setPreviewTheme("dark")}
-                  >
-                    <div className="bg-zinc-900 border border-gray-700 rounded-md p-2 mb-2">
-                      <div className="h-2 w-16 bg-gray-700 rounded-full mb-1"></div>
-                      <div className="h-2 w-10 bg-gray-800 rounded-full"></div>
-                    </div>
-                    <span className="text-sm font-medium">Dark</span>
-                  </div>
+                  ))}
                 </div>
-              </div>
+              </SettingCard>
 
               {/* Accessibility Settings */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Accessibility Settings</h3>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm">Font Size</label>
-                    <span className="text-xs">Medium</span>
+              <SettingCard icon={Smartphone} title="Accessibility" description="Make the platform more comfortable to use">
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="font-medium text-gray-900 dark:text-white">Font Size</label>
+                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">{50}%</span>
+                    </div>
+                    <Slider defaultValue={[50]} max={100} step={10} className="cursor-pointer" />
                   </div>
-                  <Slider defaultValue={[50]} max={100} step={10} />
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium">
-                      High-contrast mode
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      Enhance visibility with higher contrast colors
-                    </p>
-                  </div>
-                  <Switch />
-                </div>
+                  <ToggleSetting title="High-Contrast Mode" description="Enhance visibility with higher contrast colors" defaultChecked={false} />
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium">
-                      Text-to-speech
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      Enable screen reader compatibility
-                    </p>
-                  </div>
-                  <Switch />
+                  <ToggleSetting title="Text-to-Speech" description="Enable screen reader compatibility" defaultChecked={false} />
+
+                  <ToggleSetting title="Reduce Motion" description="Minimize animations and transitions" defaultChecked={false} />
                 </div>
-              </div>
+              </SettingCard>
 
               {/* Auto-Logout Timer */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-medium">Auto-Logout Timer</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Set session timeout duration
-                    </p>
+              <SettingCard icon={Gauge} title="Session Management" description="Control your login session duration">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-blue-50/50 dark:from-blue-900/20 dark:to-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <span className="font-semibold text-gray-900 dark:text-white">Auto-Logout After</span>
+                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">{autoLogoutTime}m</span>
                   </div>
-                  <span className="font-medium">{autoLogoutTime} minutes</span>
+                  <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.preventDefault()} className="cursor-pointer">
+                    <Slider value={[autoLogoutTime]} onValueChange={(values) => setAutoLogoutTime(values[0])} min={5} max={120} step={5} />
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">⏱️ You'll be logged out automatically after {autoLogoutTime} minutes of inactivity for security</p>
                 </div>
-                <Slider
-                  defaultValue={[30]}
-                  min={5}
-                  max={120}
-                  step={5}
-                  onValueChange={(val) => setAutoLogoutTime(val[0])}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </SettingCard>
+            </TabsContent>
 
-        {/* SECURITY & PRIVACY */}
-        <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle>Security & Privacy</CardTitle>
-              <CardDescription>
-                Manage your password, authentication methods, and privacy
-                settings.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+            {/* SECURITY & PRIVACY */}
+            <TabsContent value="security" className="space-y-6 animate-in fade-in duration-300">
               {/* Change Password */}
-             <UpdatePassword />
+              <SettingCard icon={Lock} title="Password & Authentication" description="Update your password and manage login credentials">
+                <UpdatePassword />
+              </SettingCard>
 
               {/* 2FA */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">
-                  Two-Factor Authentication
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Email Verification</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Receive a code via email
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
+              <SettingCard icon={Shield} title="Two-Factor Authentication (2FA)" description="Add an extra layer of security to your account">
+                <div className="space-y-3">
+                  <ToggleSetting title="Email Verification" description="Receive a verification code via email" defaultChecked={true} />
 
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Authenticator App</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Use an app like Google Authenticator
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
+                  <ToggleSetting title="Authenticator App" description="Use Google Authenticator, Authy, or Microsoft Authenticator" defaultChecked={false} />
 
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">SMS Verification</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Receive a code via text message
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
+                  <ToggleSetting title="SMS Verification" description="Receive a code via text message" defaultChecked={false} />
+
+                  <ToggleSetting title="Security Keys" description="Use hardware keys like YubiKey (U2F/WebAuthn)" defaultChecked={false} />
                 </div>
-              </div>
+              </SettingCard>
 
               {/* Privacy Mode */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-medium">Private Mode</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Hide your profile from public view
-                  </p>
+              <SettingCard icon={Eye} title="Privacy & Visibility" description="Control who can see your profile and activities">
+                <div className="space-y-3">
+                  <ToggleSetting title="Private Profile" description="Hide your profile from public search and browsing" defaultChecked={privateMode} onChange={setPrivateMode} />
+
+                  <ToggleSetting title="Show Online Status" description="Let others see when you're online" defaultChecked={true} />
+
+                  <ToggleSetting title="Allow Message Requests" description="Permit anyone to send you messages" defaultChecked={true} />
+
+                  <ToggleSetting title="Activity Status" description="Share your activity status with connections" defaultChecked={false} />
                 </div>
-                <div className="flex items-center gap-2">
-                  {privateMode ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  <Switch onCheckedChange={setPrivateMode} />
-                </div>
-              </div>
+              </SettingCard>
 
               {/* Recovery Methods */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Recovery Methods</h3>
-                <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full flex justify-between hover:bg-green-800 hover:text-white"
-                  >
-                    Add trusted contacts
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full flex justify-between hover:bg-green-800 hover:text-white"
-                  >
-                    Generate backup codes
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+              <SettingCard icon={AlertCircle} title="Account Recovery" description="Set up recovery options to regain access if needed">
+                <div className="space-y-3">
+                  <IconButton icon={Mail} label="Add Recovery Email" variant="outline" />
+                  <IconButton icon={Smartphone} label="Add Recovery Phone" variant="outline" />
+                  <IconButton icon={Code} label="Generate Backup Codes" variant="outline" />
                 </div>
-              </div>
+              </SettingCard>
 
               {/* DApp & API Permissions */}
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">DApp & API Permissions</h3>
-                <p className="text-sm text-muted-foreground">
-                  Control access for third-party integrations
-                </p>
-                <div className="border rounded-lg divide-y">
-                  <div className="flex items-center justify-between p-3">
-                    <div>
-                      <h4 className="font-medium">DeFi Aggregator</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Read-only access to wallet balance
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-3">
-                    <div>
-                      <h4 className="font-medium">NFT Marketplace</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Transaction signing permissions
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              </div>
+              <SettingCard icon={Code} title="Connected Apps & Integrations" description="Manage third-party app permissions">
+                <div className="space-y-3">
+                  <ToggleSetting title="DeFi Aggregator" description="Read-only access to wallet balance" defaultChecked={true} />
 
-              {/* Data Export & Account Deletion */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">
-                  Data & Account Management
-                </h3>
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full hover:bg-green-800 hover:text-white">
-                    Export All Data (GDPR)
+                  <ToggleSetting title="NFT Marketplace" description="Transaction signing permissions" defaultChecked={true} />
+
+                  <ToggleSetting title="Analytics Platform" description="View your usage and performance data" defaultChecked={true} />
+
+                  <ToggleSetting title="External Integrations" description="Connect with third-party services" defaultChecked={false} />
+                </div>
+              </SettingCard>
+
+              {/* Data Management */}
+              <SettingCard icon={Download} title="Data & Account Management" description="Control your data and account">
+                <div className="space-y-3">
+                  <Button variant="outline" className="w-full justify-between py-6 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300">
+                    <span className="flex items-center gap-2">
+                      <Download className="h-5 w-5" />
+                      Export All Data (GDPR)
+                    </span>
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button variant="destructive" className="w-full">
-                    Request Account Deletion
+
+                  <Button variant="destructive" className="w-full justify-between py-6 bg-red-600 hover:bg-red-700">
+                    <span className="flex items-center gap-2">
+                      <Trash2 className="h-5 w-5" />
+                      Request Account Deletion
+                    </span>
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </SettingCard>
+            </TabsContent>
 
-        {/* NOTIFICATIONS */}
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notifications & Communication</CardTitle>
-              <CardDescription>
-                Customize your notification preferences.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+            {/* NOTIFICATIONS */}
+            <TabsContent value="notifications" className="space-y-6 animate-in fade-in duration-300">
               {/* Email & In-App */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Email & In-App Alerts</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Email Notifications</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Receive important updates via email
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
+              <SettingCard icon={Mail} title="Email & In-App Alerts" description="Manage your notification channels">
+                <div className="space-y-3">
+                  <ToggleSetting title="Email Notifications" description="Receive important updates via email" defaultChecked={true} />
 
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Push Notifications</h4>
-                      <p className="text-xs text-muted-foreground">
-                        In-app notifications and alerts
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
+                  <ToggleSetting title="Push Notifications" description="In-app notifications and alerts" defaultChecked={true} />
 
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Browser Notifications</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Desktop alerts when browser is open
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
+                  <ToggleSetting title="Browser Notifications" description="Desktop alerts when browser is open" defaultChecked={false} />
+
+                  <ToggleSetting title="SMS Notifications" description="Critical alerts via text message" defaultChecked={false} />
                 </div>
-              </div>
+              </SettingCard>
 
               {/* Transaction & Claim Alerts */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">
-                  Transaction & Claim Alerts
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Transaction Confirmations</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Notifications when transactions complete
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
+              <SettingCard icon={Zap} title="Transaction & Claim Alerts" description="Get notified about your transactions">
+                <div className="space-y-3">
+                  <ToggleSetting title="Transaction Confirmations" description="Notifications when transactions complete" defaultChecked={true} />
 
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Claim Reminders</h4>
-                      <p className="text-xs text-muted-foreground">Notifications for available UBI claims</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Gas Price Alerts</h4>
-                      <p className="text-xs text-muted-foreground">Notifications when gas prices are favorable</p>
-                    </div>
-                    <Switch />
-                  </div>
+                  <ToggleSetting title="Claim Reminders" description="Notifications for available UBI claims" defaultChecked={true} />
+
+                  <ToggleSetting title="Gas Price Alerts" description="Notify when gas prices are favorable" defaultChecked={false} />
+
+                  <ToggleSetting title="Failed Transaction Alerts" description="Get notified about failed transactions" defaultChecked={true} />
                 </div>
-              </div>
-              
+              </SettingCard>
+
               {/* UBI Reports */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">UBI Reports</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Weekly Reports</h4>
-                      <p className="text-xs text-muted-foreground">Receive weekly UBI summaries</p>
-                    </div>
-                    <Switch />
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Monthly Reports</h4>
-                      <p className="text-xs text-muted-foreground">Receive detailed monthly UBI reports</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
+              <SettingCard icon={DollarSign} title="UBI Reports & Summaries" description="Receive periodic UBI updates">
+                <div className="space-y-3">
+                  <ToggleSetting title="Weekly Reports" description="Receive weekly UBI earnings summaries" defaultChecked={false} />
+
+                  <ToggleSetting title="Monthly Reports" description="Receive detailed monthly UBI analytics" defaultChecked={true} />
+
+                  <ToggleSetting title="Quarterly Reviews" description="Quarterly performance and growth reports" defaultChecked={false} />
+
+                  <ToggleSetting title="Achievement Notifications" description="Alerts for milestones and achievements" defaultChecked={true} />
                 </div>
-              </div>
-              
+              </SettingCard>
+
               {/* Community Announcements */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Community Announcements</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Community Updates</h4>
-                      <p className="text-xs text-muted-foreground">News about community initiatives</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Community Events</h4>
-                      <p className="text-xs text-muted-foreground">Announcements about virtual meetups</p>
-                    </div>
-                    <Switch />
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Protocol Updates</h4>
-                      <p className="text-xs text-muted-foreground">Important system and protocol changes</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
+              <SettingCard icon={Bell} title="Community & Product Updates" description="Stay informed about community news">
+                <div className="space-y-3">
+                  <ToggleSetting title="Community Updates" description="News about community initiatives and events" defaultChecked={true} />
+
+                  <ToggleSetting title="Community Events" description="Announcements about meetups and webinars" defaultChecked={false} />
+
+                  <ToggleSetting title="Protocol Updates" description="Important system and protocol changes" defaultChecked={true} />
+
+                  <ToggleSetting title="Marketing & Promotions" description="Special offers and promotions" defaultChecked={false} />
+
+                  <ToggleSetting title="Product Announcements" description="New features and product launches" defaultChecked={true} />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* WALLET & PAYMENT */}
-        <TabsContent value="wallet">
-          <Card>
-            <CardHeader>
-              <CardTitle>Wallet & Payment Settings</CardTitle>
-              <CardDescription>Manage your wallet connections and payment preferences.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Wallet Management */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Connected Wallets</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Wallet className="h-4 w-4 text-blue-500" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">MetaMask</h4>
-                        <p className="text-xs text-muted-foreground">0x71C...F3E2 (Primary)</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="bg-green-900 hover:bg-green-600 text-white hover:text-white">Disconnect</Button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                        <Wallet className="h-4 w-4 text-purple-500" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">WalletConnect</h4>
-                        <p className="text-xs text-muted-foreground">0x89B...42A1</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col md:flex-row gap-2">
-                      <Button variant="outline" size="sm" className="bg-green-700 hover:bg-green-800 text-white hover:text-white">Set Primary</Button>
-                      <Button variant="outline" size="sm" className="bg-green-900 hover:bg-green-600 text-white hover:text-white">Disconnect</Button>
-                    </div>
-                  </div>
-                  
-                  <Button className="w-full bg-green-700 hover:bg-green-800 text-white">+ Connect New Wallet</Button>
-                </div>
-              </div>
-              
-              {/* Gas Fee Preferences */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Gas Fee Preferences</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Auto-adjust Gas Fees</h4>
-                      <p className="text-xs text-muted-foreground">Optimize based on network conditions</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Default Gas Price Strategy</label>
-                    <Select defaultValue="balanced">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select strategy" />
+              </SettingCard>
+
+              {/* Notification Schedule */}
+              <SettingCard icon={Smartphone} title="Notification Quiet Hours" description="Pause notifications during specific times">
+                <div className="space-y-4">
+                  <ToggleSetting title="Enable Quiet Hours" description="Disable notifications during your rest time" defaultChecked={false} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <Select defaultValue="22">
+                      <SelectTrigger className="border-gray-300 dark:border-gray-600 rounded-lg">
+                        <SelectValue placeholder="Start time" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="fast">Fast (Higher Cost)</SelectItem>
-                        <SelectItem value="balanced">Balanced</SelectItem>
-                        <SelectItem value="economic">Economic (Slower)</SelectItem>
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>
+                            {String(i).padStart(2, "0")}:00
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select defaultValue="08">
+                      <SelectTrigger className="border-gray-300 dark:border-gray-600 rounded-lg">
+                        <SelectValue placeholder="End time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>
+                            {String(i).padStart(2, "0")}:00
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-              </div>
-              
-              {/* Fiat On/Off Ramp */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Fiat On/Off Ramp Integration</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                        <span className="text-green-500 font-bold">$</span>
+              </SettingCard>
+            </TabsContent>
+
+            {/* WALLET & PAYMENT */}
+            <TabsContent value="wallet" className="space-y-6 animate-in fade-in duration-300">
+              {/* Wallet Management */}
+              <SettingCard icon={Wallet} title="Connected Wallets" description="Manage your blockchain wallet connections">
+                <div className="space-y-3">
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-50/50 dark:from-blue-900/20 dark:to-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center justify-between hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-blue-600/20">
+                        <Wallet className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
-                        <h4 className="font-medium">Stripe</h4>
-                        <p className="text-xs text-muted-foreground">Credit/debit card payments</p>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">MetaMask</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">0x71C...F3E2 (Primary)</p>
                       </div>
                     </div>
-                    <Switch defaultChecked />
+                    <Button variant="outline" size="sm" className="bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:text-red-700">
+                      Disconnect
+                    </Button>
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-500 font-bold">R</span>
+
+                  <div className="bg-gradient-to-r from-purple-50 to-purple-50/50 dark:from-purple-900/20 dark:to-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-center justify-between hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-purple-600/20">
+                        <Wallet className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                       </div>
                       <div>
-                        <h4 className="font-medium">Ramp</h4>
-                        <p className="text-xs text-muted-foreground">Bank transfers & more</p>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">WalletConnect</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">0x89B...42A1</p>
                       </div>
                     </div>
-                    <Switch />
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400">
+                        Set Primary
+                      </Button>
+                      <Button variant="outline" size="sm" className="bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
+                        Disconnect
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
-                        <span className="text-yellow-500 font-bold">M</span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">MoonPay</h4>
-                        <p className="text-xs text-muted-foreground">Global payment options</p>
-                      </div>
-                    </div>
-                    <Switch />
+
+                  <Button className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-6 rounded-lg font-semibold">
+                    <span>+ Connect New Wallet</span>
+                  </Button>
+                </div>
+              </SettingCard>
+
+              {/* Gas Fee Preferences */}
+              <SettingCard icon={Gauge} title="Gas Fee Settings" description="Optimize your transaction costs">
+                <div className="space-y-4">
+                  <ToggleSetting title="Auto-Adjust Gas Fees" description="Optimize based on current network conditions" defaultChecked={true} />
+
+                  <div>
+                    <label className="font-semibold text-gray-900 dark:text-white mb-3 block">Gas Price Strategy</label>
+                    <Select defaultValue="balanced">
+                      <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 rounded-lg py-6">
+                        <SelectValue placeholder="Select strategy" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fast">⚡ Fast (Higher Cost)</SelectItem>
+                        <SelectItem value="balanced">⚖️ Balanced (Recommended)</SelectItem>
+                        <SelectItem value="economic">💰 Economic (Slower)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-      </Tabs>
-    </div>
+              </SettingCard>
+
+              {/* Fiat On/Off Ramp */}
+              <SettingCard icon={CreditCard} title="Fiat On/Off Ramp Integration" description="Buy and sell crypto with fiat currency">
+                <div className="space-y-3">
+                  <ToggleSetting title="Stripe" description="💳 Credit/debit card payments" defaultChecked={true} />
+
+                  <ToggleSetting title="Ramp" description="🏦 Bank transfers & more payment methods" defaultChecked={false} />
+
+                  <ToggleSetting title="MoonPay" description="🌍 Global payment options (150+ countries)" defaultChecked={false} />
+
+                  <ToggleSetting title="Transak" description="💱 Fast on/off ramps" defaultChecked={false} />
+                </div>
+              </SettingCard>
+
+              {/* Payment Preferences */}
+              <SettingCard icon={DollarSign} title="Payment Preferences" description="Set your default payment methods">
+                <div className="space-y-4">
+                  <div>
+                    <label className="font-semibold text-gray-900 dark:text-white mb-3 block">Preferred Currency</label>
+                    <Select defaultValue="usd">
+                      <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 rounded-lg py-6">
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="usd">💵 USD - US Dollar</SelectItem>
+                        <SelectItem value="eur">💶 EUR - Euro</SelectItem>
+                        <SelectItem value="gbp">💷 GBP - British Pound</SelectItem>
+                        <SelectItem value="btc">₿ BTC - Bitcoin</SelectItem>
+                        <SelectItem value="eth">Ξ ETH - Ethereum</SelectItem>
+                        <SelectItem value="usdt">USDT - Tether</SelectItem>
+                        <SelectItem value="usdc">USDC - USD Coin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <ToggleSetting title="Auto-Conversion" description="Automatically convert to preferred currency" defaultChecked={true} />
+                </div>
+              </SettingCard>
+
+              {/* Transaction History */}
+              <SettingCard icon={Zap} title="Transaction History" description="View and manage your transaction records">
+                <Button variant="outline" className="w-full justify-between py-6 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300">
+                  <span className="flex items-center gap-2">📊 View Detailed Transaction History</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </SettingCard>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Footer Info */}
+        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center md:text-left">
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">🔒 Security</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Your data is encrypted and protected with industry-standard security measures.</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">🔄 Auto-Sync</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">All settings are automatically synced across your devices in real-time.</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">❓ Need Help?</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Visit our <span className="text-green-600 dark:text-green-400 font-semibold cursor-pointer hover:underline">support center</span> for more information.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </Protected>
   );
 }
