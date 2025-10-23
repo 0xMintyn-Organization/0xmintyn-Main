@@ -230,8 +230,8 @@ async function createTestData() {
     console.log(`Buyer: ${buyer.email} (${buyer.username})`);
     console.log(`Seller: ${seller.email} (${seller.username})`);
     console.log('\n🔗 Test URLs:');
-    console.log('Buyer Orders: http://localhost:8000/api/v1/marketplace/orders/buyer');
-    console.log('Seller Orders: http://localhost:8000/api/v1/marketplace/orders/seller');
+    console.log('Buyer Orders: https://appbackend.0xmintyn.com/api/v1/marketplace/orders/buyer');
+    console.log('Seller Orders: https://appbackend.0xmintyn.com/api/v1/marketplace/orders/seller');
     
     process.exit(0);
     
