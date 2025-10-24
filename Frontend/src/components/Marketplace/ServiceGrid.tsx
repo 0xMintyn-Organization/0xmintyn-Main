@@ -55,7 +55,7 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
     if (imagePath.startsWith('http')) return imagePath;
     
     // Handle environment variable with trailing slash
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     
     // Remove trailing slash if present
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
