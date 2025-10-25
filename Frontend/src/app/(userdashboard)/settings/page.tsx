@@ -7,14 +7,23 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Protected from "@/hooks/useProtected";
-import { Bell, ChevronRight, Eye, EyeOff, Lock, Settings as SettingsIcon, Wallet, Shield, Code, Download, Trash2, CheckCircle, AlertCircle, Zap, Globe, Smartphone, Mail, CreditCard, DollarSign, Gauge } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useFontSize } from "@/contexts/FontSizeContext";
+import { Bell, ChevronRight, Eye, EyeOff, Lock, Settings as SettingsIcon, Wallet, Shield, Code, Download, Trash2, CheckCircle, AlertCircle, Zap, Globe, Smartphone, Mail, CreditCard, DollarSign, Gauge, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 
 export default function Settings() {
-  const [previewTheme, setPreviewTheme] = useState<"light" | "dark" | "system">("system");
+  const { theme, toggleTheme } = useTheme();
+  const { fontSize, setFontSize, resetFontSize } = useFontSize();
   const [autoLogoutTime, setAutoLogoutTime] = useState<number>(30);
   const [privateMode, setPrivateMode] = useState<boolean>(false);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
+
+  const handleThemeChange = (newTheme: "light" | "dark") => {
+    if (newTheme !== theme) {
+      toggleTheme();
+    }
+  };
 
   const SettingCard = ({ icon: Icon, title, description, children, className = "" }: any) => (
     <div className={`group relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 hover:shadow-lg hover:border-green-400/50 ${className}`}>
@@ -61,10 +70,12 @@ export default function Settings() {
               <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">Settings & Preferences</h1>
               <p className="text-gray-600 dark:text-gray-400 text-lg">Customize your experience and manage your account</p>
             </div>
-            <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 rounded-lg font-semibold">
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Save All Changes
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 rounded-lg font-semibold">
+                <CheckCircle className="h-5 w-5 mr-2" />
+                Save All Changes
+              </Button>
+            </div>
           </div>
 
           {/* Status Bar */}
@@ -156,21 +167,37 @@ export default function Settings() {
 
               {/* Theme Preferences */}
               <SettingCard icon={SettingsIcon} title="Theme & Appearance" description="Customize how the platform looks on your devices">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   {[
                     { value: "light", label: "Light", icon: "☀️" },
                     { value: "dark", label: "Dark", icon: "🌙" },
-                    { value: "system", label: "System", icon: "💻" },
-                  ].map((theme) => (
+                  ].map((themeOption) => (
                     <div
-                      key={theme.value}
-                      onClick={() => setPreviewTheme(theme.value as any)}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${previewTheme === theme.value ? "border-green-600 bg-green-50 dark:bg-green-900/20" : "border-gray-300 dark:border-gray-600 hover:border-green-400"}`}
+                      key={themeOption.value}
+                      onClick={() => handleThemeChange(themeOption.value as "light" | "dark")}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
+                        theme === themeOption.value 
+                          ? "border-green-600 bg-green-50 dark:bg-green-900/20 shadow-lg" 
+                          : "border-gray-300 dark:border-gray-600 hover:border-green-400 hover:shadow-md"
+                      }`}
                     >
-                      <div className="text-3xl mb-2 text-center">{theme.icon}</div>
-                      <p className="font-medium text-center text-gray-900 dark:text-white">{theme.label}</p>
+                      <div className="text-3xl mb-2 text-center">{themeOption.icon}</div>
+                      <p className="font-medium text-center text-gray-900 dark:text-white">{themeOption.label}</p>
+                      {theme === themeOption.value && (
+                        <div className="flex justify-center mt-2">
+                          <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        </div>
+                      )}
                     </div>
                   ))}
+                </div>
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>Current Theme:</strong> {theme === "light" ? "☀️ Light Mode" : "🌙 Dark Mode"}
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                    Theme changes are applied instantly and saved automatically
+                  </p>
                 </div>
               </SettingCard>
 
@@ -180,9 +207,43 @@ export default function Settings() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <label className="font-medium text-gray-900 dark:text-white">Font Size</label>
-                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">{50}%</span>
+                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">{fontSize}%</span>
                     </div>
-                    <Slider defaultValue={[50]} max={100} step={10} className="cursor-pointer" />
+                    <div className="w-full">
+                      <input
+                        type="range"
+                        min="90"
+                        max="110"
+                        step="1"
+                        value={fontSize}
+                        onChange={(e) => setFontSize(parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                        style={{
+                          background: `linear-gradient(to right, #10b981 0%, #10b981 ${((fontSize - 90) / (110 - 90)) * 100}%, #e5e7eb ${((fontSize - 90) / (110 - 90)) * 100}%, #e5e7eb 100%)`
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                      <span>90% (Compact)</span>
+                      <span>100% (Normal)</span>
+                      <span>110% (Comfortable)</span>
+                    </div>
+                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        <strong>Current Size:</strong> {fontSize}% - {fontSize < 95 ? "Compact" : fontSize < 105 ? "Normal" : "Comfortable"}
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                        Enhanced text scaling with proper line heights and spacing for better readability
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={resetFontSize}
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full border-gray-300 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                    >
+                      Reset to Normal (100%)
+                    </Button>
                   </div>
 
                   <ToggleSetting title="High-Contrast Mode" description="Enhance visibility with higher contrast colors" defaultChecked={false} />
@@ -196,14 +257,51 @@ export default function Settings() {
               {/* Auto-Logout Timer */}
               <SettingCard icon={Gauge} title="Session Management" description="Control your login session duration">
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-blue-50/50 dark:from-blue-900/20 dark:to-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <span className="font-semibold text-gray-900 dark:text-white">Auto-Logout After</span>
-                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">{autoLogoutTime}m</span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="font-medium text-gray-900 dark:text-white">Auto-Logout After</label>
+                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">{autoLogoutTime}m</span>
+                    </div>
+                    <div 
+                      className="w-full cursor-pointer slider-container"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onTouchStart={(e) => e.preventDefault()}
+                    >
+                      <input
+                        type="range"
+                        min="5"
+                        max="120"
+                        step="5"
+                        value={autoLogoutTime}
+                        onChange={(e) => setAutoLogoutTime(parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                        style={{
+                          background: `linear-gradient(to right, #10b981 0%, #10b981 ${((autoLogoutTime - 5) / (120 - 5)) * 100}%, #e5e7eb ${((autoLogoutTime - 5) / (120 - 5)) * 100}%, #e5e7eb 100%)`
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                      <span>5m (Quick)</span>
+                      <span>60m (Normal)</span>
+                      <span>120m (Long)</span>
+                    </div>
+                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        <strong>Current Time:</strong> {autoLogoutTime} minutes - {autoLogoutTime < 30 ? "Quick" : autoLogoutTime < 90 ? "Normal" : "Extended"}
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                        You'll be logged out automatically after {autoLogoutTime} minutes of inactivity for security
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => setAutoLogoutTime(30)}
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full border-gray-300 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                    >
+                      Reset to Default (30m)
+                    </Button>
                   </div>
-                  <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.preventDefault()} className="cursor-pointer">
-                    <Slider value={[autoLogoutTime]} onValueChange={(values) => setAutoLogoutTime(values[0])} min={5} max={120} step={5} />
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">⏱️ You'll be logged out automatically after {autoLogoutTime} minutes of inactivity for security</p>
                 </div>
               </SettingCard>
             </TabsContent>
