@@ -20,3 +20,5 @@ Always reuse existing utilities (errorHandler, JWT functions, database connectio
 Always reuse existing helper functions and patterns across the codebase
 Check if a similar function/middleware already exists before creating a new one
 Maintain consistency by using the same approaches throughout the project
+
+Do not change in used components of backend like controllers and routes unless they are neccasry to change 

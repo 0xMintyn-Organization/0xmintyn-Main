@@ -37,6 +37,11 @@ export interface IUser extends Document {
     isVerified: boolean;
     isSeller: boolean;
     products: mongoose.Types.ObjectId[];
+    socialAccounts: {
+        platform: string;
+        username: string;
+        isVerified: boolean;
+    }[];
     comparePassword: (password: string) => Promise<boolean>;
     SignAccessToken: () => string;
     SignRefreshToken: () => string;
@@ -128,6 +133,22 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
         type: String,
         default: 'https://static.vecteezy.com/system/resources/previews/005/129/844/original/profile-user-icon-isolated-on-white-background-eps10-free-vector.jpg',
     },
+    socialAccounts: [
+        {
+            platform: {
+                type: String,
+                required: true,
+            },
+            username: {
+                type: String,
+                required: true,
+            },
+            isVerified: {
+                type: Boolean,
+                default: false,
+            }
+        }
+    ],
     purchasedProducts: [
         {
             productId: String,

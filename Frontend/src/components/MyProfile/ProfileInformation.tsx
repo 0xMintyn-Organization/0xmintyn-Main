@@ -1,8 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/formatters";
 import {
@@ -12,10 +18,26 @@ import {
 } from "@/redux/features/user/userApi";
 import Image from "next/image";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { FaPencil } from "react-icons/fa6";
 import { useSelector } from "react-redux";
-import TabsCreate from "./TabsCreate/TabsCreate";
-import Link from "next/link";
+import {
+  Camera,
+  Edit,
+  Save,
+  X,
+  Mail,
+  MapPin,
+  Calendar,
+  User,
+  Wallet,
+  Check,
+  Upload,
+  Image as ImageIcon,
+  Shield,
+  Star,
+  Award,
+  Globe,
+  Verified,
+} from "lucide-react";
 
 interface ProfilePageProps {
   isOwnProfile: boolean;
@@ -24,12 +46,12 @@ interface ProfilePageProps {
 
 function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
   const { toast } = useToast();
-  const [user, setUser] = useState<any>(userData);
+  const { user: reduxUser } = useSelector((state: any) => state.auth);
+  const user = userData || reduxUser;
   const [username, setUsername] = useState(user?.username || "");
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [loadUser, setLoadUser] = useState(false);
   const [editedUsername, setEditedUsername] = useState(username);
   const [updateBanner, { isSuccess, isLoading, error }] =
     useUpdateBannerMutation();
@@ -49,9 +71,10 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
       error: usernameError,
     },
   ] = useEditUsernameMutation();
-  // const { } = useLoadUserQuery(undefined, { skip: loadUser ? false : true });
 
   const { walletAddress } = useSelector((state: any) => state.auth);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     firstName: user?.firstName || "",
@@ -61,6 +84,22 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
     bio: user?.bio || "",
     dateOfBirth: user?.dateOfBirth || "",
   });
+
+  // Helper function to construct full image URLs
+  const getFullImageUrl = (imagePath: string | undefined) => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    // Handle environment variable with trailing slash
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+    
+    // Ensure imagePath starts with /
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -99,553 +138,563 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
           body: JSON.stringify({
             firstName: formData.firstName,
             lastName: formData.lastName,
-            dateOfBirth: formData.dateOfBirth,
             nationality: formData.country,
             bio: formData.bio,
+            dateOfBirth: formData.dateOfBirth,
           }),
         }
       );
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        console.log("Error updating profile:", data.error);
+      console.log('Profile update result:', data);
+      if (data.success) {
+        setIsEditing(false);
+        toast({
+          title: "Success!",
+          description: "Profile updated successfully",
+        });
+        // Reload to fetch updated user data
+        window.location.reload();
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Failed to update profile",
+          variant: "destructive",
+        });
       }
-
-      setIsEditing(false);
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
-        variant: "default",
-      });
     } catch (error) {
-      console.error("Failed to update profile:", error);
-      alert("Failed to update profile. Please try again.");
+      toast({
+        title: "Error",
+        description: "An error occurred while updating profile",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const [handledSuccess, setHandledSuccess] = useState<Set<string>>(new Set());
-  const [handledError, setHandledError] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    const newHandledSuccess = new Set(handledSuccess);
-    const newHandledError = new Set(handledError);
-
-    // Success Notifications
-    if (isSuccess && !newHandledSuccess.has("bannerUpdate")) {
-      toast({
-        title: "Success",
-        description: "Banner updated successfully",
-        variant: "default",
-      });
-      newHandledSuccess.add("bannerUpdate");
-      window.location.reload();
+  const handleUserNameEditToggle = () => {
+    setIsEditingUsername(!isEditingUsername);
+    if (!isEditingUsername) {
+      setEditedUsername(username);
     }
-
-    if (isAvatarSuccess && !newHandledSuccess.has("avatarUpdate")) {
-      toast({
-        title: "Success",
-        description: "Profile picture updated successfully",
-        variant: "default",
-      });
-      newHandledSuccess.add("avatarUpdate");
-      window.location.reload();
-    }
-
-    if (isUsernameSuccess && !newHandledSuccess.has("usernameUpdate")) {
-      toast({
-        title: "Success",
-        description: "Username updated successfully",
-        variant: "default",
-      });
-      newHandledSuccess.add("usernameUpdate");
-      window.location.reload();
-    }
-
-    // Error Notifications
-    if (error && !newHandledError.has("bannerUpdateError")) {
-      if ("data" in error) {
-        const errorData = error as any;
-        toast({
-          title: "Error",
-          description: errorData.data.error,
-          variant: "destructive",
-        });
-        newHandledError.add("bannerUpdateError");
-      }
-    }
-
-    if (avatarError && !newHandledError.has("avatarUpdateError")) {
-      if ("data" in avatarError) {
-        const errorData = avatarError as any;
-        toast({
-          title: "Error",
-          description: errorData.data.error,
-          variant: "destructive",
-        });
-        newHandledError.add("avatarUpdateError");
-      }
-    }
-
-    if (usernameError && !newHandledError.has("usernameUpdateError")) {
-      if ("data" in usernameError) {
-        const errorData = usernameError as any;
-        toast({
-          title: "Error",
-          description: errorData.data.error,
-          variant: "destructive",
-        });
-        newHandledError.add("usernameUpdateError");
-      }
-    }
-
-    // Update the handled sets if new entries were added
-    if (newHandledSuccess.size > handledSuccess.size) {
-      setHandledSuccess(newHandledSuccess);
-    }
-    if (newHandledError.size > handledError.size) {
-      setHandledError(newHandledError);
-    }
-  }, [
-    isSuccess,
-    error,
-    isAvatarSuccess,
-    avatarError,
-    isUsernameSuccess,
-    usernameError,
-    handledSuccess,
-    handledError,
-  ]);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const bannerInput = useRef<HTMLInputElement>(null);
-
-  const handleBannerClick = () => {
-    bannerInput.current?.click();
   };
 
-  const handleEditClick = () => {
-    fileInputRef.current?.click();
+  const handleUsernameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setEditedUsername(e.target.value);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSave = async () => {
+    if (editedUsername.trim() === "") {
+      toast({
+        title: "Error",
+        description: "Username cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (editedUsername === username) {
+      setIsEditingUsername(false);
+      return;
+    }
+
+    try {
+      const result = await editUsername({ username: editedUsername }).unwrap();
+      console.log('Username update result:', result);
+      if (result.success) {
+        setUsername(editedUsername);
+        setIsEditingUsername(false);
+        toast({
+          title: "Success!",
+          description: "Username updated successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error('Username update error:', error);
+      toast({
+        title: "Error",
+        description: error?.data?.message || "Failed to update username",
+        variant: "destructive",
+      });
+      setEditedUsername(username); // Reset to original
+    }
+  };
+
+  const handleBannerChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please upload an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image size should be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("banner", file);
+
+    try {
+      const result = await updateBanner(formData).unwrap();
+      console.log('Banner update result:', result);
+      if (result.success) {
+        toast({
+          title: "Success!",
+          description: "Banner updated successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error('Banner update error:', error);
+      toast({
+        title: "Error",
+        description: error?.data?.message || "Failed to update banner",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please upload an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image size should be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const formData = new FormData();
     formData.append("avatar", file);
 
     try {
-      setLoadUser(false);
-
-      await updateAvatar(formData);
-    } catch (err) {
-      console.error("Avatar update failed", err);
+      const result = await updateAvatar(formData).unwrap();
+      console.log('Avatar update result:', result);
+      if (result.success) {
+        toast({
+          title: "Success!",
+          description: "Avatar updated successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error('Avatar update error:', error);
+      toast({
+        title: "Error",
+        description: error?.data?.message || "Failed to update avatar",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("banner", file); // ✅ MUST be "banner" to match upload.single("banner")
-
-    // Optional: debug
-    for (const [key, val] of formData.entries()) {
-      console.log(key, val);
-    }
-
-    try {
-      setLoadUser(false);
-
-      await updateBanner(formData);
-    } catch (err) {
-      console.error("Banner update failed", err);
-    }
-  };
-
-  const handleUserNameEditToggle = () => {
-    setIsEditingUsername((prev) => !prev);
-    setEditedUsername(username);
-  };
-
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditedUsername(e.target.value);
-  };
-
-  const handleSave = async () => {
-    setLoadUser(false);
-    await editUsername({ username: editedUsername });
-    setIsEditingUsername(false);
-  };
-
+  // Update form data when user changes
   useEffect(() => {
-    if (userData) {
-      setUser(userData);
-      setUsername(userData.username);
+    if (user) {
+      console.log('User Data:', user);
+      console.log('Avatar URL:', user.avatar);
+      console.log('Banner URL:', user.banner);
+      console.log('Full Avatar URL:', getFullImageUrl(user.avatar));
+      console.log('Full Banner URL:', getFullImageUrl(user.banner));
+      
+      setUsername(user.username || "");
+      setEditedUsername(user.username || "");
+      setFormData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        country: user.nationality || "",
+        bio: user.bio || "",
+        dateOfBirth: user.dateOfBirth || "",
+      });
     }
-  }, [userData]);
+  }, [user]);
 
   return (
-    <Card>
-      <CardHeader className="text-heading font-semibold">
-        <CardTitle>Profile Information</CardTitle>
-      </CardHeader>
-      <CardContent className="px-6">
-        {/* <div className="flex flex-col lg:flex-row gap-8"> */}
-        {/* Banner with edit option */}
-        <div className="relative h-48 xl:h-60 mb-24 rounded-lg">
-          <Image
-            src={user?.banner || "/assets/images/myprofile/banner.jpg"}
-            alt="Profile banner"
-            fill
-            className="object-cover"
-          />
-          {/* {isOwnProfile && ( */}
-          <button
-            className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full"
-            onClick={handleBannerClick}
-            disabled={isLoading}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+    <div className="space-y-6">
+      {/* Banner and Avatar Section */}
+      <div className="relative">
+        {/* Banner */}
+        <div className="relative h-48 md:h-64 rounded-2xl overflow-hidden bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 dark:from-slate-800 dark:via-slate-900 dark:to-black shadow-lg">
+          {user?.banner && getFullImageUrl(user.banner) && (
+            <Image
+              src={getFullImageUrl(user.banner)}
+              alt="Profile Banner"
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          )}
+          {isOwnProfile && (
+            <div className="absolute top-4 right-4">
+              <input
+                type="file"
+                ref={bannerInputRef}
+                onChange={handleBannerChange}
+                accept="image/*"
+                className="hidden"
               />
-            </svg>
-          </button>
-          {/* )} */}
-          <input
-            type="file"
-            className="hidden"
-            ref={bannerInput}
-            onChange={handleBannerChange}
-            accept="image/*"
-          />
-
-          {/* Profile picture */}
-          <div className="absolute -bottom-20 left-8">
-            <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-white bg-white">
-              <Image
-                src={user?.avatar || "/assets/images/myprofile/profile.jpg"}
-                alt="Profile picture"
-                fill
-                priority
-                className="object-cover object-center"
-              />
-
-              {/* Edit Button */}
-              {isOwnProfile && (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleEditClick}
-                    className="absolute bottom-4 right-5 bg-black bg-opacity-50 text-white p-1 rounded-full"
-                    disabled={isAvatarLoading}
-                  >
-                    {isAvatarLoading ? (
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8z"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    )}
-                  </button>
-
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className="hidden"
-                    name="avatar"
-                    accept="image/*"
-                  />
-                </>
-              )}
+              <Button
+                size="sm"
+                onClick={() => bannerInputRef.current?.click()}
+                className="bg-white/90 hover:bg-white text-slate-900 backdrop-blur-sm shadow-lg"
+                disabled={isLoading}
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                {isLoading ? "Uploading..." : "Change Banner"}
+              </Button>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Top section with username and wallet */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <div className="mb-4">
-              {!isEditingUsername ? (
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold">{username}</h1>
-                  {isOwnProfile && (
-                    <button
-                      onClick={handleUserNameEditToggle}
-                      className="text-gray-600 hover:text-gray-900 dark:text-gray-200"
-                    >
-                      <FaPencil className="w-4 h-4" />
-                    </button>
+        {/* Avatar */}
+        <div className="absolute -bottom-16 left-6 md:left-8">
+          <div className="relative group">
+            <Avatar className="w-32 h-32 border-4 border-white dark:border-slate-900 shadow-2xl">
+              <AvatarImage 
+                src={getFullImageUrl(user?.avatar)} 
+                alt={user?.firstName}
+              />
+              <AvatarFallback className="text-3xl font-bold bg-slate-700 dark:bg-slate-800 text-white">
+                {user?.firstName?.charAt(0)}
+                {user?.lastName?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            {isOwnProfile && (
+              <>
+                <input
+                  type="file"
+                  ref={avatarInputRef}
+                  onChange={handleAvatarChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={isAvatarLoading}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                >
+                  {isAvatarLoading ? (
+                    <Upload className="w-6 h-6 text-white animate-pulse" />
+                  ) : (
+                    <Camera className="w-6 h-6 text-white" />
                   )}
-                </div>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Header */}
+      <div className="pt-20 px-4 md:px-6">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="space-y-3">
+            {/* Username */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {!isEditingUsername ? (
+                <>
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+                    {username}
+                  </h2>
+                  {user?.isVerified && (
+                    <Badge className="bg-green-600 hover:bg-green-700 text-white">
+                      <Check className="w-3 h-3 mr-1" />
+                      Verified
+                    </Badge>
+                  )}
+                  {isOwnProfile && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleUserNameEditToggle}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  )}
+                </>
               ) : (
                 <div className="flex items-center gap-2">
-                  <input
+                  <Input
                     type="text"
                     value={editedUsername}
                     onChange={handleUsernameChange}
-                    className="border rounded px-2 py-1 text-base text-black"
+                    className="max-w-xs"
+                    disabled={isUsernameLoading}
                   />
-                  <button
+                  <Button
+                    size="sm"
                     onClick={handleSave}
-                    className="text-green-600 hover:text-green-800 text-sm font-medium"
+                    disabled={isUsernameLoading}
+                    className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900"
                   >
+                    <Check className="w-4 h-4 mr-1" />
                     Save
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={handleUserNameEditToggle}
-                    className="text-red-500 hover:text-red-700 text-sm font-medium"
+                    disabled={isUsernameLoading}
                   >
+                    <X className="w-4 h-4 mr-1" />
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center text-gray-500">
-              <span className="mr-2">Wallet:</span>
-
-              <span className="font-mono">
-                {walletAddress?.length > 10
-                  ? walletAddress?.slice(0, 6) +
-                  "..." +
-                  walletAddress?.slice(-4)
-                  : walletAddress}
-              </span>
+            {/* User Role Badge */}
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-sm">
+                {user?.role === "admin" && (
+                  <>
+                    <Shield className="w-3 h-3 mr-1" />
+                    Administrator
+                  </>
+                )}
+                {user?.role === "instructor" && (
+                  <>
+                    <Award className="w-3 h-3 mr-1" />
+                    Instructor
+                  </>
+                )}
+                {user?.role === "user" && (
+                  <>
+                    <User className="w-3 h-3 mr-1" />
+                    Member
+                  </>
+                )}
+              </Badge>
+              {user?.isSeller && (
+                <Badge className="bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-700 text-white">
+                  <Star className="w-3 h-3 mr-1" />
+                  Seller
+                </Badge>
+              )}
             </div>
-          </div>
 
-          {/* {isOwnProfile && ( */}
-          <div>
-            {isEditing ? (
-              <div className="space-x-2">
-                <button
-                  onClick={handleSaveProfile}
-                  disabled={isSaving}
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
-                >
-                  {isSaving ? "Saving..." : "Save"}
-                </button>
-                <button
-                  onClick={handleEditToggle}
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleEditToggle}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  
-                  Edit Profile
-
-                </button>
-                < TabsCreate />
-                  <Link
-                  href={"/purchased"}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                    Purchased Courses 
-                  </Link> 
+            {/* Wallet Address */}
+            {walletAddress && (
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <Wallet className="w-4 h-4" />
+                <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-xs">
+                  {walletAddress?.length > 10
+                    ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+                    : walletAddress}
+                </code>
               </div>
             )}
           </div>
-          {/* )} */}
-        </div>
-        {/* </div> */}
-        <div className=" p-6 rounded-lg shadow-md mb-8 dark:bg-zinc-900 bg-slate-100">
-          <h2 className="text-xl font-semibold mb-4">Personal Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-gray-500 mb-2">First Name</label>
+
+          {/* Edit Button */}
+          {isOwnProfile && (
+            <div className="flex gap-2">
               {isEditing ? (
-                <input
-                  type="text"
+                <>
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={isSaving}
+                    className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleEditToggle}
+                    disabled={isSaving}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={handleEditToggle} className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Profile Information Grid */}
+      <div className="px-4 md:px-6 space-y-6">
+        <div>
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <User className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+            Personal Information
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* First Name */}
+            <div className="space-y-2">
+              <Label htmlFor="firstName" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                First Name
+              </Label>
+              {isEditing ? (
+                <Input
+                  id="firstName"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded text-black"
+                  placeholder="Enter your first name"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
                 />
               ) : (
-                <p>{user?.firstName}</p>
+                <p className="text-base text-slate-900 dark:text-white px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                  {user?.firstName || "Not provided"}
+                </p>
               )}
             </div>
 
-            <div>
-              <label className="block text-gray-500 mb-2">Last Name</label>
+            {/* Last Name */}
+            <div className="space-y-2">
+              <Label htmlFor="lastName" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Last Name
+              </Label>
               {isEditing ? (
-                <input
-                  type="text"
+                <Input
+                  id="lastName"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded text-black"
+                  placeholder="Enter your last name"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
                 />
               ) : (
-                <p>{user?.lastName}</p>
+                <p className="text-base text-slate-900 dark:text-white px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                  {user?.lastName || "Not provided"}
+                </p>
               )}
             </div>
 
-            <div>
-              <label className="block text-gray-500 mb-2">Email</label>
-              <input
-                type="email"
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Email Address
+              </Label>
+              <Input
+                id="email"
                 name="email"
+                type="email"
                 value={formData.email}
-                onChange={handleInputChange}
                 disabled
-                className="w-full p-2 border rounded text-black"
+                className="bg-slate-100 dark:bg-slate-800/50 cursor-not-allowed"
               />
             </div>
 
-            <div>
-              <label className="block text-gray-500 mb-2">Country</label>
+            {/* Country */}
+            <div className="space-y-2">
+              <Label htmlFor="country" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                Country
+              </Label>
               {isEditing ? (
                 <select
+                  id="country"
                   name="country"
                   value={formData.country}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded text-black"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600 transition-all duration-200"
                 >
+                  <option value="">Select Country</option>
                   <option value="India">India</option>
                   <option value="United States">United States</option>
                   <option value="United Kingdom">United Kingdom</option>
+                  <option value="Canada">Canada</option>
+                  <option value="Australia">Australia</option>
+                  <option value="Germany">Germany</option>
+                  <option value="France">France</option>
+                  <option value="Japan">Japan</option>
                   <option value="Other">Other</option>
                 </select>
               ) : (
-                <p>{user?.nationality}</p>
+                <p className="text-base text-slate-900 dark:text-white px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                  {user?.nationality || "Not provided"}
+                </p>
               )}
             </div>
 
-            <div>
-              <label className="block text-gray-500 mb-2">Date of Birth</label>
+            {/* Date of Birth */}
+            <div className="space-y-2">
+              <Label htmlFor="dateOfBirth" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Date of Birth
+              </Label>
               {isEditing ? (
-                <input
-                  type="date"
+                <Input
+                  id="dateOfBirth"
                   name="dateOfBirth"
+                  type="date"
                   value={formData.dateOfBirth?.split("T")[0] || ""}
                   max={new Date().toISOString().split("T")[0]}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded text-black"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
                 />
               ) : (
-                <p>{formatDate(user?.dateOfBirth) || "Not provided"}</p>
+                <p className="text-base text-slate-900 dark:text-white px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                  {formatDate(user?.dateOfBirth) || "Not provided"}
+                </p>
               )}
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-gray-500 mb-2">Bio</label>
+            {/* Bio */}
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="bio" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Bio
+              </Label>
               {isEditing ? (
-                <textarea
+                <Textarea
+                  id="bio"
                   name="bio"
                   value={formData.bio}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded h-24 resize-none text-black"
                   placeholder="Tell us about yourself..."
+                  rows={4}
+                  className="resize-none transition-all duration-200 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
                 />
               ) : (
-                <p className="whitespace-pre-wrap">
+                <p className="text-base text-slate-900 dark:text-white px-3 py-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg whitespace-pre-wrap min-h-[100px]">
                   {user?.bio || "No bio provided"}
                 </p>
               )}
             </div>
           </div>
-
-          <div className="mt-6 flex gap-4">
-            {isEditing ? (
-              <>
-                <button
-                  onClick={handleSaveProfile}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  disabled={isSaving}
-                >
-                  {isSaving ? "Saving..." : "Save"}
-                </button>
-                <button
-                  onClick={handleEditToggle}
-                  className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              isOwnProfile && (
-                <button
-                  onClick={handleEditToggle}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Edit Profile
-                </button>
-              )
-            )}
-          </div>
         </div>
-
-        {/* Referral Code & Rewards */}
-        <div className="p-6 rounded-lg shadow-md dark:bg-zinc-900">
-          <h2 className="text-xl font-semibold mb-4">Referral Program</h2>
-
-          <div className="bg-slate-300 dark:bg-slate-500 p-4 rounded-lg mb-6 flex justify-between items-center">
-            <div>
-              <p className="text-gray-600 dark:text-gray-300 mb-1">
-                Your Referral Code
-              </p>
-              <p className="text-xl font-mono font-bold">
-                {user?.referralCode}
-              </p>
-            </div>
-            <button
-              // onClick={copyReferralCode}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Copy Code
-            </button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

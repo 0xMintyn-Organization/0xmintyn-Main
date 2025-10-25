@@ -145,7 +145,7 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
     },
     { 
       name: "Profile", 
-      href: "/profile", 
+      href: "/myprofile", 
       icon: User,
       badge: null,
       description: "Personal Settings"
