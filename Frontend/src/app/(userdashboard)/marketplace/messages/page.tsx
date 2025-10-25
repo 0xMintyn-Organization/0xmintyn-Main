@@ -37,6 +37,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import SimpleOfferModal from '@/components/Marketplace/SimpleOfferModal';
 import OfferBubble from '@/components/Marketplace/OfferBubble';
+import { cache, CACHE_KEYS, CACHE_TTL, cacheInvalidation } from '@/lib/cache';
+import { useOwnershipDetection } from '@/lib/ownership';
 
 export default function MessengerPage() {
   const { user } = useAuth();
@@ -59,7 +61,12 @@ export default function MessengerPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [offers, setOffers] = useState<any[]>([]);
   const [showCreateOffer, setShowCreateOffer] = useState(false);
-  const [isServiceOwner, setIsServiceOwner] = useState(false);
+  const { detectOwnership } = useOwnershipDetection(user);
+  const [ownershipStatus, setOwnershipStatus] = useState<{
+    isOwner: boolean;
+    status: 'loading' | 'owner' | 'buyer' | 'unknown';
+    message: string;
+  }>({ isOwner: false, status: 'loading', message: 'Determining your role...' });
 
   // Check for conversation parameter (when redirected from service page)
   useEffect(() => {
@@ -86,10 +93,21 @@ export default function MessengerPage() {
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const fetchConversations = async () => {
+  const fetchConversations = async (forceRefresh = false) => {
     try {
       setLoading(true);
       setError(null);
+
+      // Check cache first
+      if (!forceRefresh) {
+        const cachedConversations = cache.get(CACHE_KEYS.CONVERSATIONS);
+        if (cachedConversations) {
+          setConversations(cachedConversations.conversations);
+          setUnreadCount(cachedConversations.unreadCount);
+          setLoading(false);
+          return;
+        }
+      }
 
       // Fetch both inbox and sent messages
       const [inboxResponse, sentResponse] = await Promise.all([
@@ -105,11 +123,18 @@ export default function MessengerPage() {
         ];
         
         // Get unread count from inbox response
-        setUnreadCount(inboxResponse.data.unreadCount || 0);
+        const unreadCount = inboxResponse.data.unreadCount || 0;
+        setUnreadCount(unreadCount);
         
         // Group messages by conversation (sender/receiver pair)
         const groupedMessages = groupMessagesByConversation(allMessages);
         setConversations(groupedMessages);
+        
+        // Cache the results
+        cache.set(CACHE_KEYS.CONVERSATIONS, {
+          conversations: groupedMessages,
+          unreadCount
+        }, CACHE_TTL.SHORT);
         
         // Auto-select first conversation if none selected
         if (!selectedConversation && groupedMessages.length > 0) {
@@ -202,6 +227,27 @@ export default function MessengerPage() {
     setMessages(conversation.messages.sort((a: any, b: any) => 
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     ));
+
+    // Use simplified ownership detection
+    if (conversation.serviceId || conversation.productId) {
+      try {
+        const status = await detectOwnership(conversation);
+        setOwnershipStatus(status);
+      } catch (error) {
+        console.error('Error determining ownership:', error);
+        setOwnershipStatus({
+          isOwner: false,
+          status: 'unknown',
+          message: 'Unable to determine your role'
+        });
+      }
+    } else {
+      setOwnershipStatus({
+        isOwner: false,
+        status: 'buyer',
+        message: 'General conversation'
+      });
+    }
 
     // Fetch offers for this conversation
     if (conversation._id) {
@@ -433,8 +479,9 @@ export default function MessengerPage() {
         setNewMessage('');
         setSelectedFiles([]);
         
-        // Refresh conversations to update last message
-        fetchConversations();
+        // Invalidate cache and refresh conversations
+        cacheInvalidation.invalidateConversations();
+        fetchConversations(true);
       }
     } catch (error: any) {
       console.error('Error sending message:', error);
@@ -940,7 +987,7 @@ export default function MessengerPage() {
                   {selectedConversation && (selectedConversation.serviceId || selectedConversation.productId) && (
                     <>
                       {/* For Sellers: Create Custom Offer */}
-                      {isServiceOwner && (
+                      {ownershipStatus.isOwner && (
                         <Button
                           variant="outline"
                           size="lg"
@@ -953,8 +1000,16 @@ export default function MessengerPage() {
                         </Button>
                       )}
                       
+                      {/* Loading State */}
+                      {ownershipStatus.status === 'loading' && (
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Determining your role...</span>
+                        </div>
+                      )}
+                      
                       {/* For Buyers: Request Custom Offer */}
-                      {!isServiceOwner && (
+                      {!ownershipStatus.isOwner && ownershipStatus.status !== 'loading' && (
                         <Button
                           variant="outline"
                           size="lg"

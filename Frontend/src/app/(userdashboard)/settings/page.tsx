@@ -3,6 +3,7 @@ import UpdatePassword from "@/components/Settings/UpdatePassword/UpdatePassword"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EnhancedSelect, languageOptions } from "@/components/ui/EnhancedSelect";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -135,34 +136,13 @@ export default function Settings() {
             {/* GENERAL SETTINGS */}
             <TabsContent value="general" className="space-y-6 animate-in fade-in duration-300">
               <SettingCard icon={Globe} title="Language & Region" description="Choose your preferred language and regional settings">
-                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                  <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 rounded-lg">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">
-                      <span className="flex items-center gap-2">🇺🇸 English (US)</span>
-                    </SelectItem>
-                    <SelectItem value="es">
-                      <span className="flex items-center gap-2">🇪🇸 Español (Spain)</span>
-                    </SelectItem>
-                    <SelectItem value="fr">
-                      <span className="flex items-center gap-2">🇫🇷 Français (France)</span>
-                    </SelectItem>
-                    <SelectItem value="de">
-                      <span className="flex items-center gap-2">🇩🇪 Deutsch (Germany)</span>
-                    </SelectItem>
-                    <SelectItem value="zh">
-                      <span className="flex items-center gap-2">🇨🇳 中文 (Simplified)</span>
-                    </SelectItem>
-                    <SelectItem value="hi">
-                      <span className="flex items-center gap-2">🇮🇳 हिन्दी (Hindi)</span>
-                    </SelectItem>
-                    <SelectItem value="pt">
-                      <span className="flex items-center gap-2">🇵🇹 Português (Portugal)</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <EnhancedSelect
+                  value={selectedLanguage}
+                  onValueChange={setSelectedLanguage}
+                  options={languageOptions}
+                  placeholder="Select language"
+                  className="w-full"
+                />
               </SettingCard>
 
               {/* Theme Preferences */}

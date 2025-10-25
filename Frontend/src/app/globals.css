@@ -519,6 +519,76 @@ body {
   background: rgba(16, 185, 129, 0.9);
 }
 
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Professional dropdown fixes - minimal and effective */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Fix Radix UI Select positioning and z-index */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+[data-radix-select-content] {
+  z-index: 9999 !important;
+  position: relative !important;
+}
+
+/* Prevent body scroll when dropdown is open - professional approach */
+body:has([data-state="open"]) {
+  overflow: hidden;
+  padding-right: 0;
+}
+
+/* Smooth transitions for dropdown */
+[data-radix-select-trigger] {
+  transition: all 0.2s ease-in-out;
+}
+
+[data-radix-select-content] {
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ensure proper stacking context */
+[data-radix-select-viewport] {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Fix for mobile devices */
+@media (max-width: 768px) {
+  [data-radix-select-content] {
+    max-width: calc(100vw - 2rem);
+    left: 1rem !important;
+    right: 1rem !important;
+    width: auto !important;
+  }
+}
+
 /* Pulse animation for notifications */
 @keyframes pulse-dot {
   0% {

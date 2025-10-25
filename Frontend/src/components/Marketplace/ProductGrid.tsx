@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useAccessibility } from '@/lib/accessibility';
+import { LoadingGrid, EmptyState, ErrorState } from '@/components/ui/LoadingStates';
 
 // Sample digital product data
 const sampleProducts = [
@@ -119,6 +122,7 @@ interface ProductGridProps {
 }
 
 export default function ProductGrid({ viewMode, searchQuery, onQuickView, products, loading, hasActiveSearch }: ProductGridProps) {
+  const { generateLabel, generateDescription } = useAccessibility();
   console.log('ProductGrid received products:', products);
   console.log('ProductGrid loading:', loading);
 
@@ -147,28 +151,22 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
 
   // Show loading state
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading products...</p>
-        </div>
-      </div>
-    );
+    return <LoadingGrid count={8} />;
   }
 
   // Show empty state when no products AND there's an active search/filter
   if (!loading && displayProducts.length === 0 && hasActiveSearch) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-            <ShoppingCart className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No products found</h3>
-          <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filters to find what you&apos;re looking for.</p>
-        </div>
-      </div>
+      <EmptyState
+        icon={<ShoppingCart className="w-16 h-16 text-gray-400" />}
+        title="No products found"
+        description="Try adjusting your search or filters to find what you're looking for"
+        action={{
+          label: "Clear Filters",
+          onClick: () => window.location.reload()
+        }}
+        className="py-12"
+      />
     );
   }
 
@@ -269,25 +267,25 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
       {filteredProducts.map((product, index) => (
         <Card
           key={product._id || product.id || `product-${index}`}
           className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700"
+          role="article"
+          aria-label={generateLabel('product-card', product.title)}
+          aria-describedby={`product-${product._id || product.id}-description`}
         >
           <div className="relative">
             <Link href={`/marketplace/product/${product._id || product.id}`}>
               <div className="aspect-square relative overflow-hidden rounded-t-lg cursor-pointer">
                 {product.thumbnailImage || product.image ? (
-                  <Image
-                    src={getFullImageUrl(product.thumbnailImage || product.image)}
+                  <OptimizedImage
+                    src={product.thumbnailImage || product.image}
                     alt={product.title}
                     fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-300"
-                    onError={(e) => {
-                      console.error('Product image load error:', e);
-                      e.currentTarget.src = '/placeholder-product.jpg';
-                    }}
+                    className="group-hover:scale-110 transition-transform duration-300"
+                    fallbackSrc="/placeholder-product.jpg"
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
@@ -307,6 +305,8 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
                  size="sm"
                  onClick={() => onQuickView?.(product)}
                  className="bg-background/90 shadow-md text-foreground border"
+                 aria-label={generateLabel('view-details', product.title)}
+                 title="Quick view"
                >
                  <Eye className="w-4 h-4" />
                </Button>
@@ -314,6 +314,12 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
           </div>
 
           <CardContent className="p-4">
+            <div 
+              id={`product-${product._id || product.id}-description`}
+              className="sr-only"
+            >
+              {generateDescription('product-card', `${product.title} - ${product.description?.substring(0, 100)}...`)}
+            </div>
             <div className="mb-2">
             </div>
 
@@ -353,7 +359,11 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
 
           <CardFooter className="p-4 pt-0">
             <Link href={`/marketplace/product/${product._id || product.id}`} className="w-full">
-              <Button className="w-full bg-green-900 hover:bg-green-800 text-white">
+              <Button 
+                className="w-full bg-green-900 hover:bg-green-800 text-white"
+                aria-label={generateLabel('add-to-cart', product.title)}
+                title="Get instant access to this product"
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Get Instant Access
               </Button>

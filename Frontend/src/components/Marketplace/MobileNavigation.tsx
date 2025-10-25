@@ -47,7 +47,7 @@ export default function MobileNavigation({
   return (
     <div className="lg:hidden">
       {/* Mobile Header */}
-      <div className="bg-background shadow-sm border-b border-zinc-200 dark:border-zinc-700 sticky top-0 z-40">
+      <div className="bg-background shadow-sm border-b border-zinc-200 dark:border-zinc-700 sticky top-0 z-50">
         <div className="flex items-center justify-between h-16 px-4">
           {/* Logo */}
           <div className="flex items-center space-x-2">
