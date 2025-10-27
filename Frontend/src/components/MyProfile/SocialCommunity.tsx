@@ -25,9 +25,11 @@ import {
   Instagram,
   Facebook,
   Youtube,
+  Link as LinkIcon,
 } from "lucide-react";
-import { FaDiscord, FaTelegram, FaReddit } from "react-icons/fa";
+import { FaDiscord, FaTelegram, FaReddit, FaGoogle } from "react-icons/fa";
 import { SiLens, SiFarcaster } from "react-icons/si";
+import { SocialLoginButton } from "./SocialLoginButton";
 
 // Predefined social platforms with their URLs and icons
 const SOCIAL_PLATFORMS = [
@@ -218,8 +220,57 @@ function SocialCommunity() {
     return platform ? `${platform.baseUrl}${username}` : "#";
   };
 
+  // Auth0 supported platforms
+  const auth0Platforms = [
+    { name: "Google", icon: FaGoogle },
+    { name: "GitHub", icon: Github },
+    { name: "Twitter", icon: Twitter },
+    { name: "Discord", icon: FaDiscord },
+    { name: "LinkedIn", icon: Linkedin },
+  ];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Auth0 Social Login Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+            Quick Connect with OAuth
+          </h3>
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            Powered by Auth0
+          </span>
+        </div>
+        <Card className="border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              Connect your social accounts instantly using secure OAuth authentication
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {auth0Platforms.map((platform) => (
+                <SocialLoginButton
+                  key={platform.name}
+                  provider={platform.name}
+                  icon={platform.icon}
+                  label={platform.name}
+                  isConnected={isPlatformConnected(platform.name)}
+                  onConnect={() => {
+                    // Callback after successful connection
+                    console.log(`${platform.name} connected`);
+                  }}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Manual Entry Section */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+          Or Add Manually
+        </h3>
+        <div className="space-y-4">
       {SOCIAL_PLATFORMS.map((platform) => {
         const isConnected = isPlatformConnected(platform.name);
         const platformUsername = getPlatformUsername(platform.name);
@@ -345,6 +396,8 @@ function SocialCommunity() {
           </Card>
         );
       })}
+        </div>
+      </div>
     </div>
   );
 }

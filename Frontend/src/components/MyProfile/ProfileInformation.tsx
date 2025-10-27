@@ -149,10 +149,10 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
 
       console.log('Profile update result:', data);
       if (data.success) {
-        setIsEditing(false);
-        toast({
+      setIsEditing(false);
+      toast({
           title: "Success!",
-          description: "Profile updated successfully",
+        description: "Profile updated successfully",
         });
         // Reload to fetch updated user data
         window.location.reload();
@@ -206,18 +206,18 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
       if (result.success) {
         setUsername(editedUsername);
         setIsEditingUsername(false);
-        toast({
+      toast({
           title: "Success!",
-          description: "Username updated successfully",
+        description: "Username updated successfully",
         });
       }
     } catch (error: any) {
       console.error('Username update error:', error);
-      toast({
-        title: "Error",
+        toast({
+          title: "Error",
         description: error?.data?.message || "Failed to update username",
-        variant: "destructive",
-      });
+          variant: "destructive",
+        });
       setEditedUsername(username); // Reset to original
     }
   };
@@ -228,21 +228,21 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Error",
+        toast({
+          title: "Error",
         description: "Please upload an image file",
-        variant: "destructive",
-      });
+          variant: "destructive",
+        });
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "Error",
+        toast({
+          title: "Error",
         description: "Image size should be less than 5MB",
-        variant: "destructive",
-      });
+          variant: "destructive",
+        });
       return;
     }
 
@@ -343,21 +343,21 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
         {/* Banner */}
         <div className="relative h-48 md:h-64 rounded-2xl overflow-hidden bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 dark:from-slate-800 dark:via-slate-900 dark:to-black shadow-lg">
           {user?.banner && getFullImageUrl(user.banner) && (
-            <Image
+          <Image
               src={getFullImageUrl(user.banner)}
               alt="Profile Banner"
-              fill
-              className="object-cover"
+            fill
+            className="object-cover"
               unoptimized
             />
           )}
           {isOwnProfile && (
             <div className="absolute top-4 right-4">
-              <input
-                type="file"
+          <input
+            type="file"
                 ref={bannerInputRef}
-                onChange={handleBannerChange}
-                accept="image/*"
+            onChange={handleBannerChange}
+            accept="image/*"
                 className="hidden"
               />
               <Button
@@ -386,8 +386,8 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
                 {user?.lastName?.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            {isOwnProfile && (
-              <>
+              {isOwnProfile && (
+                <>
                 <input
                   type="file"
                   ref={avatarInputRef}
@@ -395,22 +395,22 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
                   accept="image/*"
                   className="hidden"
                 />
-                <button
+                  <button
                   onClick={() => avatarInputRef.current?.click()}
-                  disabled={isAvatarLoading}
+                    disabled={isAvatarLoading}
                   className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                >
-                  {isAvatarLoading ? (
+                  >
+                    {isAvatarLoading ? (
                     <Upload className="w-6 h-6 text-white animate-pulse" />
                   ) : (
                     <Camera className="w-6 h-6 text-white" />
-                  )}
-                </button>
-              </>
-            )}
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Profile Header */}
       <div className="pt-20 px-4 md:px-6">
@@ -506,22 +506,22 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                 <Wallet className="w-4 h-4" />
                 <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-xs">
-                  {walletAddress?.length > 10
+                {walletAddress?.length > 10
                     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-                    : walletAddress}
+                  : walletAddress}
                 </code>
-              </div>
+            </div>
             )}
           </div>
 
           {/* Edit Button */}
           {isOwnProfile && (
             <div className="flex gap-2">
-              {isEditing ? (
+            {isEditing ? (
                 <>
                   <Button
-                    onClick={handleSaveProfile}
-                    disabled={isSaving}
+                  onClick={handleSaveProfile}
+                  disabled={isSaving}
                     className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900"
                   >
                     <Save className="w-4 h-4 mr-2" />
@@ -529,11 +529,11 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={handleEditToggle}
+                  onClick={handleEditToggle}
                     disabled={isSaving}
-                  >
+                >
                     <X className="w-4 h-4 mr-2" />
-                    Cancel
+                  Cancel
                   </Button>
                 </>
               ) : (
@@ -542,10 +542,10 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
                   Edit Profile
                 </Button>
               )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
       <Separator />
 
@@ -692,9 +692,9 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
               )}
             </div>
           </div>
+          </div>
+          </div>
         </div>
-      </div>
-    </div>
   );
 }
 

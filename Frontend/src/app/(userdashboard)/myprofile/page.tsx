@@ -2,7 +2,6 @@
 "use client";
 import ProfileInformation from "@/components/MyProfile/ProfileInformation";
 import SecurityAuth from "@/components/MyProfile/SecurityAuth";
-import SocialCommunity from "@/components/MyProfile/SocialCommunity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Protected from "@/hooks/useProtected";
@@ -16,9 +15,24 @@ import {
   MessageCircle,
   Lock
 } from "lucide-react";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "react-hot-toast";
 
 function MyProfile() {
   const { user } = useSelector((state: any) => state.auth);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Handle Auth0 success callback
+  useEffect(() => {
+    const authSuccess = searchParams.get('auth');
+    if (authSuccess === 'success') {
+      toast.success('🎉 Successfully logged in with social account!');
+      // Remove the auth parameter from URL
+      router.replace('/myprofile');
+    }
+  }, [searchParams, router]);
 
   return (
     <Protected>
@@ -73,31 +87,6 @@ function MyProfile() {
               </CardContent>
             </Card>
 
-            {/* Social & Community */}
-            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-800">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                      <Users className="w-6 h-6 text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
-                        Social & Community
-                      </CardTitle>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Connect with others</p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="hidden sm:flex border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                    <MessageCircle className="w-3 h-3 mr-1" />
-                    Active
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <SocialCommunity />
-              </CardContent>
-            </Card>
 
             {/* Security & Authentication */}
             <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300">
