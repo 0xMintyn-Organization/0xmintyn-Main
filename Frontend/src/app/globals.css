@@ -589,6 +589,148 @@ body:has([data-state="open"]) {
   }
 }
 
+/* Text-to-Speech Styles */
+.tts-highlight {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.tts-enabled {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tts-enabled:hover {
+  background-color: rgba(16, 185, 129, 0.05);
+  border-radius: 4px;
+}
+
+.tts-enabled:active {
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+/* High Contrast Mode Styles */
+.high-contrast-enabled {
+  --contrast-bg: #ffffff;
+  --contrast-text: #000000;
+  --contrast-border: #000000;
+  --contrast-accent: #0000ff;
+  --contrast-shadow: 0 0 0 2px #000000;
+  --contrast-border-width: 1px;
+}
+
+.high-contrast-enabled * {
+  transition: all 0.3s ease !important;
+}
+
+/* High contrast for all elements - more aggressive approach */
+.high-contrast-enabled {
+  filter: contrast(1.5) brightness(1.1) !important;
+}
+
+.high-contrast-enabled * {
+  border: var(--contrast-border-width) solid var(--contrast-border) !important;
+  box-shadow: var(--contrast-shadow) !important;
+}
+
+/* High contrast for text elements */
+.high-contrast-enabled h1,
+.high-contrast-enabled h2,
+.high-contrast-enabled h3,
+.high-contrast-enabled h4,
+.high-contrast-enabled h5,
+.high-contrast-enabled h6,
+.high-contrast-enabled p,
+.high-contrast-enabled span,
+.high-contrast-enabled div,
+.high-contrast-enabled a,
+.high-contrast-enabled label,
+.high-contrast-enabled li {
+  color: var(--contrast-text) !important;
+  background-color: var(--contrast-bg) !important;
+  border: var(--contrast-border-width) solid var(--contrast-border) !important;
+  box-shadow: var(--contrast-shadow) !important;
+  text-shadow: 1px 1px 0 var(--contrast-border) !important;
+}
+
+/* High contrast for buttons */
+.high-contrast-enabled button,
+.high-contrast-enabled [role="button"] {
+  background-color: var(--contrast-bg) !important;
+  color: var(--contrast-text) !important;
+  border: 2px solid var(--contrast-border) !important;
+  box-shadow: var(--contrast-shadow) !important;
+}
+
+.high-contrast-enabled button:hover,
+.high-contrast-enabled [role="button"]:hover {
+  background-color: var(--contrast-accent) !important;
+  color: var(--contrast-bg) !important;
+  border-color: var(--contrast-text) !important;
+}
+
+/* High contrast for inputs */
+.high-contrast-enabled input,
+.high-contrast-enabled textarea,
+.high-contrast-enabled select {
+  background-color: var(--contrast-bg) !important;
+  color: var(--contrast-text) !important;
+  border: 2px solid var(--contrast-border) !important;
+  box-shadow: var(--contrast-shadow) !important;
+}
+
+.high-contrast-enabled input:focus,
+.high-contrast-enabled textarea:focus,
+.high-contrast-enabled select:focus {
+  border-color: var(--contrast-accent) !important;
+  box-shadow: 0 0 0 3px var(--contrast-accent) !important;
+}
+
+/* High contrast for cards */
+.high-contrast-enabled .card,
+.high-contrast-enabled [class*="card"] {
+  background-color: var(--contrast-bg) !important;
+  border: 2px solid var(--contrast-border) !important;
+  box-shadow: var(--contrast-shadow) !important;
+}
+
+/* High contrast for links */
+.high-contrast-enabled a {
+  color: var(--contrast-accent) !important;
+  text-decoration: underline !important;
+  border-bottom: 1px solid var(--contrast-accent) !important;
+}
+
+.high-contrast-enabled a:hover {
+  background-color: var(--contrast-accent) !important;
+  color: var(--contrast-bg) !important;
+}
+
+/* Contrast level variations */
+.contrast-high {
+  --contrast-shadow: 0 0 0 3px #000000;
+}
+
+.contrast-ultra {
+  --contrast-shadow: 0 0 0 4px #000000;
+  --contrast-border: #000000;
+}
+
+.contrast-ultra * {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--contrast-border) !important;
+}
+
+/* High contrast for dark mode */
+.dark.high-contrast-enabled {
+  --contrast-bg: #000000;
+  --contrast-text: #ffffff;
+  --contrast-border: #ffffff;
+  --contrast-accent: #00ffff;
+}
+
 /* Pulse animation for notifications */
 @keyframes pulse-dot {
   0% {

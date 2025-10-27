@@ -4,6 +4,8 @@ import SocialAuthProvider from "@/components/SocialAuth/SocialAuth";
 import { Toaster } from "@/components/ui/toaster";
 import ThemeProviderWrapper from "@/contexts/ThemeProviderWrapper";
 import { FontSizeProvider } from "@/contexts/FontSizeContext";
+import { TextToSpeechProvider } from "@/contexts/TextToSpeechContext";
+import { GlobalTextSelection } from "@/components/TextToSpeech/GlobalTextSelection";
 import { SessionProvider } from "next-auth/react";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -34,14 +36,17 @@ export default function RootLayout({
       >
         <ThemeProviderWrapper>
           <FontSizeProvider>
-            <Providers>
-              <SessionProvider >
-                <SocialAuthProvider>
-                  {children}
-                  <Toaster />
-                </SocialAuthProvider>
-              </SessionProvider>
-            </Providers>
+            <TextToSpeechProvider>
+                <Providers>
+                  <SessionProvider >
+                    <SocialAuthProvider>
+                      {children}
+                      <Toaster />
+                      <GlobalTextSelection />
+                    </SocialAuthProvider>
+                  </SessionProvider>
+                </Providers>
+            </TextToSpeechProvider>
           </FontSizeProvider>
         </ThemeProviderWrapper>
       </body>

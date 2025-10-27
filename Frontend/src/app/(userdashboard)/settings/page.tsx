@@ -10,12 +10,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Protected from "@/hooks/useProtected";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useFontSize } from "@/contexts/FontSizeContext";
+import { useTextToSpeech } from "@/contexts/TextToSpeechContext";
+import { TextToSpeechWrapper } from "@/components/TextToSpeech/TextToSpeechWrapper";
 import { Bell, ChevronRight, Eye, EyeOff, Lock, Settings as SettingsIcon, Wallet, Shield, Code, Download, Trash2, CheckCircle, AlertCircle, Zap, Globe, Smartphone, Mail, CreditCard, DollarSign, Gauge, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme();
   const { fontSize, setFontSize, resetFontSize } = useFontSize();
+  const { 
+    isEnabled: ttsEnabled, 
+    isSpeaking, 
+    currentText, 
+    voice, 
+    rate, 
+    pitch, 
+    volume, 
+    voices, 
+    toggleTTS, 
+    speak, 
+    stop, 
+    setVoice, 
+    setRate, 
+    setPitch, 
+    setVolume 
+  } = useTextToSpeech();
   const [autoLogoutTime, setAutoLogoutTime] = useState<number>(30);
   const [privateMode, setPrivateMode] = useState<boolean>(false);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
@@ -66,11 +85,15 @@ export default function Settings() {
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8 px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
         <div className="max-w-7xl mx-auto mb-12">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
-            <div>
-              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">Settings & Preferences</h1>
-              <p className="text-gray-600 dark:text-gray-400 text-lg">Customize your experience and manage your account</p>
-            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
+              <div>
+                <TextToSpeechWrapper>
+                  <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">Settings & Preferences</h1>
+                </TextToSpeechWrapper>
+                <TextToSpeechWrapper>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">Customize your experience and manage your account</p>
+                </TextToSpeechWrapper>
+              </div>
             <div className="flex items-center gap-3">
               <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 rounded-lg font-semibold">
                 <CheckCircle className="h-5 w-5 mr-2" />
@@ -228,7 +251,120 @@ export default function Settings() {
 
                   <ToggleSetting title="High-Contrast Mode" description="Enhance visibility with higher contrast colors" defaultChecked={false} />
 
-                  <ToggleSetting title="Text-to-Speech" description="Enable screen reader compatibility" defaultChecked={false} />
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-green-300/50 transition-all duration-300">
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">Text-to-Speech</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Enable screen reader compatibility and click-to-read functionality</p>
+                      </div>
+                      <Switch 
+                        checked={ttsEnabled} 
+                        onCheckedChange={toggleTTS} 
+                        className="scale-110" 
+                      />
+                    </div>
+
+                    {ttsEnabled && (
+                      <div className="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-green-900 dark:text-green-200">
+                            TTS Status: {isSpeaking ? 'Speaking' : 'Ready'}
+                          </span>
+                          {isSpeaking && (
+                            <Button 
+                              onClick={stop} 
+                              size="sm" 
+                              variant="outline"
+                              className="border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              Stop
+                            </Button>
+                          )}
+                        </div>
+
+                        {currentText && (
+                          <div className="text-xs text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-800/30 p-2 rounded">
+                            Reading: "{currentText.substring(0, 50)}{currentText.length > 50 ? '...' : ''}"
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">Voice</label>
+                            <Select value={voice?.name || ''} onValueChange={(voiceName) => {
+                              const selectedVoice = voices.find(v => v.name === voiceName);
+                              if (selectedVoice) setVoice(selectedVoice);
+                            }}>
+                              <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 rounded-lg">
+                                <SelectValue placeholder="Select voice" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {voices.map((v) => (
+                                  <SelectItem key={v.name} value={v.name}>
+                                    {v.name} ({v.lang})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">Rate: {rate.toFixed(1)}x</label>
+                            <input
+                              type="range"
+                              min="0.5"
+                              max="2"
+                              step="0.1"
+                              value={rate}
+                              onChange={(e) => setRate(parseFloat(e.target.value))}
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">Pitch: {pitch.toFixed(1)}</label>
+                            <input
+                              type="range"
+                              min="0.5"
+                              max="2"
+                              step="0.1"
+                              value={pitch}
+                              onChange={(e) => setPitch(parseFloat(e.target.value))}
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">Volume: {Math.round(volume * 100)}%</label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.1"
+                              value={volume}
+                              onChange={(e) => setVolume(parseFloat(e.target.value))}
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <p className="text-sm text-blue-800 dark:text-blue-200">
+                            <strong>How to use:</strong> Click on any text element to have it read aloud. The text will be highlighted while being read.
+                          </p>
+                        </div>
+
+                        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <TextToSpeechWrapper>
+                            <h4 className="font-semibold text-green-900 dark:text-green-200 mb-2">Try it now!</h4>
+                            <p className="text-sm text-green-800 dark:text-green-300">
+                              Click on this text to test the text-to-speech functionality. You should hear the text being read aloud and see it highlighted.
+                            </p>
+                          </TextToSpeechWrapper>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   <ToggleSetting title="Reduce Motion" description="Minimize animations and transitions" defaultChecked={false} />
                 </div>
