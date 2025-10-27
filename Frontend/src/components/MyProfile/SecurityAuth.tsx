@@ -10,17 +10,17 @@ import {
   Monitor,
   Wallet,
   Github,
-  Twitter,
-  Linkedin
+  Twitter
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import { FaApple, FaDiscord } from "react-icons/fa6";
+import { FaDiscord } from "react-icons/fa6";
 import { SocialLoginButton } from "./SocialLoginButton";
+import { PhantomWalletButton } from "./PhantomWalletButton";
 import { useSelector } from "react-redux";
 import { useToast } from "@/hooks/use-toast";
 
 function SecurityAuth() {
-  const { user } = useSelector((state: any) => state.auth);
+  const { user } = useSelector((state: { auth: { user: { socialAccounts?: { platform: string }[] } } }) => state.auth);
   const { toast } = useToast();
   const [sessions] = useState([
     { device: "Chrome on Windows", location: "New York, USA", lastActive: "2 mins ago", current: true },
@@ -31,100 +31,13 @@ function SecurityAuth() {
   // Check if user has connected social accounts
   const getConnectedAccounts = () => {
     if (!user?.socialAccounts) return [];
-    return user.socialAccounts.map((account: any) => account.platform.toLowerCase());
+    return user.socialAccounts.map((account: { platform: string }) => account.platform.toLowerCase());
   };
 
   const connectedAccounts = getConnectedAccounts();
 
   return (
     <div className="space-y-6">
-      
-      {/* Social Login Integration */}
-      <Card className="bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-            <Shield className="w-5 h-5" />
-            Social Login Integration
-          </CardTitle>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Connect your social accounts for secure authentication
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <SocialLoginButton
-              provider="Google"
-              icon={FcGoogle}
-              label="Google"
-              isConnected={connectedAccounts.includes('google')}
-              redirectTo="/myprofile"
-              onConnect={() => {
-                toast({
-                  title: "Success!",
-                  description: "Google account linked successfully",
-                });
-                window.location.reload();
-              }}
-            />
-            <SocialLoginButton
-              provider="GitHub"
-              icon={Github}
-              label="GitHub"
-              isConnected={connectedAccounts.includes('github')}
-              redirectTo="/myprofile"
-              onConnect={() => {
-                toast({
-                  title: "Success!",
-                  description: "GitHub account linked successfully",
-                });
-                window.location.reload();
-              }}
-            />
-            <SocialLoginButton
-              provider="Twitter"
-              icon={Twitter}
-              label="Twitter"
-              isConnected={connectedAccounts.includes('twitter')}
-              redirectTo="/myprofile"
-              onConnect={() => {
-                toast({
-                  title: "Success!",
-                  description: "Twitter account linked successfully",
-                });
-                window.location.reload();
-              }}
-            />
-            <SocialLoginButton
-              provider="Discord"
-              icon={FaDiscord}
-              label="Discord"
-              isConnected={connectedAccounts.includes('discord')}
-              redirectTo="/myprofile"
-              onConnect={() => {
-                toast({
-                  title: "Success!",
-                  description: "Discord account linked successfully",
-                });
-                window.location.reload();
-              }}
-            />
-            <SocialLoginButton
-              provider="LinkedIn"
-              icon={Linkedin}
-              label="LinkedIn"
-              isConnected={connectedAccounts.includes('linkedin')}
-              redirectTo="/myprofile"
-              onConnect={() => {
-                toast({
-                  title: "Success!",
-                  description: "LinkedIn account linked successfully",
-                });
-                window.location.reload();
-              }}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Security Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -188,20 +101,92 @@ function SecurityAuth() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900">
+          {/* Phantom Wallet Connection */}
+          <PhantomWalletButton 
+            onConnect={() => {
+              toast({
+                title: "Wallet Connected!",
+                description: "Phantom wallet connected successfully",
+              });
+              // No page refresh needed - state updates automatically
+            }}
+            onDisconnect={() => {
+              toast({
+                title: "Wallet Disconnected",
+                description: "Phantom wallet disconnected",
+              });
+              // No page refresh needed - state updates automatically
+            }}
+          />
+          
+          {/* Multi-Sig Wallet Button (Placeholder for future implementation) */}
+          <Button 
+            disabled
+            variant="outline" 
+            className="w-full opacity-50 cursor-not-allowed"
+          >
             <Wallet className="w-4 h-4 mr-2" />
-            Connect Multi-Sig Wallet
+            Multi-Sig Wallet (Coming Soon)
           </Button>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Button variant="outline" className="w-full hover:bg-slate-50 dark:hover:bg-slate-800">
-              <FcGoogle className="w-5 h-5 mr-2" />
-              Login with Google
-            </Button>
-            <Button variant="outline" className="w-full hover:bg-slate-50 dark:hover:bg-slate-800">
-              <FaApple className="w-5 h-5 mr-2" />
-              Login with Apple
-              </Button>
-            </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <SocialLoginButton
+              provider="Google"
+              icon={FcGoogle}
+              label="Google"
+              isConnected={connectedAccounts.includes('google')}
+              redirectTo="/myprofile"
+              onConnect={() => {
+                toast({
+                  title: "Success!",
+                  description: "Google account linked successfully",
+                });
+                // No page refresh needed - state updates automatically
+              }}
+            />
+            <SocialLoginButton
+              provider="GitHub"
+              icon={Github}
+              label="GitHub"
+              isConnected={connectedAccounts.includes('github')}
+              redirectTo="/myprofile"
+              onConnect={() => {
+                toast({
+                  title: "Success!",
+                  description: "GitHub account linked successfully",
+                });
+                // No page refresh needed - state updates automatically
+              }}
+            />
+            <SocialLoginButton
+              provider="Twitter"
+              icon={Twitter}
+              label="Twitter"
+              isConnected={connectedAccounts.includes('twitter')}
+              redirectTo="/myprofile"
+              onConnect={() => {
+                toast({
+                  title: "Success!",
+                  description: "Twitter account linked successfully",
+                });
+                // No page refresh needed - state updates automatically
+              }}
+            />
+            <SocialLoginButton
+              provider="Discord"
+              icon={FaDiscord}
+              label="Discord"
+              isConnected={connectedAccounts.includes('discord')}
+              redirectTo="/myprofile"
+              onConnect={() => {
+                toast({
+                  title: "Success!",
+                  description: "Discord account linked successfully",
+                });
+                // No page refresh needed - state updates automatically
+              }}
+            />
+          </div>
           </CardContent>
         </Card>
 

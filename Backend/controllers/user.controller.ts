@@ -671,3 +671,102 @@ import sendEmail from '../utils/sendMail';
             return next(new ErrorHandler(error.message, 400));
         }
     });
+
+    // Update wallet address
+    export const updateWalletAddress = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { walletAddress, walletProvider } = req.body;
+            const userId = req.user?._id;
+
+            if (!userId) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            if (!walletAddress || !walletProvider) {
+                return next(new ErrorHandler("Wallet address and provider are required", 400));
+            }
+
+            const user = await UserModel.findById(userId);
+            if (!user) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            // Update wallet information
+            user.walletAddress = walletAddress;
+            user.walletProvider = walletProvider;
+            user.walletConnectedAt = new Date();
+
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: "Wallet address updated successfully",
+                user: {
+                    _id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    username: user.username,
+                    role: user.role,
+                    isVerified: user.isVerified,
+                    isSeller: user.isSeller,
+                    avatar: user.avatar,
+                    banner: user.banner,
+                    bio: user.bio,
+                    walletAddress: user.walletAddress,
+                    walletProvider: user.walletProvider,
+                    walletConnectedAt: user.walletConnectedAt,
+                    socialAccounts: user.socialAccounts
+                }
+            });
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
+
+    // Remove wallet address
+    export const removeWalletAddress = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user?._id;
+
+            if (!userId) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            const user = await UserModel.findById(userId);
+            if (!user) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            // Remove wallet information
+            user.walletAddress = null;
+            user.walletProvider = null;
+            user.walletConnectedAt = null;
+
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: "Wallet address removed successfully",
+                user: {
+                    _id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    username: user.username,
+                    role: user.role,
+                    isVerified: user.isVerified,
+                    isSeller: user.isSeller,
+                    avatar: user.avatar,
+                    banner: user.banner,
+                    bio: user.bio,
+                    walletAddress: user.walletAddress,
+                    walletProvider: user.walletProvider,
+                    walletConnectedAt: user.walletConnectedAt,
+                    socialAccounts: user.socialAccounts
+                }
+            });
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Link as LinkIcon } from "lucide-react";
+import { Loader2, CheckCircle, Link as LinkIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { userLoggedIn } from "@/redux/features/auth/authSlice";
@@ -151,27 +151,27 @@ export function SocialLoginButton({
   return (
     <Button
       onClick={handleAuth0Login}
-      disabled={isLoading || isConnected}
+      disabled={isLoading || isProcessing || isConnected}
       variant={isConnected ? "outline" : "default"}
-      className={`w-full ${
+      className={`w-full transition-all duration-200 ${
         isConnected
-          ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+          ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300"
           : "bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900"
       }`}
     >
-      {isLoading ? (
+      {isLoading || isProcessing ? (
         <>
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          Connecting...
+          {isProcessing ? "Processing..." : "Connecting..."}
         </>
       ) : isConnected ? (
         <>
-          <Icon className="w-4 h-4 mr-2" />
+          <CheckCircle className="w-4 h-4 mr-2" />
           Connected to {label}
         </>
       ) : (
         <>
-          <LinkIcon className="w-4 h-4 mr-2" />
+          <Icon className="w-4 h-4 mr-2" />
           Connect {label}
         </>
       )}

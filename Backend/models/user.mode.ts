@@ -42,6 +42,9 @@ export interface IUser extends Document {
         username: string;
         isVerified: boolean;
     }[];
+    walletAddress: string;
+    walletProvider: string;
+    walletConnectedAt: Date;
     comparePassword: (password: string) => Promise<boolean>;
     SignAccessToken: () => string;
     SignRefreshToken: () => string;
@@ -149,6 +152,18 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
             }
         }
     ],
+    walletAddress: {
+        type: String,
+        default: null,
+    },
+    walletProvider: {
+        type: String,
+        default: null,
+    },
+    walletConnectedAt: {
+        type: Date,
+        default: null,
+    },
     purchasedProducts: [
         {
             productId: String,

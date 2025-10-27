@@ -72,7 +72,8 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
     },
   ] = useEditUsernameMutation();
 
-  const { walletAddress } = useSelector((state: any) => state.auth);
+  // Get wallet address from user data
+  const walletAddress = user?.walletAddress;
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -505,12 +506,20 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
             {walletAddress && (
               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                 <Wallet className="w-4 h-4" />
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-500">
+                  {user?.walletProvider?.toUpperCase() || 'WALLET'}:
+                </span>
                 <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-xs">
-                {walletAddress?.length > 10
-                    ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-                  : walletAddress}
+                  {walletAddress?.length > 10
+                      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+                    : walletAddress}
                 </code>
-            </div>
+                {user?.walletConnectedAt && (
+                  <span className="text-xs text-slate-500 dark:text-slate-500">
+                    Connected {formatDate(user.walletConnectedAt)}
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
