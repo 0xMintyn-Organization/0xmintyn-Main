@@ -95,6 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('user', JSON.stringify(data.user));
       if (data.accessToken) {
         localStorage.setItem('accessToken', data.accessToken);
+        // Store login timestamp for auto-logout calculation
+        localStorage.setItem('loginTimestamp', Date.now().toString());
       }
     } else if (!queryLoading && shouldFetch) {
       // No user data and not loading, user is not authenticated
@@ -115,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setShouldFetch(false);
     localStorage.removeItem('user');
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('loginTimestamp');
     router.push('/login');
   };
 

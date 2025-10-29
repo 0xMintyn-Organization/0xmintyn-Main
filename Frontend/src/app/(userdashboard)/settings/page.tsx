@@ -13,7 +13,12 @@ import { useFontSize } from "@/contexts/FontSizeContext";
 import { useTextToSpeech } from "@/contexts/TextToSpeechContext";
 import { TextToSpeechWrapper } from "@/components/TextToSpeech/TextToSpeechWrapper";
 import { Bell, ChevronRight, Eye, EyeOff, Lock, Settings as SettingsIcon, Wallet, Shield, Code, Download, Trash2, CheckCircle, AlertCircle, Zap, Globe, Smartphone, Mail, CreditCard, DollarSign, Gauge, Moon, Sun } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAutoLogout } from "@/hooks/useAutoLogout";
+
+const AUTO_LOGOUT_STORAGE_KEY = 'autoLogout_time';
+const AUTO_LOGOUT_ENABLED_KEY = 'autoLogout_enabled';
+const DEFAULT_AUTO_LOGOUT_TIME = 30; // minutes
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme();
@@ -35,9 +40,56 @@ export default function Settings() {
     setPitch, 
     setVolume 
   } = useTextToSpeech();
-  const [autoLogoutTime, setAutoLogoutTime] = useState<number>(30);
+  
+  // Auto-logout state with persistence
+  const [autoLogoutTime, setAutoLogoutTime] = useState<number>(DEFAULT_AUTO_LOGOUT_TIME);
+  const [autoLogoutEnabled, setAutoLogoutEnabled] = useState<boolean>(true);
+  const { saveUserPreference } = useAutoLogout();
   const [privateMode, setPrivateMode] = useState<boolean>(false);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
+
+  // Load auto-logout preferences from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTime = localStorage.getItem(AUTO_LOGOUT_STORAGE_KEY);
+      const savedEnabled = localStorage.getItem(AUTO_LOGOUT_ENABLED_KEY);
+      
+      if (savedTime) {
+        const parsedTime = parseInt(savedTime, 10);
+        if (!isNaN(parsedTime) && parsedTime >= 5 && parsedTime <= 120) {
+          setAutoLogoutTime(parsedTime);
+        }
+      }
+      
+      if (savedEnabled !== null) {
+        setAutoLogoutEnabled(savedEnabled === 'true');
+      }
+    }
+  }, []);
+
+  // Save auto-logout time preference
+  const handleAutoLogoutTimeChange = (value: number) => {
+    setAutoLogoutTime(value);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(AUTO_LOGOUT_STORAGE_KEY, value.toString());
+      // Also save as session timeout (total session duration)
+      localStorage.setItem('autoLogout_sessionTimeout', value.toString());
+    }
+  };
+
+  // Save auto-logout enabled preference
+  const handleAutoLogoutEnabledChange = (enabled: boolean) => {
+    setAutoLogoutEnabled(enabled);
+    saveUserPreference(enabled);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(AUTO_LOGOUT_ENABLED_KEY, enabled.toString());
+    }
+  };
+
+  // Reset to default
+  const handleResetAutoLogout = () => {
+    handleAutoLogoutTimeChange(DEFAULT_AUTO_LOGOUT_TIME);
+  };
 
   const handleThemeChange = (newTheme: "light" | "dark") => {
     if (newTheme !== theme) {
@@ -371,53 +423,77 @@ export default function Settings() {
               </SettingCard>
 
               {/* Auto-Logout Timer */}
-              <SettingCard icon={Gauge} title="Session Management" description="Control your login session duration">
+              <SettingCard icon={Gauge} title="Session Management" description="Control your login session duration and auto-logout">
                 <div className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <label className="font-medium text-gray-900 dark:text-white">Auto-Logout After</label>
-                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">{autoLogoutTime}m</span>
+                  {/* Enable/Disable Toggle */}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-green-300/50 transition-all duration-300">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Enable Auto-Logout</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Automatically log out when session expires for security</p>
                     </div>
-                    <div 
-                      className="w-full cursor-pointer slider-container"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onTouchStart={(e) => e.preventDefault()}
-                    >
-                      <input
-                        type="range"
-                        min="5"
-                        max="120"
-                        step="5"
-                        value={autoLogoutTime}
-                        onChange={(e) => setAutoLogoutTime(parseInt(e.target.value))}
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                        style={{
-                          background: `linear-gradient(to right, #10b981 0%, #10b981 ${((autoLogoutTime - 5) / (120 - 5)) * 100}%, #e5e7eb ${((autoLogoutTime - 5) / (120 - 5)) * 100}%, #e5e7eb 100%)`
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                      <span>5m (Quick)</span>
-                      <span>60m (Normal)</span>
-                      <span>120m (Long)</span>
-                    </div>
-                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
-                        <strong>Current Time:</strong> {autoLogoutTime} minutes - {autoLogoutTime < 30 ? "Quick" : autoLogoutTime < 90 ? "Normal" : "Extended"}
-                      </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
-                        You'll be logged out automatically after {autoLogoutTime} minutes of inactivity for security
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => setAutoLogoutTime(30)}
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full border-gray-300 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
-                    >
-                      Reset to Default (30m)
-                    </Button>
+                    <Switch 
+                      checked={autoLogoutEnabled} 
+                      onCheckedChange={handleAutoLogoutEnabledChange}
+                      className="scale-110" 
+                    />
                   </div>
+
+                  {autoLogoutEnabled && (
+                    <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <label className="font-medium text-gray-900 dark:text-white">Session Timeout</label>
+                        <span className="text-sm font-semibold text-green-600 dark:text-green-400">{autoLogoutTime} min</span>
+                      </div>
+                      <div className="w-full">
+                        <input
+                          type="range"
+                          min="5"
+                          max="120"
+                          step="5"
+                          value={autoLogoutTime}
+                          onChange={(e) => {
+                            const newValue = parseInt(e.target.value);
+                            handleAutoLogoutTimeChange(newValue);
+                          }}
+                          className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb slider-track"
+                          style={{
+                            background: `linear-gradient(to right, #10b981 0%, #10b981 ${((autoLogoutTime - 5) / (120 - 5)) * 100}%, #e5e7eb ${((autoLogoutTime - 5) / (120 - 5)) * 100}%, #e5e7eb 100%)`
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                        <span>5m</span>
+                        <span>30m</span>
+                        <span>60m</span>
+                        <span>120m</span>
+                      </div>
+                      <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                          <strong>Session Duration:</strong> {autoLogoutTime} minutes total
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                          You'll be automatically logged out after {autoLogoutTime} minutes of session time. A warning will be shown 2 minutes before logout.
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={handleResetAutoLogout}
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full border-gray-300 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      >
+                        Reset to Default ({DEFAULT_AUTO_LOGOUT_TIME}m)
+                      </Button>
+                    </div>
+                  )}
+
+                  {!autoLogoutEnabled && (
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        <AlertCircle className="h-4 w-4 inline mr-2" />
+                        Auto-logout is disabled. Your session will remain active until the token expires or you manually log out.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </SettingCard>
             </TabsContent>
