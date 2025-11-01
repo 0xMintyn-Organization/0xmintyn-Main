@@ -324,9 +324,9 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "http://localhost:8000"; 
+            const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com"; 
             // @ts-ignore
-            const avatarUrl = `${serverUrl}/uploads/${req.file.filename}`;
+            const avatarUrl = `${serverUrl}/uploads/files/${req.file.filename}`;
 
             user.avatar = avatarUrl; 
             await user.save();
@@ -357,9 +357,9 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
+            const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
             // @ts-ignore
-            const bannerUrl = `${serverUrl}/uploads/${req.file.filename}`;
+            const bannerUrl = `${serverUrl}/uploads/files/${req.file.filename}`;
 
             user.banner = bannerUrl;
             await user.save();
@@ -587,6 +587,185 @@ import sendEmail from '../utils/sendMail';
                 }
             });
 
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
+
+    // Add or update social account
+    export const updateSocialAccount = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user?._id;
+            const { platform, username } = req.body;
+
+            if (!platform || !username) {
+                return next(new ErrorHandler("Platform and username are required", 400));
+            }
+
+            const user = await UserModel.findById(userId);
+
+            if (!user) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            // Check if social account already exists
+            const existingAccountIndex = user.socialAccounts.findIndex(
+                (account: any) => account.platform.toLowerCase() === platform.toLowerCase()
+            );
+
+            if (existingAccountIndex !== -1) {
+                // Update existing account
+                user.socialAccounts[existingAccountIndex].username = username;
+            } else {
+                // Add new account
+                user.socialAccounts.push({
+                    platform,
+                    username,
+                    isVerified: false
+                });
+            }
+
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                user,
+                message: "Social account updated successfully",
+            });
+
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
+
+    // Remove social account
+    export const removeSocialAccount = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user?._id;
+            const { platform } = req.body;
+
+            if (!platform) {
+                return next(new ErrorHandler("Platform is required", 400));
+            }
+
+            const user = await UserModel.findById(userId);
+
+            if (!user) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            // Remove the social account
+            user.socialAccounts = user.socialAccounts.filter(
+                (account: any) => account.platform.toLowerCase() !== platform.toLowerCase()
+            );
+
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                user,
+                message: "Social account removed successfully",
+            });
+
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
+
+    // Update wallet address
+    export const updateWalletAddress = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { walletAddress, walletProvider } = req.body;
+            const userId = req.user?._id;
+
+            if (!userId) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            if (!walletAddress || !walletProvider) {
+                return next(new ErrorHandler("Wallet address and provider are required", 400));
+            }
+
+            const user = await UserModel.findById(userId);
+            if (!user) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            // Update wallet information
+            user.walletAddress = walletAddress;
+            user.walletProvider = walletProvider;
+            user.walletConnectedAt = new Date();
+
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: "Wallet address updated successfully",
+                user: {
+                    _id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    username: user.username,
+                    role: user.role,
+                    isVerified: user.isVerified,
+                    isSeller: user.isSeller,
+                    avatar: user.avatar,
+                    banner: user.banner,
+                    bio: user.bio,
+                    walletAddress: user.walletAddress,
+                    walletProvider: user.walletProvider,
+                    walletConnectedAt: user.walletConnectedAt,
+                    socialAccounts: user.socialAccounts
+                }
+            });
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
+
+    // Remove wallet address
+    export const removeWalletAddress = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user?._id;
+
+            if (!userId) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            const user = await UserModel.findById(userId);
+            if (!user) {
+                return next(new ErrorHandler("User not found", 404));
+            }
+
+            // Remove wallet information
+            user.walletAddress = null;
+            user.walletProvider = null;
+            user.walletConnectedAt = null;
+
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: "Wallet address removed successfully",
+                user: {
+                    _id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    username: user.username,
+                    role: user.role,
+                    isVerified: user.isVerified,
+                    isSeller: user.isSeller,
+                    avatar: user.avatar,
+                    banner: user.banner,
+                    bio: user.bio,
+                    walletAddress: user.walletAddress,
+                    walletProvider: user.walletProvider,
+                    walletConnectedAt: user.walletConnectedAt,
+                    socialAccounts: user.socialAccounts
+                }
+            });
         } catch (error: any) {
             return next(new ErrorHandler(error.message, 400));
         }

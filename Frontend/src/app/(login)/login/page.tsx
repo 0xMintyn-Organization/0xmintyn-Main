@@ -13,6 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useLoginMutation } from "@/redux/features/auth/authApi";
 import useAuth from "@/hooks/userAuth";
 import { useRouter } from "next/navigation";
+import { SocialLoginButton } from "@/components/MyProfile/SocialLoginButton";
+import { FcGoogle } from "react-icons/fc";
+import { Github, Twitter, Linkedin } from "lucide-react";
+import { FaDiscord } from "react-icons/fa";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -127,6 +131,63 @@ export default function LoginPage() {
           </Button>
         </form>
       </Form>
+
+      {/* Social Login Section */}
+      <div className="mt-6">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-gray-300 dark:border-gray-600" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white dark:bg-zinc-800 px-2 text-gray-500 dark:text-gray-400">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <SocialLoginButton
+            provider="Google"
+            icon={FcGoogle}
+            label="Google"
+            isConnected={false}
+            redirectTo="/dashboard"
+            onConnect={() => {
+              console.log("Google login successful");
+            }}
+          />
+          <SocialLoginButton
+            provider="GitHub"
+            icon={Github}
+            label="GitHub"
+            isConnected={false}
+            redirectTo="/dashboard"
+            onConnect={() => {
+              console.log("GitHub login successful");
+            }}
+          />
+          <SocialLoginButton
+            provider="Twitter"
+            icon={Twitter}
+            label="Twitter"
+            isConnected={false}
+            redirectTo="/dashboard"
+            onConnect={() => {
+              console.log("Twitter login successful");
+            }}
+          />
+          <SocialLoginButton
+            provider="Discord"
+            icon={FaDiscord}
+            label="Discord"
+            isConnected={false}
+            redirectTo="/dashboard"
+            onConnect={() => {
+              console.log("Discord login successful");
+            }}
+          />
+        </div>
+      </div>
 
       <div className="text-center mt-4 text-sm text-gray-500">
         Don't have an account?{" "}

@@ -122,16 +122,7 @@ function SocialCommunity() {
               >
                 Connected Accounts
               </button>
-              <button
-                className={`flex-1 py-4 px-6 text-center ${
-                  activeTab === 'contributions'
-                    ? 'border-b-2 border-green-500 text-green-500 font-medium'
-                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
-                onClick={() => setActiveTab('contributions')}
-              >
-                Community Contributions
-              </button>
+           
             </div>
             
             {/* Connected Accounts Tab Content */}
@@ -183,64 +174,7 @@ function SocialCommunity() {
               </div>
             )}
             
-            {/* Community Contributions Tab Content */}
-            {activeTab === 'contributions' && (
-              <div className="p-6">
-                <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2 md:mb-0">Your Community Activity</h3>
-                  <div className="bg-green-100 px-4 py-2 rounded-lg flex items-center">
-                    <span className="text-sm text-gray-600 mr-2">Engagement Score:</span>
-                    <span className="text-lg font-bold text-green-600">{engagementScore}</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-6">
-                  {mockContributions.map((contribution) => (
-                    <div key={contribution.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-green-900">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center">
-                          <div className="p-1.5 rounded-full bg-gray-100 dark:bg-zinc-600 mr-2">
-                            {getContributionTypeIcon(contribution.type)}
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-900 dark:text-gray-200 dark:text-white">{contribution.type}</span>
-                            <span className={`ml-2 text-xs px-2 py-1 rounded ${getPlatformColor(contribution.platform)}`}>
-                              {contribution.platform}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-xs text-gray-500">{formatRelativeTime(contribution.date)}</span>
-                      </div>
-                      
-                      <div className="mb-3">
-                        <p className="text-gray-700 dark:text-white">{contribution.content}</p>
-                      </div>
-                      
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                          <span>{contribution.likes}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                          </svg>
-                          <span>{contribution.comments}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2 0 "/>
-                        </svg>
-                        <span>{contribution.comments}</span>
-                        </div>
-                        </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+         
           </div>
       )
 }

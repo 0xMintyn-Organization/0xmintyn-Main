@@ -28,7 +28,9 @@ import marketplaceOrderRouter from './routes/marketplace/marketplaceOrder.route'
 import marketplaceMessageRouter from './routes/marketplace/marketplaceMessage.route';
 import marketplaceOfferRouter from './routes/marketplace/marketplaceOffer.route';
 import marketplaceReviewRouter from './routes/marketplace/marketplaceReview.route';
+import dashboardRouter from './routes/dashboard/dashboard.route';
 import uploadRouter from './routes/upload.route';
+import auth0Router from './routes/auth0.route';
 require('dotenv').config();
 export const app = express();
 
@@ -41,7 +43,7 @@ app.use(cookieParser());
 
 // cors
 app.use(cors({ 
-    origin: ['http://localhost:3000', 'http://209.74.89.249:3000' ], 
+    origin: ['https://app.0xmintyn.com', 'http://209.74.89.249:3000' ], 
     credentials: true 
 }));
 
@@ -109,9 +111,11 @@ app.use('/api/v1/marketplace/orders', marketplaceOrderRouter);
 app.use('/api/v1/marketplace/messages', marketplaceMessageRouter);
 app.use('/api/v1/marketplace/offers', marketplaceOfferRouter);
 app.use('/api/v1/marketplace/reviews', marketplaceReviewRouter);
+app.use('/api/v1/dashboard', dashboardRouter);
 app.use('/api/v1/upload', uploadRouter);
 app.use('/api/v1/proposal', proposalRoutes);
 app.use('/api/v1/vote', voteRoutes);
+app.use('/api/v1', auth0Router);
 
 
 

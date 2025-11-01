@@ -1,5 +1,5 @@
 import express from 'express';
-import { activateUserAccount, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus } from '../controllers/user.controller';
+import { activateUserAccount, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus, updateSocialAccount, removeSocialAccount, updateWalletAddress, removeWalletAddress } from '../controllers/user.controller';
 import { getInstructorStats } from '../controllers/instructor.controller';
 import { isAthenticated as isAuthenticated } from '../utils/auth';
 import upload from '../middleware/multerConfig';
@@ -37,8 +37,12 @@ userRouter.post("/apply-instructor", updateAccessTokenMiddleware, isAuthenticate
 
 userRouter.put("/toggle-seller-status", updateAccessTokenMiddleware, isAuthenticated, toggleSellerStatus);
 
+userRouter.put("/update-social-account", updateAccessTokenMiddleware, isAuthenticated, updateSocialAccount);
 
+userRouter.delete("/remove-social-account", updateAccessTokenMiddleware, isAuthenticated, removeSocialAccount);
 
+userRouter.put("/update-wallet-address", updateAccessTokenMiddleware, isAuthenticated, updateWalletAddress);
 
+userRouter.delete("/remove-wallet-address", updateAccessTokenMiddleware, isAuthenticated, removeWalletAddress);
 
 export default userRouter;

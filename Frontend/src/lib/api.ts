@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Centralized API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/';
+const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/';
 
 // Create axios instance with default configuration
 const api = axios.create({
@@ -177,6 +177,76 @@ export const marketplaceAPI = {
   getUnreadCount: () => apiCall({
     method: 'GET',
     url: 'marketplace/messages/unread-count'
+  })
+};
+
+// Dashboard API functions following marketplace naming convention
+export const dashboardAPI = {
+  // Stats
+  getTotalUsers: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/totalusers'
+  }),
+
+  getTotalInstructors: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/totalinstructors'
+  }),
+
+  getTotalCourses: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/totalcourses'
+  }),
+
+  getTotalProducts: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/totalproducts'
+  }),
+
+  getTotalServices: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/totalservices'
+  }),
+
+  getAvgRating: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/avgrating'
+  }),
+
+  // Top items
+  getTopInstructors: (limit?: number) => apiCall({
+    method: 'GET',
+    url: 'dashboard/topinstructors',
+    params: limit ? { limit } : {}
+  }),
+
+  getTopProducts: (limit?: number) => apiCall({
+    method: 'GET',
+    url: 'dashboard/topproducts',
+    params: limit ? { limit } : {}
+  }),
+
+  getTopServices: (limit?: number) => apiCall({
+    method: 'GET',
+    url: 'dashboard/topservices',
+    params: limit ? { limit } : {}
+  }),
+
+  getTopSellers: (limit?: number) => apiCall({
+    method: 'GET',
+    url: 'dashboard/topsellers',
+    params: limit ? { limit } : {}
+  }),
+
+  getTrendingCategories: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/trendingcategories'
+  }),
+
+  getRecentActivity: (limit?: number) => apiCall({
+    method: 'GET',
+    url: 'dashboard/recentactivity',
+    params: limit ? { limit } : {}
   })
 };
 

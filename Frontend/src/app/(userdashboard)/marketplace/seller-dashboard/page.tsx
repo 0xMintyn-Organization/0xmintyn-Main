@@ -93,7 +93,7 @@ export default function SellerDashboardPage() {
       // Fetch seller products, services, and orders in parallel (removed non-existent stats endpoint)
       const [productsResponse, servicesResponse, ordersResponse] = await Promise.all([
         // Fetch seller products
-        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/products/seller/my-products?limit=5`, {
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/products/seller/my-products?limit=5`, {
           withCredentials: true
         }).catch((error) => {
           console.error('Error fetching seller products:', error);
@@ -101,7 +101,7 @@ export default function SellerDashboardPage() {
         }),
         
         // Fetch seller services
-        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/services/seller/my-services?limit=5`, {
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/services/seller/my-services?limit=5`, {
           withCredentials: true
         }).catch((error) => {
           console.error('Error fetching seller services:', error);
@@ -109,7 +109,7 @@ export default function SellerDashboardPage() {
         }),
         
         // Fetch seller orders for sales calculation
-        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/orders/seller`, {
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/orders/seller`, {
           withCredentials: true
         }).catch((error) => {
           console.error('Error fetching seller orders:', error);
@@ -187,7 +187,7 @@ export default function SellerDashboardPage() {
     try {
       // Fetch inbox messages
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/messages/inbox?limit=5`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/messages/inbox?limit=5`,
         { withCredentials: true }
       );
 
@@ -197,7 +197,7 @@ export default function SellerDashboardPage() {
 
       // Fetch unread count
       const unreadResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/messages/unread-count`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/messages/unread-count`,
         { withCredentials: true }
       );
 
@@ -214,7 +214,7 @@ export default function SellerDashboardPage() {
     if (!imagePath) return '/placeholder-product.jpg';
     if (imagePath.startsWith('http')) return imagePath;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     return `${baseUrl}${normalizedPath}`;
@@ -236,8 +236,8 @@ export default function SellerDashboardPage() {
     
     try {
       const endpoint = deleteModal.itemType === 'product' 
-        ? `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/products/${deleteModal.itemId}`
-        : `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/services/${deleteModal.itemId}`;
+        ? `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/products/${deleteModal.itemId}`
+        : `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/services/${deleteModal.itemId}`;
       
       await axios.delete(endpoint, { withCredentials: true });
       
@@ -275,7 +275,7 @@ export default function SellerDashboardPage() {
     try {
       // First check if user has a seller profile
       const statusResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/sellers/profile/status`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/sellers/profile/status`,
         { withCredentials: true }
       );
 
@@ -286,7 +286,7 @@ export default function SellerDashboardPage() {
         if (statusResponse.data.hasProfile) {
           // If user has profile, fetch the full profile data
           const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/sellers/profile/me`,
+            `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/sellers/profile/me`,
             { withCredentials: true }
           );
 

@@ -25,6 +25,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { SocialLoginButton } from "@/components/MyProfile/SocialLoginButton";
+import { FcGoogle } from "react-icons/fc";
+import { Github, Twitter, Linkedin } from "lucide-react";
+import { FaDiscord } from "react-icons/fa";
 
 
 
@@ -334,6 +338,64 @@ function UserRegistartionForm() {
             {isSubmitting ? "Submitting..." : "Register"}
           </Button>
         </form>
+
+        {/* Social Login Section */}
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-300 dark:border-gray-600" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white dark:bg-zinc-800 px-2 text-gray-500 dark:text-gray-400">
+                Or register with
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <SocialLoginButton
+              provider="Google"
+              icon={FcGoogle}
+              label="Google"
+              isConnected={false}
+              redirectTo="/dashboard"
+              onConnect={() => {
+                console.log("Google registration successful");
+              }}
+            />
+            <SocialLoginButton
+              provider="GitHub"
+              icon={Github}
+              label="GitHub"
+              isConnected={false}
+              redirectTo="/dashboard"
+              onConnect={() => {
+                console.log("GitHub registration successful");
+              }}
+            />
+            <SocialLoginButton
+              provider="Twitter"
+              icon={Twitter}
+              label="Twitter"
+              isConnected={false}
+              redirectTo="/dashboard"
+              onConnect={() => {
+                console.log("Twitter registration successful");
+              }}
+            />
+            <SocialLoginButton
+              provider="Discord"
+              icon={FaDiscord}
+              label="Discord"
+              isConnected={false}
+              redirectTo="/dashboard"
+              onConnect={() => {
+                console.log("Discord registration successful");
+              }}
+            />
+          </div>
+        </div>
+
         <div className="text-center pt-4">
           <span className="text-sm text-gray-500">
             Already have an account?{" "}
