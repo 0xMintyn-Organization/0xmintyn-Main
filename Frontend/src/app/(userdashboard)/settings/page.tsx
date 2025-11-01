@@ -210,7 +210,7 @@ export default function Settings() {
 
             {/* GENERAL SETTINGS */}
             <TabsContent value="general" className="space-y-6 animate-in fade-in duration-300">
-              <SettingCard icon={Globe} title="Language & Region" description="Choose your preferred language and regional settings">
+              {/* <SettingCard icon={Globe} title="Language & Region" description="Choose your preferred language and regional settings">
                 <EnhancedSelect
                   value={selectedLanguage}
                   onValueChange={setSelectedLanguage}
@@ -218,7 +218,7 @@ export default function Settings() {
                   placeholder="Select language"
                   className="w-full"
                 />
-              </SettingCard>
+              </SettingCard> */}
 
               {/* Theme Preferences */}
               <SettingCard icon={SettingsIcon} title="Theme & Appearance" description="Customize how the platform looks on your devices">
@@ -300,8 +300,6 @@ export default function Settings() {
                       Reset to Normal (100%)
                     </Button>
                   </div>
-
-                  <ToggleSetting title="High-Contrast Mode" description="Enhance visibility with higher contrast colors" defaultChecked={false} />
 
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-green-300/50 transition-all duration-300">
@@ -417,8 +415,6 @@ export default function Settings() {
                       </div>
                     )}
                   </div>
-
-                  <ToggleSetting title="Reduce Motion" description="Minimize animations and transitions" defaultChecked={false} />
                 </div>
               </SettingCard>
 
@@ -511,18 +507,12 @@ export default function Settings() {
                   <ToggleSetting title="Email Verification" description="Receive a verification code via email" defaultChecked={true} />
 
                   <ToggleSetting title="Authenticator App" description="Use Google Authenticator, Authy, or Microsoft Authenticator" defaultChecked={false} />
-
-                  <ToggleSetting title="SMS Verification" description="Receive a code via text message" defaultChecked={false} />
-
-                  <ToggleSetting title="Security Keys" description="Use hardware keys like YubiKey (U2F/WebAuthn)" defaultChecked={false} />
                 </div>
               </SettingCard>
 
               {/* Privacy Mode */}
               <SettingCard icon={Eye} title="Privacy & Visibility" description="Control who can see your profile and activities">
                 <div className="space-y-3">
-                  <ToggleSetting title="Private Profile" description="Hide your profile from public search and browsing" defaultChecked={privateMode} onChange={setPrivateMode} />
-
                   <ToggleSetting title="Show Online Status" description="Let others see when you're online" defaultChecked={true} />
 
                   <ToggleSetting title="Allow Message Requests" description="Permit anyone to send you messages" defaultChecked={true} />
@@ -581,12 +571,6 @@ export default function Settings() {
               <SettingCard icon={Mail} title="Email & In-App Alerts" description="Manage your notification channels">
                 <div className="space-y-3">
                   <ToggleSetting title="Email Notifications" description="Receive important updates via email" defaultChecked={true} />
-
-                  <ToggleSetting title="Push Notifications" description="In-app notifications and alerts" defaultChecked={true} />
-
-                  <ToggleSetting title="Browser Notifications" description="Desktop alerts when browser is open" defaultChecked={false} />
-
-                  <ToggleSetting title="SMS Notifications" description="Critical alerts via text message" defaultChecked={false} />
                 </div>
               </SettingCard>
 
