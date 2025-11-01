@@ -180,4 +180,74 @@ export const marketplaceAPI = {
   })
 };
 
+// Dashboard API functions following marketplace naming convention
+export const dashboardAPI = {
+  // Stats
+  getTotalUsers: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/totalusers'
+  }),
+
+  getTotalInstructors: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/totalinstructors'
+  }),
+
+  getTotalCourses: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/totalcourses'
+  }),
+
+  getTotalProducts: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/totalproducts'
+  }),
+
+  getTotalServices: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/totalservices'
+  }),
+
+  getAvgRating: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/avgrating'
+  }),
+
+  // Top items
+  getTopInstructors: (limit?: number) => apiCall({
+    method: 'GET',
+    url: 'dashboard/topinstructors',
+    params: limit ? { limit } : {}
+  }),
+
+  getTopProducts: (limit?: number) => apiCall({
+    method: 'GET',
+    url: 'dashboard/topproducts',
+    params: limit ? { limit } : {}
+  }),
+
+  getTopServices: (limit?: number) => apiCall({
+    method: 'GET',
+    url: 'dashboard/topservices',
+    params: limit ? { limit } : {}
+  }),
+
+  getTopSellers: (limit?: number) => apiCall({
+    method: 'GET',
+    url: 'dashboard/topsellers',
+    params: limit ? { limit } : {}
+  }),
+
+  getTrendingCategories: () => apiCall({
+    method: 'GET',
+    url: 'dashboard/trendingcategories'
+  }),
+
+  getRecentActivity: (limit?: number) => apiCall({
+    method: 'GET',
+    url: 'dashboard/recentactivity',
+    params: limit ? { limit } : {}
+  })
+};
+
 export default api;

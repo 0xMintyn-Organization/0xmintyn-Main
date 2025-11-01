@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRole } from "@/hooks/useRole";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,48 +10,53 @@ import {
   BarChart3,
   Crown,
   GraduationCap,
-  User,
   TrendingUp,
   Plus,
-  Eye,
-  Edit,
-  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import Spinner from "@/components/Spinner";
 import roleService from "@/services/roleService";
+import EnhancedDashboard from "./EnhancedDashboard";
+import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
 
 interface DashboardData {
   totalUsers?: number;
   totalInstructors?: number;
   totalAdmins?: number;
   totalCourses?: number;
-  recentUsers?: any[];
-  recentCourses?: any[];
+  recentUsers?: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  }>;
+  recentCourses?: Array<{
+    _id: string;
+    name: string;
+    createdBy: string;
+  }>;
 }
 
 export default function RoleBasedDashboard() {
   const { user, isAdmin, isInstructor, isUser } = useRole();
-  const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData>({});
+  
+  // Load user data on component mount
+  const { isLoading: userLoading } = useLoadUserQuery(undefined, {
+    skip: false, // Always try to load user data
+  });
 
-  useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-    }
-  }, [user]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await roleService.getRoleDashboard();
       if (response.success) {
         setDashboardData(response.dashboard);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching dashboard data:", error);
       toast({
         title: "Error",
@@ -61,9 +66,16 @@ export default function RoleBasedDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  if (loading) {
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user, fetchDashboardData]);
+
+  // Show loading while user data is being loaded
+  if (userLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
         <Spinner />
@@ -80,13 +92,13 @@ export default function RoleBasedDashboard() {
   }
 
   if (isUser()) {
-    return <UserDashboard data={dashboardData} />;
+    return <UserDashboard />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-white mb-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           Welcome to 0xMintyn
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
@@ -106,7 +118,7 @@ function AdminDashboard({ data }: { data: DashboardData }) {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Admin Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -206,7 +218,7 @@ function AdminDashboard({ data }: { data: DashboardData }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {data.recentUsers?.slice(0, 3).map((user: any) => (
+              {data.recentUsers?.slice(0, 3).map((user) => (
                 <div key={user._id} className="flex items-center justify-between text-sm">
                   <span>{user.firstName} {user.lastName}</span>
                   <span className="text-gray-500">{user.role}</span>
@@ -229,7 +241,7 @@ function InstructorDashboard({ data }: { data: DashboardData }) {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Instructor Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -333,107 +345,6 @@ function InstructorDashboard({ data }: { data: DashboardData }) {
 }
 
 // User Dashboard Component
-function UserDashboard({ data }: { data: DashboardData }) {
-  const router = useRouter();
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
-            Welcome Back!
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Continue your learning journey
-          </p>
-        </div>
-        <Button onClick={() => router.push("/courses")}>
-          <BookOpen className="w-4 h-4 mr-2" />
-          Browse Courses
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Enrolled Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Active courses</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Finished courses</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Learning Hours</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Total hours</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Continue Learning</CardTitle>
-            <CardDescription>Resume your courses</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button 
-              className="w-full justify-start" 
-              variant="outline"
-              onClick={() => router.push("/my-courses")}
-            >
-              <BookOpen className="w-4 h-4 mr-2" />
-              My Courses
-            </Button>
-            <Button 
-              className="w-full justify-start" 
-              variant="outline"
-              onClick={() => router.push("/courses")}
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              Browse Courses
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Manage your account</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button 
-              className="w-full justify-start" 
-              variant="outline"
-              onClick={() => router.push("/profile")}
-            >
-              <User className="w-4 h-4 mr-2" />
-              Edit Profile
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+function UserDashboard() {
+  return <EnhancedDashboard />;
 }

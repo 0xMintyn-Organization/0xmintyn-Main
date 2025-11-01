@@ -2,10 +2,10 @@ import { createSlice } from "@reduxjs/toolkit";
 
 
 const initialState = {
-    user: "",
+    user: null,
     token: "",
-    walletAddress: "",  
-
+    walletAddress: "",
+    isAuthenticated: false,
 };
 
 const authSlice = createSlice({
@@ -14,16 +14,18 @@ const authSlice = createSlice({
     reducers: {
         userRegistration: (state, action) => {
             state.token = action.payload.token;
-
+            state.isAuthenticated = true;
         },
         userLoggedIn: (state, action) => {
             state.token = action.payload.accessToken;
             state.user = action.payload.user;
+            state.isAuthenticated = true;
         },
         userLoggedOut: (state) => {
             state.token = "";
-            state.user = "";
-            state.walletAddress = "";  
+            state.user = null;
+            state.walletAddress = "";
+            state.isAuthenticated = false;
         },
         setWalletAddress: (state, action) => {
             state.walletAddress = action.payload.walletAddress;  
