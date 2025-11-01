@@ -4,7 +4,7 @@ export const auth0Config = {
     domain: process.env.AUTH0_DOMAIN || '',
     clientId: process.env.AUTH0_CLIENT_ID || '',
     clientSecret: process.env.AUTH0_CLIENT_SECRET || '',
-    callbackURL: process.env.AUTH0_CALLBACK_URL || 'http://localhost:8000/api/v1/auth/callback',
+    callbackURL: process.env.AUTH0_CALLBACK_URL || 'https://appbackend.0xmintyn.com/api/v1/auth/callback',
     audience: process.env.AUTH0_AUDIENCE || '',
     scope: 'openid profile email',
 };

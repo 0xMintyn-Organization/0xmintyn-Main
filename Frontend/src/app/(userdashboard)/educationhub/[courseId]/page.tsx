@@ -56,8 +56,8 @@ export default function CoursePreviewPage() {
           const data = result.course;
 
           // Patch paths
-          data.demoUrl = `http://localhost:8000/api/v1/stream/${data.demoUrl?.split("uploads/videos/")[1]}`;
-          data.thumbnail = data.thumbnail?.replace("http://localhost:8000", process.env.NEXT_PUBLIC_SERVER_URI || "");
+          data.demoUrl = `https://appbackend.0xmintyn.com/api/v1/stream/${data.demoUrl?.split("uploads/videos/")[1]}`;
+          data.thumbnail = data.thumbnail?.replace("https://appbackend.0xmintyn.com", process.env.NEXT_PUBLIC_SERVER_URI || "");
          
 
           setCourse(data);
