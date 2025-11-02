@@ -910,23 +910,11 @@ export default function UserDashboardPage() {
                             )}
                           </div>
 
-                          {/* Action Buttons */}
+                          {/* Action Buttons - Products don't need Message/View Detail, just Download */}
                           <div className="flex flex-wrap gap-2">
-                            <Link href={`/marketplace/orders/${product.id}`}>
-                              <Button size="sm" variant="default">
-                                <Eye className="h-4 w-4 mr-1" />
-                                View Order
-                              </Button>
-                            </Link>
-                            <Link href={`/marketplace/messages?conversation=${product.id}`}>
-                              <Button size="sm" variant="outline">
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                Message Seller
-                              </Button>
-                            </Link>
                             {product.status === 'completed' && product.productId && (
                               <Link href={`/marketplace/product/${product.productId}`}>
-                                <Button size="sm" variant="outline" className="text-green-600">
+                                <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700">
                                   <Download className="h-4 w-4 mr-1" />
                                   Download Product
                                 </Button>
