@@ -23,4 +23,9 @@ Maintain consistency by using the same approaches throughout the project
 
 Do not change in used components of backend like controllers and routes unless they are neccasry to change 
 
-make sure once you fixed and i said it is working now then do not touch it 
+make sure once you fixed and i said it is working now then do not touch it
+
+CRITICAL: EDUCATION HUB IS COMPLETE AND WORKING
+- Education Hub (courses, enrollments, reviews, orders, bookmarks, certificates, notes, instructor flow, admin panels) is fully functional
+- DO NOT touch any education hub files, middleware, controllers, routes, or related code when working on other modules
+- Any changes to education hub could break it and cause issues 
