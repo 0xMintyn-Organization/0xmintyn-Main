@@ -32,7 +32,7 @@ export const createCourse = CatchAsyncError(async (req: Request, res: Response, 
   }
 
   const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
-  const thumbnail = `${serverUrl}/uploads/${req.file.filename}`;
+  const thumbnail = `${serverUrl}/uploads/files/${req.file.filename}`;
 
   // Parse JSON body fields for arrays
   const parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
@@ -207,7 +207,7 @@ export const updateCourse = CatchAsyncError(
     // Handle thumbnail update if provided
     if (req.file) {
       const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
-      course.thumbnail = `${serverUrl}/uploads/${req.file.filename}`;
+      course.thumbnail = `${serverUrl}/uploads/files/${req.file.filename}`;
     }
 
     await course.save();

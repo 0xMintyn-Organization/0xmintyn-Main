@@ -55,10 +55,7 @@ export default function CoursePreviewPage() {
         if (result.success) {
           const data = result.course;
 
-          // Patch paths
-          data.demoUrl = `https://appbackend.0xmintyn.com/api/v1/stream/${data.demoUrl?.split("uploads/videos/")[1]}`;
-          data.thumbnail = data.thumbnail?.replace("https://appbackend.0xmintyn.com", process.env.NEXT_PUBLIC_SERVER_URI || "");
-         
+          // URLs are already correct from backend, no patching needed
 
           setCourse(data);
           setExpandedSections(data.courseData?.map((_: any, idx: number) => idx) || []);
