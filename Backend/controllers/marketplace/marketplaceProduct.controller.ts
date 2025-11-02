@@ -168,13 +168,14 @@ export const getMarketplaceProductById = CatchAsyncError(async (req: Request, re
             }
             
             // If not found in purchasedProducts, check orders directly
+            // For digital products, allow if order exists and is not cancelled/refunded
             if (!isPurchased) {
                 const order = await MarketplaceOrderModel.findOne({
                     buyerId: userId,
                     'items.itemId': productId,
                     'items.itemType': 'product',
-                    paymentStatus: 'completed',
-                    orderStatus: { $in: ['completed', 'confirmed', 'processing'] }
+                    orderStatus: { $nin: ['cancelled', 'refunded'] }, // Exclude cancelled/refunded
+                    paymentStatus: { $nin: ['refunded', 'cancelled'] } // Exclude refunded/cancelled payments
                 });
                 isPurchased = !!order;
             }
