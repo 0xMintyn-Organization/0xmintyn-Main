@@ -100,6 +100,9 @@ export const getUserEnrolledCourses = CatchAsyncError(
           const course = await CourseModel.findById(order.courseId)
             .populate("createdBy", "firstName lastName username avatar");
           
+          // Skip if course was deleted
+          if (!course) return null;
+          
           return {
             orderId: order._id,
             courseId: order.courseId,
@@ -114,10 +117,13 @@ export const getUserEnrolledCourses = CatchAsyncError(
         })
       );
 
+      // Filter out null values (deleted courses)
+      const validCourses = coursesWithDetails.filter(course => course !== null);
+
       res.status(200).json({
         success: true,
         message: "Enrolled courses fetched successfully",
-        courses: coursesWithDetails
+        courses: validCourses
       });
     } catch (error: any) {
       console.error("Get Enrolled Courses Error:", error);
