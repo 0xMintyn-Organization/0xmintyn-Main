@@ -274,16 +274,22 @@ export const getAdminReviews = CatchAsyncError(
       }
 
       // Get reviews with course information
-      const reviews = await ReviewModel.find(filter)
+      const allReviews = await ReviewModel.find(filter)
         .populate('courseId', 'name thumbnail')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
 
-      // Get total count
-      const totalReviews = await ReviewModel.countDocuments(filter);
+      // Filter out reviews where course has been deleted
+      const reviews = allReviews.filter(review => review.courseId !== null && review.courseId !== undefined);
 
-      // Get unique courses for filter dropdown
+      // Get total count (excluding deleted courses)
+      const totalReviews = await ReviewModel.countDocuments({
+        ...filter,
+        courseId: { $exists: true }
+      });
+
+      // Get unique courses for filter dropdown (only existing courses)
       const courses = await ReviewModel.aggregate([
         { $group: { _id: "$courseId" } },
         { $lookup: { from: "courses", localField: "_id", foreignField: "_id", as: "course" } },
@@ -293,7 +299,7 @@ export const getAdminReviews = CatchAsyncError(
 
       res.status(200).json({
         success: true,
-        reviews,
+        reviews: reviews,
         courses,
         pagination: {
           currentPage: page,

@@ -197,38 +197,45 @@ export const getAdminOrders = CatchAsyncError(
         try {
             console.log("Admin orders request");
 
-            // Get all orders with populated user and course data
-            const orders = await OrderModel.find({})
-                .populate('userId', 'firstName lastName email avatar')
-                .populate({
-                    path: 'courseId',
-                    select: 'name thumbnail',
-                    populate: {
-                        path: 'createdBy',
-                        select: 'firstName lastName'
-                    }
-                })
-                .sort({ createdAt: -1 });
+            // Get all orders
+            const orders = await OrderModel.find({}).sort({ createdAt: -1 });
 
-            // Filter out orders with missing data
-            const validOrders = orders.filter(order => 
-                order.userId && order.courseId && order.courseId.createdBy
+            // Manually populate user and course data since courseId/userId are strings
+            const validOrders = await Promise.all(
+                orders.map(async (order) => {
+                    const user = await UserModel.findById(order.userId).select('firstName lastName email avatar');
+                    const course = await CourseModel.findById(order.courseId).populate('createdBy', 'firstName lastName');
+                    
+                    // Skip orders where course or user is deleted
+                    if (!user || !course) {
+                        return null;
+                    }
+                    
+                    return {
+                        ...order.toObject(),
+                        userId: user,
+                        courseId: course
+                    };
+                })
             );
 
+            // Filter out null values (deleted courses/users)
+            const filteredOrders = validOrders.filter((order): order is NonNullable<typeof order> => order !== null && order !== undefined);
+
             // Calculate order statistics
-            const totalOrders = validOrders.length;
-            const totalRevenue = validOrders.reduce((sum, order) => sum + (order.coursePrice || 0), 0);
-            const pendingOrders = validOrders.filter(order => order.status === 'pending').length;
-            const completedOrders = validOrders.filter(order => order.status === 'completed').length;
-            const cancelledOrders = validOrders.filter(order => order.status === 'cancelled').length;
-            const refundedOrders = validOrders.filter(order => order.status === 'refunded').length;
+            const totalOrders = filteredOrders.length;
+            const totalRevenue = filteredOrders.reduce((sum, order) => sum + (order.coursePrice || 0), 0);
+            const pendingOrders = filteredOrders.filter(order => order.status === 'pending').length;
+            const completedOrders = filteredOrders.filter(order => order.status === 'completed').length;
+            const cancelledOrders = filteredOrders.filter(order => order.status === 'cancelled').length;
+            const refundedOrders = filteredOrders.filter(order => order.status === 'refunded').length;
             const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
             // Calculate monthly revenue
             const currentMonth = new Date();
             currentMonth.setMonth(currentMonth.getMonth());
             currentMonth.setDate(1);
-            const monthlyRevenue = validOrders
+            const monthlyRevenue = filteredOrders
                 .filter(order => {
                     const orderDate = new Date(order.createdAt);
                     return orderDate.getMonth() === currentMonth.getMonth() && 
@@ -237,7 +244,7 @@ export const getAdminOrders = CatchAsyncError(
                 .reduce((sum, order) => sum + (order.coursePrice || 0), 0);
 
             // Get recent orders (last 20)
-            const recentOrders = validOrders.slice(0, 20);
+            const recentOrders = filteredOrders.slice(0, 20);
 
             // Generate revenue by month data (last 12 months)
             const revenueByMonth = [];
@@ -249,7 +256,7 @@ export const getAdminOrders = CatchAsyncError(
                 monthEnd.setMonth(monthEnd.getMonth() + 1);
                 monthEnd.setDate(0);
 
-                const monthOrders = validOrders.filter(order => {
+                const monthOrders = filteredOrders.filter(order => {
                     const orderDate = new Date(order.createdAt);
                     return orderDate >= monthStart && orderDate <= monthEnd;
                 });
@@ -295,7 +302,7 @@ export const getAdminOrders = CatchAsyncError(
 
             // Top courses by revenue
             const courseRevenue = new Map();
-            validOrders.forEach(order => {
+            filteredOrders.forEach(order => {
                 if (order.courseId && order.courseId.createdBy) {
                     const courseId = order.courseId._id.toString();
                     const courseName = order.courseId.name || 'Unknown Course';
@@ -323,7 +330,7 @@ export const getAdminOrders = CatchAsyncError(
 
             // Top instructors by revenue
             const instructorRevenue = new Map();
-            validOrders.forEach(order => {
+            filteredOrders.forEach(order => {
                 if (order.courseId && order.courseId.createdBy) {
                     const instructorId = order.courseId.createdBy._id.toString();
                     const instructorName = `${order.courseId.createdBy.firstName || ''} ${order.courseId.createdBy.lastName || ''}`.trim() || 'Unknown Instructor';
@@ -365,7 +372,7 @@ export const getAdminOrders = CatchAsyncError(
                     averageOrderValue,
                     monthlyRevenue,
                     recentOrders,
-                    orders: validOrders,
+                    orders: filteredOrders,
                     revenueByMonth,
                     ordersByStatus,
                     topCourses,
