@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { CatchAsyncError } from "../../middleware/catchAsyncError";
 import { MarketplaceProductModel } from "../../models/marketplace/MarketplaceProduct.model";
+import { MarketplaceOrderModel } from "../../models/marketplace/MarketplaceOrder.model";
 import ErrorHandler from "../../utils/errorHandler";
 import UserModel from "../../models/user.mode";
 import path from "path";
@@ -29,10 +30,23 @@ export const getProductFile = CatchAsyncError(async (req: Request, res: Response
             return next(new ErrorHandler("Product not available", 404));
         }
 
-        // Verify purchase: Check if user has purchased this product
-        const hasPurchased = user.purchasedProducts?.some((p: any) => 
+        // Verify purchase: Check multiple sources
+        // 1. Check user.purchasedProducts array
+        let hasPurchased = user.purchasedProducts?.some((p: any) => 
             p.productId?.toString() === productId || p.toString() === productId
         );
+        
+        // 2. If not found in purchasedProducts, check orders directly
+        if (!hasPurchased) {
+            const order = await MarketplaceOrderModel.findOne({
+                buyerId: userId,
+                'items.itemId': productId,
+                'items.itemType': 'product',
+                paymentStatus: 'completed',
+                orderStatus: { $in: ['completed', 'confirmed', 'processing'] }
+            });
+            hasPurchased = !!order;
+        }
         
         // Allow access if: user purchased it, user is the seller, or user is admin
         const isSeller = product.sellerId.toString() === userId.toString();
