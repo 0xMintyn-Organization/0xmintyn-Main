@@ -22,3 +22,5 @@ Check if a similar function/middleware already exists before creating a new one
 Maintain consistency by using the same approaches throughout the project
 
 Do not change in used components of backend like controllers and routes unless they are neccasry to change 
+
+make sure once you fixed and i said it is working now then do not touch it 

@@ -1,13 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/errorHandler";
+
+// ✅ Ensure uploads/files exists
+const fileDir = path.join(__dirname, "../uploads/files");
+if (!fs.existsSync(fileDir)) {
+  fs.mkdirSync(fileDir, { recursive: true });
+}
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/files/"); // Files will be stored in the "uploads/files" folder
+        cb(null, fileDir); // Files will be stored in the "uploads/files" folder
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
