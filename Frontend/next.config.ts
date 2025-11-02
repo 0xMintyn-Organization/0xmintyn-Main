@@ -3,8 +3,47 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'appbackend.0xmintyn.com',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '209.74.89.249',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'static.vecteezy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'github.com',
+      },
+    ],
+    // Keep domains for backward compatibility (Next.js 12 style)
     domains: [
       'localhost', 
+      'appbackend.0xmintyn.com',
       'yourdomain.com', 
       'static.vecteezy.com', 
       'picsum.photos',
