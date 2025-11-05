@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
+  ArrowLeftRight,
   Users,
   BookOpen,
   BarChart3,
@@ -85,6 +86,12 @@ const navigation: NavItem[] = [
     href: "/educationhub",
     icon: List,
     roles: ["user"],
+  },
+  {
+    name: "Exchange",
+    href: "/exchange",
+    icon: ArrowLeftRight,
+    roles: ["user", "instructor", "admin"],
   },
   {
     name: "Profile",

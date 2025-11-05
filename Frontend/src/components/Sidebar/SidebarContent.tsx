@@ -26,7 +26,8 @@ import {
   MessageSquare,
   Star,
   Vote,
-  Store
+  Store,
+  ArrowLeftRight
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -135,6 +136,13 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       badge: "3",
       badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
       description: "Community Proposals"
+    },
+    { 
+      name: "Exchange", 
+      href: "/exchange", 
+      icon: ArrowLeftRight,
+      badge: null,
+      description: "Token Exchange"
     },
     { 
       name: "Settings", 
