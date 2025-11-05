@@ -10,7 +10,7 @@ import {
     approveMarketplaceService
 } from "../../controllers/marketplace/marketplaceService.controller";
 import { updateAccessTokenMiddleware } from "../../controllers/user.controller";
-import { isAthenticated, authorizeRoles } from "../../utils/auth";
+import { isAthenticated, authorizeRoles, authorizeSeller } from "../../utils/auth";
 import { optionalAuth } from "../../middleware/authWithRefresh";
 import upload from "../../middleware/multerConfig";
 
@@ -24,12 +24,12 @@ marketplaceServiceRouter.get(
     getMarketplaceServiceById
 );
 
-// Protected Routes - Seller & Admin
+// Protected Routes - Seller & Admin (any role with isSeller:true can access)
 marketplaceServiceRouter.post(
     "/create",
     updateAccessTokenMiddleware,
     isAthenticated,
-    authorizeRoles("admin", "user"), // user with isSeller:true can create (checked in controller)
+    authorizeSeller, // allows any role if isSeller:true or admin
     upload.array("images", 5),
     createMarketplaceService
 );
@@ -38,7 +38,7 @@ marketplaceServiceRouter.get(
     "/seller/my-services",
     updateAccessTokenMiddleware,
     isAthenticated,
-    authorizeRoles("admin", "user"), // seller/admin only
+    authorizeSeller, // allows any role if isSeller:true or admin
     getSellerServices
 );
 
@@ -46,7 +46,7 @@ marketplaceServiceRouter.put(
     "/:serviceId",
     updateAccessTokenMiddleware,
     isAthenticated,
-    authorizeRoles("admin", "user"), // seller/admin only
+    authorizeSeller, // allows any role if isSeller:true or admin
     updateMarketplaceService
 );
 
@@ -54,7 +54,7 @@ marketplaceServiceRouter.delete(
     "/:serviceId",
     updateAccessTokenMiddleware,
     isAthenticated,
-    authorizeRoles("admin", "user"), // seller/admin only
+    authorizeSeller, // allows any role if isSeller:true or admin
     deleteMarketplaceService
 );
 
@@ -62,7 +62,7 @@ marketplaceServiceRouter.patch(
     "/:serviceId/toggle-status",
     updateAccessTokenMiddleware,
     isAthenticated,
-    authorizeRoles("admin", "user"), // seller/admin only
+    authorizeSeller, // allows any role if isSeller:true or admin
     toggleMarketplaceServiceStatus
 );
 

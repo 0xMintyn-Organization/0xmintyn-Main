@@ -632,12 +632,28 @@ export default function MessengerPage() {
                       <div className="flex items-start space-x-3">
                         <div className="relative w-12 h-12 flex-shrink-0">
                           {conversation.otherUser?.avatar ? (
-                            <Image
-                              src={conversation.otherUser.avatar}
-                              alt={conversation.otherUser.firstName || 'User'}
-                              fill
-                              className="object-cover rounded-full"
-                            />
+                            <>
+                              <Image
+                                src={getImageUrl(conversation.otherUser.avatar)}
+                                alt={conversation.otherUser.firstName || 'User'}
+                                fill
+                                className="object-cover rounded-full"
+                                onError={(e) => {
+                                  // Hide the image and show fallback
+                                  const parent = e.currentTarget.parentElement;
+                                  if (parent) {
+                                    const fallback = parent.querySelector('.avatar-fallback') as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                    e.currentTarget.style.display = 'none';
+                                  }
+                                }}
+                              />
+                              <div className="avatar-fallback w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center hidden">
+                                <span className="text-white font-semibold">
+                                  {conversation.otherUser?.firstName?.charAt(0) || 'U'}
+                                </span>
+                              </div>
+                            </>
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
                               <span className="text-white font-semibold">
@@ -691,12 +707,28 @@ export default function MessengerPage() {
                   <div className="flex items-center space-x-3">
                     <div className="relative w-14 h-14">
                       {selectedConversation.otherUser?.avatar ? (
-                        <Image
-                          src={selectedConversation.otherUser.avatar}
-                          alt={selectedConversation.otherUser.firstName || 'User'}
-                          fill
-                          className="object-cover rounded-full border-2 border-green-500"
-                        />
+                        <>
+                          <Image
+                            src={getImageUrl(selectedConversation.otherUser.avatar)}
+                            alt={selectedConversation.otherUser.firstName || 'User'}
+                            fill
+                            className="object-cover rounded-full border-2 border-green-500"
+                            onError={(e) => {
+                              // Hide the image and show fallback
+                              const parent = e.currentTarget.parentElement;
+                              if (parent) {
+                                const fallback = parent.querySelector('.avatar-fallback') as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                                e.currentTarget.style.display = 'none';
+                              }
+                            }}
+                          />
+                          <div className="avatar-fallback w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center border-2 border-green-500 hidden">
+                            <span className="text-white text-xl font-bold">
+                              {selectedConversation.otherUser?.firstName?.charAt(0) || 'U'}
+                            </span>
+                          </div>
+                        </>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center border-2 border-green-500">
                           <span className="text-white text-xl font-bold">
@@ -809,12 +841,28 @@ export default function MessengerPage() {
                               {!(item.senderId?._id === user?._id || item.senderId === user?._id) && (
                                 <div className="relative w-10 h-10 flex-shrink-0">
                                   {selectedConversation.otherUser?.avatar ? (
-                                    <Image
-                                      src={selectedConversation.otherUser.avatar}
-                                      alt={selectedConversation.otherUser.firstName || 'User'}
-                                      fill
-                                      className="object-cover rounded-full"
-                                    />
+                                    <>
+                                      <Image
+                                        src={getImageUrl(selectedConversation.otherUser.avatar)}
+                                        alt={selectedConversation.otherUser.firstName || 'User'}
+                                        fill
+                                        className="object-cover rounded-full"
+                                        onError={(e) => {
+                                          // Hide the image and show fallback
+                                          const parent = e.currentTarget.parentElement;
+                                          if (parent) {
+                                            const fallback = parent.querySelector('.avatar-fallback') as HTMLElement;
+                                            if (fallback) fallback.style.display = 'flex';
+                                            e.currentTarget.style.display = 'none';
+                                          }
+                                        }}
+                                      />
+                                      <div className="avatar-fallback w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center hidden">
+                                        <span className="text-white text-sm font-semibold">
+                                          {selectedConversation.otherUser?.firstName?.charAt(0) || 'U'}
+                                        </span>
+                                      </div>
+                                    </>
                                   ) : (
                                     <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
                                       <span className="text-white text-sm font-semibold">

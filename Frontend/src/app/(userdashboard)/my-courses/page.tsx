@@ -88,8 +88,11 @@ function MyCoursesPage() {
   };
 
   const filteredCourses = courses.filter(course => {
+    // Skip if course data is missing (deleted course)
+    if (!course.course) return false;
+    
     const matchesSearch = course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.course.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         course.course.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || course.course.categories === categoryFilter;
     const matchesLevel = levelFilter === "all" || course.course.level === levelFilter;
     
@@ -198,9 +201,11 @@ function MyCoursesPage() {
                         className="w-full h-48 object-cover rounded-t-lg"
                       />
                       <div className="absolute top-4 right-4">
-                        <Badge className={getLevelBadgeColor(course.course.level)}>
-                          {course.course.level}
-                        </Badge>
+                        {course.course?.level && (
+                          <Badge className={getLevelBadgeColor(course.course.level)}>
+                            {course.course.level}
+                          </Badge>
+                        )}
                       </div>
                       <div className="absolute bottom-4 left-4 right-4">
                         <Progress value={progress} className="h-2" />
@@ -223,12 +228,12 @@ function MyCoursesPage() {
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <div className="flex items-center gap-1">
                           <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                          <span>{course.course.averageRating || 0}</span>
-                          <span>({course.course.totalReviews} reviews)</span>
+                          <span>{course.course?.averageRating || 0}</span>
+                          <span>({course.course?.totalReviews || 0} reviews)</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          <span>{course.course.courseData?.length || 0} lessons</span>
+                          <span>{course.course?.courseData?.length || 0} lessons</span>
                         </div>
                       </div>
                     </CardHeader>

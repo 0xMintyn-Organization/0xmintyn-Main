@@ -200,6 +200,29 @@ export default function AdminServicesManagement() {
     return Math.max(...packages.map(p => p.price));
   };
 
+  // Helper function to construct full image URLs
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) return '/placeholder-service.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    // Handle environment variable with trailing slash
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
+    
+    // Remove trailing slash if present
+    baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    
+    // Ensure imagePath starts with /
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
+
+  // Helper function to get service image (thumbnail or first image)
+  const getServiceImage = (service: Service) => {
+    if (service.thumbnailImage) return service.thumbnailImage;
+    if (service.images && service.images.length > 0) return service.images[0];
+    return null;
+  };
+
   if (loading) {
     return (
       <Protected>
@@ -401,13 +424,32 @@ export default function AdminServicesManagement() {
                         <TableRow key={service._id}>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <Image
-                                src={service.thumbnailImage}
-                                alt={service.title}
-                                width={40}
-                                height={40}
-                                className="rounded-lg object-cover"
-                              />
+                              {getServiceImage(service) ? (
+                                <div className="relative w-10 h-10 flex-shrink-0">
+                                  <Image
+                                    src={getFullImageUrl(getServiceImage(service)!)}
+                                    alt={service.title}
+                                    fill
+                                    className="rounded-lg object-cover"
+                                    onError={(e) => {
+                                      // Hide the image and show fallback
+                                      const parent = e.currentTarget.parentElement;
+                                      if (parent) {
+                                        const fallback = parent.querySelector('.image-fallback') as HTMLElement;
+                                        if (fallback) fallback.style.display = 'flex';
+                                        e.currentTarget.style.display = 'none';
+                                      }
+                                    }}
+                                  />
+                                  <div className="image-fallback w-full h-full bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center hidden">
+                                    <Briefcase className="w-5 h-5 text-white" />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <Briefcase className="w-5 h-5 text-white" />
+                                </div>
+                              )}
                               <div>
                                 <div className="font-medium">{service.title}</div>
                                 <div className="text-sm text-gray-500 truncate max-w-xs">

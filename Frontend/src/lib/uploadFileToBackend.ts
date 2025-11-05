@@ -14,6 +14,7 @@ export const uploadFileToBackend = (
     formData.append("file", file);
 
     xhr.open("POST", `${process.env.NEXT_PUBLIC_SERVER_URI}upload/upload`, true);
+    xhr.withCredentials = true; // Send cookies for authentication
 
     // Track upload progress
     xhr.upload.onprogress = (event) => {

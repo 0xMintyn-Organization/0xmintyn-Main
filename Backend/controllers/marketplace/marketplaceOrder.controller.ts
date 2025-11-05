@@ -157,19 +157,29 @@ export const createMarketplaceOrder = CatchAsyncError(async (req: Request, res: 
       orderItems.push(orderItem);
     }
 
+    // Check if order contains only products (no services)
+    // Products are instantly delivered, so auto-complete the order
+    const isProductOnlyOrder = orderItems.every(item => item.itemType === 'product');
+
     // Create the order
-    const orderData = {
+    const orderData: any = {
       buyerId: userId,
       sellerId,
       items: orderItems,
       orderTotal: totalAmount,
       currency: 'USD',
-      paymentStatus: 'pending',
-      orderStatus: 'pending',
+      paymentStatus: isProductOnlyOrder ? 'completed' : 'pending',
+      orderStatus: isProductOnlyOrder ? 'completed' : 'pending',
       shippingAddress,
       notes,
       isActive: true
     };
+
+    // For product-only orders, set completion timestamp
+    if (isProductOnlyOrder) {
+      orderData.completedAt = new Date();
+      orderData.startedAt = new Date();
+    }
 
     // Generate order number before creating
     const orderCount = await MarketplaceOrderModel.countDocuments();
@@ -205,7 +215,10 @@ export const createMarketplaceOrder = CatchAsyncError(async (req: Request, res: 
       { new: true }
     );
 
-    // Note: Seller stats will be updated when order is completed, not when created
+    // Update seller stats if it's a product-only order (completed immediately)
+    if (isProductOnlyOrder && sellerId) {
+      await updateSellerStatsAfterOrder(sellerId.toString(), orderItems, totalAmount);
+    }
 
     // Populate the order with buyer and seller details
     const populatedOrder = await MarketplaceOrderModel.findById(order._id)

@@ -158,15 +158,15 @@ export default function CreateOfferModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create Custom Offer for {buyerName}</DialogTitle>
-          <DialogDescription>
-            Create a personalized offer with custom pricing, deliverables, and timeline
+      <DialogContent className="max-w-md max-h-[85vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-5 pt-5 pb-4 border-b flex-shrink-0">
+          <DialogTitle className="text-base">Create Custom Offer</DialogTitle>
+          <DialogDescription className="text-xs mt-1">
+            For {buyerName}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 px-5 py-4 overflow-y-auto flex-1 min-h-0">
           {/* Success State */}
           {created && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
@@ -193,22 +193,22 @@ export default function CreateOfferModal({
           )}
 
           {!created && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Service/Product Context */}
               {(serviceTitle || productTitle) && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-blue-600">
+                    <Badge className="bg-blue-600 text-xs">
                       {serviceId ? '🎯 Service' : '📦 Product'}
                     </Badge>
-                    <span className="text-sm font-medium">{serviceTitle || productTitle}</span>
+                    <span className="text-xs font-medium truncate">{serviceTitle || productTitle}</span>
                   </div>
                 </div>
               )}
 
               {/* Offer Title */}
-              <div className="space-y-2">
-                <Label htmlFor="offerTitle">Offer Title *</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="offerTitle" className="text-xs font-semibold">Offer Title *</Label>
                 <Input
                   id="offerTitle"
                   placeholder="e.g., Custom Website Design Package"
@@ -220,24 +220,25 @@ export default function CreateOfferModal({
               </div>
 
               {/* Offer Description */}
-              <div className="space-y-2">
-                <Label htmlFor="offerDescription">Offer Description *</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="offerDescription" className="text-xs font-semibold">Description *</Label>
                 <Textarea
                   id="offerDescription"
-                  placeholder="Describe what you will deliver in detail..."
+                  placeholder="What you'll deliver, scope, timeline..."
                   value={offerDescription}
                   onChange={(e) => setOfferDescription(e.target.value)}
                   disabled={creating}
-                  rows={4}
+                  rows={3}
+                  className="text-sm min-h-[80px] max-h-[100px] resize-none"
                   maxLength={2000}
                 />
                 <p className="text-xs text-muted-foreground">{offerDescription.length}/2000</p>
               </div>
 
               {/* Pricing and Timeline */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price (USD) *</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="price" className="text-xs font-semibold">Price (USD) *</Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
@@ -254,8 +255,8 @@ export default function CreateOfferModal({
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="deliveryTime">Delivery Time *</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="deliveryTime" className="text-xs font-semibold">Delivery Time *</Label>
                   <Select value={deliveryTime} onValueChange={setDeliveryTime} disabled={creating}>
                     <SelectTrigger>
                       <SelectValue />
@@ -274,9 +275,9 @@ export default function CreateOfferModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="revisions">Number of Revisions</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="revisions" className="text-xs font-semibold">Revisions</Label>
                   <div className="relative">
                     <RefreshCw className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
@@ -291,8 +292,8 @@ export default function CreateOfferModal({
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="expiresIn">Offer Valid For</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="expiresIn" className="text-xs font-semibold">Expires In</Label>
                   <Select value={expiresInDays} onValueChange={setExpiresInDays} disabled={creating}>
                     <SelectTrigger>
                       <SelectValue />
@@ -308,38 +309,41 @@ export default function CreateOfferModal({
               </div>
 
               {/* Deliverables */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label>Deliverables * (What buyer will receive)</Label>
+                  <Label className="text-xs font-semibold">Deliverables *</Label>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="h-7 text-xs"
                     onClick={addDeliverable}
                     disabled={creating || deliverables.length >= 10}
                   >
-                    <Plus className="w-4 h-4 mr-1" />
+                    <Plus className="w-3 h-3 mr-1" />
                     Add
                   </Button>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {deliverables.map((deliverable, index) => (
-                    <div key={index} className="flex gap-2">
+                    <div key={index} className="flex gap-1.5">
                       <Input
-                        placeholder={`Deliverable ${index + 1}`}
+                        placeholder={`Item ${index + 1}`}
                         value={deliverable}
                         onChange={(e) => updateDeliverable(index, e.target.value)}
                         disabled={creating}
+                        className="text-sm h-8"
                       />
                       {deliverables.length > 1 && (
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
+                          className="h-8 w-8 p-0"
                           onClick={() => removeDeliverable(index)}
                           disabled={creating}
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-3 h-3" />
                         </Button>
                       )}
                     </div>
@@ -348,33 +352,25 @@ export default function CreateOfferModal({
               </div>
 
               {/* Additional Terms */}
-              <div className="space-y-2">
-                <Label htmlFor="additionalTerms">Additional Terms (Optional)</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="additionalTerms" className="text-xs font-semibold">Additional Terms (Optional)</Label>
                 <Textarea
                   id="additionalTerms"
-                  placeholder="Any special requirements or terms..."
+                  placeholder="Special terms or conditions..."
                   value={additionalTerms}
                   onChange={(e) => setAdditionalTerms(e.target.value)}
                   disabled={creating}
-                  rows={3}
+                  rows={2}
+                  className="text-sm min-h-[60px] max-h-[80px] resize-none"
                   maxLength={1000}
                 />
-              </div>
-
-              {/* Info Box */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                <p className="text-xs text-blue-800 dark:text-blue-200">
-                  💡 <strong>Custom Offer:</strong> This offer will be sent to {buyerName}. 
-                  They can accept or reject it within {expiresInDays} day{parseInt(expiresInDays) > 1 ? 's' : ''}. 
-                  Once accepted, payment will be processed and work can begin.
-                </p>
               </div>
             </div>
           )}
 
           {/* Action Buttons */}
           {!created && (
-            <div className="flex justify-end space-x-3 pt-4 border-t">
+            <div className="flex justify-end gap-2 px-5 py-3 border-t bg-background flex-shrink-0">
               <Button
                 variant="outline"
                 onClick={handleClose}
