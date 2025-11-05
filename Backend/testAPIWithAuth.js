@@ -7,7 +7,7 @@ async function testAPIWithAuth() {
     
     // Test the API endpoint
     const orderId = '68ee8ccc99dc92d16c0eb789';
-    const apiUrl = `http://localhost:8000/api/v1/marketplace/orders/${orderId}`;
+    const apiUrl = `https://appbackend.0xmintyn.com/api/v1/marketplace/orders/${orderId}`;
     
     console.log(`Testing: ${apiUrl}`);
     
@@ -19,7 +19,7 @@ async function testAPIWithAuth() {
     }
     
     // Test buyer orders API
-    const buyerOrdersUrl = 'http://localhost:8000/api/v1/marketplace/orders/buyer';
+    const buyerOrdersUrl = 'https://appbackend.0xmintyn.com/api/v1/marketplace/orders/buyer';
     console.log(`\nTesting buyer orders: ${buyerOrdersUrl}`);
     
     try {
@@ -30,7 +30,7 @@ async function testAPIWithAuth() {
     }
     
     // Test seller orders API
-    const sellerOrdersUrl = 'http://localhost:8000/api/v1/marketplace/orders/seller';
+    const sellerOrdersUrl = 'https://appbackend.0xmintyn.com/api/v1/marketplace/orders/seller';
     console.log(`\nTesting seller orders: ${sellerOrdersUrl}`);
     
     try {

@@ -60,7 +60,7 @@ export default function OptimizedImage({
     if (!imagePath) return fallbackSrc;
     if (imagePath.startsWith('http')) return imagePath;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
     if (baseUrl.endsWith('/')) {
       baseUrl = baseUrl.slice(0, -1);
     }

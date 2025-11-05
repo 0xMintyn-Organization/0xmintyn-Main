@@ -508,7 +508,7 @@ export default function MessengerPage() {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     return `${baseUrl}${normalizedPath}`;
@@ -534,7 +534,7 @@ export default function MessengerPage() {
     if (!fileUrl) return '';
     if (fileUrl.startsWith('http')) return fileUrl;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const normalizedPath = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
     return `${baseUrl}${normalizedPath}`;

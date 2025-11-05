@@ -928,7 +928,7 @@ interface IProposal {
 ```bash
 # Server Configuration
 PORT=8000
-SERVER_URL=http://localhost:8000
+SERVER_URL=https://appbackend.0xmintyn.com
 
 # Database
 DB_URI=mongodb://127.0.0.1:27017/0xmintyn
@@ -949,7 +949,7 @@ SMTP_FROM="0xMintyn <no-reply@0xmintyn.com>"
 
 **Frontend (.env.local):**
 ```bash
-NEXT_PUBLIC_SERVER_URI=http://localhost:8000
+NEXT_PUBLIC_SERVER_URI=https://appbackend.0xmintyn.com
 ```
 
 **Development Setup:**
@@ -1027,8 +1027,8 @@ npm run dev
 ```
 
 6. **Access the application**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
+- Frontend: https://app.0xmintyn.com
+- Backend API: https://appbackend.0xmintyn.com
 
 ### Default Admin Account
 After setting up the database, create an admin user through the registration endpoint or directly in the database.

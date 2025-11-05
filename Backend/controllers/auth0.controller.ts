@@ -143,7 +143,7 @@ export const handleAuth0Callback = CatchAsyncError(async (req: Request, res: Res
         });
 
         // Redirect to Auth0 success page (handles popup closing)
-        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth0-success`);
+        res.redirect(`${process.env.FRONTEND_URL || 'https://app.0xmintyn.com'}/auth0-success`);
 
     } catch (error: any) {
         console.error('Auth0 callback error:', error.response?.data || error.message);
