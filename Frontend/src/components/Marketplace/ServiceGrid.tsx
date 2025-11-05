@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 interface ServiceGridProps {
   viewMode: 'grid' | 'list';
@@ -55,7 +56,7 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
     if (imagePath.startsWith('http')) return imagePath;
     
     // Handle environment variable with trailing slash
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     
     // Remove trailing slash if present
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
@@ -217,7 +218,7 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
       {filteredServices.map((service, index) => {
         const serviceImage = getServiceImage(service);
         const minPrice = getMinPrice(service);
@@ -229,15 +230,12 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
               <Link href={`/marketplace/service/${service._id}`}>
                 <div className="aspect-video relative overflow-hidden rounded-t-lg cursor-pointer">
                   {serviceImage ? (
-                    <Image
-                      src={getFullImageUrl(serviceImage)}
+                    <OptimizedImage
+                      src={serviceImage}
                       alt={service.title || 'Service'}
                       fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                      onError={(e) => {
-                        console.error('Service image load error:', e);
-                        e.currentTarget.src = '/placeholder-service.jpg';
-                      }}
+                      className="group-hover:scale-110 transition-transform duration-300"
+                      fallbackSrc="/placeholder-service.jpg"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">

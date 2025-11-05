@@ -3,6 +3,9 @@
 import SocialAuthProvider from "@/components/SocialAuth/SocialAuth";
 import { Toaster } from "@/components/ui/toaster";
 import ThemeProviderWrapper from "@/contexts/ThemeProviderWrapper";
+import { FontSizeProvider } from "@/contexts/FontSizeContext";
+import { TextToSpeechProvider } from "@/contexts/TextToSpeechContext";
+import { GlobalTextSelection } from "@/components/TextToSpeech/GlobalTextSelection";
 import { SessionProvider } from "next-auth/react";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -32,15 +35,19 @@ export default function RootLayout({
         className={`${inter.className} antialiased bg-background text-foreground`}
       >
         <ThemeProviderWrapper>
-          <Providers>
-          <SessionProvider >
-          <SocialAuthProvider>
-            {children}
-            <Toaster />
-
-          </SocialAuthProvider>
-          </SessionProvider>
-          </Providers>
+          <FontSizeProvider>
+            <TextToSpeechProvider>
+                <Providers>
+                  <SessionProvider >
+                    <SocialAuthProvider>
+                      {children}
+                      <Toaster />
+                      <GlobalTextSelection />
+                    </SocialAuthProvider>
+                  </SessionProvider>
+                </Providers>
+            </TextToSpeechProvider>
+          </FontSizeProvider>
         </ThemeProviderWrapper>
       </body>
     </html>

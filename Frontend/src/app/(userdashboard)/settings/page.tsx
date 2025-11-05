@@ -3,18 +3,99 @@ import UpdatePassword from "@/components/Settings/UpdatePassword/UpdatePassword"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EnhancedSelect, languageOptions } from "@/components/ui/EnhancedSelect";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Protected from "@/hooks/useProtected";
-import { Bell, ChevronRight, Eye, EyeOff, Lock, Settings as SettingsIcon, Wallet, Shield, Code, Download, Trash2, CheckCircle, AlertCircle, Zap, Globe, Smartphone, Mail, CreditCard, DollarSign, Gauge } from "lucide-react";
-import { useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useFontSize } from "@/contexts/FontSizeContext";
+import { useTextToSpeech } from "@/contexts/TextToSpeechContext";
+import { TextToSpeechWrapper } from "@/components/TextToSpeech/TextToSpeechWrapper";
+import { Bell, ChevronRight, Eye, EyeOff, Lock, Settings as SettingsIcon, Wallet, Shield, Code, Download, Trash2, CheckCircle, AlertCircle, Zap, Globe, Smartphone, Mail, CreditCard, DollarSign, Gauge, Moon, Sun } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAutoLogout } from "@/hooks/useAutoLogout";
+
+const AUTO_LOGOUT_STORAGE_KEY = 'autoLogout_time';
+const AUTO_LOGOUT_ENABLED_KEY = 'autoLogout_enabled';
+const DEFAULT_AUTO_LOGOUT_TIME = 30; // minutes
 
 export default function Settings() {
-  const [previewTheme, setPreviewTheme] = useState<"light" | "dark" | "system">("system");
-  const [autoLogoutTime, setAutoLogoutTime] = useState<number>(30);
+  const { theme, toggleTheme } = useTheme();
+  const { fontSize, setFontSize, resetFontSize } = useFontSize();
+  const { 
+    isEnabled: ttsEnabled, 
+    isSpeaking, 
+    currentText, 
+    voice, 
+    rate, 
+    pitch, 
+    volume, 
+    voices, 
+    toggleTTS, 
+    speak, 
+    stop, 
+    setVoice, 
+    setRate, 
+    setPitch, 
+    setVolume 
+  } = useTextToSpeech();
+  
+  // Auto-logout state with persistence
+  const [autoLogoutTime, setAutoLogoutTime] = useState<number>(DEFAULT_AUTO_LOGOUT_TIME);
+  const [autoLogoutEnabled, setAutoLogoutEnabled] = useState<boolean>(true);
+  const { saveUserPreference } = useAutoLogout();
   const [privateMode, setPrivateMode] = useState<boolean>(false);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
+
+  // Load auto-logout preferences from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTime = localStorage.getItem(AUTO_LOGOUT_STORAGE_KEY);
+      const savedEnabled = localStorage.getItem(AUTO_LOGOUT_ENABLED_KEY);
+      
+      if (savedTime) {
+        const parsedTime = parseInt(savedTime, 10);
+        if (!isNaN(parsedTime) && parsedTime >= 5 && parsedTime <= 120) {
+          setAutoLogoutTime(parsedTime);
+        }
+      }
+      
+      if (savedEnabled !== null) {
+        setAutoLogoutEnabled(savedEnabled === 'true');
+      }
+    }
+  }, []);
+
+  // Save auto-logout time preference
+  const handleAutoLogoutTimeChange = (value: number) => {
+    setAutoLogoutTime(value);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(AUTO_LOGOUT_STORAGE_KEY, value.toString());
+      // Also save as session timeout (total session duration)
+      localStorage.setItem('autoLogout_sessionTimeout', value.toString());
+    }
+  };
+
+  // Save auto-logout enabled preference
+  const handleAutoLogoutEnabledChange = (enabled: boolean) => {
+    setAutoLogoutEnabled(enabled);
+    saveUserPreference(enabled);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(AUTO_LOGOUT_ENABLED_KEY, enabled.toString());
+    }
+  };
+
+  // Reset to default
+  const handleResetAutoLogout = () => {
+    handleAutoLogoutTimeChange(DEFAULT_AUTO_LOGOUT_TIME);
+  };
+
+  const handleThemeChange = (newTheme: "light" | "dark") => {
+    if (newTheme !== theme) {
+      toggleTheme();
+    }
+  };
 
   const SettingCard = ({ icon: Icon, title, description, children, className = "" }: any) => (
     <div className={`group relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 hover:shadow-lg hover:border-green-400/50 ${className}`}>
@@ -56,15 +137,21 @@ export default function Settings() {
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8 px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
         <div className="max-w-7xl mx-auto mb-12">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
-            <div>
-              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">Settings & Preferences</h1>
-              <p className="text-gray-600 dark:text-gray-400 text-lg">Customize your experience and manage your account</p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
+              <div>
+                <TextToSpeechWrapper>
+                  <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">Settings & Preferences</h1>
+                </TextToSpeechWrapper>
+                <TextToSpeechWrapper>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">Customize your experience and manage your account</p>
+                </TextToSpeechWrapper>
+              </div>
+            <div className="flex items-center gap-3">
+              <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 rounded-lg font-semibold">
+                <CheckCircle className="h-5 w-5 mr-2" />
+                Save All Changes
+              </Button>
             </div>
-            <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 rounded-lg font-semibold">
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Save All Changes
-            </Button>
           </div>
 
           {/* Status Bar */}
@@ -123,54 +210,49 @@ export default function Settings() {
 
             {/* GENERAL SETTINGS */}
             <TabsContent value="general" className="space-y-6 animate-in fade-in duration-300">
-              <SettingCard icon={Globe} title="Language & Region" description="Choose your preferred language and regional settings">
-                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                  <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 rounded-lg">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">
-                      <span className="flex items-center gap-2">🇺🇸 English (US)</span>
-                    </SelectItem>
-                    <SelectItem value="es">
-                      <span className="flex items-center gap-2">🇪🇸 Español (Spain)</span>
-                    </SelectItem>
-                    <SelectItem value="fr">
-                      <span className="flex items-center gap-2">🇫🇷 Français (France)</span>
-                    </SelectItem>
-                    <SelectItem value="de">
-                      <span className="flex items-center gap-2">🇩🇪 Deutsch (Germany)</span>
-                    </SelectItem>
-                    <SelectItem value="zh">
-                      <span className="flex items-center gap-2">🇨🇳 中文 (Simplified)</span>
-                    </SelectItem>
-                    <SelectItem value="hi">
-                      <span className="flex items-center gap-2">🇮🇳 हिन्दी (Hindi)</span>
-                    </SelectItem>
-                    <SelectItem value="pt">
-                      <span className="flex items-center gap-2">🇵🇹 Português (Portugal)</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </SettingCard>
+              {/* <SettingCard icon={Globe} title="Language & Region" description="Choose your preferred language and regional settings">
+                <EnhancedSelect
+                  value={selectedLanguage}
+                  onValueChange={setSelectedLanguage}
+                  options={languageOptions}
+                  placeholder="Select language"
+                  className="w-full"
+                />
+              </SettingCard> */}
 
               {/* Theme Preferences */}
               <SettingCard icon={SettingsIcon} title="Theme & Appearance" description="Customize how the platform looks on your devices">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   {[
                     { value: "light", label: "Light", icon: "☀️" },
                     { value: "dark", label: "Dark", icon: "🌙" },
-                    { value: "system", label: "System", icon: "💻" },
-                  ].map((theme) => (
+                  ].map((themeOption) => (
                     <div
-                      key={theme.value}
-                      onClick={() => setPreviewTheme(theme.value as any)}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${previewTheme === theme.value ? "border-green-600 bg-green-50 dark:bg-green-900/20" : "border-gray-300 dark:border-gray-600 hover:border-green-400"}`}
+                      key={themeOption.value}
+                      onClick={() => handleThemeChange(themeOption.value as "light" | "dark")}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
+                        theme === themeOption.value 
+                          ? "border-green-600 bg-green-50 dark:bg-green-900/20 shadow-lg" 
+                          : "border-gray-300 dark:border-gray-600 hover:border-green-400 hover:shadow-md"
+                      }`}
                     >
-                      <div className="text-3xl mb-2 text-center">{theme.icon}</div>
-                      <p className="font-medium text-center text-gray-900 dark:text-white">{theme.label}</p>
+                      <div className="text-3xl mb-2 text-center">{themeOption.icon}</div>
+                      <p className="font-medium text-center text-gray-900 dark:text-white">{themeOption.label}</p>
+                      {theme === themeOption.value && (
+                        <div className="flex justify-center mt-2">
+                          <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        </div>
+                      )}
                     </div>
                   ))}
+                </div>
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>Current Theme:</strong> {theme === "light" ? "☀️ Light Mode" : "🌙 Dark Mode"}
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                    Theme changes are applied instantly and saved automatically
+                  </p>
                 </div>
               </SettingCard>
 
@@ -180,30 +262,234 @@ export default function Settings() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <label className="font-medium text-gray-900 dark:text-white">Font Size</label>
-                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">{50}%</span>
+                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">{fontSize}%</span>
                     </div>
-                    <Slider defaultValue={[50]} max={100} step={10} className="cursor-pointer" />
+                    <div className="w-full">
+                      <input
+                        type="range"
+                        min="90"
+                        max="110"
+                        step="1"
+                        value={fontSize}
+                        onChange={(e) => setFontSize(parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                        style={{
+                          background: `linear-gradient(to right, #10b981 0%, #10b981 ${((fontSize - 90) / (110 - 90)) * 100}%, #e5e7eb ${((fontSize - 90) / (110 - 90)) * 100}%, #e5e7eb 100%)`
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                      <span>90% (Compact)</span>
+                      <span>100% (Normal)</span>
+                      <span>110% (Comfortable)</span>
+                    </div>
+                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        <strong>Current Size:</strong> {fontSize}% - {fontSize < 95 ? "Compact" : fontSize < 105 ? "Normal" : "Comfortable"}
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                        Enhanced text scaling with proper line heights and spacing for better readability
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={resetFontSize}
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full border-gray-300 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                    >
+                      Reset to Normal (100%)
+                    </Button>
                   </div>
 
-                  <ToggleSetting title="High-Contrast Mode" description="Enhance visibility with higher contrast colors" defaultChecked={false} />
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-green-300/50 transition-all duration-300">
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">Text-to-Speech</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Enable screen reader compatibility and click-to-read functionality</p>
+                      </div>
+                      <Switch 
+                        checked={ttsEnabled} 
+                        onCheckedChange={toggleTTS} 
+                        className="scale-110" 
+                      />
+                    </div>
 
-                  <ToggleSetting title="Text-to-Speech" description="Enable screen reader compatibility" defaultChecked={false} />
+                    {ttsEnabled && (
+                      <div className="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-green-900 dark:text-green-200">
+                            TTS Status: {isSpeaking ? 'Speaking' : 'Ready'}
+                          </span>
+                          {isSpeaking && (
+                            <Button 
+                              onClick={stop} 
+                              size="sm" 
+                              variant="outline"
+                              className="border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              Stop
+                            </Button>
+                          )}
+                        </div>
 
-                  <ToggleSetting title="Reduce Motion" description="Minimize animations and transitions" defaultChecked={false} />
+                        {currentText && (
+                          <div className="text-xs text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-800/30 p-2 rounded">
+                            Reading: "{currentText.substring(0, 50)}{currentText.length > 50 ? '...' : ''}"
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">Voice</label>
+                            <Select value={voice?.name || ''} onValueChange={(voiceName) => {
+                              const selectedVoice = voices.find(v => v.name === voiceName);
+                              if (selectedVoice) setVoice(selectedVoice);
+                            }}>
+                              <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 rounded-lg">
+                                <SelectValue placeholder="Select voice" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {voices.map((v) => (
+                                  <SelectItem key={v.name} value={v.name}>
+                                    {v.name} ({v.lang})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">Rate: {rate.toFixed(1)}x</label>
+                            <input
+                              type="range"
+                              min="0.5"
+                              max="2"
+                              step="0.1"
+                              value={rate}
+                              onChange={(e) => setRate(parseFloat(e.target.value))}
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">Pitch: {pitch.toFixed(1)}</label>
+                            <input
+                              type="range"
+                              min="0.5"
+                              max="2"
+                              step="0.1"
+                              value={pitch}
+                              onChange={(e) => setPitch(parseFloat(e.target.value))}
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">Volume: {Math.round(volume * 100)}%</label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.1"
+                              value={volume}
+                              onChange={(e) => setVolume(parseFloat(e.target.value))}
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <p className="text-sm text-blue-800 dark:text-blue-200">
+                            <strong>How to use:</strong> Click on any text element to have it read aloud. The text will be highlighted while being read.
+                          </p>
+                        </div>
+
+                        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <TextToSpeechWrapper>
+                            <h4 className="font-semibold text-green-900 dark:text-green-200 mb-2">Try it now!</h4>
+                            <p className="text-sm text-green-800 dark:text-green-300">
+                              Click on this text to test the text-to-speech functionality. You should hear the text being read aloud and see it highlighted.
+                            </p>
+                          </TextToSpeechWrapper>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </SettingCard>
 
               {/* Auto-Logout Timer */}
-              <SettingCard icon={Gauge} title="Session Management" description="Control your login session duration">
+              <SettingCard icon={Gauge} title="Session Management" description="Control your login session duration and auto-logout">
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-blue-50/50 dark:from-blue-900/20 dark:to-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <span className="font-semibold text-gray-900 dark:text-white">Auto-Logout After</span>
-                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">{autoLogoutTime}m</span>
+                  {/* Enable/Disable Toggle */}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-green-300/50 transition-all duration-300">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Enable Auto-Logout</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Automatically log out when session expires for security</p>
+                    </div>
+                    <Switch 
+                      checked={autoLogoutEnabled} 
+                      onCheckedChange={handleAutoLogoutEnabledChange}
+                      className="scale-110" 
+                    />
                   </div>
-                  <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.preventDefault()} className="cursor-pointer">
-                    <Slider value={[autoLogoutTime]} onValueChange={(values) => setAutoLogoutTime(values[0])} min={5} max={120} step={5} />
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">⏱️ You'll be logged out automatically after {autoLogoutTime} minutes of inactivity for security</p>
+
+                  {autoLogoutEnabled && (
+                    <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <label className="font-medium text-gray-900 dark:text-white">Session Timeout</label>
+                        <span className="text-sm font-semibold text-green-600 dark:text-green-400">{autoLogoutTime} min</span>
+                      </div>
+                      <div className="w-full">
+                        <input
+                          type="range"
+                          min="5"
+                          max="120"
+                          step="5"
+                          value={autoLogoutTime}
+                          onChange={(e) => {
+                            const newValue = parseInt(e.target.value);
+                            handleAutoLogoutTimeChange(newValue);
+                          }}
+                          className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb slider-track"
+                          style={{
+                            background: `linear-gradient(to right, #10b981 0%, #10b981 ${((autoLogoutTime - 5) / (120 - 5)) * 100}%, #e5e7eb ${((autoLogoutTime - 5) / (120 - 5)) * 100}%, #e5e7eb 100%)`
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                        <span>5m</span>
+                        <span>30m</span>
+                        <span>60m</span>
+                        <span>120m</span>
+                      </div>
+                      <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                          <strong>Session Duration:</strong> {autoLogoutTime} minutes total
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                          You'll be automatically logged out after {autoLogoutTime} minutes of session time. A warning will be shown 2 minutes before logout.
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={handleResetAutoLogout}
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full border-gray-300 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      >
+                        Reset to Default ({DEFAULT_AUTO_LOGOUT_TIME}m)
+                      </Button>
+                    </div>
+                  )}
+
+                  {!autoLogoutEnabled && (
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        <AlertCircle className="h-4 w-4 inline mr-2" />
+                        Auto-logout is disabled. Your session will remain active until the token expires or you manually log out.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </SettingCard>
             </TabsContent>
@@ -221,18 +507,12 @@ export default function Settings() {
                   <ToggleSetting title="Email Verification" description="Receive a verification code via email" defaultChecked={true} />
 
                   <ToggleSetting title="Authenticator App" description="Use Google Authenticator, Authy, or Microsoft Authenticator" defaultChecked={false} />
-
-                  <ToggleSetting title="SMS Verification" description="Receive a code via text message" defaultChecked={false} />
-
-                  <ToggleSetting title="Security Keys" description="Use hardware keys like YubiKey (U2F/WebAuthn)" defaultChecked={false} />
                 </div>
               </SettingCard>
 
               {/* Privacy Mode */}
               <SettingCard icon={Eye} title="Privacy & Visibility" description="Control who can see your profile and activities">
                 <div className="space-y-3">
-                  <ToggleSetting title="Private Profile" description="Hide your profile from public search and browsing" defaultChecked={privateMode} onChange={setPrivateMode} />
-
                   <ToggleSetting title="Show Online Status" description="Let others see when you're online" defaultChecked={true} />
 
                   <ToggleSetting title="Allow Message Requests" description="Permit anyone to send you messages" defaultChecked={true} />
@@ -291,12 +571,6 @@ export default function Settings() {
               <SettingCard icon={Mail} title="Email & In-App Alerts" description="Manage your notification channels">
                 <div className="space-y-3">
                   <ToggleSetting title="Email Notifications" description="Receive important updates via email" defaultChecked={true} />
-
-                  <ToggleSetting title="Push Notifications" description="In-app notifications and alerts" defaultChecked={true} />
-
-                  <ToggleSetting title="Browser Notifications" description="Desktop alerts when browser is open" defaultChecked={false} />
-
-                  <ToggleSetting title="SMS Notifications" description="Critical alerts via text message" defaultChecked={false} />
                 </div>
               </SettingCard>
 
