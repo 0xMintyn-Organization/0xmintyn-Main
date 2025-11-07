@@ -401,21 +401,13 @@ export default function Sidebar() {
                  user?.role === 'admin' ? 'Administrator' : 'Member'}
               </p>
             </div>
-            <Badge className={`text-xs ${
-              user?.role === 'admin' ? 'bg-gradient-to-r from-red-400 to-red-500 text-white' :
-              user?.role === 'instructor' ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white' :
-              'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black'
-            }`}>
-              {user?.role === 'admin' ? 'ADMIN' : 
-               user?.role === 'instructor' ? 'PRO' : 'USER'}
-            </Badge>
           </div>
           
           {/* Wallet Balance */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-zinc-600 dark:text-zinc-400">Wallet Balance</span>
-              <span className="font-semibold text-green-600">$1,234.56</span>
+              <span className="font-semibold text-green-600">$200</span>
             </div>
             <Progress value={75} className="h-1.5" />
           </div>
