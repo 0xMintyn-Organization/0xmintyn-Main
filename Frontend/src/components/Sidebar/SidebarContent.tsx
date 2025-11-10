@@ -137,6 +137,14 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       description: "Community Proposals"
     },
     { 
+      name: "Exchange", 
+      href: "/exchange", 
+      icon: TrendingUp,
+      badge: "New",
+      badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      description: "Trade 0xMintyn Tokens"
+    },
+    { 
       name: "Settings", 
       href: "/settings", 
       icon: Settings,

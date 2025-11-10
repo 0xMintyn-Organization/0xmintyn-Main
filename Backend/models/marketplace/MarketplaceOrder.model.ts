@@ -433,7 +433,7 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
 // Indexes for better query performance
 marketplaceOrderSchema.index({ buyerId: 1, isActive: 1 });
 marketplaceOrderSchema.index({ sellerId: 1, isActive: 1 });
-marketplaceOrderSchema.index({ orderNumber: 1 });
+// Note: orderNumber already has index from unique: true
 marketplaceOrderSchema.index({ paymentStatus: 1 });
 marketplaceOrderSchema.index({ orderStatus: 1 });
 marketplaceOrderSchema.index({ createdAt: -1 });

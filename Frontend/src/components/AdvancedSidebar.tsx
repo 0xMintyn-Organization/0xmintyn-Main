@@ -25,7 +25,8 @@ import {
   ShoppingCart,
   User,
   Users,
-  Vote
+  Vote,
+  TrendingUp
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -61,6 +62,12 @@ const navigation: NavItem[] = [
     name: "Governance",
     href: "/governance",
     icon: Vote,
+    roles: ["user", "instructor", "admin"],
+  },
+  {
+    name: "Exchange",
+    href: "/exchange",
+    icon: TrendingUp,
     roles: ["user", "instructor", "admin"],
   },
   {

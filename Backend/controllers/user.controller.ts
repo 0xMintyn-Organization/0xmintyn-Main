@@ -3,6 +3,7 @@ import ejs from 'ejs';
 import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import path from 'path';
+import mongoose from 'mongoose';
 import { CatchAsyncError } from '../middleware/catchAsyncError';
 import UserModel, { IUser } from '../models/user.mode';
 import { getUserById } from '../services/user.services';
@@ -135,7 +136,12 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler('Please enter email and password', 400));
             }
 
-            const user = await UserModel.findOne({ email }).select('+password');
+            // Check MongoDB connection
+            if (mongoose.connection.readyState !== 1) {
+                return next(new ErrorHandler('Database connection not available. Please try again in a moment.', 503));
+            }
+
+            const user = await UserModel.findOne({ email }).select('+password').maxTimeMS(5000);
             if (!user) {
                 return next(new ErrorHandler('Invalid email or password', 401));
             }
@@ -148,7 +154,11 @@ import sendEmail from '../utils/sendMail';
             sendToken(user, 200, res);
 
         } catch (error: any) {
-            return next(new ErrorHandler(error.message, 400));
+            // Handle MongoDB timeout specifically
+            if (error.name === 'MongoServerSelectionError' || error.message.includes('buffering timed out')) {
+                return next(new ErrorHandler('Database connection timeout. Please check if MongoDB is running.', 503));
+            }
+            return next(new ErrorHandler(error.message || 'Login failed', 400));
         }
     });
 

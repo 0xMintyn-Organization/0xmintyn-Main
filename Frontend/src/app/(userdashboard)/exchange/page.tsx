@@ -1,166 +1,169 @@
-import Dropdown1 from "@/components/Exchange/Dropdown1"
-import Dropdown2 from "@/components/Exchange/Dropdown2"
-import { OpenOrdersTable } from "@/components/Exchange/OpenOrdersTable"
-import { OrderBookTable } from "@/components/Exchange/OrderBookTable"
-import PlaceOrderDropdown from "@/components/Exchange/PlaceOrderDropdown"
-import { TradeHistoryTable } from "@/components/Exchange/TradeHistoryTable"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import Protected from "@/hooks/useProtected"
-import formatNumber from "@/lib/formatters"
-import { swapRate } from "@/lib/utils"
+'use client';
 
-function Exchange() {
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import MarketOverview from '@/components/Exchange/MarketOverview';
+import TradingVolume from '@/components/Exchange/TradingVolume';
+import QuickSwap from '@/components/Exchange/QuickSwap';
+import OrderBook from '@/components/Exchange/OrderBook';
+import PlaceOrder from '@/components/Exchange/PlaceOrder';
+import OpenOrders from '@/components/Exchange/OpenOrders';
+import TradeHistory from '@/components/Exchange/TradeHistory';
+import TradingChart from '@/components/Exchange/TradingChart';
+import CoinRates from '@/components/Exchange/CoinRates';
+import Protected from '@/hooks/useProtected';
+import { TrendingUp, Wallet, Activity, BarChart3, ArrowUpRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-    return(
-        <Protected>
-
-        <div className="flex flex-col mx-auto space-y-4 py-6 px-4">
-            {/* Exchange Dashboard & Quick Swap */}
-            <div className="grid lg:grid-cols-2 gap-2">
-                {/* Exchange Dashboard */}
-                <Card>
-                    <CardHeader className="text-heading font-semibold">
-                        <CardTitle>Exchange Dashboard</CardTitle>
-                        
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-
-                        {/* Market Overview */}
-                        <div className="bg-slate-200 dark:bg-zinc-900 rounded-lg">
-                            <h6 className="text-heading font-semibold text-sm py-3 px-4">Market Overview</h6>
-
-                            {/* Swap Rates */}
-                            <div className="flex justify-between gap-4 my-2 mx-4">
-                                {swapRate.map((rate, idx) => (
-                                    <div key={idx} className="bg-zinc-300 dark:bg-zinc-800 w-1/3 rounded-xl text-center py-4 mb-4">
-                                        <h6>{rate.currency}</h6>
-                                        <p className="text-heading font-semibold text-base">{rate.swapRate}</p>
-                                        <p className={`${rate.marginPercentage.startsWith('-') ? 'text-red-500' : 'text-green-800'} text-[10px] font-semibold`}>{rate.marginPercentage}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* 24h Trading Volume */}
-                        <div className="bg-slate-200 dark:bg-zinc-900 rounded-lg py-2 px-4">
-                            <h6 className="text-heading font-semibold text-sm">24h Trading Volume</h6>
-                            <h6 className="text-heading font-semibold text-sm mt-2">{formatNumber(1234567)}</h6>
-                        </div>
-
-                    </CardContent>
+export default function ExchangePage() {
+  return (
+    <Protected>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+        <div className="container mx-auto px-4 py-8 space-y-6">
+          {/* Enhanced Header */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 via-green-700 to-green-600 p-8 shadow-2xl">
+            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                    <TrendingUp className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-bold text-white flex items-center gap-2">
+                      0xMintyn Exchange
+                      <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                        Live
+                      </Badge>
+                    </h1>
+                    <p className="text-green-100 mt-1 text-lg">
+                      Trade 0xMintyn tokens with USD, USDT, BTC, and ETH
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Balance Card */}
+                <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Wallet className="w-5 h-5 text-white" />
+                      <p className="text-sm text-green-100 font-medium">Total Balance</p>
+                    </div>
+                    <p className="text-3xl font-bold text-white">1,000 OXM</p>
+                    <p className="text-sm text-green-100 mt-1">≈ $1,050.00 USD</p>
+                  </CardContent>
                 </Card>
-
-                {/* Quick Swap */}
-                <Card>
-                    <CardHeader className="text-heading font-semibold">
-                        <CardTitle>Quick Swap</CardTitle>
-                        
-                    </CardHeader>
-                    <CardContent className=" space-y-4">
-
-                        {/* Market Overview */}
-                        <div className="bg-slate-200 dark:bg-zinc-900 rounded-lg p-4 space-y-3">
-                            <Input placeholder="Amount" className="bg-zinc-300 dark:bg-zinc-800"/>
-                            <Dropdown1 />
-                            <Dropdown2 />
-                            <p className="text-sm">1 OXM = $1.05 USD</p>
-                            {/* CTA Button */}
-                            <Button aria-label="swap" className=" bg-green-900 font-semibold text-white hover:bg-green-800 rounded-3xl">
-                                Swap
-                            </Button> 
-                        </div>
-
-                    </CardContent>
+                
+                {/* Stats Card */}
+                <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Activity className="w-5 h-5 text-white" />
+                      <p className="text-sm text-green-100 font-medium">24h Volume</p>
+                    </div>
+                    <p className="text-3xl font-bold text-white">$1.2M</p>
+                    <p className="text-sm text-green-100 mt-1 flex items-center gap-1">
+                      <ArrowUpRight className="w-3 h-3" />
+                      +12.5%
+                    </p>
+                  </CardContent>
                 </Card>
+              </div>
             </div>
-            
-            {/* Order Book & Place Order */}
-            <div className="grid lg:grid-cols-2 gap-2">
-                {/* Order Book */}
-                <Card>
-                    <CardHeader className="text-heading font-semibold">
-                        <CardTitle>Order Book</CardTitle>
-                        
-                    </CardHeader>
-                    <CardContent className="space-y-3">
+          </div>
 
-                        {/* Table */}
-                        <div className="">
-                            <OrderBookTable />
-                        </div>
+          {/* Top Row: Market Overview & Quick Swap */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Market Overview */}
+            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20">
+                <CardTitle className="text-xl font-bold flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-green-600" />
+                  Market Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <MarketOverview />
+                <TradingVolume />
+              </CardContent>
+            </Card>
 
-                    </CardContent>
-                </Card>
+            {/* Quick Swap */}
+            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                <CardTitle className="text-xl font-bold flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-purple-600" />
+                  Quick Swap
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <QuickSwap />
+              </CardContent>
+            </Card>
+          </div>
 
-                {/* Place Order */}
-                <Card>
-                    <CardHeader className="text-heading font-semibold">
-                        <CardTitle>Place Order</CardTitle>
-                        
-                    </CardHeader>
-                    <CardContent className=" space-y-4">
+          {/* Middle Row: Order Book & Place Order */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Order Book */}
+            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
+                <CardTitle className="text-xl font-bold">Order Book</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <OrderBook />
+              </CardContent>
+            </Card>
 
-                        <div className="flex justify-between items-center">
-                            <Button aria-label="market" className="bg-green-900 font-semibold text-white hover:bg-green-800">
-                                Market
-                            </Button>
-                            <p>Limit</p>
-                            <p>Stop</p>
-                        </div>
+            {/* Place Order */}
+            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20">
+                <CardTitle className="text-xl font-bold">Place Order</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <PlaceOrder />
+              </CardContent>
+            </Card>
+          </div>
 
-                        <div className="bg-slate-200 dark:bg-zinc-900 rounded-lg p-4 space-y-3">
-                            <PlaceOrderDropdown />
-                            <Input placeholder="Amount (OXM)" className="bg-zinc-300 dark:bg-zinc-800"/>
-                            <p className="text-sm">Total = $0.00</p>
-                            {/* CTA Button */}
-                            <Button aria-label="place-order" className=" bg-green-900 font-semibold text-white hover:bg-green-800 rounded-3xl">
-                                Place Order
-                            </Button> 
-                        </div>
+          {/* Trading Chart - Full Width */}
+          <div className="grid grid-cols-1 gap-6">
+            <TradingChart />
+          </div>
 
-                    </CardContent>
-                </Card>
-            </div>
+          {/* Coin Rates Table - Full Width */}
+          <div className="grid grid-cols-1 gap-6">
+            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+              <CoinRates />
+            </Card>
+          </div>
 
-            {/* Open Orders & Trade History */}
-            <div className="grid lg:grid-cols-2 gap-2">
-                {/* Open Orders */}
-                <Card>
-                    <CardHeader className="text-heading font-semibold">
-                        <CardTitle>Open Orders</CardTitle>
-                        
-                    </CardHeader>
-                    <CardContent className="space-y-3">
+          {/* Bottom Row: Open Orders & Trade History */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Open Orders */}
+            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20">
+                <CardTitle className="text-xl font-bold">Open Orders</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <OpenOrders />
+              </CardContent>
+            </Card>
 
-                        {/* Table */}
-                        <div className="">
-                            <OpenOrdersTable />
-                        </div>
-
-                    </CardContent>
-                </Card>
-
-                {/* Trade History */}
-                <Card>
-                    <CardHeader className="text-heading font-semibold">
-                        <CardTitle>Trade History</CardTitle>
-                        
-                    </CardHeader>
-                    <CardContent className=" space-y-4">
-
-                        {/* Table */}
-                        <div className="">
-                            <TradeHistoryTable />
-                        </div>
-
-                    </CardContent>
-                </Card>
-            </div>
+            {/* Trade History */}
+            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20">
+                <CardTitle className="text-xl font-bold">Trade History</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <TradeHistory />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-        </Protected>
-    )
+      </div>
+    </Protected>
+  );
 }
-
-export default Exchange
