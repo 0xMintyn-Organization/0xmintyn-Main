@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Play, Clock, Users, Star, Award, BookOpen, Video, FileText, Download, Globe,
-  Calendar, CheckCircle, Lock, ShoppingCart, Heart, Share2, BarChart, Target, Shield,
+  Calendar, CheckCircle, Lock, Heart, BarChart, Target, Shield,
   ChevronDown, Edit, Mail, GraduationCap
 } from "lucide-react";
 import Spinner from "@/components/Spinner";
@@ -27,7 +27,6 @@ export default function CoursePreviewPage() {
   const [error, setError] = useState("");
   const [course, setCourse] = useState<any>(null);
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [enrollmentChecked, setEnrollmentChecked] = useState(false);
@@ -55,10 +54,7 @@ export default function CoursePreviewPage() {
         if (result.success) {
           const data = result.course;
 
-          // Patch paths
-          data.demoUrl = `http://localhost:8000/api/v1/stream/${data.demoUrl?.split("uploads/videos/")[1]}`;
-          data.thumbnail = data.thumbnail?.replace("http://localhost:8000", process.env.NEXT_PUBLIC_SERVER_URI || "");
-         
+          // URLs are already correct from backend, no patching needed
 
           setCourse(data);
           setExpandedSections(data.courseData?.map((_: any, idx: number) => idx) || []);
@@ -364,13 +360,6 @@ export default function CoursePreviewPage() {
                         )}
                       </Button>
                     )}
-                    
-                    {!isCourseInstructor && !isAdmin() && (
-                      <Button variant="outline" size="lg" className="w-full border-green-900 text-green-900">
-                        <ShoppingCart className="w-4 h-4 mr-2" />
-                        Buy Now
-                      </Button>
-                    )}
 
                     {/* Bookmark Button */}
                     <Button 
@@ -391,23 +380,6 @@ export default function CoursePreviewPage() {
                           <span className="ml-2">Loading...</span>
                         </>
                       ) : isBookmarked ? "Bookmarked" : "Bookmark"}
-                    </Button>
-                  </div>
-
-                  {/* Wishlist & Share */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setIsWishlisted(!isWishlisted)}
-                    >
-                      <Heart className={`w-4 h-4 mr-1 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
-                      Wishlist
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Share2 className="w-4 h-4 mr-1" />
-                      Share
                     </Button>
                   </div>
 

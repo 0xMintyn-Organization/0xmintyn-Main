@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { MarketplaceProductModel } from "../../models/marketplace/MarketplaceProduct.model";
 import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
+import { MarketplaceOrderModel } from "../../models/marketplace/MarketplaceOrder.model";
 import { CatchAsyncError } from "../../middleware/catchAsyncError";
 import ErrorHandler from "../../utils/errorHandler";
 import UserModel from "../../models/user.mode";
@@ -164,6 +165,19 @@ export const getMarketplaceProductById = CatchAsyncError(async (req: Request, re
                 isPurchased = user.purchasedProducts.some((p: any) => 
                     p.productId?.toString() === productId || p.toString() === productId
                 );
+            }
+            
+            // If not found in purchasedProducts, check orders directly
+            // For digital products, allow if order exists and is not cancelled/refunded
+            if (!isPurchased) {
+                const order = await MarketplaceOrderModel.findOne({
+                    buyerId: userId,
+                    'items.itemId': productId,
+                    'items.itemType': 'product',
+                    orderStatus: { $nin: ['cancelled', 'refunded'] }, // Exclude cancelled/refunded
+                    paymentStatus: { $nin: ['refunded', 'cancelled'] } // Exclude refunded/cancelled payments
+                });
+                isPurchased = !!order;
             }
         }
 

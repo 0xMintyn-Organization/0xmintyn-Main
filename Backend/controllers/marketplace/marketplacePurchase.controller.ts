@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { CatchAsyncError } from "../../middleware/catchAsyncError";
 import { MarketplaceProductModel } from "../../models/marketplace/MarketplaceProduct.model";
+import { MarketplaceOrderModel } from "../../models/marketplace/MarketplaceOrder.model";
 import ErrorHandler from "../../utils/errorHandler";
 import UserModel from "../../models/user.mode";
 import path from "path";
@@ -29,10 +30,24 @@ export const getProductFile = CatchAsyncError(async (req: Request, res: Response
             return next(new ErrorHandler("Product not available", 404));
         }
 
-        // Verify purchase: Check if user has purchased this product
-        const hasPurchased = user.purchasedProducts?.some((p: any) => 
+        // Verify purchase: Check multiple sources
+        // 1. Check user.purchasedProducts array
+        let hasPurchased = user.purchasedProducts?.some((p: any) => 
             p.productId?.toString() === productId || p.toString() === productId
         );
+        
+        // 2. If not found in purchasedProducts, check orders directly
+        // For digital products, allow download if order exists and is not cancelled/refunded
+        if (!hasPurchased) {
+            const order = await MarketplaceOrderModel.findOne({
+                buyerId: userId,
+                'items.itemId': productId,
+                'items.itemType': 'product',
+                orderStatus: { $nin: ['cancelled', 'refunded'] }, // Exclude cancelled/refunded
+                paymentStatus: { $nin: ['refunded', 'cancelled'] } // Exclude refunded/cancelled payments
+            });
+            hasPurchased = !!order;
+        }
         
         // Allow access if: user purchased it, user is the seller, or user is admin
         const isSeller = product.sellerId.toString() === userId.toString();
@@ -55,8 +70,26 @@ export const getProductFile = CatchAsyncError(async (req: Request, res: Response
             return next(new ErrorHandler("File not found on server", 404));
         }
 
+        // Sanitize filename for HTTP headers (remove special characters, limit length)
+        const sanitizeFileName = (filename: string) => {
+            if (!filename) return 'download';
+            // Remove or replace special characters that are not safe for HTTP headers
+            return filename
+                .replace(/["\n\r\t]/g, '_') // Replace quotes, newlines, tabs
+                .replace(/[^\w\s.-]/g, '_') // Replace other special chars with underscore
+                .replace(/\s+/g, '_') // Replace spaces with underscore
+                .trim()
+                .substring(0, 200); // Limit length
+        };
+
+        const safeFileName = sanitizeFileName(product.title);
+        const fileExtension = product.fileFormat?.toLowerCase() || 'zip';
+        const fileName = `${safeFileName}.${fileExtension}`;
+
         // Set appropriate headers for file download
-        res.setHeader('Content-Disposition', `attachment; filename="${product.title}.${product.fileFormat?.toLowerCase() || 'zip'}"`);
+        // Escape quotes and use simple filename format
+        const escapedFileName = fileName.replace(/"/g, '\\"');
+        res.setHeader('Content-Disposition', `attachment; filename="${escapedFileName}"`);
         res.setHeader('Content-Type', 'application/octet-stream');
 
         // Stream the file

@@ -41,3 +41,18 @@ export const authorizeRoles = (...roles: string[]) => {
         next();
     }
 }
+
+// authorize seller - allows any role if isSeller is true or if user is admin
+export const authorizeSeller = (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as any;
+    if (!user) {
+        return next(new ErrorHandler('User not authenticated', 401));
+    }
+    
+    // Allow if user is admin or if user has isSeller flag set to true
+    if (user.role === 'admin' || user.isSeller === true) {
+        return next();
+    }
+    
+    return next(new ErrorHandler(`Only sellers (isSeller: true) or admins can access this resource. Your role: ${user.role}, isSeller: ${user.isSeller}`, 403));
+}

@@ -10,7 +10,7 @@ import {
     approveMarketplaceProduct
 } from "../../controllers/marketplace/marketplaceProduct.controller";
 import { updateAccessTokenMiddleware } from "../../controllers/user.controller";
-import { isAthenticated, authorizeRoles } from "../../utils/auth";
+import { isAthenticated, authorizeRoles, authorizeSeller } from "../../utils/auth";
 import { optionalAuth } from "../../middleware/authWithRefresh";
 import upload from "../../middleware/multerConfig";
 
@@ -24,12 +24,12 @@ marketplaceProductRouter.get(
     getMarketplaceProductById
 );
 
-// Protected Routes - Seller & Admin
+// Protected Routes - Seller & Admin (any role with isSeller:true can access)
 marketplaceProductRouter.post(
     "/create",
     updateAccessTokenMiddleware,
     isAthenticated,
-    authorizeRoles("admin", "user"), // user with isSeller:true can create (checked in controller)
+    authorizeSeller, // allows any role if isSeller:true or admin
     upload.array("images", 5),
     createMarketplaceProduct
 );
@@ -38,7 +38,7 @@ marketplaceProductRouter.get(
     "/seller/my-products",
     updateAccessTokenMiddleware,
     isAthenticated,
-    authorizeRoles("admin", "user"), // seller/admin only
+    authorizeSeller, // allows any role if isSeller:true or admin
     getSellerProducts
 );
 
@@ -46,7 +46,7 @@ marketplaceProductRouter.put(
     "/:productId",
     updateAccessTokenMiddleware,
     isAthenticated,
-    authorizeRoles("admin", "user"), // seller/admin only
+    authorizeSeller, // allows any role if isSeller:true or admin
     updateMarketplaceProduct
 );
 
@@ -54,7 +54,7 @@ marketplaceProductRouter.delete(
     "/:productId",
     updateAccessTokenMiddleware,
     isAthenticated,
-    authorizeRoles("admin", "user"), // seller/admin only
+    authorizeSeller, // allows any role if isSeller:true or admin
     deleteMarketplaceProduct
 );
 
@@ -62,7 +62,7 @@ marketplaceProductRouter.patch(
     "/:productId/toggle-status",
     updateAccessTokenMiddleware,
     isAthenticated,
-    authorizeRoles("admin", "user"), // seller/admin only
+    authorizeSeller, // allows any role if isSeller:true or admin
     toggleMarketplaceProductStatus
 );
 

@@ -39,6 +39,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
+import ReviewModal from '@/components/Marketplace/ReviewModal';
 
 export default function UserDashboardPage() {
   const { user } = useAuth();
@@ -58,6 +59,10 @@ export default function UserDashboardPage() {
   const [purchasedServices, setPurchasedServices] = useState<any[]>([]);
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Review modal state
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedProductForReview, setSelectedProductForReview] = useState<any>(null);
 
   // Pagination and Search states for Services
   const [servicesSearchQuery, setServicesSearchQuery] = useState('');
@@ -124,14 +129,17 @@ export default function UserDashboardPage() {
         
         setPurchasedProducts(productOrders.map((order: any) => ({
           id: order._id,
+          orderId: order._id, // Store order ID for review
           orderNumber: order.orderNumber,
           productId: order.items[0]?.itemId, // Get the actual product ID
           productTitle: order.items[0]?.itemTitle || 'Product Order',
           productType: 'Digital Product',
+          sellerId: order.sellerId?._id || order.sellerId, // Store seller ID for review
           sellerName: order.sellerId?.sellerName || order.sellerId?.storeName || 'Seller',
           price: order.orderTotal,
           purchaseDate: order.createdAt,
           status: order.orderStatus,
+          orderItems: order.items || [], // Store order items for review modal
           downloadLink: order.orderStatus === 'completed' 
             ? `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/purchase/product/${order.items[0]?.itemId}/file`
             : null,
@@ -910,30 +918,26 @@ export default function UserDashboardPage() {
                             )}
                           </div>
 
-                          {/* Action Buttons */}
+                          {/* Action Buttons - Products don't need Message/View Detail, just Download */}
                           <div className="flex flex-wrap gap-2">
-                            <Link href={`/marketplace/orders/${product.id}`}>
-                              <Button size="sm" variant="default">
-                                <Eye className="h-4 w-4 mr-1" />
-                                View Order
-                              </Button>
-                            </Link>
-                            <Link href={`/marketplace/messages?conversation=${product.id}`}>
-                              <Button size="sm" variant="outline">
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                Message Seller
-                              </Button>
-                            </Link>
                             {product.status === 'completed' && product.productId && (
                               <Link href={`/marketplace/product/${product.productId}`}>
-                                <Button size="sm" variant="outline" className="text-green-600">
+                                <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700">
                                   <Download className="h-4 w-4 mr-1" />
                                   Download Product
                                 </Button>
                               </Link>
                             )}
                             {!product.hasReview && product.status === 'completed' && (
-                              <Button size="sm" variant="outline" className="text-yellow-600">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-yellow-600"
+                                onClick={() => {
+                                  setSelectedProductForReview(product);
+                                  setReviewModalOpen(true);
+                                }}
+                              >
                                 <Star className="h-4 w-4 mr-1" />
                                 Write Review
                               </Button>
@@ -979,6 +983,25 @@ export default function UserDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Review Modal */}
+      {selectedProductForReview && (
+        <ReviewModal
+          isOpen={reviewModalOpen}
+          onClose={() => {
+            setReviewModalOpen(false);
+            setSelectedProductForReview(null);
+          }}
+          orderId={selectedProductForReview.orderId}
+          sellerId={selectedProductForReview.sellerId}
+          sellerName={selectedProductForReview.sellerName}
+          orderItems={selectedProductForReview.orderItems || []}
+          onReviewSuccess={() => {
+            // Refresh the data to update hasReview status
+            fetchUserData();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -25,6 +25,26 @@ uploadRouter.post(
     uploadFile
 );
 
+// Upload endpoint for course videos (legacy support)
+uploadRouter.post(
+    "/upload",
+    updateAccessTokenMiddleware,
+    isAthenticated,
+    (req, res, next) => {
+        upload.single('file')(req, res, (err) => {
+            if (err) {
+                console.error('Multer error:', err);
+                return res.status(400).json({
+                    success: false,
+                    message: err.message || 'File upload error'
+                });
+            }
+            next();
+        });
+    },
+    uploadFile
+);
+
 // Multiple files upload
 uploadRouter.post(
     "/files",

@@ -156,21 +156,21 @@ export default function SimpleOfferModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <FileText className="w-6 h-6 text-blue-600" />
-            Send Custom Offer to {buyerName}
+      <DialogContent className="max-w-md max-h-[85vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-5 pt-5 pb-4 border-b flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <FileText className="w-5 h-5 text-blue-600" />
+            Send Custom Offer
           </DialogTitle>
-          <p className="text-gray-600">
-            Create a personalized offer with pricing and terms for this project.
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            To {buyerName}
           </p>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 px-5 py-4 overflow-y-auto flex-1 min-h-0">
           {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="offerTitle" className="text-sm font-semibold">
+          <div className="space-y-1.5">
+            <Label htmlFor="offerTitle" className="text-xs font-semibold">
               Offer Title *
             </Label>
             <Input
@@ -190,21 +190,21 @@ export default function SimpleOfferModal({
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="offerDescription" className="text-sm font-semibold">
-              What's included in this offer? *
+          <div className="space-y-1.5">
+            <Label htmlFor="offerDescription" className="text-xs font-semibold">
+              Description *
             </Label>
             <Textarea
               id="offerDescription"
               value={formData.offerDescription}
               onChange={(e) => handleInputChange('offerDescription', e.target.value)}
-              placeholder="Describe what you'll deliver, the scope of work, timeline, and any special requirements..."
-              rows={4}
-              className={errors.offerDescription ? 'border-red-500' : ''}
+              placeholder="What you'll deliver, scope, timeline..."
+              rows={3}
+              className={`text-sm min-h-[80px] max-h-[100px] resize-none ${errors.offerDescription ? 'border-red-500' : ''}`}
               maxLength={2000}
             />
             <div className="flex justify-between text-xs text-gray-500">
-              <span>{formData.offerDescription.length}/2000 characters</span>
+              <span>{formData.offerDescription.length}/2000</span>
               {errors.offerDescription && (
                 <span className="text-red-500 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
@@ -215,8 +215,8 @@ export default function SimpleOfferModal({
           </div>
 
           {/* Price */}
-          <div className="space-y-2">
-            <Label htmlFor="price" className="text-sm font-semibold">
+          <div className="space-y-1.5">
+            <Label htmlFor="price" className="text-xs font-semibold">
               Price (USD) *
             </Label>
             <div className="relative">
@@ -241,9 +241,9 @@ export default function SimpleOfferModal({
           </div>
 
           {/* Delivery Time & Revisions */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="deliveryTime" className="text-sm font-semibold">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="deliveryTime" className="text-xs font-semibold">
                 Delivery Time *
               </Label>
               <Select value={formData.deliveryTime} onValueChange={(value) => handleInputChange('deliveryTime', value)}>
@@ -269,8 +269,8 @@ export default function SimpleOfferModal({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="revisions" className="text-sm font-semibold">
+            <div className="space-y-1.5">
+              <Label htmlFor="revisions" className="text-xs font-semibold">
                 Revisions *
               </Label>
               <Select value={formData.revisions} onValueChange={(value) => handleInputChange('revisions', value)}>
@@ -296,9 +296,9 @@ export default function SimpleOfferModal({
           </div>
 
           {/* Deliverables */}
-          <div className="space-y-2">
-            <Label htmlFor="deliverables" className="text-sm font-semibold">
-              Key Deliverables (Optional)
+          <div className="space-y-1.5">
+            <Label htmlFor="deliverables" className="text-xs font-semibold">
+              Deliverables (Optional)
             </Label>
             <Input
               id="deliverables"
@@ -309,22 +309,23 @@ export default function SimpleOfferModal({
           </div>
 
           {/* Additional Terms */}
-          <div className="space-y-2">
-            <Label htmlFor="additionalTerms" className="text-sm font-semibold">
+          <div className="space-y-1.5">
+            <Label htmlFor="additionalTerms" className="text-xs font-semibold">
               Additional Terms (Optional)
             </Label>
             <Textarea
               id="additionalTerms"
               value={formData.additionalTerms}
               onChange={(e) => handleInputChange('additionalTerms', e.target.value)}
-              placeholder="Any special terms, requirements, or conditions..."
+              placeholder="Special terms or conditions..."
               rows={2}
+              className="text-sm min-h-[60px] max-h-[80px] resize-none"
               maxLength={1000}
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-2 px-5 py-3 border-t bg-background flex-shrink-0">
           <Button variant="outline" onClick={onClose} disabled={sending}>
             Cancel
           </Button>

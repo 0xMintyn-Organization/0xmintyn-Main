@@ -1,12 +1,21 @@
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 
-// Set storage engine
+// Set storage engine with absolute paths
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         // Store images in uploads/images/ and other files in uploads/files/
-        const dest = file.fieldname === 'images' ? 'uploads/images/' : 'uploads/files/';
-        cb(null, dest);
+        const destDir = file.fieldname === 'images' 
+            ? path.join(__dirname, "../uploads/images")
+            : path.join(__dirname, "../uploads/files");
+        
+        // Ensure directory exists
+        if (!fs.existsSync(destDir)) {
+            fs.mkdirSync(destDir, { recursive: true });
+        }
+        
+        cb(null, destDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

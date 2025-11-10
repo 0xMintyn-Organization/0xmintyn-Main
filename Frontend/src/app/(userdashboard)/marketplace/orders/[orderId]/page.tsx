@@ -44,6 +44,32 @@ export default function OrderDetailPage() {
   const [canReview, setCanReview] = useState(false);
   const [checkingReview, setCheckingReview] = useState(false);
 
+  // Helper function to safely format dates
+  const safeFormatDate = (dateValue: any, formatString: string, fallback: string = 'N/A') => {
+    if (!dateValue) return fallback;
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return fallback;
+      return format(date, formatString);
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return fallback;
+    }
+  };
+
+  // Helper function to safely format distance to now
+  const safeFormatDistanceToNow = (dateValue: any, options?: any, fallback: string = 'N/A') => {
+    if (!dateValue) return fallback;
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return fallback;
+      return formatDistanceToNow(date, options);
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return fallback;
+    }
+  };
+
   useEffect(() => {
     if (orderId) {
       fetchOrderDetails();
@@ -156,24 +182,35 @@ export default function OrderDetailPage() {
       return { text: 'Not set', color: 'text-gray-500', progress: 0 };
     }
     
-    const now = new Date();
-    const deliveryDate = new Date(order.estimatedDeliveryDate);
-    const startDate = order.startedAt ? new Date(order.startedAt) : new Date(order.createdAt);
-    
-    // If already completed or cancelled
-    if (order.orderStatus === 'completed' || order.orderStatus === 'cancelled') {
-      return { text: 'Completed', color: 'text-green-500', progress: 100 };
-    }
-    
-    // If delivered, show delivered status
-    if (order.orderStatus === 'delivered') {
-      return { text: 'Delivered', color: 'text-orange-500', progress: 90 };
-    }
-    
-    // Calculate time remaining
-    const totalTime = differenceInMilliseconds(deliveryDate, startDate);
-    const elapsed = differenceInMilliseconds(now, startDate);
-    const remaining = differenceInMilliseconds(deliveryDate, now);
+    try {
+      const now = new Date();
+      const deliveryDate = new Date(order.estimatedDeliveryDate);
+      const startDate = order.startedAt ? new Date(order.startedAt) : (order.createdAt ? new Date(order.createdAt) : now);
+      
+      // Validate dates
+      if (isNaN(deliveryDate.getTime()) || isNaN(startDate.getTime())) {
+        console.error('Invalid date in delivery countdown:', { 
+          estimatedDeliveryDate: order.estimatedDeliveryDate, 
+          startedAt: order.startedAt, 
+          createdAt: order.createdAt 
+        });
+        return { text: 'Invalid date', color: 'text-gray-500', progress: 0 };
+      }
+      
+      // If already completed or cancelled
+      if (order.orderStatus === 'completed' || order.orderStatus === 'cancelled') {
+        return { text: 'Completed', color: 'text-green-500', progress: 100 };
+      }
+      
+      // If delivered, show delivered status
+      if (order.orderStatus === 'delivered') {
+        return { text: 'Delivered', color: 'text-orange-500', progress: 90 };
+      }
+      
+      // Calculate time remaining
+      const totalTime = differenceInMilliseconds(deliveryDate, startDate);
+      const elapsed = differenceInMilliseconds(now, startDate);
+      const remaining = differenceInMilliseconds(deliveryDate, now);
     
     // Calculate progress percentage
     const progress = Math.min(100, Math.max(0, (elapsed / totalTime) * 100));
@@ -210,6 +247,10 @@ export default function OrderDetailPage() {
     if (hours < 6) color = 'text-red-500';
     
     return { text, color, progress: Math.round(progress) };
+    } catch (error) {
+      console.error('Error calculating delivery countdown:', error);
+      return { text: 'Error calculating', color: 'text-gray-500', progress: 0 };
+    }
   };
 
   // Determine if current user is seller and owns this order
@@ -275,7 +316,7 @@ export default function OrderDetailPage() {
             {isSellerByOwnership ? 'Sell Order' : 'Order'} #{order.orderNumber || order._id?.slice(-8)}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm">
-            {isSellerByOwnership ? 'Customer order' : 'Your order'} • Created {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}
+            {isSellerByOwnership ? 'Customer order' : 'Your order'} • Created {safeFormatDistanceToNow(order.createdAt, { addSuffix: true })}
           </p>
         </div>
         <Badge className={`${getStatusColor(order.orderStatus)} text-base px-4 py-2`}>
@@ -312,9 +353,9 @@ export default function OrderDetailPage() {
               </div>
               
               <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-                <span>Started: {order.startedAt ? format(new Date(order.startedAt), 'MMM dd, hh:mm a') : format(new Date(order.createdAt), 'MMM dd, hh:mm a')}</span>
+                <span>Started: {order.startedAt ? safeFormatDate(order.startedAt, 'MMM dd, hh:mm a') : safeFormatDate(order.createdAt, 'MMM dd, hh:mm a')}</span>
                 <span className="font-medium">{deliveryCountdown.progress}% Complete</span>
-                <span>Due: {format(new Date(order.estimatedDeliveryDate), 'MMM dd, hh:mm a')}</span>
+                <span>Due: {safeFormatDate(order.estimatedDeliveryDate, 'MMM dd, hh:mm a')}</span>
               </div>
             </div>
           </CardContent>
@@ -588,10 +629,10 @@ export default function OrderDetailPage() {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Estimated Delivery</p>
                   <p className="font-semibold text-gray-900 dark:text-white">
-                    {format(new Date(order.estimatedDeliveryDate), 'EEEE, MMMM dd, yyyy')}
+                    {safeFormatDate(order.estimatedDeliveryDate, 'EEEE, MMMM dd, yyyy')}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {formatDistanceToNow(new Date(order.estimatedDeliveryDate), { addSuffix: true })}
+                    {safeFormatDistanceToNow(order.estimatedDeliveryDate, { addSuffix: true })}
                   </p>
                 </div>
               )}
@@ -602,7 +643,7 @@ export default function OrderDetailPage() {
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Actual Delivery</p>
                     <p className="font-semibold text-green-600">
-                      {format(new Date(order.deliveryDate), 'EEEE, MMMM dd, yyyy')}
+                      {safeFormatDate(order.deliveryDate, 'EEEE, MMMM dd, yyyy')}
                     </p>
                     <Badge className="mt-2 bg-green-500">
                       <CheckCircle className="h-3 w-3 mr-1" />
@@ -618,12 +659,12 @@ export default function OrderDetailPage() {
                   <div className="text-sm">
                     <div className="flex justify-between mb-2">
                       <span className="text-gray-600 dark:text-gray-400">Started</span>
-                      <span className="font-medium">{formatDistanceToNow(new Date(order.startedAt), { addSuffix: true })}</span>
+                      <span className="font-medium">{safeFormatDistanceToNow(order.startedAt, { addSuffix: true })}</span>
                     </div>
                     {order.completedAt && (
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-gray-400">Completed</span>
-                        <span className="font-medium">{formatDistanceToNow(new Date(order.completedAt), { addSuffix: true })}</span>
+                        <span className="font-medium">{safeFormatDistanceToNow(order.completedAt, { addSuffix: true })}</span>
                       </div>
                     )}
                   </div>
