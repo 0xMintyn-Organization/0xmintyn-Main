@@ -12,6 +12,7 @@ import OpenOrders from '@/components/Exchange/OpenOrders';
 import TradeHistory from '@/components/Exchange/TradeHistory';
 import TradingChart from '@/components/Exchange/TradingChart';
 import CoinRates from '@/components/Exchange/CoinRates';
+import KycStatusCard from '@/components/Exchange/KycStatusCard';
 import Protected from '@/hooks/useProtected';
 import { TrendingUp, Wallet, Activity, BarChart3, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -74,6 +75,9 @@ export default function ExchangePage() {
               </div>
             </div>
           </div>
+
+          {/* KYC Status */}
+          <KycStatusCard />
 
           {/* Top Row: Market Overview & Quick Swap */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
