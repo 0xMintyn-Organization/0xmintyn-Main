@@ -153,11 +153,14 @@ export function SocialLoginButton({
       onClick={handleAuth0Login}
       disabled={isLoading || isProcessing || isConnected}
       variant={isConnected ? "outline" : "default"}
-      className={`w-full transition-all duration-200 ${
+      className={`w-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
         isConnected
           ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300"
           : "bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900"
       }`}
+      aria-label={isConnected ? `Connected to ${label}` : `Login with ${label}`}
+      aria-disabled={isLoading || isProcessing || isConnected}
+      tabIndex={isConnected ? -1 : 0}
     >
       {isLoading || isProcessing ? (
         <>
