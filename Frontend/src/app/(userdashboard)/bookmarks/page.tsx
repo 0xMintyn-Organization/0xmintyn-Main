@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Bookmark,
   Search,
@@ -53,6 +54,8 @@ export default function BookmarksPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [removingBookmark, setRemovingBookmark] = useState<string | null>(null);
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const [bulkRemoving, setBulkRemoving] = useState(false);
   
   const router = useRouter();
   const { toast } = useToast();
@@ -86,6 +89,9 @@ export default function BookmarksPage() {
   };
 
   const removeBookmark = async (courseId: string) => {
+    const confirmed = window.confirm("Remove this course from your bookmarks?");
+    if (!confirmed) return;
+
     try {
       setRemovingBookmark(courseId);
       const response = await axios.delete(
@@ -104,6 +110,8 @@ export default function BookmarksPage() {
           );
         });
         setCategorizedBookmarks(updatedCategorized);
+        // Also clear from selection if present
+        setSelectedCourseIds(prev => prev.filter(id => id !== courseId));
 
         toast({
           title: "Bookmark Removed",
@@ -138,6 +146,58 @@ export default function BookmarksPage() {
   });
 
   const categories = ["all", ...Object.keys(categorizedBookmarks)];
+
+  const toggleSelected = (courseId: string, checked: boolean | string) => {
+    const isChecked = checked === true;
+    setSelectedCourseIds(prev =>
+      isChecked ? [...prev, courseId] : prev.filter(id => id !== courseId)
+    );
+  };
+
+  const handleBulkRemove = async () => {
+    if (selectedCourseIds.length === 0) return;
+    const confirmed = window.confirm(
+      `Remove ${selectedCourseIds.length} selected bookmark(s)?`
+    );
+    if (!confirmed) return;
+
+    try {
+      setBulkRemoving(true);
+
+      // Perform deletions in parallel using existing API
+      await Promise.all(
+        selectedCourseIds.map(courseId =>
+          axios.delete(
+            `${process.env.NEXT_PUBLIC_SERVER_URI}bookmark/remove/${courseId}`,
+            { withCredentials: true }
+          ).catch(err => {
+            console.error("Bulk remove error for course", courseId, err);
+          })
+        )
+      );
+
+      // Update local state
+      setBookmarks(prev =>
+        prev.filter(b => !selectedCourseIds.includes(b.courseId))
+      );
+
+      const updatedCategorized = { ...categorizedBookmarks };
+      Object.keys(updatedCategorized).forEach(category => {
+        updatedCategorized[category] = updatedCategorized[category].filter(
+          b => !selectedCourseIds.includes(b.courseId)
+        );
+      });
+      setCategorizedBookmarks(updatedCategorized);
+
+      setSelectedCourseIds([]);
+      toast({
+        title: "Bookmarks Removed",
+        description: "Selected courses have been removed from your bookmarks.",
+      });
+    } finally {
+      setBulkRemoving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -218,6 +278,31 @@ export default function BookmarksPage() {
         </div>
 
         {/* Bookmarks Content */}
+        {selectedCourseIds.length > 0 && (
+          <div className="mb-4 flex items-center justify-between bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg px-4 py-2 text-sm text-amber-800 dark:text-amber-100">
+            <span>
+              <span className="font-semibold">{selectedCourseIds.length}</span>{" "}
+              selected
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedCourseIds([])}
+              >
+                Clear Selection
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleBulkRemove}
+                disabled={bulkRemoving}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {bulkRemoving ? "Removing..." : "Remove Selected"}
+              </Button>
+            </div>
+          </div>
+        )}
         {filteredBookmarks.length === 0 ? (
           <div className="text-center py-12">
             <Bookmark className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -243,9 +328,18 @@ export default function BookmarksPage() {
               <Card key={bookmark._id} className="group hover:shadow-lg transition-shadow duration-200">
                 <CardContent className="p-0">
                   {viewMode === "grid" ? (
-                    // Grid View
-                    <div className="relative">
-                      <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
+                  // Grid View
+                  <div className="relative">
+                    <div className="absolute top-2 left-2 z-10">
+                      <Checkbox
+                        checked={selectedCourseIds.includes(bookmark.courseId)}
+                        onCheckedChange={(checked) =>
+                          toggleSelected(bookmark.courseId, checked)
+                        }
+                        aria-label="Select bookmark"
+                      />
+                    </div>
+                    <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
                         {bookmark.courseThumbnail ? (
                           <img
                             src={bookmark.courseThumbnail}
@@ -296,6 +390,12 @@ export default function BookmarksPage() {
                             <Clock className="w-4 h-4" />
                             {bookmark.courseDuration}
                           </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            <span className="truncate">
+                              {new Date(bookmark.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -321,6 +421,15 @@ export default function BookmarksPage() {
                   ) : (
                     // List View
                     <div className="flex p-4">
+                      <div className="flex flex-col items-center mr-3 pt-1">
+                        <Checkbox
+                          checked={selectedCourseIds.includes(bookmark.courseId)}
+                          onCheckedChange={(checked) =>
+                            toggleSelected(bookmark.courseId, checked)
+                          }
+                          aria-label="Select bookmark"
+                        />
+                      </div>
                       <div className="w-32 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0 mr-4">
                         {bookmark.courseThumbnail ? (
                           <img

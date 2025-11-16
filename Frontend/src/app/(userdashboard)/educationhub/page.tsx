@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import axios from "axios"; 
 import { AllRolesProtected } from "@/components/RoleProtected";
 import { Input } from "@/components/ui/input";
@@ -102,10 +103,13 @@ function EnhancedEducationCard({ course }: { course: Course }) {
     return (
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
             <div className="relative h-48 overflow-hidden">
-                <img
+                <Image
                     src={course.imagePath || '/placeholder-course.jpg'}
                     alt={course.imageAltText}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    fill
+                    sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw"
+                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    priority={false}
                 />
                 {course.isPurchased && (
                     <div className="absolute top-2 right-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
@@ -436,7 +440,22 @@ function EducationHub() {
             <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
                 {/* Header Section */}
                 <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
-                    <div className="max-w-7xl mx-auto px-4 py-6">
+                    <div className="max-w-7xl mx-auto px-4 py-6 space-y-3">
+                        {/* Breadcrumbs */}
+                        <nav className="flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-1" aria-label="Breadcrumb">
+                            <button
+                                type="button"
+                                onClick={() => router.push("/dashboard")}
+                                className="inline-flex items-center hover:text-gray-900 dark:hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 rounded px-1"
+                            >
+                                Home
+                            </button>
+                            <span className="text-gray-400 dark:text-gray-500">/</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-200">
+                                Education Hub
+                            </span>
+                        </nav>
+
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div>
                                 <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
@@ -632,11 +651,16 @@ function EducationHub() {
                                     // List View
                                     <div key={course.id} className="bg-white dark:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg transition-shadow p-4">
                                         <div className="flex gap-4">
-                                            <img
-                                                src={course.imagePath}
-                                                alt={course.imageAltText}
-                                                className="w-48 h-32 object-cover rounded-lg"
-                                            />
+                                            <div className="relative w-48 h-32 flex-shrink-0">
+                                                <Image
+                                                    src={course.imagePath || "/placeholder-course.jpg"}
+                                                    alt={course.imageAltText}
+                                                    fill
+                                                    sizes="192px"
+                                                    className="object-cover rounded-lg"
+                                                    priority={false}
+                                                />
+                                            </div>
                                             <div className="flex-1">
                                                 <div className="flex items-start justify-between">
                                                     <div>

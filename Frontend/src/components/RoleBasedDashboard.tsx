@@ -268,7 +268,7 @@ function InstructorDashboard({ data }: { data: DashboardData }) {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalCourses || 0}</div>
+            <div className="text-2xl font-bold">{data.totalCourses ?? 0}</div>
             <p className="text-xs text-muted-foreground">Published courses</p>
           </CardContent>
         </Card>
@@ -279,7 +279,7 @@ function InstructorDashboard({ data }: { data: DashboardData }) {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{data.totalStudents ?? 0}</div>
             <p className="text-xs text-muted-foreground">Enrolled students</p>
           </CardContent>
         </Card>
@@ -290,7 +290,9 @@ function InstructorDashboard({ data }: { data: DashboardData }) {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0.0</div>
+            <div className="text-2xl font-bold">
+              {(data.averageRating ?? 0).toFixed(1)}
+            </div>
             <p className="text-xs text-muted-foreground">Course ratings</p>
           </CardContent>
         </Card>

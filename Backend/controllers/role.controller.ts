@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import UserModel from "../models/user.mode";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/errorHandler";
+import { CourseModel } from "../models/course.model";
+import OrderModel from "../models/order.model";
 
 // Get all users with role management (Admin only)
 export const getAllUsers = CatchAsyncError(
@@ -284,10 +286,38 @@ async function getAdminDashboard() {
 }
 
 async function getInstructorDashboard(instructorId: string) {
-  // This would integrate with course analytics
+  // Aggregate instructor-specific stats for the role-based dashboard
+  // 1) Courses created by this instructor
+  const courses = await CourseModel.find({ createdBy: instructorId }).select(
+    "averageRating"
+  );
+
+  const totalCourses = courses.length;
+
+  // 2) Unique students from completed orders for this instructor's courses
+  const studentsAgg = await OrderModel.aggregate([
+    { $match: { instructorId: instructorId.toString(), status: "completed" } },
+    { $group: { _id: "$userId" } },
+    { $group: { _id: null, count: { $sum: 1 } } },
+  ]);
+
+  const totalStudents =
+    studentsAgg && studentsAgg.length > 0 ? studentsAgg[0].count : 0;
+
+  // 3) Average rating across instructor's courses (using stored averageRating)
+  let averageRating = 0;
+  if (totalCourses > 0) {
+    const sumRatings = courses.reduce(
+      (sum, course: any) => sum + (course.averageRating || 0),
+      0
+    );
+    averageRating = Number((sumRatings / totalCourses).toFixed(1));
+  }
+
   return {
-    message: "Instructor dashboard data",
-    instructorId
+    totalCourses,
+    totalStudents,
+    averageRating,
   };
 }
 

@@ -11,21 +11,17 @@ interface CustomCaptchaProps {
 }
 
 export default function CustomCaptcha({ onVerify, onTokenChange }: CustomCaptchaProps) {
-  const [num1, setNum1] = useState(0);
-  const [num2, setNum2] = useState(0);
+  const [codeNumber, setCodeNumber] = useState(0);
   const [answer, setAnswer] = useState("");
   const [isValid, setIsValid] = useState(false);
   const [error, setError] = useState("");
-  const [attempts, setAttempts] = useState(0);
   const captchaToken = useRef<string | null>(null);
 
   // Generate new CAPTCHA challenge
   const generateCaptcha = () => {
-    // Generate two random numbers between 1 and 20
-    const n1 = Math.floor(Math.random() * 20) + 1;
-    const n2 = Math.floor(Math.random() * 20) + 1;
-    setNum1(n1);
-    setNum2(n2);
+    // Generate a single-digit number between 1 and 9
+    const n = Math.floor(Math.random() * 9) + 1;
+    setCodeNumber(n);
     setAnswer("");
     setIsValid(false);
     setError("");
@@ -43,7 +39,7 @@ export default function CustomCaptcha({ onVerify, onTokenChange }: CustomCaptcha
 
   // Validate answer
   const validateAnswer = (userAnswer: string) => {
-    const correctAnswer = num1 + num2;
+    const correctAnswer = codeNumber;
     const userAnswerNum = parseInt(userAnswer, 10);
 
     if (isNaN(userAnswerNum)) {
@@ -66,20 +62,11 @@ export default function CustomCaptcha({ onVerify, onTokenChange }: CustomCaptcha
         onTokenChange(captchaToken.current);
       }
     } else {
-      setError("Incorrect answer. Please try again.");
+      setError("Incorrect number. Try again or refresh.");
       setIsValid(false);
-      setAttempts((prev) => prev + 1);
       onVerify(false);
       if (onTokenChange) {
         onTokenChange(null);
-      }
-      
-      // Regenerate CAPTCHA after 3 failed attempts
-      if (attempts >= 2) {
-        setTimeout(() => {
-          generateCaptcha();
-          setAttempts(0);
-        }, 500);
       }
     }
   };
@@ -102,7 +89,6 @@ export default function CustomCaptcha({ onVerify, onTokenChange }: CustomCaptcha
 
   const handleRefresh = () => {
     generateCaptcha();
-    setAttempts(0);
   };
 
   return (
@@ -124,24 +110,20 @@ export default function CustomCaptcha({ onVerify, onTokenChange }: CustomCaptcha
 
       <div className="flex items-center gap-3 mb-3">
         <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded border border-gray-200 dark:border-gray-700">
-          <span className="text-lg font-bold text-gray-800 dark:text-gray-200 select-none">
-            {num1}
+          <span className="text-sm text-gray-600 dark:text-gray-400">Enter this number:</span>
+          <span className="text-lg font-bold text-gray-800 dark:text-gray-200 select-none" aria-label="CAPTCHA number">
+            {codeNumber}
           </span>
-          <span className="text-lg text-gray-600 dark:text-gray-400">+</span>
-          <span className="text-lg font-bold text-gray-800 dark:text-gray-200 select-none">
-            {num2}
-          </span>
-          <span className="text-lg text-gray-600 dark:text-gray-400">=</span>
         </div>
         <Input
           type="number"
           value={answer}
           onChange={(e) => handleAnswerChange(e.target.value)}
-          placeholder="?"
-          className="w-20 text-center text-lg font-semibold"
+          placeholder="Type it here"
+          className="w-32 text-center text-lg font-semibold"
           min="0"
-          max="100"
-          aria-label="CAPTCHA answer"
+          max="9"
+          aria-label="CAPTCHA answer input"
         />
       </div>
 
@@ -159,7 +141,7 @@ export default function CustomCaptcha({ onVerify, onTokenChange }: CustomCaptcha
 
       {!isValid && !error && answer === "" && (
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-          Solve the math problem above
+          Type the number shown above
         </p>
       )}
     </div>

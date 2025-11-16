@@ -24,6 +24,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import Spinner from "@/components/Spinner";
 
+interface CourseProgress {
+  totalLectures: number;
+  completedLectures: number;
+  progressPercentage: number;
+  completedLectureIds: string[];
+}
+
 interface EnrolledCourse {
   orderId: string;
   courseId: string;
@@ -49,6 +56,7 @@ interface EnrolledCourse {
     totalReviews: number;
     courseData: any[];
   };
+  progress?: CourseProgress;
 }
 
 function MyCoursesPage() {
@@ -73,7 +81,35 @@ function MyCoursesPage() {
       );
 
       if (response.data.success) {
-        setCourses(response.data.courses);
+        const baseCourses: EnrolledCourse[] = response.data.courses;
+
+        // Fetch progress for each enrolled course
+        const coursesWithProgress = await Promise.all(
+          baseCourses.map(async (course) => {
+            try {
+              const progressRes = await axios.get(
+                `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/progress/${course.courseId}`,
+                { withCredentials: true }
+              );
+
+              if (progressRes.data?.success && progressRes.data.progress) {
+                return {
+                  ...course,
+                  progress: progressRes.data.progress as CourseProgress,
+                };
+              }
+            } catch (err) {
+              console.error(
+                `Error fetching progress for course ${course.courseId}:`,
+                err
+              );
+            }
+            // Fallback: return course without progress if API fails
+            return course;
+          })
+        );
+
+        setCourses(coursesWithProgress);
       }
     } catch (error: any) {
       console.error("Error fetching enrolled courses:", error);
@@ -113,9 +149,16 @@ function MyCoursesPage() {
   };
 
   const calculateProgress = (course: EnrolledCourse) => {
-    // This would be calculated based on user's progress through the course
-    // For now, return a random progress for demonstration
-    return Math.floor(Math.random() * 100);
+    // Use progress returned from backend if available
+    if (
+      course.progress &&
+      typeof course.progress.progressPercentage === "number"
+    ) {
+      return course.progress.progressPercentage;
+    }
+
+    // Fallback: no progress data available yet
+    return 0;
   };
 
   if (loading) {

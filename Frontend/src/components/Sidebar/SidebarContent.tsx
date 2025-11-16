@@ -4,6 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useBookmarkCount } from "@/hooks/useBookmarkCount";
+import { useGovernanceStats } from "@/hooks/useGovernanceStats";
+import { useTotalCourses } from "@/hooks/useTotalCourses";
 import { useRole } from "@/hooks/useRole";
 import {
   BarChart3,
@@ -33,7 +35,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // Role-based navigation items
-const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: boolean = false, isSeller: boolean = false) => {
+const getNavItems = (
+  userRole: string,
+  bookmarkCount: number,
+  hasPurchases: boolean = false,
+  isSeller: boolean = false,
+  pendingGovernanceCount: number = 0,
+  totalCourses: number = 0
+) => {
   // Build marketplace submenu dynamically based on user status
   const marketplaceChildren = [
     {
@@ -94,7 +103,8 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       name: "Education", 
       href: "#", 
       icon: GraduationCap,
-      badge: "12",
+      // Dynamic badge: show total courses (fallback to bookmarks if zero), hide if both zero
+      badge: totalCourses > 0 ? String(totalCourses) : (bookmarkCount > 0 ? String(bookmarkCount) : null),
       badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       description: "Courses & Learning",
       hasSubmenu: true,
@@ -133,7 +143,8 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       name: "Governance", 
       href: "/governance", 
       icon: Vote,
-      badge: "3",
+      // Dynamic badge: show number of active (pending) proposals; hide if zero
+      badge: pendingGovernanceCount > 0 ? String(pendingGovernanceCount) : null,
       badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
       description: "Community Proposals"
     },
@@ -351,6 +362,8 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useRole();
   const { bookmarkCount } = useBookmarkCount();
+  const { pendingCount: pendingGovernanceCount } = useGovernanceStats();
+  const { totalCourses } = useTotalCourses();
   
   // Check if user has any purchased items
   const hasPurchases = user && (
@@ -362,7 +375,14 @@ export default function Sidebar() {
   // Check if user is a seller
   const isSeller = user?.isSeller || false;
   
-  const navItems = getNavItems(user?.role || 'user', bookmarkCount, hasPurchases, isSeller);
+  const navItems = getNavItems(
+    user?.role || 'user',
+    bookmarkCount,
+    hasPurchases,
+    isSeller,
+    pendingGovernanceCount,
+    totalCourses
+  );
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   return (

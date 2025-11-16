@@ -4,24 +4,25 @@ import { Button } from "../ui/button";
 import { Moon, Sun, LogOut } from "lucide-react";
 import MobileSidebar from "../Sidebar/MobileSidebar";
 import Link from "next/link";
-import { signOut, useSession } from "next-auth/react";
 import { useLogOutQuery } from "@/redux/features/auth/authApi";
 import { useState } from "react";
-import { redirect } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+
 function Header() {
     const { theme, toggleTheme } = useTheme();
-    const { data: session } = useSession();
-    const [logout, setLogout] = useState(false);
+    const { logout: authLogout } = useAuth();
+    const [logoutRequested, setLogoutRequested] = useState(false);
 
-    const { } = useLogOutQuery(undefined, {
-        skip: !logout ? true : false,
+    // Call backend logout endpoint when logoutRequested is true
+    useLogOutQuery(undefined, {
+        skip: !logoutRequested,
     });
 
-    const handleLogout = async () => {
-        setLogout(true);
-        await signOut({ callbackUrl: "https://app.0xmintyn.com/login" });
-      };
-      
+    const handleLogout = () => {
+        // Trigger backend logout (cookies/session) and clear frontend auth state
+        setLogoutRequested(true);
+        authLogout(); // Clears local storage/user and redirects to /login
+    };
 
     return (
         <header className="flex justify-between items-center px-4 sm:px-8 py-2 w-full">
