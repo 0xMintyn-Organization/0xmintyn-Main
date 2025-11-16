@@ -1,0 +1,41 @@
+name: Deploy to server1 (SSH)
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-server1
+      cancel-in-progress: false
+    steps:
+      - name: Deploy over SSH to server1
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          # port: ${{ secrets.SSH_PORT }} # Optional, defaults to 22 if omitted
+          script: |
+            set -e
+            echo "→ Entering project directory"
+            cd ~/0xMintyn
+
+            echo "→ Pulling latest changes"
+            git pull
+
+            echo "→ Building Frontend"
+            cd Frontend
+            npm ci
+            npm run build
+
+            echo "→ Restarting processes with PM2"
+            pm2 restart backend
+            pm2 restart frontend
+
+            echo "✓ Deployment complete"
+
+
