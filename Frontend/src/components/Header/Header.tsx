@@ -55,7 +55,7 @@ function Header() {
                     className="hidden lg:block bg-green-900 text-white hover:bg-green-700 font-semibold rounded-3xl px-3 text-xs"
                     aria-label="Earning Balance"
                 >
-                    1000 OXM
+                    100 0XM
                 </Button>
 
                 <Button
