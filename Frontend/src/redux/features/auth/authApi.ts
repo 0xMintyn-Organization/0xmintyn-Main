@@ -31,14 +31,20 @@ export const authApi = apiSlice.injectEndpoints({
             }
         }),
         activation: builder.mutation({
+            // Supports both code-based and link-based activation.
+            // If activation_code is null/undefined, backend will use token-only flow.
             query: ({ activation_token, activation_code }) => ({
-                url: `activate-user`,
+                url: activation_code != null ? `activate-user` : `activate-link`,
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 credentials: "include" as const,
-                body: JSON.stringify({ activation_code, activation_token }),
+                body: JSON.stringify(
+                    activation_code != null
+                        ? { activation_code, activation_token }
+                        : { activation_token }
+                ),
             }),
         }),
         login: builder.mutation({

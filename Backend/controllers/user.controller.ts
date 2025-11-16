@@ -54,7 +54,19 @@ import sendEmail from '../utils/sendMail';
             const activationCode = activationToken.activationCode;
             console.log(activationCode);
 
-            const data = { user: { name: user.firstName }, activationCode };
+            // Build activation link for token-based email verification
+            const clientUrl =
+                process.env.CLIENT_URL || "https://app.0xmintyn.com/";
+            const normalizedClientUrl = clientUrl.endsWith("/")
+                ? clientUrl.slice(0, -1)
+                : clientUrl;
+            const activationLink = `${normalizedClientUrl}/activation-link?token=${activationToken.token}`;
+
+            const data = {
+                user: { name: user.firstName },
+                activationCode,
+                activationLink,
+            };
             const html = await ejs.renderFile(path.join(__dirname, '../mails/activatiomail.ejs'), data);
             try {
                 await sendEmail({
@@ -93,6 +105,10 @@ import sendEmail from '../utils/sendMail';
         activation_code: string;
     }
 
+    interface ILinkActivationRequest {
+        activation_token: string;
+    }
+
     export const activateUserAccount = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { activation_token, activation_code } = req.body as IActivationRequest;
@@ -117,6 +133,38 @@ import sendEmail from '../utils/sendMail';
                 message: 'Account Activated Successfully',
             });
 
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
+
+    // Activate user account using token link (no code input)
+    export const activateUserAccountByLink = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { activation_token } = req.body as ILinkActivationRequest;
+
+            if (!activation_token) {
+                return next(new ErrorHandler('Activation token is required', 400));
+            }
+
+            const newUser: { user: IUser, activationCode: string } = jwt.verify(
+                activation_token,
+                process.env.ACTIVATION_SECRET as string
+            ) as { user: IUser, activationCode: string };
+
+            const { email } = newUser.user;
+
+            const existUser = await UserModel.findOne({ email });
+            if (existUser) {
+                return next(new ErrorHandler('User already exists', 400));
+            }
+
+            await UserModel.create(newUser.user);
+
+            res.status(200).json({
+                success: true,
+                message: 'Account Activated Successfully',
+            });
         } catch (error: any) {
             return next(new ErrorHandler(error.message, 400));
         }

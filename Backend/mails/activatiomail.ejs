@@ -107,8 +107,16 @@
         </div>
         <div class="content">
             <p>Hi <%= user.name %>,</p>
-            <p>Welcome to 0xMintyn! We're excited to have you on board. To complete your registration, please use the
-                activation code below:</p>
+            <p>Welcome to 0xMintyn! We're excited to have you on board.</p>
+            <p>To complete your registration, you can either click the button below or use the activation code.</p>
+
+            <% if (typeof activationLink !== 'undefined' && activationLink) { %>
+            <p style="text-align: center; margin: 24px 0;">
+                <a href="<%= activationLink %>" class="btn">Activate Account</a>
+            </p>
+            <% } %>
+
+            <p>If you prefer, you can also enter this activation code in the app:</p>
             <div class="activation-code">
                 <%= activationCode %>
             </div>

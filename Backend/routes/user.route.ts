@@ -1,5 +1,5 @@
 import express from 'express';
-import { activateUserAccount, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus, updateSocialAccount, removeSocialAccount, updateWalletAddress, removeWalletAddress } from '../controllers/user.controller';
+import { activateUserAccount, activateUserAccountByLink, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus, updateSocialAccount, removeSocialAccount, updateWalletAddress, removeWalletAddress } from '../controllers/user.controller';
 import { getInstructorStats } from '../controllers/instructor.controller';
 import { isAthenticated as isAuthenticated } from '../utils/auth';
 import upload from '../middleware/multerConfig';
@@ -9,6 +9,7 @@ const userRouter = express.Router();
 userRouter.post('/register', registrationUser);
 
 userRouter.post('/activate-user', activateUserAccount);
+userRouter.post('/activate-link', activateUserAccountByLink);
 
 userRouter.post('/login', loginUser);
 
