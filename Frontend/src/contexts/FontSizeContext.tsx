@@ -13,9 +13,9 @@ export const FontSizeProvider = ({ children }: { children: React.ReactNode }) =>
   const [fontSize, setFontSizeState] = useState<number>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("fontSize");
-      return saved ? parseInt(saved) : 100; // Default 100% (normal size)
+      return saved ? parseInt(saved) : 90; // Default 90% (compact)
     }
-    return 100;
+    return 90;
   });
 
   const [mounted, setMounted] = useState(false);
@@ -45,7 +45,7 @@ export const FontSizeProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   const resetFontSize = () => {
-    setFontSize(100); // Reset to normal size
+    setFontSize(100); // Reset to normal size (100%)
   };
 
   useEffect(() => {
