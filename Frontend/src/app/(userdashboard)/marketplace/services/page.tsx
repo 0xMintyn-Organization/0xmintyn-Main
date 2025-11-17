@@ -81,14 +81,22 @@ export default function AllServicesPage() {
       setLoading(true);
       setError(null);
 
-      const params = {
+      const params: Record<string, any> = {
         page: currentPage,
         limit: itemsPerPage,
-        search: searchQuery,
-        categories: selectedCategories.join(','),
         sortBy,
         type: 'services'
       };
+
+      // Only add search if it's not empty
+      if (searchQuery && searchQuery.trim()) {
+        params.search = searchQuery.trim();
+      }
+
+      // Only add categories if at least one is selected
+      if (selectedCategories.length > 0) {
+        params.categories = selectedCategories.join(',');
+      }
 
       const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/search`, {
         params,

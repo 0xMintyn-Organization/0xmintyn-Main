@@ -70,14 +70,22 @@ export default function MarketplacePage(): React.JSX.Element {
       setLoading(true);
       setError(null);
 
-      const params = {
+      const params: Record<string, any> = {
         page: currentPage,
         limit: itemsPerPage,
-        search: searchQuery,
-        categories: selectedCategories.join(','),
         sortBy,
         type: activeTab
       };
+
+      // Only add search if it's not empty
+      if (searchQuery && searchQuery.trim()) {
+        params.search = searchQuery.trim();
+      }
+
+      // Only add categories if at least one is selected
+      if (selectedCategories.length > 0) {
+        params.categories = selectedCategories.join(',');
+      }
 
       const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/search`, {
         params,
@@ -436,20 +444,39 @@ export default function MarketplacePage(): React.JSX.Element {
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Categories</h4>
                   <div className="flex flex-wrap gap-2">
-                    {['Website Templates', 'Design Assets', 'Code Templates', 'E-books & Guides', 'Software & Tools', 'Stock Media'].map((category) => (
-                      <Badge
-                        key={category}
-                        variant={selectedCategories.includes(category) ? "default" : "outline"}
-                        className={`cursor-pointer transition-colors ${
-                          selectedCategories.includes(category)
-                            ? 'bg-green-600 hover:bg-green-700 text-white'
-                            : 'hover:bg-green-50 dark:hover:bg-green-950/20'
-                        }`}
-                        onClick={() => handleCategoryToggle(category)}
-                      >
-                        {category}
-                      </Badge>
-                    ))}
+                    {activeTab === 'products' ? (
+                      // Product categories (must match backend enum exactly)
+                      ['Website Templates', 'Design Assets', 'Code Templates', 'E-books & Guides', 'Software & Tools', 'Stock Media', 'Fonts & Typography', '3D Assets'].map((category) => (
+                        <Badge
+                          key={category}
+                          variant={selectedCategories.includes(category) ? "default" : "outline"}
+                          className={`cursor-pointer transition-colors ${
+                            selectedCategories.includes(category)
+                              ? 'bg-green-600 hover:bg-green-700 text-white'
+                              : 'hover:bg-green-50 dark:hover:bg-green-950/20'
+                          }`}
+                          onClick={() => handleCategoryToggle(category)}
+                        >
+                          {category}
+                        </Badge>
+                      ))
+                    ) : (
+                      // Service categories (must match backend enum exactly)
+                      ['Design & Creative', 'Web Development', 'Mobile Development', 'Writing & Translation', 'Digital Marketing', 'Video & Animation', 'Music & Audio', 'Programming & Tech', 'Business Services', 'Lifestyle', 'Data Entry & Admin', 'Tutoring & Education'].map((category) => (
+                        <Badge
+                          key={category}
+                          variant={selectedCategories.includes(category) ? "default" : "outline"}
+                          className={`cursor-pointer transition-colors ${
+                            selectedCategories.includes(category)
+                              ? 'bg-green-600 hover:bg-green-700 text-white'
+                              : 'hover:bg-green-50 dark:hover:bg-green-950/20'
+                          }`}
+                          onClick={() => handleCategoryToggle(category)}
+                        >
+                          {category}
+                        </Badge>
+                      ))
+                    )}
                   </div>
                 </div>
 

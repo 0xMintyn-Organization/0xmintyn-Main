@@ -49,37 +49,59 @@ export const searchMarketplace = async (req: Request, res: Response) => {
       }
     }
 
-    // Build sort options
-    let sortOptions: any = {};
-    switch (sortBy) {
-      case 'newest':
-        sortOptions.createdAt = -1;
-        break;
-      case 'oldest':
-        sortOptions.createdAt = 1;
-        break;
-      case 'price-low':
-        sortOptions.price = 1;
-        break;
-      case 'price-high':
-        sortOptions.price = -1;
-        break;
-      case 'popular':
-        sortOptions.totalSales = -1;
-        break;
-      case 'rating':
-        sortOptions.rating = -1;
-        break;
-      default:
-        sortOptions.createdAt = -1;
-    }
-
+    // Determine model first to set correct sort fields
     let Model, items, totalItems;
 
     if (type === 'products') {
       Model = MarketplaceProductModel;
     } else {
       Model = MarketplaceServiceModel;
+    }
+
+    // Build sort options based on type
+    let sortOptions: any = {};
+    switch (sortBy) {
+      case 'newest':
+        sortOptions.createdAt = -1;
+        sortOptions._id = -1; // Secondary sort for consistency
+        break;
+      case 'oldest':
+        sortOptions.createdAt = 1;
+        sortOptions._id = 1; // Secondary sort for consistency
+        break;
+      case 'price-low':
+        if (type === 'products') {
+          sortOptions.price = 1;
+        } else {
+          // For services, sort by minimum package price
+          sortOptions['packages.price'] = 1;
+        }
+        sortOptions.createdAt = -1; // Secondary sort for consistency
+        break;
+      case 'price-high':
+        if (type === 'products') {
+          sortOptions.price = -1;
+        } else {
+          // For services, sort by maximum package price
+          sortOptions['packages.price'] = -1;
+        }
+        sortOptions.createdAt = -1; // Secondary sort for consistency
+        break;
+      case 'popular':
+        if (type === 'products') {
+          sortOptions.salesCount = -1;
+        } else {
+          sortOptions.orderCount = -1; // Services use orderCount
+        }
+        sortOptions.createdAt = -1; // Secondary sort for consistency
+        break;
+      case 'rating':
+        sortOptions.rating = -1;
+        sortOptions.createdAt = -1; // Secondary sort for consistency
+        break;
+      default:
+        sortOptions.createdAt = -1;
+        sortOptions._id = -1; // Secondary sort for consistency
     }
 
     // Log the final query for debugging
