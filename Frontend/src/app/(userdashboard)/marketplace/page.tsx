@@ -16,11 +16,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { Filter, Grid, List, Plus, Search, Store, Package, Users, TrendingUp, Star, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
 export default function MarketplacePage(): React.JSX.Element {
   const { user } = useAuth();
   const { activeTab, searchQuery, setSearchQuery } = useMarketplace();
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [showQuickView, setShowQuickView] = useState(false);
@@ -57,6 +59,10 @@ export default function MarketplacePage(): React.JSX.Element {
     products: Record<string, number>;
     services: Record<string, number>;
   } | undefined>(undefined);
+
+  // Featured items state
+  const [featuredProducts, setFeaturedProducts] = useState<unknown[]>([]);
+  const [featuredServices, setFeaturedServices] = useState<unknown[]>([]);
 
   // API Functions
   const fetchMarketplaceData = useCallback(async () => {
@@ -121,6 +127,58 @@ export default function MarketplacePage(): React.JSX.Element {
     }
   }, []);
 
+  // Fetch marketplace stats from dedicated endpoint
+  const fetchMarketplaceStats = useCallback(async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/stats`, {
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        setStats(response.data.stats || {
+          totalProducts: 0,
+          totalServices: 0,
+          totalSellers: 0,
+          successRate: 0
+        });
+      }
+    } catch (error: unknown) {
+      console.error('Error fetching marketplace stats:', error);
+    }
+  }, []);
+
+  // Fetch featured products
+  const fetchFeaturedProducts = useCallback(async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/products`, {
+        params: { featured: 'true', limit: 4 },
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        setFeaturedProducts(response.data.products || []);
+      }
+    } catch (error: unknown) {
+      console.error('Error fetching featured products:', error);
+    }
+  }, []);
+
+  // Fetch featured services
+  const fetchFeaturedServices = useCallback(async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/services`, {
+        params: { featured: 'true', limit: 4 },
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        setFeaturedServices(response.data.services || []);
+      }
+    } catch (error: unknown) {
+      console.error('Error fetching featured services:', error);
+    }
+  }, []);
+
   // Check seller status on component mount
   useEffect(() => {
     if (user) {
@@ -137,6 +195,17 @@ export default function MarketplacePage(): React.JSX.Element {
   useEffect(() => {
     fetchCategoryStats();
   }, [fetchCategoryStats]);
+
+  // Fetch marketplace stats on component mount
+  useEffect(() => {
+    fetchMarketplaceStats();
+  }, [fetchMarketplaceStats]);
+
+  // Fetch featured items on component mount
+  useEffect(() => {
+    fetchFeaturedProducts();
+    fetchFeaturedServices();
+  }, [fetchFeaturedProducts, fetchFeaturedServices]);
 
   const handleQuickView = (product: unknown) => {
     setSelectedProduct(product);
@@ -529,7 +598,10 @@ export default function MarketplacePage(): React.JSX.Element {
         {!loading && !error && (
           <FeaturedSection 
             activeTab={activeTab} 
-            featuredItems={activeTab === 'products' ? products.slice(0, 4) : services.slice(0, 4)}
+            featuredItems={activeTab === 'products' 
+              ? (featuredProducts.length > 0 ? featuredProducts : products.slice(0, 4))
+              : (featuredServices.length > 0 ? featuredServices : services.slice(0, 4))
+            }
           />
         )}
       </div>

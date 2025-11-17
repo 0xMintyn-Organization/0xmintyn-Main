@@ -26,19 +26,26 @@ export const searchMarketplace = async (req: Request, res: Response) => {
     };
 
     // Add search functionality
-    if (search) {
+    if (search && typeof search === 'string' && search.trim()) {
+      const searchTerm = search.trim();
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
+        { title: { $regex: searchTerm, $options: 'i' } },
+        { description: { $regex: searchTerm, $options: 'i' } },
+        { tags: { $in: [new RegExp(searchTerm, 'i')] } }
       ];
+      console.log('Search filter applied:', searchTerm);
     }
 
     // Add category filter
-    if (categories) {
-      const categoryArray = (categories as string).split(',').filter(Boolean);
+    if (categories && typeof categories === 'string' && categories.trim()) {
+      const categoryArray = (categories as string)
+        .split(',')
+        .map(cat => cat.trim())
+        .filter(Boolean);
+      
       if (categoryArray.length > 0) {
         query.category = { $in: categoryArray };
+        console.log('Category filter applied:', categoryArray);
       }
     }
 
@@ -75,6 +82,12 @@ export const searchMarketplace = async (req: Request, res: Response) => {
       Model = MarketplaceServiceModel;
     }
 
+    // Log the final query for debugging
+    console.log('Marketplace search query:', JSON.stringify(query, null, 2));
+    console.log('Search type:', type);
+    console.log('Sort options:', sortOptions);
+    console.log('Pagination:', { page: pageNum, limit: limitNum, skip });
+
     // Execute query with pagination
     const [itemsResult, totalItemsResult] = await Promise.all([
       Model.find(query)
@@ -88,6 +101,8 @@ export const searchMarketplace = async (req: Request, res: Response) => {
 
     items = itemsResult;
     totalItems = totalItemsResult;
+
+    console.log(`Found ${totalItems} total items, returning ${items.length} items`);
 
     // Get marketplace stats
     const [totalProducts, totalServices, totalSellers] = await Promise.all([

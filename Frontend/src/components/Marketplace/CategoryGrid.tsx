@@ -53,12 +53,39 @@ interface CategoryGridProps {
 }
 
 export default function CategoryGrid({ activeTab, categoryStats, loading }: CategoryGridProps) {
+  // Map frontend category IDs to backend category names
+  const categoryNameMap: Record<string, string> = {
+    // Product categories
+    'templates': 'Website Templates',
+    'design': 'Design Assets',
+    'code': 'Code Templates',
+    'ebooks': 'E-books & Guides',
+    'software': 'Software & Tools',
+    'media': 'Stock Media',
+    'fonts': 'Fonts & Typography',
+    '3d': '3D Assets',
+    // Service categories
+    'development': 'Web Development',
+    'writing': 'Writing & Translation',
+    'marketing': 'Digital Marketing',
+    'education': 'Tutoring & Education',
+    'photography': 'Photography',
+    'music': 'Music & Audio',
+    'business': 'Business Services'
+  };
+
   // Use dynamic counts if available, otherwise fall back to static counts
   const getCategoryCount = (categoryId: string) => {
     if (categoryStats && activeTab === 'products') {
-      return categoryStats.products[categoryId] || 0;
+      const categoryName = categoryNameMap[categoryId] || categoryId;
+      return categoryStats.products[categoryName] || 0;
     } else if (categoryStats && activeTab === 'services') {
-      return categoryStats.services[categoryId] || 0;
+      const categoryName = categoryNameMap[categoryId] || categoryId;
+      // For services, check if it's 'design' which maps to 'Design & Creative'
+      if (categoryId === 'design') {
+        return categoryStats.services['Design & Creative'] || 0;
+      }
+      return categoryStats.services[categoryName] || 0;
     }
     return 0;
   };

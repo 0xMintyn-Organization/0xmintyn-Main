@@ -111,7 +111,8 @@ interface FeaturedSectionProps {
 
 export default function FeaturedSection({ activeTab, featuredItems }: FeaturedSectionProps) {
   const staticItems = activeTab === 'products' ? featuredProducts : featuredServices;
-  const displayItems = featuredItems || staticItems;
+  // Use featuredItems if provided and not empty, otherwise fall back to static items
+  const displayItems = (featuredItems && featuredItems.length > 0) ? featuredItems : staticItems;
 
   // Helper function to construct full image URLs
   const getFullImageUrl = (imagePath: string) => {

@@ -97,8 +97,10 @@ export default function OptimizedImage({
             imageLoading ? 'opacity-0' : 'opacity-100'
           } ${className}`}
           priority={priority}
+          loading={priority ? 'eager' : 'lazy'}
           onLoad={handleLoad}
           onError={handleError}
+          sizes={fill ? '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw' : undefined}
         />
       )}
     </div>

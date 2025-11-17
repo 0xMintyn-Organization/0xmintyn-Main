@@ -6,7 +6,6 @@ import { ShoppingCart, Eye, Download, FileText, Image as ImageIcon, Code, Music 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import Image from 'next/image';
 import Link from 'next/link';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { useAccessibility } from '@/lib/accessibility';
@@ -182,12 +181,13 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
           <Card key={product.id || `product-list-${index}`} className="hover:shadow-md transition-shadow">
             <div className="flex">
               <div className="relative w-48 h-32 flex-shrink-0">
-                {product.image ? (
-                  <Image
-                    src={product.image}
+                {product.thumbnailImage || product.image ? (
+                  <OptimizedImage
+                    src={product.thumbnailImage || product.image}
                     alt={product.title}
                     fill
                     className="object-cover rounded-l-lg"
+                    fallbackSrc="/placeholder-product.jpg"
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 rounded-l-lg flex items-center justify-center">
@@ -286,6 +286,7 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
                     fill
                     className="group-hover:scale-110 transition-transform duration-300"
                     fallbackSrc="/placeholder-product.jpg"
+                    priority={index < 4}
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">

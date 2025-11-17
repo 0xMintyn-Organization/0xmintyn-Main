@@ -40,7 +40,7 @@ export default function AllProductsPage() {
     successRate: 0
   });
 
-  // Categories for filtering
+  // Categories for filtering (must match backend enum exactly)
   const categories = [
     'Website Templates',
     'Design Assets', 
@@ -49,9 +49,7 @@ export default function AllProductsPage() {
     'Software & Tools',
     'Stock Media',
     'Fonts & Typography',
-    '3D Models',
-    'Audio & Music',
-    'Video Templates'
+    '3D Assets'
   ];
 
   // Sort options
@@ -70,14 +68,22 @@ export default function AllProductsPage() {
       setLoading(true);
       setError(null);
 
-      const params = {
+      const params: Record<string, any> = {
         page: currentPage,
         limit: itemsPerPage,
-        search: searchQuery,
-        categories: selectedCategories.join(','),
         sortBy,
         type: 'products'
       };
+
+      // Only add search if it's not empty
+      if (searchQuery && searchQuery.trim()) {
+        params.search = searchQuery.trim();
+      }
+
+      // Only add categories if at least one is selected
+      if (selectedCategories.length > 0) {
+        params.categories = selectedCategories.join(',');
+      }
 
       const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/search`, {
         params,
@@ -85,7 +91,6 @@ export default function AllProductsPage() {
       });
 
       if (response.data.success) {
-        console.log('Products API Response:', response.data);
         setProducts(response.data.data.items || []);
         setTotalPages(response.data.data.pagination.totalPages || 1);
         setTotalItems(response.data.data.pagination.totalItems || 0);

@@ -61,7 +61,7 @@ export default function HeroSection() {
   return (
     <div className="mb-12">
       {/* Hero Carousel */}
-            <div className="relative bg-gradient-to-r from-green-900 to-green-800 rounded-2xl overflow-hidden mb-8">
+      <div className="relative bg-gradient-to-r from-green-900 to-green-800 rounded-2xl overflow-hidden mb-8">
         <div className="relative h-96">
           {heroSlides.map((slide, index) => (
             <div
@@ -106,7 +106,8 @@ export default function HeroSection() {
           variant="ghost"
           size="sm"
           onClick={prevSlide}
-          className="absolute left-4 top-1/2 transform -translate-y-1/2  bg-opacity-20 hover:bg-opacity-30 text-white"
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-20 hover:bg-opacity-30 text-white z-10"
+          aria-label="Previous slide"
         >
           <ChevronLeft className="w-5 h-5" />
         </Button>
@@ -114,20 +115,22 @@ export default function HeroSection() {
           variant="ghost"
           size="sm"
           onClick={nextSlide}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2  bg-opacity-20 hover:bg-opacity-30 text-white"
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-20 hover:bg-opacity-30 text-white z-10"
+          aria-label="Next slide"
         >
           <ChevronRight className="w-5 h-5" />
         </Button>
 
         {/* Dots Indicator */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
           {heroSlides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
               className={`w-2 h-2 rounded-full transition-colors ${
-                index === currentSlide ? '' : ' bg-opacity-50'
+                index === currentSlide ? 'bg-white' : 'bg-white bg-opacity-50'
               }`}
+              aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
