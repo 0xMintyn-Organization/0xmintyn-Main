@@ -39,9 +39,24 @@ export default function ActivationLinkPage() {
 
     if (error && "data" in (error as any)) {
       const err = error as any;
+      // Get user-friendly error message
+      const errorMessage = err.data?.error || err.data?.message || "Failed to activate account.";
+      
+      // Check if it's a duplicate key error and provide better message
+      let friendlyMessage = errorMessage;
+      if (errorMessage.includes('E11000') || errorMessage.includes('duplicate key')) {
+        if (errorMessage.includes('email')) {
+          friendlyMessage = "This email is already registered. Please log in instead.";
+        } else if (errorMessage.includes('username')) {
+          friendlyMessage = "This username is already taken. Please register with a different username.";
+        } else {
+          friendlyMessage = "This account already exists. Please log in instead.";
+        }
+      }
+      
       toast({
         title: "Activation Failed",
-        description: err.data?.error || err.data?.message || "Failed to activate account.",
+        description: friendlyMessage,
         variant: "destructive",
       });
     }

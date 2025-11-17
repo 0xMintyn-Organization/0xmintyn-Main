@@ -39,6 +39,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 export const apiSlice = createApi({
     reducerPath: 'api',
     baseQuery: baseQueryWithReauth,
+    tagTypes: ['User'],
     endpoints: (builder) => ({
         refreshToken: builder.query({
             query: () => ({
@@ -53,17 +54,26 @@ export const apiSlice = createApi({
                 method: 'GET',
                 credentials: 'include',
             }),
-            async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+            providesTags: ['User'],
+            async onQueryStarted(arg, { dispatch, queryFulfilled, getState }) {
                 try {
                     const result = await queryFulfilled;
-                    dispatch(userLoggedIn({
-                        accessToken: result.data.accessToken,
-                        user: result.data.user
-                    }));
-
+                    
+                    // Only log in if user is not already logged out
+                    // Check Redux state to prevent auto-login after logout
+                    const state = getState() as any;
+                    const isLoggedOut = !state.auth?.isAuthenticated && !state.auth?.user;
+                    
+                    if (!isLoggedOut && result.data?.user) {
+                        dispatch(userLoggedIn({
+                            accessToken: result.data.accessToken,
+                            user: result.data.user
+                        }));
+                    }
                 } catch (error) {
                     console.log(error);
-
+                    // On error (401, etc.), ensure user is logged out
+                    dispatch(userLoggedOut());
                 }
             }
         }),

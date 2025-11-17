@@ -35,16 +35,43 @@ const OTPVerification = ({ setRoute }: { setRoute: (route: string) => void }) =>
         if (error) {
             if ("data" in error) {
                 const errorData = error as any;
+                const errorMessage = errorData.data?.error || errorData.data?.message || "An error occurred";
+                
+                // Check if it's a duplicate key error and provide better message
+                let friendlyMessage = errorMessage;
+                if (errorMessage.includes('E11000') || errorMessage.includes('duplicate key')) {
+                    if (errorMessage.includes('email')) {
+                        friendlyMessage = "This email is already registered. Please log in instead.";
+                    } else if (errorMessage.includes('username')) {
+                        friendlyMessage = "This username is already taken. Please register with a different username.";
+                    } else {
+                        friendlyMessage = "This account already exists. Please log in instead.";
+                    }
+                }
+                
                 toast({
-                    title: "Error",
-                    description: errorData.data.error || "An error occurred",
+                    title: "Activation Failed",
+                    description: friendlyMessage,
                     variant: "destructive",
                 });
                 setInvalidError(true);
             } else if ("error" in error) {
+                const errorMessage = (error as any).error || "An error occurred";
+                let friendlyMessage = errorMessage;
+                
+                if (errorMessage.includes('E11000') || errorMessage.includes('duplicate key')) {
+                    if (errorMessage.includes('email')) {
+                        friendlyMessage = "This email is already registered. Please log in instead.";
+                    } else if (errorMessage.includes('username')) {
+                        friendlyMessage = "This username is already taken. Please register with a different username.";
+                    } else {
+                        friendlyMessage = "This account already exists. Please log in instead.";
+                    }
+                }
+                
                 toast({
-                    title: "Error",
-                    description: error.error || "An error occurred",
+                    title: "Activation Failed",
+                    description: friendlyMessage,
                     variant: "destructive",
                 });
             }

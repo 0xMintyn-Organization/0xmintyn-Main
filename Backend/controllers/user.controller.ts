@@ -26,15 +26,22 @@ import sendEmail from '../utils/sendMail';
     export const registrationUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { firstName, lastName, dateOfBirth, nationality, age, email, username, contactNumber, password }: IRegistrationBody = req.body;
-            const isEmailExist = await UserModel.findOne({ email });
-            const isUsernameExist = await UserModel.findOne({ username });
-
-            if (isEmailExist) {
-                return next(new ErrorHandler('Email already exists', 400));
+            
+            // Validate required fields
+            if (!email || !username || !password) {
+                return next(new ErrorHandler('Email, username, and password are required', 400));
             }
 
+            // Check if email already exists BEFORE sending OTP
+            const isEmailExist = await UserModel.findOne({ email });
+            if (isEmailExist) {
+                return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
+            }
+
+            // Check if username already exists BEFORE sending OTP
+            const isUsernameExist = await UserModel.findOne({ username });
             if (isUsernameExist) {
-                return next(new ErrorHandler('Username already exists', 400));
+                return next(new ErrorHandler('This username is already taken. Please choose a different username.', 400));
             }
 
             const user: IRegistrationBody = {
@@ -113,20 +120,61 @@ import sendEmail from '../utils/sendMail';
         try {
             const { activation_token, activation_code } = req.body as IActivationRequest;
 
-            const newUser: { user: IUser, activationCode: string } = jwt.verify(activation_token, process.env.ACTIVATION_SECRET as string) as { user: IUser, activationCode: string };
+            if (!activation_token || !activation_code) {
+                return next(new ErrorHandler('Activation token and code are required', 400));
+            }
+
+            // Verify JWT token
+            let newUser: { user: IUser, activationCode: string };
+            try {
+                newUser = jwt.verify(activation_token, process.env.ACTIVATION_SECRET as string) as { user: IUser, activationCode: string };
+            } catch (jwtError: any) {
+                if (jwtError.name === 'TokenExpiredError') {
+                    return next(new ErrorHandler('Activation code has expired. Please register again.', 400));
+                }
+                if (jwtError.name === 'JsonWebTokenError') {
+                    return next(new ErrorHandler('Invalid activation token. Please register again.', 400));
+                }
+                return next(new ErrorHandler('Invalid activation token', 400));
+            }
 
             if (newUser.activationCode !== activation_code) {
-                return next(new ErrorHandler('Invalid Activation Code', 400));
+                return next(new ErrorHandler('Invalid activation code. Please check your email and try again.', 400));
             }
 
-            const { email } = newUser.user;
+            const { email, username } = newUser.user;
 
-            const existUser = await UserModel.findOne({ email });
+            // Double-check if user already exists (before creating)
+            const existUser = await UserModel.findOne({ 
+                $or: [{ email }, { username }] 
+            });
+            
             if (existUser) {
-                return next(new ErrorHandler('User already exists', 400));
+                if (existUser.email === email) {
+                    return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
+                }
+                if (existUser.username === username) {
+                    return next(new ErrorHandler('This username is already taken. Please register with a different username.', 400));
+                }
             }
 
-            const user = await UserModel.create(newUser.user);
+            // Create user with error handling for duplicate key errors
+            try {
+                await UserModel.create(newUser.user);
+            } catch (createError: any) {
+                // Handle MongoDB duplicate key error
+                if (createError.code === 11000) {
+                    const duplicateField = Object.keys(createError.keyValue || {})[0];
+                    if (duplicateField === 'email') {
+                        return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
+                    } else if (duplicateField === 'username') {
+                        return next(new ErrorHandler('This username is already taken. Please register with a different username.', 400));
+                    }
+                    return next(new ErrorHandler('This account already exists. Please log in instead.', 400));
+                }
+                // Re-throw if it's not a duplicate key error
+                throw createError;
+            }
 
             res.status(200).json({
                 success: true,
@@ -134,7 +182,17 @@ import sendEmail from '../utils/sendMail';
             });
 
         } catch (error: any) {
-            return next(new ErrorHandler(error.message, 400));
+            // Handle any other errors with user-friendly messages
+            if (error.code === 11000) {
+                const duplicateField = Object.keys(error.keyValue || {})[0];
+                if (duplicateField === 'email') {
+                    return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
+                } else if (duplicateField === 'username') {
+                    return next(new ErrorHandler('This username is already taken. Please register with a different username.', 400));
+                }
+                return next(new ErrorHandler('This account already exists. Please log in instead.', 400));
+            }
+            return next(new ErrorHandler(error.message || 'Failed to activate account. Please try again.', 400));
         }
     });
 
@@ -147,26 +205,73 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler('Activation token is required', 400));
             }
 
-            const newUser: { user: IUser, activationCode: string } = jwt.verify(
-                activation_token,
-                process.env.ACTIVATION_SECRET as string
-            ) as { user: IUser, activationCode: string };
-
-            const { email } = newUser.user;
-
-            const existUser = await UserModel.findOne({ email });
-            if (existUser) {
-                return next(new ErrorHandler('User already exists', 400));
+            // Verify JWT token
+            let newUser: { user: IUser, activationCode: string };
+            try {
+                newUser = jwt.verify(
+                    activation_token,
+                    process.env.ACTIVATION_SECRET as string
+                ) as { user: IUser, activationCode: string };
+            } catch (jwtError: any) {
+                if (jwtError.name === 'TokenExpiredError') {
+                    return next(new ErrorHandler('Activation link has expired. Please register again.', 400));
+                }
+                if (jwtError.name === 'JsonWebTokenError') {
+                    return next(new ErrorHandler('Invalid activation link. Please register again.', 400));
+                }
+                return next(new ErrorHandler('Invalid activation token', 400));
             }
 
-            await UserModel.create(newUser.user);
+            const { email, username } = newUser.user;
+
+            // Double-check if user already exists (before creating)
+            const existUser = await UserModel.findOne({ 
+                $or: [{ email }, { username }] 
+            });
+            
+            if (existUser) {
+                if (existUser.email === email) {
+                    return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
+                }
+                if (existUser.username === username) {
+                    return next(new ErrorHandler('This username is already taken. Please register with a different username.', 400));
+                }
+            }
+
+            // Create user with error handling for duplicate key errors
+            try {
+                await UserModel.create(newUser.user);
+            } catch (createError: any) {
+                // Handle MongoDB duplicate key error
+                if (createError.code === 11000) {
+                    const duplicateField = Object.keys(createError.keyValue || {})[0];
+                    if (duplicateField === 'email') {
+                        return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
+                    } else if (duplicateField === 'username') {
+                        return next(new ErrorHandler('This username is already taken. Please register with a different username.', 400));
+                    }
+                    return next(new ErrorHandler('This account already exists. Please log in instead.', 400));
+                }
+                // Re-throw if it's not a duplicate key error
+                throw createError;
+            }
 
             res.status(200).json({
                 success: true,
                 message: 'Account Activated Successfully',
             });
         } catch (error: any) {
-            return next(new ErrorHandler(error.message, 400));
+            // Handle any other errors with user-friendly messages
+            if (error.code === 11000) {
+                const duplicateField = Object.keys(error.keyValue || {})[0];
+                if (duplicateField === 'email') {
+                    return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
+                } else if (duplicateField === 'username') {
+                    return next(new ErrorHandler('This username is already taken. Please register with a different username.', 400));
+                }
+                return next(new ErrorHandler('This account already exists. Please log in instead.', 400));
+            }
+            return next(new ErrorHandler(error.message || 'Failed to activate account. Please try again.', 400));
         }
     });
 
@@ -203,8 +308,44 @@ import sendEmail from '../utils/sendMail';
     // Logout user
     export const logoutUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            res.cookie('access_token', "", { maxAge: 1 });
-            res.cookie('refresh_token', "", { maxAge: 1 });
+            // Clear cookies with same options used when setting them
+            const isProduction = process.env.NODE_ENV === 'production';
+            
+            // Clear access_token cookie
+            res.cookie('access_token', "", {
+                maxAge: 0,
+                expires: new Date(0),
+                httpOnly: true,
+                sameSite: isProduction ? 'none' : 'lax',
+                secure: isProduction,
+                path: '/',
+            });
+            
+            // Clear refresh_token cookie
+            res.cookie('refresh_token', "", {
+                maxAge: 0,
+                expires: new Date(0),
+                httpOnly: true,
+                sameSite: isProduction ? 'none' : 'lax',
+                secure: isProduction,
+                path: '/',
+            });
+            
+            // Clear any other potential auth cookies
+            res.clearCookie('access_token', {
+                httpOnly: true,
+                sameSite: isProduction ? 'none' : 'lax',
+                secure: isProduction,
+                path: '/',
+            });
+            
+            res.clearCookie('refresh_token', {
+                httpOnly: true,
+                sameSite: isProduction ? 'none' : 'lax',
+                secure: isProduction,
+                path: '/',
+            });
+            
             const UserId = req.user?._id || ''; // @ts-ignore 
             res.status(200).json({
                 success: true,

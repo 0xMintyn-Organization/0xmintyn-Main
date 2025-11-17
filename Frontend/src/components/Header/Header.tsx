@@ -18,10 +18,21 @@ function Header() {
         skip: !logoutRequested,
     });
 
-    const handleLogout = () => {
-        // Trigger backend logout (cookies/session) and clear frontend auth state
-        setLogoutRequested(true);
-        authLogout(); // Clears local storage/user and redirects to /login
+    const handleLogout = async () => {
+        try {
+            // Trigger backend logout first (clears cookies/session)
+            setLogoutRequested(true);
+            
+            // Wait a moment for the logout query to execute
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Then clear frontend auth state
+            authLogout();
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if backend logout fails, clear frontend state
+            authLogout();
+        }
     };
 
     return (

@@ -102,13 +102,31 @@ export const authApi = apiSlice.injectEndpoints({
                 method: "GET",
                 credentials: "include" as const,
             }),
-            async onQueryStarted(arg, { dispatch }) {
+            invalidatesTags: ['User'],
+            async onQueryStarted(arg, { dispatch, queryFulfilled }) {
                 try {
+                    // Clear Redux state first
                     dispatch(userLoggedOut());
-
+                    
+                    // Clear localStorage
+                    if (typeof window !== 'undefined') {
+                        localStorage.removeItem('user');
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('loginTimestamp');
+                        localStorage.removeItem('refreshToken');
+                        sessionStorage.clear();
+                    }
+                    
+                    // Wait for backend logout to complete
+                    await queryFulfilled;
                 } catch (error) {
                     console.log(error);
-
+                    // Even on error, clear local state
+                    dispatch(userLoggedOut());
+                    if (typeof window !== 'undefined') {
+                        localStorage.clear();
+                        sessionStorage.clear();
+                    }
                 }
             }
         }),

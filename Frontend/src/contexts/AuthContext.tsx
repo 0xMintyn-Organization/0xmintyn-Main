@@ -111,14 +111,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refetch();
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsLoading(false);
-    setShouldFetch(false);
+  const logout = async () => {
+    // Clear all local storage items
     localStorage.removeItem('user');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('loginTimestamp');
-    router.push('/login');
+    localStorage.removeItem('refreshToken');
+    
+    // Clear session storage
+    if (typeof window !== 'undefined') {
+      sessionStorage.clear();
+      
+      // Clear all cookies that might be accessible from client side
+      // Note: httpOnly cookies can only be cleared by backend
+      document.cookie.split(";").forEach((c) => {
+        const cookieName = c.trim().split("=")[0];
+        // Clear any auth-related cookies
+        if (cookieName.includes('token') || cookieName.includes('auth') || cookieName.includes('session')) {
+          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+        }
+      });
+    }
+    
+    // Clear state
+    setUser(null);
+    setIsLoading(false);
+    setShouldFetch(false);
+    
+    // Use replace instead of push to prevent back navigation
+    router.replace('/login');
   };
 
   const value = {
