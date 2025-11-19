@@ -145,6 +145,14 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       description: "Trade 0xMintyn Tokens"
     },
     { 
+      name: "P2P Trading", 
+      href: "/p2p-trading", 
+      icon: Users,
+      badge: "Live",
+      badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      description: "Buy/Sell OXM Directly"
+    },
+    { 
       name: "Settings", 
       href: "/settings", 
       icon: Settings,
@@ -582,6 +590,7 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
     </div>
   );
 }
