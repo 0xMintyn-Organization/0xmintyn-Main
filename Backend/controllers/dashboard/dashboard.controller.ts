@@ -5,8 +5,8 @@ import { MarketplaceProductModel } from "../../models/marketplace/MarketplacePro
 import { MarketplaceServiceModel } from "../../models/marketplace/MarketplaceService.model";
 import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
 import { MarketplaceOrderModel } from "../../models/marketplace/MarketplaceOrder.model";
-import { OrderModel } from "../../models/order.model";
-import { ReviewModel } from "../../models/review.model";
+import OrderModel from "../../models/order.model";
+import ReviewModel from "../../models/review.model";
 
 // Get total users count
 export const getTotalUsers = async (req: Request, res: Response) => {
