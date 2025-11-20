@@ -7,7 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VscWorkspaceTrusted } from "react-icons/vsc";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 type VerifyNumber = {
     "0": string;
@@ -16,11 +17,13 @@ type VerifyNumber = {
     "3": string;
 };
 
-const OTPVerification = ({ setRoute }: { setRoute: (route: string) => void }) => {
+export default function OTPVerification() {
     const [invalidError, setInvalidError] = useState<boolean>(false);
+    const [isVerifying, setIsVerifying] = useState<boolean>(false);
     const { token } = useSelector((state: { auth: { token: string } }) => state.auth);
-    const [activation, { isSuccess, error }] = useActivationMutation();
+    const [activation, { isSuccess, error, isLoading }] = useActivationMutation();
     const { toast } = useToast();
+    const router = useRouter();
 
     useEffect(() => {
         if (isSuccess) {
@@ -29,7 +32,9 @@ const OTPVerification = ({ setRoute }: { setRoute: (route: string) => void }) =>
                 description: "You can now log in.",
                 variant: "default",
             });
-            redirect("/login");
+            setTimeout(() => {
+                router.push("/login");
+            }, 1500);
         }
 
         if (error) {
@@ -76,7 +81,7 @@ const OTPVerification = ({ setRoute }: { setRoute: (route: string) => void }) =>
                 });
             }
         }
-    }, [isSuccess, error, toast, setRoute]);
+    }, [isSuccess, error, toast, router]);
 
     const inputRef = [
         useRef<HTMLInputElement>(null),
@@ -96,9 +101,21 @@ const OTPVerification = ({ setRoute }: { setRoute: (route: string) => void }) =>
         const verificationNumber = Object.values(verifyNumber).join("");
         if (verificationNumber.length !== 4) {
             setInvalidError(true);
+            toast({
+                title: "Invalid OTP",
+                description: "Please enter the complete 4-digit code.",
+                variant: "destructive",
+            });
             return;
         }
-        await activation({ activation_token: token, activation_code: verificationNumber });
+        setIsVerifying(true);
+        try {
+            await activation({ activation_token: token, activation_code: verificationNumber });
+        } catch (err) {
+            // Error handled in useEffect
+        } finally {
+            setIsVerifying(false);
+        }
     };
 
     const handleInputChange = (index: number, value: string) => {
@@ -113,46 +130,111 @@ const OTPVerification = ({ setRoute }: { setRoute: (route: string) => void }) =>
         }
     };
 
+    const handlePaste = (index: number, event: React.ClipboardEvent<HTMLInputElement>) => {
+        const pastedData = event.clipboardData.getData("text").replace(/[^0-9]/g, "");
+        if (!pastedData) {
+            return;
+        }
+
+        event.preventDefault();
+        setInvalidError(false);
+
+        const newVerifyNumber = { ...verifyNumber };
+        let currentIndex = index;
+
+        for (const char of pastedData) {
+            if (currentIndex > 3) break;
+            const key = currentIndex.toString() as keyof VerifyNumber;
+            newVerifyNumber[key] = char;
+            currentIndex += 1;
+        }
+
+        setVerifyNumber(newVerifyNumber);
+
+        const focusIndex = Math.min(currentIndex, 3);
+        inputRef[focusIndex]?.current?.focus();
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+        if (e.key === "Backspace" && !verifyNumber[index as keyof VerifyNumber] && index > 0) {
+            inputRef[index - 1].current?.focus();
+        }
+    };
+
     return (
         <div className="w-full max-w-md mx-auto p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md my-16">
-            <h2 className="text-2xl font-bold mb-6 text-center">Verify Your Account</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">
+                Verify Your Account
+            </h2>
             <div className="w-full flex items-center justify-center mt-2">
-                <div className="w-[80px] h-[80px] rounded-full bg-green-700 flex items-center justify-center">
-                    <VscWorkspaceTrusted size={40} />
+                <div className="w-[80px] h-[80px] rounded-full bg-green-600 dark:bg-green-700 flex items-center justify-center">
+                    <VscWorkspaceTrusted size={40} className="text-white" />
                 </div>
             </div>
-            <div className="m-auto flex items-center justify-around mt-4">
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4 mb-6">
+                Enter the 4-digit code sent to your email
+            </p>
+            <div className="m-auto flex items-center justify-around mt-4 gap-2">
                 {/* OTP Inputs */}
                 {Object.keys(verifyNumber).map((key, index) => (
                     <Input
                         key={key}
                         ref={inputRef[index]}
-                        className={`w-[65px] h-[65px] bg-transparent  text-center border-[3px] rounded-[10px] text-black dark:text-white text-[18px] font-Poppins outline-none
-              ${invalidError ? "shake border-red-500" : "dark:border-white border-[#0000004a]"}
-            `}
-                        type="number"
+                        id={`otp-${index}`}
+                        aria-label={`OTP digit ${index + 1}`}
+                        className={`w-[65px] h-[65px] bg-transparent text-center border-2 rounded-lg text-black dark:text-white text-xl font-semibold outline-none transition-all
+                            ${invalidError 
+                                ? "border-red-500 dark:border-red-500 shake" 
+                                : "border-gray-300 dark:border-gray-600 focus:border-green-600 dark:focus:border-green-500"
+                            }
+                        `}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]"
                         maxLength={1}
                         value={verifyNumber[key as keyof VerifyNumber]}
-                        onChange={(e) => handleInputChange(index, e.target.value)}
+                        onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9]/g, "");
+                            handleInputChange(index, value);
+                        }}
+                        onKeyDown={(e) => handleKeyDown(e, index)}
+                        onPaste={(e) => handlePaste(index, e)}
+                        disabled={isVerifying || isLoading}
+                        autoComplete="off"
                     />
                 ))}
             </div>
-            <div className="w-full flex justify-center mt-6 ">
-                <Button onClick={verificationHandler} className="w-full bg-green-700 hover:bg-green-800 text-white">
-                    Verify
+            {invalidError && (
+                <p className="text-red-500 text-sm text-center mt-2" role="alert">
+                    Please enter a valid 4-digit code
+                </p>
+            )}
+            <div className="w-full flex justify-center mt-6">
+                <Button 
+                    onClick={verificationHandler} 
+                    disabled={isVerifying || isLoading || Object.values(verifyNumber).join("").length !== 4}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {isVerifying || isLoading ? (
+                        <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Verifying...
+                        </>
+                    ) : (
+                        "Verify OTP"
+                    )}
                 </Button>
             </div>
-            <h5 className="text-center pt-4 font-Poppins text-[14px]">
-                Go back to Sign in?
-                <span
-                    className="text-[#2190ff] pl-2 cursor-pointer"
-                    onClick={() => redirect("/login")} 
+            <div className="text-center pt-4 text-sm text-gray-600 dark:text-gray-400">
+                Go back to Sign in?{" "}
+                <button
+                    type="button"
+                    onClick={() => router.push("/login")}
+                    className="text-green-600 dark:text-green-400 hover:underline font-medium"
                 >
                     Sign In
-                </span>
-            </h5>
+                </button>
+            </div>
         </div>
     );
-};
-
-export default OTPVerification;
+}
