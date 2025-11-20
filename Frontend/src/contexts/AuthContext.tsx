@@ -107,17 +107,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (reduxUser && reduxIsAuthenticated) {
       setUser(reduxUser);
       setIsLoading(false);
-    } else if (!reduxIsAuthenticated || reduxUser === null) {
-      // User is logged out - clear everything
-      setUser(null);
-      setIsLoading(false);
-      setShouldFetch(false);
-      // Clear localStorage to prevent stale data
-      localStorage.removeItem('user');
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('loginTimestamp');
-      localStorage.removeItem('refreshToken');
+    } else if (reduxIsAuthenticated === false && reduxUser === null) {
+      // Only clear if EXPLICITLY logged out (not just empty on initial load)
+      // Check if there's cached data - if yes, don't clear (might be initializing)
+      const hasCached = localStorage.getItem('user') && localStorage.getItem('accessToken');
+      
+      // Only clear if explicitly logged out AND no cached data OR if we're sure it's a logout
+      if (!hasCached) {
+        setUser(null);
+        setIsLoading(false);
+        setShouldFetch(false);
+        // Clear localStorage to prevent stale data
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('loginTimestamp');
+        localStorage.removeItem('refreshToken');
+      }
     }
+    // If Redux state is empty but we have cached data, keep loading state
+    // Don't clear user data on initial load
   }, [reduxUser, reduxIsAuthenticated]);
 
   useEffect(() => {
