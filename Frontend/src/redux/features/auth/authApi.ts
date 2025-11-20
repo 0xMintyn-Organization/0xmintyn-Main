@@ -20,9 +20,17 @@ export const authApi = apiSlice.injectEndpoints({
             async onQueryStarted(arg, { dispatch, queryFulfilled }) {
                 try {
                     const result = await queryFulfilled;
+                    const activationToken = result.data.activationToken;
+                    
+                    // Store in Redux
                     dispatch(userRegistration({
-                        token: result.data.activationToken,
+                        token: activationToken,
                     }));
+                    
+                    // Also store in localStorage for persistence
+                    if (typeof window !== 'undefined' && activationToken) {
+                        localStorage.setItem('activationToken', activationToken);
+                    }
 
                 } catch (error) {
                     console.log(error);

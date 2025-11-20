@@ -20,13 +20,28 @@ type VerifyNumber = {
 export default function OTPVerification() {
     const [invalidError, setInvalidError] = useState<boolean>(false);
     const [isVerifying, setIsVerifying] = useState<boolean>(false);
-    const { token } = useSelector((state: { auth: { token: string } }) => state.auth);
+    const reduxToken = useSelector((state: { auth: { token: string } }) => state.auth.token);
     const [activation, { isSuccess, error, isLoading }] = useActivationMutation();
     const { toast } = useToast();
     const router = useRouter();
+    
+    // Get token from localStorage (persisted) or Redux (current session)
+    const getActivationToken = () => {
+        if (typeof window !== 'undefined') {
+            const storedToken = localStorage.getItem('activationToken');
+            return storedToken || reduxToken || '';
+        }
+        return reduxToken || '';
+    };
+    
+    const token = getActivationToken();
 
     useEffect(() => {
         if (isSuccess) {
+            // Clear activation token from localStorage after successful activation
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('activationToken');
+            }
             toast({
                 title: "Account Activated Successfully",
                 description: "You can now log in.",
@@ -108,6 +123,17 @@ export default function OTPVerification() {
             });
             return;
         }
+        
+        if (!token) {
+            toast({
+                title: "Activation Token Missing",
+                description: "Please register again or check your email for the activation link.",
+                variant: "destructive",
+            });
+            router.push("/registration-form");
+            return;
+        }
+        
         setIsVerifying(true);
         try {
             await activation({ activation_token: token, activation_code: verificationNumber });
