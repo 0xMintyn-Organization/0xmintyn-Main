@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { dashboardAPI } from "@/lib/api";
+import { dashboardAPI, apiCall } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 import {
   Users,
@@ -139,7 +139,6 @@ export default function EnhancedDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [platformStats, setPlatformStats] = useState([
-    { icon: Users, label: "Total Users", value: "0", change: "+0%", color: "text-slate-400" },
     { icon: GraduationCap, label: "Instructors", value: "0", change: "+0%", color: "text-slate-400" },
     { icon: BookOpen, label: "Courses", value: "0", change: "+0%", color: "text-slate-400" },
     { icon: Package, label: "Products", value: "0", change: "+0%", color: "text-slate-400" },
@@ -153,6 +152,7 @@ export default function EnhancedDashboard() {
   const [topSellers, setTopSellers] = useState<Seller[]>([]);
   const [trendingCategories, setTrendingCategories] = useState<Category[]>([]);
   const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -167,9 +167,8 @@ export default function EnhancedDashboard() {
       try {
         setLoading(true);
 
-        // Fetch all stats in parallel
+        // Fetch all stats in parallel (excluding Total Users - admin only)
         const [
-          usersData,
           instructorsData,
           coursesData,
           productsData,
@@ -180,31 +179,28 @@ export default function EnhancedDashboard() {
           servicesList,
           sellersList,
           categoriesList,
-          activityList
+          activityList,
+          enrolledCoursesData
         ] = await Promise.all([
-          dashboardAPI.getTotalUsers(),
           dashboardAPI.getTotalInstructors(),
           dashboardAPI.getTotalCourses(),
           dashboardAPI.getTotalProducts(),
           dashboardAPI.getTotalServices(),
           dashboardAPI.getAvgRating(),
-          dashboardAPI.getTopInstructors(4),
+          dashboardAPI.getTopInstructors(12), // Fetch more for the instructors tab
           dashboardAPI.getTopProducts(4),
           dashboardAPI.getTopServices(4),
           dashboardAPI.getTopSellers(4),
           dashboardAPI.getTrendingCategories(),
-          dashboardAPI.getRecentActivity(10)
+          dashboardAPI.getRecentActivity(10),
+          apiCall({
+            method: 'GET',
+            url: 'enrollment/my-courses'
+          }).catch(() => ({ success: false, courses: [] })) // Handle error gracefully
         ]);
 
-        // Update platform stats
+        // Update platform stats (Total Users removed - admin only)
         setPlatformStats([
-          {
-            icon: Users,
-            label: "Total Users",
-            value: usersData.data?.totalUsers?.toLocaleString() || "0",
-            change: usersData.data?.change || "+0%",
-            color: "text-slate-400"
-          },
           {
             icon: GraduationCap,
             label: "Instructors",
@@ -278,6 +274,37 @@ export default function EnhancedDashboard() {
         }));
         setRecentActivity(formattedActivity);
 
+        // Set enrolled courses with progress
+        if (enrolledCoursesData.success && enrolledCoursesData.courses) {
+          // Fetch progress for each course
+          const coursesWithProgress = await Promise.all(
+            enrolledCoursesData.courses.slice(0, 6).map(async (enrollment: any) => {
+              try {
+                const progressResponse = await apiCall({
+                  method: 'GET',
+                  url: `enrollment/progress/${enrollment.courseId}`
+                });
+                return {
+                  ...enrollment,
+                  progress: progressResponse.data?.progressPercentage || 0,
+                  completedLectures: progressResponse.data?.completedLectures || 0,
+                  totalLectures: progressResponse.data?.totalLectures || 0
+                };
+              } catch {
+                return {
+                  ...enrollment,
+                  progress: 0,
+                  completedLectures: 0,
+                  totalLectures: 0
+                };
+              }
+            })
+          );
+          setEnrolledCourses(coursesWithProgress);
+        } else {
+          setEnrolledCourses([]);
+        }
+
       } catch (error: unknown) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -344,7 +371,7 @@ export default function EnhancedDashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-12">
           {platformStats.map((stat, index) => (
             <Card key={index} className="hover:shadow-lg transition-all duration-200 relative">
               <CardContent className="p-6">
@@ -393,7 +420,8 @@ export default function EnhancedDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {(topInstructors.length > 0 ? topInstructors.slice(0, 3) : []).map((instructor) => (
+                  {topInstructors.length > 0 ? (
+                    topInstructors.slice(0, 3).map((instructor) => (
                     <div key={instructor.id} className="flex items-center space-x-4 p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                       <Avatar className="w-12 h-12">
                         <AvatarImage src={instructor.avatar} alt={instructor.name} />
@@ -425,15 +453,23 @@ export default function EnhancedDashboard() {
                         </div>
                       </div>
                     </div>
-                  ))}
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setActiveTab("instructors")}
-                  >
-                    View All Instructors
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <GraduationCap className="w-12 h-12 text-slate-400 mx-auto mb-2" />
+                      <p className="text-sm text-slate-600 dark:text-slate-400">No instructors available</p>
+                    </div>
+                  )}
+                  {topInstructors.length > 0 && (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setActiveTab("instructors")}
+                    >
+                      View All Instructors
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
 
@@ -449,7 +485,8 @@ export default function EnhancedDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {trendingCategories.map((category, index) => (
+                  {trendingCategories.length > 0 ? (
+                    trendingCategories.map((category, index) => (
                     <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                       <div className="flex items-center space-x-3">
                         <div className="p-2 rounded-lg bg-slate-600">
@@ -468,7 +505,13 @@ export default function EnhancedDashboard() {
                         <ArrowUpRight className="w-4 h-4" />
                       </Button>
                     </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <TrendingUp className="w-12 h-12 text-slate-400 mx-auto mb-2" />
+                      <p className="text-sm text-slate-600 dark:text-slate-400">No trending categories available</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -527,6 +570,80 @@ export default function EnhancedDashboard() {
             </Card>
           </TabsContent>
 
+          {/* Top Instructors Tab */}
+          <TabsContent value="instructors" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Crown className="w-5 h-5 mr-2 text-yellow-600" />
+                  Top Instructors
+                </CardTitle>
+                <CardDescription>
+                  Meet our most successful educators
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {topInstructors.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {topInstructors.map((instructor) => (
+                      <div key={instructor.id} className="p-6 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-all duration-200">
+                        <div className="flex items-start space-x-4">
+                          <Avatar className="w-16 h-16">
+                            <AvatarImage src={instructor.avatar} alt={instructor.name} />
+                            <AvatarFallback>{instructor.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="font-semibold text-slate-900 dark:text-white">
+                                {instructor.name}
+                              </h3>
+                              {instructor.verified && (
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              )}
+                            </div>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                              @{instructor.username}
+                            </p>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">Students</span>
+                                <span className="text-sm font-medium">{instructor.students.toLocaleString()}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">Courses</span>
+                                <span className="text-sm font-medium">{instructor.courses}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">Rating</span>
+                                <div className="flex items-center">
+                                  <Star className="w-4 h-4 text-yellow-500 fill-current mr-1" />
+                                  <span className="text-sm font-medium">{instructor.rating}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="mt-3">
+                              {instructor.badge}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <GraduationCap className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                      No instructors available
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Check back later for top instructors
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* My Courses Tab */}
           <TabsContent value="courses" className="space-y-6">
             <Card>
@@ -540,97 +657,96 @@ export default function EnhancedDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-6 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-all duration-200">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                        <Code className="w-8 h-8 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                            React Fundamentals
-                          </h3>
-                          <Badge variant="secondary" className="text-xs">In Progress</Badge>
-                        </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                          Learn the basics of React development
-                        </p>
-                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-3">
-                          <div className="h-2 bg-blue-500 rounded-full" style={{ width: '75%' }}></div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">
-                            75% complete • 3 lessons remaining
-                          </span>
-                          <Button size="sm" variant="outline">
-                            Continue
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                {enrolledCourses.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {enrolledCourses.map((enrollment) => {
+                      const course = enrollment.course || {};
+                      const progress = enrollment.progress || 0;
+                      const completedLectures = enrollment.completedLectures || 0;
+                      const totalLectures = enrollment.totalLectures || 0;
+                      const remainingLectures = totalLectures - completedLectures;
+                      const isCompleted = progress >= 100;
+                      const isInProgress = progress > 0 && progress < 100;
+                      
+                      // Get course category icon
+                      const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+                        "Web Development": Code,
+                        "UI/UX Design": Palette,
+                        "Mobile Development": Smartphone,
+                        "Digital Marketing": Target,
+                        "Data Science": BarChart3,
+                        "Content Writing": PenTool,
+                        "Design & Creative": Palette,
+                        "Writing & Translation": PenTool,
+                        "Video & Animation": Video,
+                        "Music & Audio": Music,
+                        "Programming & Tech": Code
+                      };
+                      const CategoryIcon = course.categories && course.categories.length > 0
+                        ? categoryIcons[course.categories[0]] || Code
+                        : Code;
 
-                  <div className="p-6 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-all duration-200">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                        <Code className="w-8 h-8 text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                            JavaScript Advanced
-                          </h3>
-                          <Badge variant="secondary" className="text-xs">Recently Started</Badge>
-                        </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                          Advanced JavaScript concepts and patterns
-                        </p>
-                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-3">
-                          <div className="h-2 bg-green-500 rounded-full" style={{ width: '25%' }}></div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">
-                            25% complete • 8 lessons remaining
-                          </span>
-                          <Button size="sm" variant="outline">
-                            Continue
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                      // Color based on progress
+                      const progressColor = isCompleted ? "bg-purple-500" : isInProgress ? "bg-blue-500" : "bg-green-500";
+                      const bgColor = isCompleted ? "bg-purple-100 dark:bg-purple-900/20" : isInProgress ? "bg-blue-100 dark:bg-blue-900/20" : "bg-green-100 dark:bg-green-900/20";
+                      const iconColor = isCompleted ? "text-purple-600" : isInProgress ? "text-blue-600" : "text-green-600";
 
-                  <div className="p-6 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-all duration-200">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
-                        <CheckCircle className="w-8 h-8 text-purple-600" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                            HTML & CSS Basics
-                          </h3>
-                          <Badge variant="secondary" className="text-xs">Completed</Badge>
+                      return (
+                        <div key={enrollment.courseId} className="p-6 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-all duration-200">
+                          <div className="flex items-start space-x-4">
+                            <div className={`w-16 h-16 ${bgColor} rounded-lg flex items-center justify-center`}>
+                              <CategoryIcon className={`w-8 h-8 ${iconColor}`} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white line-clamp-1">
+                                  {enrollment.courseName || course.name || "Course"}
+                                </h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  {isCompleted ? "Completed" : isInProgress ? "In Progress" : "Recently Started"}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
+                                {course.description || "Continue learning"}
+                              </p>
+                              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-3">
+                                <div className={`h-2 ${progressColor} rounded-full transition-all`} style={{ width: `${progress}%` }}></div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                  {isCompleted 
+                                    ? "Completed • Certificate earned"
+                                    : `${Math.round(progress)}% complete${remainingLectures > 0 ? ` • ${remainingLectures} lessons remaining` : ""}`
+                                  }
+                                </span>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => router.push(`/courses/${enrollment.courseId}`)}
+                                >
+                                  {isCompleted ? "View Certificate" : "Continue"}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                          Foundation of web development
-                        </p>
-                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-3">
-                          <div className="h-2 bg-purple-500 rounded-full" style={{ width: '100%' }}></div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">
-                            Completed • Certificate earned
-                          </span>
-                          <Button size="sm" variant="outline">
-                            View Certificate
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <BookOpen className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                      No enrolled courses yet
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                      Start your learning journey by enrolling in a course
+                    </p>
+                    <Button onClick={() => router.push("/educationhub")}>
+                      Browse Courses
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -650,7 +766,8 @@ export default function EnhancedDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {(topProducts.length > 0 ? topProducts : []).map((product) => (
+                  {topProducts.length > 0 ? (
+                    topProducts.map((product) => (
                     <div key={product.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                       <div className="relative w-16 h-16 flex-shrink-0">
                         <Image
@@ -694,7 +811,13 @@ export default function EnhancedDashboard() {
                         )}
                       </div>
                     </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Package className="w-12 h-12 text-slate-400 mx-auto mb-2" />
+                      <p className="text-sm text-slate-600 dark:text-slate-400">No products available</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -710,7 +833,8 @@ export default function EnhancedDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {(topServices.length > 0 ? topServices : []).map((service) => (
+                  {topServices.length > 0 ? (
+                    topServices.map((service) => (
                     <div key={service.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                       <div className="relative w-16 h-16 flex-shrink-0">
                         <Image
@@ -753,7 +877,13 @@ export default function EnhancedDashboard() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Briefcase className="w-12 h-12 text-slate-400 mx-auto mb-2" />
+                      <p className="text-sm text-slate-600 dark:text-slate-400">No services available</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -770,8 +900,9 @@ export default function EnhancedDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {(topSellers.length > 0 ? topSellers : []).map((seller) => (
+                {topSellers.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {topSellers.map((seller) => (
                     <div key={seller.id} className="text-center p-6 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-all duration-200">
                       <Avatar className="w-20 h-20 mx-auto mb-4">
                         <AvatarImage src={seller.avatar} alt={seller.name} />
@@ -807,8 +938,14 @@ export default function EnhancedDashboard() {
                         View Store
                       </Button>
                     </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Trophy className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                    <p className="text-sm text-slate-600 dark:text-slate-400">No sellers available</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -826,7 +963,8 @@ export default function EnhancedDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {(recentActivity.length > 0 ? recentActivity : []).map((activity) => (
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity) => (
                   <div key={activity.id} className="flex items-center space-x-4 p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                     <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-800">
                       <activity.icon className="w-5 h-5 text-slate-400" />
@@ -840,7 +978,13 @@ export default function EnhancedDashboard() {
                       </p>
                     </div>
                   </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <Activity className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                    <p className="text-sm text-slate-600 dark:text-slate-400">No recent activity</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

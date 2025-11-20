@@ -83,30 +83,13 @@ export default function RoleBasedDashboard() {
     );
   }
 
+  // Only admin gets a different dashboard
   if (isAdmin()) {
     return <AdminDashboard data={dashboardData} />;
   }
 
-  if (isInstructor()) {
-    return <InstructorDashboard data={dashboardData} />;
-  }
-
-  if (isUser()) {
-    return <UserDashboard />;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          Welcome to 0xMintyn
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Your role is being determined...
-        </p>
-      </div>
-    </div>
-  );
+  // All other roles (user and instructor) get the same unified dashboard
+  return <EnhancedDashboard />;
 }
 
 // Admin Dashboard Component
@@ -232,121 +215,3 @@ function AdminDashboard({ data }: { data: DashboardData }) {
   );
 }
 
-// Instructor Dashboard Component
-function InstructorDashboard({ data }: { data: DashboardData }) {
-  const router = useRouter();
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Instructor Dashboard
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage your courses and track performance
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => router.push("/create-course")}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Course
-          </Button>
-          <Button variant="outline" onClick={() => router.push("/instructor/analytics")}>
-            <BarChart3 className="w-4 h-4 mr-2" />
-            View Analytics
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">My Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.totalCourses ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Published courses</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.totalStudents ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Enrolled students</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(data.averageRating ?? 0).toFixed(1)}
-            </div>
-            <p className="text-xs text-muted-foreground">Course ratings</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Course Management</CardTitle>
-            <CardDescription>Manage your course content</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button 
-              className="w-full justify-start" 
-              variant="outline"
-              onClick={() => router.push("/create-course")}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Course
-            </Button>
-            <Button 
-              className="w-full justify-start" 
-              variant="outline"
-              onClick={() => router.push("/instructor/my_courses")}
-            >
-              <BookOpen className="w-4 h-4 mr-2" />
-              View My Courses
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Analytics</CardTitle>
-            <CardDescription>Track your course performance</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button 
-              className="w-full justify-start" 
-              variant="outline"
-              onClick={() => router.push("/instructor/analytics")}
-            >
-              <BarChart3 className="w-4 h-4 mr-2" />
-              View Analytics
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-// User Dashboard Component
-function UserDashboard() {
-  return <EnhancedDashboard />;
-}
