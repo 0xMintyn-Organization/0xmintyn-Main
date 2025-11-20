@@ -2,7 +2,7 @@
 
 ## Overview
 
-The P2P Trade component is a Binance-style peer-to-peer trading interface integrated into the sidebar. It allows users to buy and sell OXM tokens directly with other users.
+The P2P Trade component is a Binance-style peer-to-peer trading interface integrated into the sidebar. It allows users to buy and sell multiple crypto assets (USDT, BTC, ETH, etc.) directly with other users.
 
 ## Component Structure
 
@@ -24,7 +24,7 @@ P2PTrade (Main Component)
 
 ### ✅ Implemented
 
-- **Buy/Sell Tabs**: Seamless switching between buying and selling OXM
+- **Buy/Sell Tabs**: Seamless switching between buying and selling supported assets
 - **Market Listings**: Display of available P2P offers with trader information
 - **Search & Filter**: Search by trader name or payment method
 - **Sorting**: Sort by price, rating, or number of trades (ascending/descending)
@@ -43,7 +43,7 @@ P2PTrade (Main Component)
 - **Trader Verification**: Visual indicators for verified traders
 - **Online Status**: Real-time online/offline indicators
 - **Payment Method Badges**: Quick view of accepted payment methods
-- **Balance Display**: Compact balance overview (OXM, USD, USDT)
+- **Balance Display**: Compact balance overview (selected asset + USD/USDT)
 
 ## Mock Data Structure
 
@@ -58,7 +58,7 @@ interface P2POffer {
   completedTrades: number;
   completionRate: number;
   price: number;
-  available: number; // Available amount in OXM
+  available: number; // Available amount in selected asset
   minLimit: number;
   maxLimit: number;
   paymentMethods: string[];
@@ -66,17 +66,14 @@ interface P2POffer {
   timeLimit: number; // Minutes
   isVerified: boolean;
   isOnline: boolean;
+  asset: string;
 }
 ```
 
 ### UserBalance Interface
 
 ```typescript
-interface UserBalance {
-  OXM: number;
-  USD: number;
-  USDT: number;
-}
+type UserBalance = Record<string, number>;
 ```
 
 ## State Management

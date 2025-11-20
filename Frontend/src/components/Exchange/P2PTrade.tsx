@@ -56,29 +56,26 @@ export interface P2POffer {
   traderRating: number;
   completedTrades: number;
   completionRate: number;
-  responseRate: number; // New: Response rate percentage (like Binance)
-  responseTime: number; // New: Response time in minutes
+  responseRate: number;
+  responseTime: number;
   price: number;
-  available: number; // Available amount in OXM
+  available: number;
   minLimit: number;
   maxLimit: number;
   paymentMethods: string[];
   side: 'buy' | 'sell';
-  timeLimit: number; // Minutes
+  timeLimit: number;
   isVerified: boolean;
   isOnline: boolean;
-  requiresVerification?: boolean; // New: Requires KYC/Verification badge
-  traderId?: string; // New: For profile link
+  requiresVerification?: boolean;
+  traderId?: string;
+  asset: string;
 }
 
-export interface UserBalance {
-  OXM: number;
-  USD: number;
-  USDT: number;
-}
+export type UserBalance = Record<string, number>;
 
 // Mock data - Replace with API calls
-const mockBuyOffers: P2POffer[] = [
+const baseBuyOffers: Omit<P2POffer, 'asset'>[] = [
   {
     id: '1',
     traderName: 'CryptoTrader_01',
@@ -161,7 +158,7 @@ const mockBuyOffers: P2POffer[] = [
   },
 ];
 
-const mockSellOffers: P2POffer[] = [
+const baseSellOffers: Omit<P2POffer, 'asset'>[] = [
   {
     id: '5',
     traderName: 'Buyer_Expert',
@@ -224,14 +221,89 @@ const mockSellOffers: P2POffer[] = [
   },
 ];
 
+const assetSymbols = [
+  'USDT',
+  'BTC',
+  'USDC',
+  'FDUSD',
+  'BNB',
+  'ETH',
+  'ADA',
+  'SHIB',
+  'DOGE',
+  'TRX',
+  'SOL',
+  'PEPE',
+  'TRUMP',
+  '1000CHEEMS',
+  'TST',
+  'DOLO',
+] as const;
+
+const generateOffersForAsset = (
+  symbol: string,
+  index: number,
+): { buy: P2POffer[]; sell: P2POffer[] } => {
+  const priceFactor = 1 + index * 0.02;
+  const availabilityFactor = 1 + index * 0.08;
+
+  const mapOffer = (offer: Omit<P2POffer, 'asset'>, i: number, side: 'buy' | 'sell'): P2POffer => ({
+    ...offer,
+    id: `${symbol}-${side}-${i}`,
+    asset: symbol,
+    price: parseFloat((offer.price * priceFactor * (side === 'buy' ? 1 : 1.03)).toFixed(3)),
+    available: Math.max(10, Math.round(offer.available * availabilityFactor)),
+    minLimit: Math.max(5, Math.round(offer.minLimit * (1 + index * 0.03))),
+    maxLimit: Math.max(offer.maxLimit, Math.round(offer.maxLimit * availabilityFactor)),
+  });
+
+  return {
+    buy: baseBuyOffers.map((offer, i) => mapOffer(offer, i, 'buy')),
+    sell: baseSellOffers.map((offer, i) => mapOffer(offer, i, 'sell')),
+  };
+};
+
+const assetOfferCatalog: Record<string, { buy: P2POffer[]; sell: P2POffer[] }> = assetSymbols.reduce(
+  (acc, symbol, index) => {
+    acc[symbol] = generateOffersForAsset(symbol, index);
+    return acc;
+  },
+  {} as Record<string, { buy: P2POffer[]; sell: P2POffer[] }>,
+);
+
+const fiatCurrencies = [
+  { code: 'USD', label: 'USD', symbol: '$', badgeClass: 'bg-amber-500/90 text-white' },
+  { code: 'USDT', label: 'USDT', symbol: '₮', badgeClass: 'bg-emerald-500 text-white' },
+  { code: 'PKR', label: 'PKR', symbol: 'Rs', badgeClass: 'bg-green-600 text-white' },
+  { code: 'NGN', label: 'NGN', symbol: '₦', badgeClass: 'bg-lime-500 text-gray-900' },
+  { code: 'EUR', label: 'EUR', symbol: '€', badgeClass: 'bg-blue-600 text-white' },
+] as const;
+
 const mockUserBalance: UserBalance = {
-  OXM: 1000,
-  USD: 500,
-  USDT: 200,
+  USD: 1500,
+  USDT: 800,
+  BTC: 0.85,
+  ETH: 4.2,
+  BNB: 6,
+  ADA: 12500,
+  SHIB: 2500000,
+  DOGE: 50000,
+  TRX: 4000,
+  SOL: 180,
+  PEPE: 150000000,
+  TRUMP: 80,
+  '1000CHEEMS': 120,
+  TST: 1500,
+  DOLO: 900,
+  FDUSD: 600,
+  USDC: 900,
 };
 
 export default function P2PTrade() {
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
+  const [selectedAsset, setSelectedAsset] = useState<string>(assetSymbols[0]);
+  const [showAllAssets, setShowAllAssets] = useState(false);
+  const [selectedFiat, setSelectedFiat] = useState<(typeof fiatCurrencies)[number]['code']>(fiatCurrencies[0].code);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table'); // New: View mode toggle
   const [searchQuery, setSearchQuery] = useState('');
   const [transactionAmount, setTransactionAmount] = useState(''); // New: Transaction amount filter
@@ -246,9 +318,18 @@ export default function P2PTrade() {
   const [tradeAmount, setTradeAmount] = useState('');
   const [userBalance] = useState<UserBalance>(mockUserBalance);
   const [isProcessing, setIsProcessing] = useState(false);
+  const selectedAssetBalance = userBalance[selectedAsset] ?? 0;
+  const usdBalance = userBalance.USD ?? 0;
+  const usdtBalance = userBalance.USDT ?? 0;
+  const activeFiat = fiatCurrencies.find((c) => c.code === selectedFiat) ?? fiatCurrencies[0];
+
+  const visibleAssetCount = 12;
+  const canShowMoreAssets = assetSymbols.length > visibleAssetCount;
+  const displayedAssets = showAllAssets ? assetSymbols : assetSymbols.slice(0, visibleAssetCount);
+  const offersForAsset = assetOfferCatalog[selectedAsset] ?? assetOfferCatalog[assetSymbols[0]];
 
   // Get offers based on active tab
-  const allOffers = activeTab === 'buy' ? mockBuyOffers : mockSellOffers;
+  const allOffers = activeTab === 'buy' ? offersForAsset.buy : offersForAsset.sell;
 
   // Get all unique payment methods
   const allPaymentMethods = useMemo(() => {
@@ -326,17 +407,16 @@ export default function P2PTrade() {
     
     // Validate balance
     if (activeTab === 'buy') {
-      // Buying OXM - need USD/USDT
-      const requiredAmount = amount * selectedOffer.price;
-      if (userBalance.USD < requiredAmount && userBalance.USDT < requiredAmount) {
-        toast.error('Insufficient balance');
+      const requiredFiat = amount * selectedOffer.price;
+      if ((userBalance.USD ?? 0) < requiredFiat && (userBalance.USDT ?? 0) < requiredFiat) {
+        toast.error('Insufficient USD/USDT balance for this purchase');
         setIsProcessing(false);
         return;
       }
     } else {
-      // Selling OXM - need OXM
-      if (userBalance.OXM < amount) {
-        toast.error('Insufficient OXM balance');
+      const assetBalance = userBalance[selectedOffer.asset] ?? 0;
+      if (assetBalance < amount) {
+        toast.error(`Insufficient ${selectedOffer.asset} balance`);
         setIsProcessing(false);
         return;
       }
@@ -344,7 +424,9 @@ export default function P2PTrade() {
 
     // Validate limits
     if (amount < selectedOffer.minLimit || amount > selectedOffer.maxLimit) {
-      toast.error(`Amount must be between ${selectedOffer.minLimit} and ${selectedOffer.maxLimit} OXM`);
+      toast.error(
+        `Amount must be between ${selectedOffer.minLimit} and ${selectedOffer.maxLimit} ${selectedOffer.asset}`,
+      );
       setIsProcessing(false);
       return;
     }
@@ -360,12 +442,9 @@ export default function P2PTrade() {
       //   side: activeTab,
       // });
 
-      toast.success(
-        `${activeTab === 'buy' ? 'Buy' : 'Sell'} order placed successfully!`,
-        {
-          description: `${amount} OXM at $${selectedOffer.price} per token`,
-        }
-      );
+      toast.success(`${activeTab === 'buy' ? 'Buy' : 'Sell'} order placed successfully!`, {
+        description: `${amount} ${selectedOffer.asset} at $${selectedOffer.price} per unit`,
+      });
 
       setIsTradeModalOpen(false);
       setSelectedOffer(null);
@@ -386,22 +465,58 @@ export default function P2PTrade() {
       {/* Balance Display - Compact */}
       <Card className="border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
         <CardContent className="p-3">
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">OXM:</span>
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{userBalance.OXM.toLocaleString()}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{selectedAsset}:</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {selectedAssetBalance.toLocaleString()}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 dark:text-gray-400">USD:</span>
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">${userBalance.USD.toLocaleString()}</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                ${usdBalance.toLocaleString()}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 dark:text-gray-400">USDT:</span>
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{userBalance.USDT.toLocaleString()}</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {usdtBalance.toLocaleString()}
+              </span>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Asset Selector */}
+      <div className="border border-gray-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 p-2 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          {displayedAssets.map((symbol) => (
+            <button
+              key={symbol}
+              onClick={() => setSelectedAsset(symbol)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${
+                selectedAsset === symbol
+                  ? 'bg-gray-900 text-amber-300 dark:bg-white dark:text-gray-900'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              {symbol}
+            </button>
+          ))}
+          {canShowMoreAssets && (
+            <button
+              onClick={() => setShowAllAssets((prev) => !prev)}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            >
+              {showAllAssets ? 'Less' : 'More'}
+              <ChevronDown
+                className={`w-3 h-3 transition-transform ${showAllAssets ? 'rotate-180' : ''}`}
+              />
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Main Trading Section */}
       <Card className="border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
@@ -430,14 +545,35 @@ export default function P2PTrade() {
                   {/* First Row: Transaction Amount, Payment Method, More Filters, Sort */}
                   <div className="flex flex-wrap gap-1.5 items-center">
                     {/* Transaction Amount Input */}
-                    <div className="relative flex-1 min-w-[140px]">
-                      <Input
-                        type="number"
-                        placeholder="Transaction amount"
-                        value={transactionAmount}
-                        onChange={(e) => setTransactionAmount(e.target.value)}
-                        className="h-7 bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-[11px] px-2 py-1"
-                      />
+                    <div className="relative flex-1 min-w-[160px]">
+                      <div className="flex items-center h-7 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus-within:ring-1 focus-within:ring-gray-400 dark:focus-within:ring-zinc-500">
+                        <Input
+                          type="number"
+                          placeholder="Transaction amount"
+                          value={transactionAmount}
+                          onChange={(e) => setTransactionAmount(e.target.value)}
+                          className="h-full flex-1 border-0 bg-transparent text-[11px] px-2 py-1 focus-visible:ring-0 focus-visible:outline-none"
+                        />
+                        <div className="flex items-center gap-1 pl-2 pr-1 border-l border-gray-200 dark:border-zinc-700 h-full">
+                          <span
+                            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${activeFiat.badgeClass}`}
+                          >
+                            {activeFiat.symbol}
+                          </span>
+                          <Select value={selectedFiat} onValueChange={(value) => setSelectedFiat(value as typeof selectedFiat)}>
+                            <SelectTrigger className="h-6 w-[68px] border-0 bg-transparent text-[11px] px-1 py-0 focus:ring-0 focus:ring-offset-0">
+                              <SelectValue placeholder="Currency" />
+                            </SelectTrigger>
+                            <SelectContent align="end">
+                              {fiatCurrencies.map((currency) => (
+                                <SelectItem key={currency.code} value={currency.code}>
+                                  {currency.code}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Payment Method Filter */}
@@ -595,7 +731,7 @@ export default function P2PTrade() {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-1.5 min-w-0 mb-0.5">
                                       <Link
-                                        href={`/p2p-trading/trader/${offer.traderId || offer.id}`}
+                                        href={`/exchange?mode=p2p&trader=${encodeURIComponent(offer.traderId || offer.id)}`}
                                         className="font-medium text-xs text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:underline truncate transition-colors"
                                         title={offer.traderName}
                                       >
@@ -625,11 +761,14 @@ export default function P2PTrade() {
                                 <div className="font-medium text-xs text-gray-900 dark:text-gray-100">
                                   ${offer.price.toFixed(3)}
                                 </div>
+                                <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                                  {offer.asset}/USD
+                                </div>
                               </td>
                               <td className="py-2.5 px-2.5 align-top">
                                 <div className="space-y-0.5">
                                   <div className="font-medium text-xs text-gray-900 dark:text-gray-100">
-                                    {offer.available.toLocaleString()} OXM
+                                    {offer.available.toLocaleString()} {offer.asset}
                                   </div>
                                   <div className="text-[10px] text-gray-600 dark:text-gray-400">
                                     ${(offer.minLimit * offer.price).toFixed(2)} - ${(offer.maxLimit * offer.price).toFixed(2)}
@@ -661,7 +800,7 @@ export default function P2PTrade() {
                                         : 'bg-red-600 hover:bg-red-700 text-white'
                                     }`}
                                   >
-                                    {activeTab === 'buy' ? 'Buy' : 'Sell'} OXM
+                                    {activeTab === 'buy' ? 'Buy' : 'Sell'} {offer.asset}
                                   </Button>
                                   {offer.requiresVerification && (
                                     <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-3.5 text-amber-600 dark:text-amber-500 border-amber-600 dark:border-amber-500 bg-amber-50 dark:bg-amber-950/20">

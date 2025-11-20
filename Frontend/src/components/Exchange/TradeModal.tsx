@@ -60,11 +60,12 @@ export default function TradeModal({
   const amountNum = parseFloat(amount) || 0;
   const total = amountNum * offer.price;
   const isBuy = side === 'buy';
+  const assetLabel = offer.asset ?? 'Asset';
 
   // Calculate available balance
-  const availableBalance = isBuy 
-    ? Math.max(userBalance.USD, userBalance.USDT)
-    : userBalance.OXM;
+  const availableBalance = isBuy
+    ? Math.max(userBalance.USD ?? 0, userBalance.USDT ?? 0)
+    : userBalance[assetLabel] ?? 0;
 
   // Validate amount
   const validateAmount = () => {
@@ -76,17 +77,17 @@ export default function TradeModal({
     }
 
     if (amountNum < offer.minLimit) {
-      newErrors.amount = `Minimum amount is ${offer.minLimit} OXM`;
+      newErrors.amount = `Minimum amount is ${offer.minLimit} ${assetLabel}`;
       return newErrors;
     }
 
     if (amountNum > offer.maxLimit) {
-      newErrors.amount = `Maximum amount is ${offer.maxLimit} OXM`;
+      newErrors.amount = `Maximum amount is ${offer.maxLimit} ${assetLabel}`;
       return newErrors;
     }
 
     if (amountNum > offer.available) {
-      newErrors.amount = `Available amount is ${offer.available} OXM`;
+      newErrors.amount = `Available amount is ${offer.available} ${assetLabel}`;
       return newErrors;
     }
 
@@ -96,7 +97,7 @@ export default function TradeModal({
     }
 
     if (!isBuy && amountNum > availableBalance) {
-      newErrors.amount = `Insufficient OXM. Available: ${availableBalance} OXM`;
+      newErrors.amount = `Insufficient ${assetLabel}. Available: ${availableBalance} ${assetLabel}`;
       return newErrors;
     }
 
@@ -140,10 +141,10 @@ export default function TradeModal({
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {isBuy ? 'Buy' : 'Sell'} OXM - {offer.traderName}
+            {isBuy ? 'Buy' : 'Sell'} {assetLabel} - {offer.traderName}
           </DialogTitle>
           <DialogDescription>
-            Complete your {isBuy ? 'purchase' : 'sale'} with this trader
+            Complete your {isBuy ? 'purchase' : 'sale'} of {assetLabel} with this trader
           </DialogDescription>
         </DialogHeader>
 
@@ -181,13 +182,15 @@ export default function TradeModal({
             </div>
             <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Available</p>
-              <p className="text-xl font-bold">{offer.available.toLocaleString()} OXM</p>
+              <p className="text-xl font-bold">
+                {offer.available.toLocaleString()} {assetLabel}
+              </p>
             </div>
           </div>
 
           {/* Amount Input */}
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount (OXM)</Label>
+            <Label htmlFor="amount">Amount ({assetLabel})</Label>
             <Input
               id="amount"
               type="number"
@@ -230,7 +233,7 @@ export default function TradeModal({
                 <span className="text-2xl font-bold">${total.toFixed(2)}</span>
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                {amountNum.toFixed(2)} OXM × ${offer.price.toFixed(2)} = ${total.toFixed(2)}
+                {amountNum.toFixed(2)} {assetLabel} × ${offer.price.toFixed(2)} = ${total.toFixed(2)}
               </div>
             </div>
           )}
@@ -276,7 +279,7 @@ export default function TradeModal({
                   Trade Limits
                 </p>
                 <p className="text-yellow-700 dark:text-yellow-300">
-                  Min: {offer.minLimit} OXM | Max: {offer.maxLimit} OXM
+                  Min: {offer.minLimit} {assetLabel} | Max: {offer.maxLimit} {assetLabel}
                 </p>
                 <p className="text-yellow-700 dark:text-yellow-300">
                   Time Limit: {offer.timeLimit} minutes
@@ -289,16 +292,18 @@ export default function TradeModal({
           <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Your Balance</p>
             <div className="flex justify-between text-sm">
-              <span>OXM:</span>
-              <span className="font-semibold">{userBalance.OXM.toLocaleString()}</span>
+              <span>{assetLabel}:</span>
+              <span className="font-semibold">
+                {(userBalance[assetLabel] ?? 0).toLocaleString()}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span>USD:</span>
-              <span className="font-semibold">${userBalance.USD.toLocaleString()}</span>
+              <span className="font-semibold">${(userBalance.USD ?? 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>USDT:</span>
-              <span className="font-semibold">{userBalance.USDT.toLocaleString()}</span>
+              <span className="font-semibold">{(userBalance.USDT ?? 0).toLocaleString()}</span>
             </div>
           </div>
         </div>

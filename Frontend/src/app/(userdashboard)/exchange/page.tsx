@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import MarketOverview from '@/components/Exchange/MarketOverview';
@@ -15,9 +15,20 @@ import CoinRates from '@/components/Exchange/CoinRates';
 import KycStatusCard from '@/components/Exchange/KycStatusCard';
 import Protected from '@/hooks/useProtected';
 import { TrendingUp, Wallet, Activity, BarChart3, ArrowUpRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import P2PTrade from '@/components/Exchange/P2PTrade';
+import { useSearchParams } from 'next/navigation';
 
 export default function ExchangePage() {
+  const searchParams = useSearchParams();
+  const initialTab = useMemo(() => (searchParams?.get('mode') === 'p2p' ? 'p2p' : 'spot'), [searchParams]);
+  const [activeTab, setActiveTab] = useState<'spot' | 'p2p'>(initialTab as 'spot' | 'p2p');
+
+  useEffect(() => {
+    const mode = searchParams?.get('mode') === 'p2p' ? 'p2p' : 'spot';
+    setActiveTab(mode as 'spot' | 'p2p');
+  }, [searchParams]);
+
   return (
     <Protected>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
@@ -79,93 +90,118 @@ export default function ExchangePage() {
           {/* KYC Status */}
           <KycStatusCard />
 
-          {/* Top Row: Market Overview & Quick Swap */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Market Overview */}
-            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
-              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20">
-                <CardTitle className="text-xl font-bold flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-green-600" />
-                  Market Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <MarketOverview />
-                <TradingVolume />
-              </CardContent>
-            </Card>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'spot' | 'p2p')} className="space-y-6">
+            <TabsList className="w-full max-w-md bg-white/60 dark:bg-zinc-900/60 border border-gray-200 dark:border-zinc-800 rounded-xl p-1">
+              <TabsTrigger
+                value="spot"
+                className="flex-1 rounded-lg data-[state=active]:bg-gray-900 data-[state=active]:text-white dark:data-[state=active]:bg-gray-100 dark:data-[state=active]:text-gray-900 text-sm font-semibold"
+              >
+                Spot Trading
+              </TabsTrigger>
+              <TabsTrigger
+                value="p2p"
+                className="flex-1 rounded-lg data-[state=active]:bg-gray-900 data-[state=active]:text-white dark:data-[state=active]:bg-gray-100 dark:data-[state=active]:text-gray-900 text-sm font-semibold"
+              >
+                P2P Trading
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Quick Swap */}
-            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
-              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
-                <CardTitle className="text-xl font-bold flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-purple-600" />
-                  Quick Swap
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <QuickSwap />
-              </CardContent>
-            </Card>
-          </div>
+            <TabsContent value="spot" className="space-y-6">
+              {/* Top Row: Market Overview & Quick Swap */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Market Overview */}
+                <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+                  <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20">
+                    <CardTitle className="text-xl font-bold flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-green-600" />
+                      Market Overview
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-4">
+                    <MarketOverview />
+                    <TradingVolume />
+                  </CardContent>
+                </Card>
 
-          {/* Middle Row: Order Book & Place Order */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Order Book */}
-            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
-              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
-                <CardTitle className="text-xl font-bold">Order Book</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <OrderBook />
-              </CardContent>
-            </Card>
+                {/* Quick Swap */}
+                <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+                  <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                    <CardTitle className="text-xl font-bold flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-purple-600" />
+                      Quick Swap
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <QuickSwap />
+                  </CardContent>
+                </Card>
+              </div>
 
-            {/* Place Order */}
-            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
-              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20">
-                <CardTitle className="text-xl font-bold">Place Order</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <PlaceOrder />
-              </CardContent>
-            </Card>
-          </div>
+              {/* Middle Row: Order Book & Place Order */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Order Book */}
+                <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+                  <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
+                    <CardTitle className="text-xl font-bold">Order Book</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <OrderBook />
+                  </CardContent>
+                </Card>
 
-          {/* Trading Chart - Full Width */}
-          <div className="grid grid-cols-1 gap-6">
-            <TradingChart />
-          </div>
+                {/* Place Order */}
+                <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+                  <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20">
+                    <CardTitle className="text-xl font-bold">Place Order</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <PlaceOrder />
+                  </CardContent>
+                </Card>
+              </div>
 
-          {/* Coin Rates Table - Full Width */}
-          <div className="grid grid-cols-1 gap-6">
-            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
-              <CoinRates />
-            </Card>
-          </div>
+              {/* Trading Chart - Full Width */}
+              <div className="grid grid-cols-1 gap-6">
+                <TradingChart />
+              </div>
 
-          {/* Bottom Row: Open Orders & Trade History */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Open Orders */}
-            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
-              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20">
-                <CardTitle className="text-xl font-bold">Open Orders</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <OpenOrders />
-              </CardContent>
-            </Card>
+              {/* Coin Rates Table - Full Width */}
+              <div className="grid grid-cols-1 gap-6">
+                <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+                  <CoinRates />
+                </Card>
+              </div>
 
-            {/* Trade History */}
-            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
-              <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20">
-                <CardTitle className="text-xl font-bold">Trade History</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <TradeHistory />
-              </CardContent>
-            </Card>
-          </div>
+              {/* Bottom Row: Open Orders & Trade History */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Open Orders */}
+                <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+                  <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20">
+                    <CardTitle className="text-xl font-bold">Open Orders</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <OpenOrders />
+                  </CardContent>
+                </Card>
+
+                {/* Trade History */}
+                <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
+                  <CardHeader className="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20">
+                    <CardTitle className="text-xl font-bold">Trade History</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <TradeHistory />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="p2p" className="space-y-6">
+              <div className="max-w-7xl mx-auto w-full">
+                <P2PTrade />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </Protected>

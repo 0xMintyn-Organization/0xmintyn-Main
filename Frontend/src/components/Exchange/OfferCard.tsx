@@ -24,6 +24,7 @@ interface OfferCardProps {
 
 export default function OfferCard({ offer, onTradeClick }: OfferCardProps) {
   const isBuy = offer.side === 'buy';
+  const assetLabel = offer.asset;
 
   return (
     <Card className="border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:shadow-sm transition-all duration-200 h-full">
@@ -45,7 +46,7 @@ export default function OfferCard({ offer, onTradeClick }: OfferCardProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <Link
-                  href={`/p2p-trading/trader/${offer.traderId || offer.id}`}
+                  href={`/exchange?mode=p2p&trader=${encodeURIComponent(offer.traderId || offer.id)}`}
                   className="font-medium text-xs text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 truncate hover:underline transition-colors"
                 >
                   {offer.traderName}
@@ -91,7 +92,9 @@ export default function OfferCard({ offer, onTradeClick }: OfferCardProps) {
         {/* Price and Available */}
         <div className="flex items-center justify-between py-1.5 border-t border-b border-gray-100 dark:border-zinc-800">
           <div>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Price</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">
+              Price ({assetLabel}/USD)
+            </p>
             <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
               ${offer.price.toFixed(3)}
             </p>
@@ -99,7 +102,7 @@ export default function OfferCard({ offer, onTradeClick }: OfferCardProps) {
           <div className="text-right">
             <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Available</p>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {offer.available.toLocaleString()} OXM
+              {offer.available.toLocaleString()} {assetLabel}
             </p>
           </div>
         </div>
@@ -109,7 +112,7 @@ export default function OfferCard({ offer, onTradeClick }: OfferCardProps) {
           <div>
             <span className="text-gray-500 dark:text-gray-400">Limit: </span>
             <span className="font-medium text-gray-700 dark:text-gray-300">
-              {offer.minLimit} - {offer.maxLimit.toLocaleString()} OXM
+              {offer.minLimit} - {offer.maxLimit.toLocaleString()} {assetLabel}
             </span>
           </div>
           <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
@@ -152,12 +155,12 @@ export default function OfferCard({ offer, onTradeClick }: OfferCardProps) {
             {isBuy ? (
               <>
                 <ArrowUp className="w-3 h-3 mr-1.5" />
-                Buy OXM
+                Buy {assetLabel}
               </>
             ) : (
               <>
                 <ArrowDown className="w-3 h-3 mr-1.5" />
-                Sell OXM
+                Sell {assetLabel}
               </>
             )}
           </Button>
