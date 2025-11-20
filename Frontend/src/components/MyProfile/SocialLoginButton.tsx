@@ -91,7 +91,10 @@ export function SocialLoginButton({
           if (event.origin !== window.location.origin || isProcessing) return;
 
           if (event.data.type === 'AUTH0_SUCCESS') {
-            console.log("Processing AUTH0_SUCCESS message");
+            console.log("=== AUTH0_SUCCESS MESSAGE RECEIVED ===");
+            console.log("Full message data:", event.data);
+            console.log("Message timestamp:", event.data.timestamp);
+            
             setIsProcessing(true);
             clearInterval(checkPopup);
             setIsLoading(false);
@@ -106,11 +109,22 @@ export function SocialLoginButton({
             const userId = event.data.userId;
             
             console.log("=== Auth0 Success Handler ===");
-            console.log("Token in message:", !!token, "UserId:", userId);
+            console.log("Token in message:", !!token, token ? "Token present" : "Token missing");
+            console.log("UserId in message:", userId || "Missing");
+            console.log("Current localStorage:", {
+              user: localStorage.getItem('user') ? "Present" : "Missing",
+              accessToken: localStorage.getItem('accessToken') ? "Present" : "Missing",
+              explicit_logout: sessionStorage.getItem('explicit_logout')
+            });
+            console.log("Current Redux state:", "Check Redux DevTools");
             
             // If we have token from URL, use it immediately (fastest path)
             if (token && userId) {
+              console.log("=== Token-based Fetch Attempt (Primary Method) ===");
               console.log("✅ Using token from popup message for immediate login");
+              console.log("Token length:", token.length);
+              console.log("UserId:", userId);
+              console.log("Fetch URL:", `${process.env.NEXT_PUBLIC_SERVER_URI}me`);
               
               try {
                 // Fetch user data using the token
@@ -125,6 +139,9 @@ export function SocialLoginButton({
                     },
                   }
                 );
+                
+                console.log("Token-based fetch response status:", userResponse.status);
+                console.log("Token-based fetch response headers:", Object.fromEntries(userResponse.headers.entries()));
 
                 if (userResponse.ok) {
                   const userData = await userResponse.json();
@@ -145,11 +162,18 @@ export function SocialLoginButton({
                       localStorage.setItem('accessToken', userData.accessToken);
                       localStorage.setItem('loginTimestamp', Date.now().toString());
                       
-                      console.log("✅ User logged in, redirecting to dashboard");
-                      // Small delay to ensure state propagates
-                      setTimeout(() => {
-                        router.push(redirectTo);
-                      }, 300);
+                      console.log("✅ User logged in successfully!");
+                      console.log("User data:", userData.user);
+                      console.log("Access token:", userData.accessToken ? "Present" : "Missing");
+                      console.log("Redux state after dispatch:", "Check Redux DevTools");
+                      console.log("LocalStorage:", {
+                        user: localStorage.getItem('user') ? "Present" : "Missing",
+                        accessToken: localStorage.getItem('accessToken') ? "Present" : "Missing"
+                      });
+                      // TEMPORARILY DISABLED FOR DEBUGGING - Don't redirect yet
+                      // setTimeout(() => {
+                      //   router.push(redirectTo);
+                      // }, 300);
                       return;
                     }
                 } else {
@@ -157,14 +181,21 @@ export function SocialLoginButton({
                 }
               } catch (error) {
                 console.error("❌ Error with token-based fetch:", error);
+                console.error("Error details:", {
+                  message: error instanceof Error ? error.message : String(error),
+                  stack: error instanceof Error ? error.stack : undefined
+                });
                 // Fall through to cookie-based approach
               }
             }
             
             // Fallback: Wait for cookies to be set, then fetch using RTK Query
             console.log("Using cookie-based authentication (fallback)");
+            console.log("Available cookies:", document.cookie || "No cookies found");
             setTimeout(async () => {
               try {
+                console.log("=== Cookie-based Fetch Attempt ===");
+                console.log("Cookies available:", document.cookie || "No cookies");
                 console.log("Fetching user session using RTK Query (cookies)");
                 
                 // Use RTK Query's refetch - this properly handles cookies and updates Redux
@@ -174,10 +205,19 @@ export function SocialLoginButton({
                   isSuccess: result.isSuccess,
                   isError: result.isError,
                   hasData: !!result.data,
+                  error: result.error,
+                  data: result.data
                 });
                 
+                if (result.isError) {
+                  console.error("❌ RTK Query refetch error:", result.error);
+                  console.error("Error status:", result.error?.status);
+                  console.error("Error data:", result.error?.data);
+                }
+                
                 if (result.isSuccess && result.data?.user && result.data?.accessToken) {
-                  console.log("✅ User session fetched successfully:", result.data.user.email);
+                  console.log("✅ User session fetched successfully via RTK Query:", result.data.user.email);
+                  console.log("RTK Query result:", result.data);
                   
                   // Clear explicit logout flag
                   sessionStorage.removeItem('explicit_logout');
@@ -185,13 +225,28 @@ export function SocialLoginButton({
                   // RTK Query's onQueryStarted already updates Redux and localStorage
                   await new Promise(resolve => setTimeout(resolve, 500));
                   
-                  console.log("Redirecting to dashboard");
-                  router.push(redirectTo);
+                  console.log("Redux state after RTK Query:", "Check Redux DevTools");
+                  console.log("LocalStorage after RTK Query:", {
+                    user: localStorage.getItem('user') ? "Present" : "Missing",
+                    accessToken: localStorage.getItem('accessToken') ? "Present" : "Missing"
+                  });
+                  
+                  // TEMPORARILY DISABLED FOR DEBUGGING - Don't redirect yet
+                  // console.log("Redirecting to dashboard");
+                  // router.push(redirectTo);
                   return;
                 }
                 
                 // Final fallback: manual fetch with cookies
-                console.log("Trying manual fetch with cookies...");
+                console.log("=== Manual Fetch Attempt (Cookie Fallback) ===");
+                console.log("Cookies before fetch:", document.cookie || "No cookies");
+                console.log("Fetch URL:", `${process.env.NEXT_PUBLIC_SERVER_URI}me`);
+                console.log("Fetch options:", {
+                  method: "GET",
+                  credentials: "include",
+                  headers: { 'Accept': 'application/json' }
+                });
+                
                 const userResponse = await fetch(
                   `${process.env.NEXT_PUBLIC_SERVER_URI}me`,
                   {
@@ -202,10 +257,15 @@ export function SocialLoginButton({
                     },
                   }
                 );
+                
+                console.log("Manual fetch response status:", userResponse.status);
+                console.log("Manual fetch response headers:", Object.fromEntries(userResponse.headers.entries()));
 
                 if (userResponse.ok) {
                   const userData = await userResponse.json();
                   if (userData.user && userData.accessToken) {
+                    console.log("✅ User data fetched via manual fetch (cookie fallback):", userData.user.email);
+                    
                     // Clear explicit logout flag
                     sessionStorage.removeItem('explicit_logout');
                     
@@ -218,19 +278,38 @@ export function SocialLoginButton({
                     localStorage.setItem('accessToken', userData.accessToken);
                     localStorage.setItem('loginTimestamp', Date.now().toString());
                     
-                    setTimeout(() => {
-                      router.push(redirectTo);
-                    }, 500);
+                    console.log("Redux state after manual fetch:", "Check Redux DevTools");
+                    console.log("LocalStorage after manual fetch:", {
+                      user: localStorage.getItem('user') ? "Present" : "Missing",
+                      accessToken: localStorage.getItem('accessToken') ? "Present" : "Missing"
+                    });
+                    
+                    // TEMPORARILY DISABLED FOR DEBUGGING - Don't redirect yet
+                    // setTimeout(() => {
+                    //   router.push(redirectTo);
+                    // }, 500);
                     return;
+                  } else {
+                    console.error("❌ Manual fetch returned data but missing user or accessToken:", userData);
                   }
+                } else {
+                  const errorText = await userResponse.text();
+                  console.error("❌ Manual fetch failed with status:", userResponse.status, errorText);
                 }
                 
-                // Ultimate fallback: reload page
-                console.log("🔄 All methods failed, reloading page");
-                window.location.reload();
+                // TEMPORARILY DISABLED FOR DEBUGGING - Don't reload yet
+                // console.log("🔄 All methods failed, reloading page");
+                // window.location.reload();
+                console.log("🔄 All fetch methods completed. Check console logs above for details.");
               } catch (error) {
                 console.error("❌ Error in cookie-based fetch:", error);
-                window.location.reload();
+                console.error("Error details:", {
+                  message: error instanceof Error ? error.message : String(error),
+                  stack: error instanceof Error ? error.stack : undefined
+                });
+                // TEMPORARILY DISABLED FOR DEBUGGING
+                // window.location.reload();
+                console.log("🔄 Cookie-based fetch failed. Check error above.");
               }
             }, 1500); // Shorter delay since we tried token first
           } else if (event.data.type === 'AUTH0_ERROR') {
