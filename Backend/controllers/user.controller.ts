@@ -647,6 +647,120 @@ import sendEmail from '../utils/sendMail';
         }
     });
 
+    // Forgot Password - Send reset email
+    interface IForgotPasswordBody {
+        email: string;
+    }
+
+    export const forgotPassword = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { email }: IForgotPasswordBody = req.body;
+
+            if (!email) {
+                return next(new ErrorHandler('Please provide your email address', 400));
+            }
+
+            const user = await UserModel.findOne({ email });
+            
+            // For security, don't reveal if email exists or not
+            // Always return success message
+            if (!user) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'If an account exists with this email, you will receive password reset instructions.',
+                });
+            }
+
+            // Create reset token (expires in 15 minutes)
+            const resetToken = jwt.sign(
+                { userId: user._id },
+                process.env.ACTIVATION_SECRET as Secret,
+                { expiresIn: '15m' }
+            );
+
+            // Build reset link
+            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://app.0xmintyn.com";
+            const normalizedClientUrl = clientUrl.endsWith("/") ? clientUrl.slice(0, -1) : clientUrl;
+            const resetLink = `${normalizedClientUrl}/reset-password?token=${resetToken}`;
+
+            const data = {
+                user: { name: user.firstName || 'User' },
+                resetLink,
+            };
+
+            try {
+                await sendEmail({
+                    email: user.email,
+                    subject: 'Password Reset Request - 0xMintyn',
+                    template: 'resetPassword.ejs',
+                    data,
+                });
+
+                res.status(200).json({
+                    success: true,
+                    message: 'If an account exists with this email, you will receive password reset instructions.',
+                });
+            } catch (error: any) {
+                console.error('Error sending reset email:', error);
+                return next(new ErrorHandler('Failed to send reset email. Please try again later.', 500));
+            }
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
+
+    // Reset Password - Handle password reset with token
+    interface IResetPasswordBody {
+        token: string;
+        newPassword: string;
+    }
+
+    export const resetPassword = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { token, newPassword }: IResetPasswordBody = req.body;
+
+            if (!token || !newPassword) {
+                return next(new ErrorHandler('Token and new password are required', 400));
+            }
+
+            if (newPassword.length < 6) {
+                return next(new ErrorHandler('Password must be at least 6 characters', 400));
+            }
+
+            // Verify reset token
+            let decoded: { userId: string } | null = null;
+            try {
+                decoded = jwt.verify(token, process.env.ACTIVATION_SECRET as Secret) as { userId: string };
+            } catch (jwtError: any) {
+                if (jwtError.name === 'TokenExpiredError') {
+                    return next(new ErrorHandler('Reset link has expired. Please request a new one.', 400));
+                }
+                if (jwtError.name === 'JsonWebTokenError') {
+                    return next(new ErrorHandler('Invalid reset link. Please request a new one.', 400));
+                }
+                return next(new ErrorHandler('Invalid reset token', 400));
+            }
+
+            // Find user by ID from token
+            const user = await UserModel.findById(decoded.userId).select('+password');
+            
+            if (!user) {
+                return next(new ErrorHandler('User not found', 400));
+            }
+
+            // Update password
+            user.password = newPassword;
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: 'Password reset successfully. You can now login with your new password.',
+            });
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
+
 
     type ISocialAuthBody = {
         email: string;

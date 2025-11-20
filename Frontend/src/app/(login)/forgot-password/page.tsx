@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail } from "lucide-react";
 import Spinner from "@/components/Spinner";
 import useAuth from "@/hooks/userAuth";
+import { useForgotPasswordMutation } from "@/redux/features/auth/authApi";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -20,7 +21,7 @@ export default function ForgotPasswordPage() {
   const { isLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forgotPassword, { isLoading: isSubmitting }] = useForgotPasswordMutation();
 
   const form = useForm<z.infer<typeof forgotPasswordSchema>>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -34,15 +35,12 @@ export default function ForgotPasswordPage() {
   const isFormValid = form.formState.isValid;
 
   async function onSubmit(values: z.infer<typeof forgotPasswordSchema>) {
-    setIsSubmitting(true);
     try {
-      // TODO: Implement forgot password API call
-      // const response = await forgotPassword(values.email).unwrap();
+      const response = await forgotPassword({ email: values.email }).unwrap();
       
-      // For now, show success message
       toast({
         title: "Password Reset Email Sent",
-        description: "If an account exists with this email, you will receive password reset instructions.",
+        description: response.message || "If an account exists with this email, you will receive password reset instructions.",
         variant: "default",
       });
       
@@ -53,11 +51,9 @@ export default function ForgotPasswordPage() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error?.data?.error || "Failed to send reset email. Please try again.",
+        description: error?.data?.error || error?.data?.message || "Failed to send reset email. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
