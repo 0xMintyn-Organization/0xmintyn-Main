@@ -7,6 +7,7 @@ import { Loader2, CheckCircle, Link as LinkIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { userLoggedIn } from "@/redux/features/auth/authSlice";
+import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
 
 interface SocialLoginButtonProps {
   provider: string;
@@ -30,6 +31,13 @@ export function SocialLoginButton({
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  // Use RTK Query to fetch user - this handles cookies properly
+  // We skip the automatic query but can still call refetch manually
+  const { refetch: refetchUser, isLoading: isFetchingUser } = useLoadUserQuery(undefined, { 
+    skip: true,
+    // Don't refetch on mount or reconnect
+    refetchOnMountOrArgChange: false,
+  });
 
   const handleAuth0Login = async () => {
     try {
@@ -93,51 +101,98 @@ export function SocialLoginButton({
               popup.postMessage({ type: 'CLOSE_POPUP' }, window.location.origin);
             }
             
-            // Wait a bit for cookies to be set, then fetch user session
+            // Wait a bit for cookies to be set, then fetch user session using RTK Query
             setTimeout(async () => {
               try {
-                console.log("Fetching user session after Auth0 success");
-                // Explicitly fetch user from server (cookies should be set)
-                const userResponse = await fetch(
-                  `${process.env.NEXT_PUBLIC_SERVER_URI}me`,
-                  {
-                    method: "GET",
-                    credentials: "include",
-                  }
-                );
-
-                if (userResponse.ok) {
-                  const userData = await userResponse.json();
-                  console.log("User session fetched:", userData);
+                console.log("=== Auth0 Success Handler ===");
+                console.log("Checking for cookies...");
+                console.log("Document cookies:", document.cookie);
+                console.log("Fetching user session after Auth0 success using RTK Query");
+                
+                // Use RTK Query's refetch - this properly handles cookies and updates Redux
+                const result = await refetchUser();
+                
+                console.log("Refetch result:", {
+                  data: result.data,
+                  error: result.error,
+                  isSuccess: result.isSuccess,
+                  isError: result.isError,
+                });
+                
+                if (result.isSuccess && result.data?.user && result.data?.accessToken) {
+                  console.log("✅ User session fetched successfully:", result.data.user.email);
                   
-                  if (userData.user && userData.accessToken) {
-                    // Update Redux state
-                    dispatch(userLoggedIn({
-                      accessToken: userData.accessToken,
-                      user: userData.user
-                    }));
-                    
-                    // Update localStorage
-                    localStorage.setItem('user', JSON.stringify(userData.user));
-                    localStorage.setItem('accessToken', userData.accessToken);
-                    localStorage.setItem('loginTimestamp', Date.now().toString());
-                    
-                    // Redirect to dashboard
-                    console.log("Redirecting to dashboard");
-                    router.push(redirectTo);
-                    return;
-                  }
+                  // RTK Query's onQueryStarted already updates Redux and localStorage
+                  // Wait a moment for state to propagate
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                  
+                  console.log("Redirecting to dashboard");
+                  // Use router.push for client-side navigation (faster, no reload)
+                  router.push(redirectTo);
+                  return;
+                } else if (result.isError) {
+                  console.error("❌ RTK Query refetch error:", result.error);
+                } else {
+                  console.warn("⚠️ No user data in RTK Query response");
                 }
                 
-                // Fallback: refresh page if fetch fails
-                console.log("User fetch failed, refreshing page as fallback");
+                // Fallback: try manual fetch
+                console.log("Trying manual fetch as fallback...");
+                try {
+                  const userResponse = await fetch(
+                    `${process.env.NEXT_PUBLIC_SERVER_URI}me`,
+                    {
+                      method: "GET",
+                      credentials: "include",
+                      headers: {
+                        'Accept': 'application/json',
+                      },
+                    }
+                  );
+
+                  console.log("Manual fetch response status:", userResponse.status);
+                  
+                  if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    console.log("✅ Manual fetch successful:", userData);
+                    
+                    if (userData.user && userData.accessToken) {
+                      dispatch(userLoggedIn({
+                        accessToken: userData.accessToken,
+                        user: userData.user
+                      }));
+                      
+                      localStorage.setItem('user', JSON.stringify(userData.user));
+                      localStorage.setItem('accessToken', userData.accessToken);
+                      localStorage.setItem('loginTimestamp', Date.now().toString());
+                      
+                      await new Promise(resolve => setTimeout(resolve, 500));
+                      console.log("Redirecting to dashboard (manual fetch)");
+                      router.push(redirectTo);
+                      return;
+                    }
+                  } else {
+                    const errorText = await userResponse.text();
+                    console.error("❌ Manual fetch failed:", userResponse.status, errorText);
+                  }
+                } catch (fetchError) {
+                  console.error("❌ Manual fetch exception:", fetchError);
+                }
+                
+                // Final fallback: full page reload to let AuthContext handle it
+                console.log("🔄 All fetch methods failed, doing full page reload");
+                toast({
+                  title: "Session detected",
+                  description: "Reloading to complete login...",
+                });
                 window.location.reload();
               } catch (error) {
-                console.error("Error fetching user session:", error);
-                // Fallback: refresh page
+                console.error("❌ Error in Auth0 success handler:", error);
+                // Final fallback: reload page
+                console.log("🔄 Error occurred, reloading page");
                 window.location.reload();
               }
-            }, 1500);
+            }, 2000); // Increased delay to ensure cookies are set
           } else if (event.data.type === 'AUTH0_ERROR') {
             console.log("Processing AUTH0_ERROR message");
             setIsProcessing(true);
@@ -191,7 +246,7 @@ export function SocialLoginButton({
   return (
     <Button
       onClick={handleAuth0Login}
-      disabled={isLoading || isProcessing || isConnected}
+      disabled={isLoading || isProcessing || isFetchingUser || isConnected}
       variant={isConnected ? "outline" : "default"}
       className={`w-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
         isConnected
@@ -199,13 +254,13 @@ export function SocialLoginButton({
           : "bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900"
       }`}
       aria-label={isConnected ? `Connected to ${label}` : `Login with ${label}`}
-      aria-disabled={isLoading || isProcessing || isConnected}
+      aria-disabled={isLoading || isProcessing || isFetchingUser || isConnected}
       tabIndex={isConnected ? -1 : 0}
     >
-      {isLoading || isProcessing ? (
+      {isLoading || isProcessing || isFetchingUser ? (
         <>
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          {isProcessing ? "Processing..." : "Connecting..."}
+          {isFetchingUser ? "Loading session..." : isProcessing ? "Processing..." : "Connecting..."}
         </>
       ) : isConnected ? (
         <>
