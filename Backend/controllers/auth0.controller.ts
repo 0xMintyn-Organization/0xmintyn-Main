@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { CatchAsyncError } from '../middleware/catchAsyncError';
 import UserModel from '../models/user.mode';
 import ErrorHandler from '../utils/errorHandler';
-import { sendToken } from '../utils/jwt';
+import { accessTokenOptions, refreshTokenOptions } from '../utils/jwt';
 import { auth0Config } from '../config/auth0.config';
 
 // Generate Auth0 authorization URL
@@ -128,19 +128,9 @@ export const handleAuth0Callback = CatchAsyncError(async (req: Request, res: Res
         });
 
         // Set cookies and redirect to frontend
-        res.cookie('access_token', accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 1000, // 1 hour
-        });
+        res.cookie('access_token', accessToken, accessTokenOptions);
 
-        res.cookie('refresh_token', refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
-        });
+        res.cookie('refresh_token', refreshToken, refreshTokenOptions);
 
         // Redirect to Auth0 success page (handles popup closing)
         res.redirect(`${process.env.FRONTEND_URL || 'https://app.0xmintyn.com'}/auth0-success`);
