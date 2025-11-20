@@ -40,9 +40,11 @@ function UserRegistartionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [register, { data, error, isSuccess }] = useRegisterMutation();
-  const { data: userData } = useLoadUserQuery(undefined, {});
+  const { data: userData } = useLoadUserQuery(undefined, {
+    skip: true, // Skip auto-fetching - we'll check auth state manually
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -51,12 +53,16 @@ function UserRegistartionForm() {
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [honeypot, setHoneypot] = useState("");
 
-  // 🧠 Redirect if already logged in
+  // 🧠 Redirect if already logged in (but only if actually authenticated with real user data)
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push("/dashboard");
+    // Only redirect if:
+    // 1. Not loading
+    // 2. Authenticated flag is true
+    // 3. User object exists (not just a flag)
+    if (!isLoading && isAuthenticated && user) {
+      router.replace("/dashboard");
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, user]);
 
   // ✅ Handle registration result
   useEffect(() => {

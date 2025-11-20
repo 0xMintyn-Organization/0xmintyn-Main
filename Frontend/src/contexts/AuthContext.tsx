@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useLoadUserQuery } from '@/redux/features/api/apiSlice';
 import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { userLoggedOut } from '@/redux/features/auth/authSlice';
 
 interface User {
   _id: string;
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [shouldFetch, setShouldFetch] = useState(true);
   const router = useRouter();
+  const dispatch = useDispatch();
 
   // Get user from Redux store first
   const reduxUser = useSelector((state: any) => state.auth?.user);
@@ -44,7 +46,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    // Prioritize Redux store data if available
+    // If Redux says user is NOT authenticated, clear everything immediately
+    if (!reduxIsAuthenticated && !reduxUser) {
+      setUser(null);
+      setIsLoading(false);
+      setShouldFetch(false);
+      // Clear any stale localStorage data
+      localStorage.removeItem('user');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('loginTimestamp');
+      localStorage.removeItem('refreshToken');
+      return;
+    }
+
+    // Prioritize Redux store data if available AND authenticated
     if (reduxUser && reduxIsAuthenticated) {
       setUser(reduxUser);
       setIsLoading(false);
@@ -52,11 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Check if user data exists in localStorage
+    // Check if user data exists in localStorage (only if Redux doesn't explicitly say logged out)
     const cachedUser = localStorage.getItem('user');
     const cachedToken = localStorage.getItem('accessToken');
     
-    if (cachedUser && cachedToken) {
+    if (cachedUser && cachedToken && reduxIsAuthenticated !== false) {
       try {
         const parsedUser = JSON.parse(cachedUser);
         setUser(parsedUser);
@@ -70,23 +85,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setShouldFetch(true);
       }
     } else {
+      // No cached data or explicitly logged out
+      setUser(null);
       setShouldFetch(true);
     }
   }, [reduxUser, reduxIsAuthenticated]);
 
-  // Sync with Redux store changes
+  // Sync with Redux store changes - this is critical for logout
   useEffect(() => {
     if (reduxUser && reduxIsAuthenticated) {
       setUser(reduxUser);
       setIsLoading(false);
-    } else if (!reduxIsAuthenticated && reduxUser === null) {
+    } else if (!reduxIsAuthenticated || reduxUser === null) {
+      // User is logged out - clear everything
       setUser(null);
       setIsLoading(false);
+      setShouldFetch(false);
+      // Clear localStorage to prevent stale data
+      localStorage.removeItem('user');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('loginTimestamp');
+      localStorage.removeItem('refreshToken');
     }
   }, [reduxUser, reduxIsAuthenticated]);
 
   useEffect(() => {
-    if (data?.user) {
+    // Check Redux state first - if explicitly logged out, don't set user even if API returns data
+    if (!reduxIsAuthenticated && reduxUser === null) {
+      setUser(null);
+      setIsLoading(false);
+      setShouldFetch(false);
+      return;
+    }
+
+    if (data?.user && reduxIsAuthenticated !== false) {
       setUser(data.user);
       setIsLoading(false);
       setShouldFetch(false);
@@ -103,8 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setIsLoading(false);
       setShouldFetch(false);
+      // Clear any stale cache
+      localStorage.removeItem('user');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('loginTimestamp');
     }
-  }, [data, queryLoading, shouldFetch]);
+  }, [data, queryLoading, shouldFetch, reduxIsAuthenticated, reduxUser]);
 
   const refetchUser = () => {
     setShouldFetch(true);
@@ -112,6 +148,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    // Clear Redux state FIRST - this is critical
+    dispatch(userLoggedOut());
+    
     // Clear all local storage items
     localStorage.removeItem('user');
     localStorage.removeItem('accessToken');
@@ -134,7 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     }
     
-    // Clear state
+    // Clear local state
     setUser(null);
     setIsLoading(false);
     setShouldFetch(false);

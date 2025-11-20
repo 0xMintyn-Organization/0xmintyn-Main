@@ -10,20 +10,22 @@ interface ProtectedProps {
 }
 
 export default function Protected({ children }: ProtectedProps) {
-    const { isLoading, isAuthenticated } = useAuth();
+    const { isLoading, isAuthenticated, user } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            router.push("/login");
+        // If not loading and not authenticated (or no user), redirect to login
+        if (!isLoading && (!isAuthenticated || !user)) {
+            router.replace("/login");
         }
-    }, [isLoading, isAuthenticated, router]);
+    }, [isLoading, isAuthenticated, user, router]);
 
     if (isLoading) {
         return <Spinner />;
     }
 
-    if (!isAuthenticated) {
+    // Double check - if still not authenticated after loading, redirect
+    if (!isAuthenticated || !user) {
         return <Spinner />; // Show spinner while redirecting
     }
 

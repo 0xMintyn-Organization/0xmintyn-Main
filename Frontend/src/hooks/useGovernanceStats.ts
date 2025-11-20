@@ -17,7 +17,7 @@ export function useGovernanceStats() {
     const fetchStats = async () => {
       try {
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SERVER_URI}governance/proposal/stats`,
+          `${process.env.NEXT_PUBLIC_SERVER_URI}proposal/stats`,
           { withCredentials: true }
         );
 
@@ -26,6 +26,14 @@ export function useGovernanceStats() {
         }
       } catch (error) {
         console.error('Error fetching governance stats:', error);
+        // Set default stats on error to prevent infinite loading
+        setStats({
+          totalProposals: 0,
+          totalVotes: 0,
+          activeProposals: 0,
+          passedProposals: 0,
+          rejectedProposals: 0,
+        });
       } finally {
         setLoading(false);
       }
