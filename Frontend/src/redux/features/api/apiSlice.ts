@@ -95,22 +95,49 @@ export const apiSlice = createApi({
                 } catch (error: any) {
                     console.log('Load user error:', error);
                     
-                    // Only log out if it's an authentication error (401, 403)
-                    // Don't log out on network errors or other issues
-                    const isAuthError = error?.status === 401 || 
-                                       error?.status === 403 ||
-                                       (error?.error?.status === 401) ||
-                                       (error?.error?.status === 403);
+                    // Check if it's an authentication error
+                    // Backend might return 400 with "Please login" message, which is also an auth error
+                    const errorStatus = error?.status || error?.error?.status;
+                    const errorData = error?.data || error?.error?.data;
+                    const errorMessage = typeof errorData === 'string' 
+                        ? errorData 
+                        : errorData?.error || errorData?.message || '';
                     
+                    const isAuthError = errorStatus === 401 || 
+                                       errorStatus === 403 ||
+                                       (errorStatus === 400 && (
+                                           errorMessage.toLowerCase().includes('login') ||
+                                           errorMessage.toLowerCase().includes('authenticate') ||
+                                           errorMessage.toLowerCase().includes('unauthorized') ||
+                                           errorMessage.toLowerCase().includes('access')
+                                       ));
+                    
+                    // Only log out if:
+                    // 1. It's an auth error AND
+                    // 2. There's actually a user logged in (check localStorage or Redux state)
+                    // 3. AND the error message explicitly says to login (not just a network issue)
                     if (isAuthError) {
-                        // Clear localStorage on auth error
-                        if (typeof window !== 'undefined') {
-                            localStorage.removeItem('user');
-                            localStorage.removeItem('accessToken');
-                            localStorage.removeItem('loginTimestamp');
-                            localStorage.removeItem('refreshToken');
+                        const state = getState() as any;
+                        const hasUserInState = state.auth?.user || state.auth?.isAuthenticated;
+                        const hasUserInStorage = typeof window !== 'undefined' && localStorage.getItem('user');
+                        
+                        // Only log out if there's actually a user to log out
+                        // AND the error is a real auth error (not just a bad request format)
+                        if ((hasUserInState || hasUserInStorage) && 
+                            (errorStatus === 401 || errorStatus === 403 || 
+                             errorMessage.toLowerCase().includes('login') ||
+                             errorMessage.toLowerCase().includes('authenticate'))) {
+                            // Clear localStorage on auth error
+                            if (typeof window !== 'undefined') {
+                                localStorage.removeItem('user');
+                                localStorage.removeItem('accessToken');
+                                localStorage.removeItem('loginTimestamp');
+                                localStorage.removeItem('refreshToken');
+                            }
+                            dispatch(userLoggedOut());
                         }
-                        dispatch(userLoggedOut());
+                        // If no user is logged in, just silently fail - don't log out nothing
+                        // This handles the case where /me is called before login
                     }
                     // For other errors (network, etc.), don't log out - user might still be valid
                 }

@@ -22,12 +22,15 @@ if (typeof window !== 'undefined') {
         const cachedUser = localStorage.getItem('user');
         const cachedToken = localStorage.getItem('accessToken');
         
-        if (cachedUser && cachedToken) {
+        // If we have user data, restore state even if token is missing (token might be in httpOnly cookie)
+        // The API call will verify and refresh the token
+        if (cachedUser) {
             try {
                 const user = JSON.parse(cachedUser);
                 // Set initial state from localStorage (optimistic) - this happens synchronously
+                // Use empty string for token if not found - it might be in httpOnly cookie
                 store.dispatch(userLoggedIn({
-                    accessToken: cachedToken,
+                    accessToken: cachedToken || '',
                     user: user
                 }));
             } catch (error) {

@@ -60,6 +60,18 @@ export const authApi = apiSlice.injectEndpoints({
             async onQueryStarted(arg, { dispatch, queryFulfilled }) {
                 try {
                     const result = await queryFulfilled;
+                    
+                    // Save to localStorage immediately after successful login
+                    if (typeof window !== 'undefined' && result.data) {
+                        if (result.data.user) {
+                            localStorage.setItem('user', JSON.stringify(result.data.user));
+                        }
+                        if (result.data.accessToken) {
+                            localStorage.setItem('accessToken', result.data.accessToken);
+                            localStorage.setItem('loginTimestamp', Date.now().toString());
+                        }
+                    }
+                    
                     dispatch(userLoggedIn({
                         accessToken: result.data.accessToken,
                         user: result.data.user
@@ -84,6 +96,18 @@ export const authApi = apiSlice.injectEndpoints({
             async onQueryStarted(arg, { dispatch, queryFulfilled }) {
                 try {
                     const result = await queryFulfilled;
+                    
+                    // Save to localStorage immediately after successful social auth
+                    if (typeof window !== 'undefined' && result.data) {
+                        if (result.data.user) {
+                            localStorage.setItem('user', JSON.stringify(result.data.user));
+                        }
+                        if (result.data.accessToken) {
+                            localStorage.setItem('accessToken', result.data.accessToken);
+                            localStorage.setItem('loginTimestamp', Date.now().toString());
+                        }
+                    }
+                    
                     dispatch(userLoggedIn({
                         accessToken: result.data.accessToken,
                         user: result.data.user
