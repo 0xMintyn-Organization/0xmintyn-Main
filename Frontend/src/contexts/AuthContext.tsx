@@ -53,8 +53,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // If Redux explicitly says logged out (not just empty on initial load) and no cache, clear everything
     if (!reduxIsAuthenticated && !reduxUser && !hasCachedData) {
       setUser(null);
-      setIsLoading(false);
-      setShouldFetch(false);
+      // We still want to check server-side session (e.g., Auth0/social login cookies),
+      // so keep loading state true and allow fetch to run.
+      setIsLoading(true);
+      setShouldFetch(true);
       return;
     }
     
