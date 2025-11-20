@@ -50,9 +50,23 @@ export default function LoginPage() {
 
   // 🧠 Redirect if already logged in
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push("/dashboard");
-    }
+    // Wait a bit longer after page load to allow Auth0 session to be detected
+    const checkAuth = () => {
+      if (!isLoading && isAuthenticated) {
+        console.log("User authenticated, redirecting to dashboard");
+        router.push("/dashboard");
+      }
+    };
+
+    // Check immediately
+    checkAuth();
+
+    // Also check after a short delay (for Auth0/social login sessions that need time to load)
+    const timeoutId = setTimeout(() => {
+      checkAuth();
+    }, 2000);
+
+    return () => clearTimeout(timeoutId);
   }, [isAuthenticated, isLoading, router]);
 
   // ✅ Handle login result

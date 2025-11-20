@@ -37,13 +37,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
 
   // Get user from Redux store first
-  const reduxUser = useSelector((state: any) => state.auth?.user);
-  const reduxIsAuthenticated = useSelector((state: any) => state.auth?.isAuthenticated);
+  const reduxUser = useSelector((state: { auth?: { user: User | null; isAuthenticated: boolean } }) => state.auth?.user);
+  const reduxIsAuthenticated = useSelector((state: { auth?: { user: User | null; isAuthenticated: boolean } }) => state.auth?.isAuthenticated);
 
   // Only fetch user data when needed
   const { data, isLoading: queryLoading, refetch } = useLoadUserQuery(undefined, {
     skip: !shouldFetch,
   });
+
+  // On initial mount, always try to fetch user session (for Auth0/social login cookies)
+  useEffect(() => {
+    // On mount, if no user data anywhere, try fetching from server (cookies might exist)
+    const hasCachedUser = localStorage.getItem('user');
+    const hasReduxUser = reduxUser && reduxIsAuthenticated;
+    
+    if (!hasCachedUser && !hasReduxUser && !shouldFetch) {
+      console.log("No cached user found, checking server-side session (cookies)");
+      setShouldFetch(true);
+      setIsLoading(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount - intentionally not including deps
 
   useEffect(() => {
     // Only clear if Redux explicitly says user is logged out AND there's no cached data
@@ -131,8 +145,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [reduxUser, reduxIsAuthenticated]);
 
   useEffect(() => {
-    // Check Redux state first - if explicitly logged out, don't set user even if API returns data
-    if (!reduxIsAuthenticated && reduxUser === null) {
+    // Check Redux state first - only skip if EXPLICITLY logged out (not just empty on initial load)
+    // After page refresh, Redux state is empty but we still need to check server-side session
+    const hasCachedData = typeof window !== 'undefined' && 
+                          (localStorage.getItem('user') || localStorage.getItem('accessToken'));
+    const explicitlyLoggedOut = reduxIsAuthenticated === false && reduxUser === null && !hasCachedData;
+    
+    if (explicitlyLoggedOut) {
+      console.log("User explicitly logged out, skipping fetch");
       setUser(null);
       setIsLoading(false);
       setShouldFetch(false);
@@ -140,6 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (data?.user && reduxIsAuthenticated !== false) {
+      console.log("User data received from API:", data.user.email);
       setUser(data.user);
       setIsLoading(false);
       setShouldFetch(false);
@@ -152,14 +173,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('loginTimestamp', Date.now().toString());
       }
     } else if (!queryLoading && shouldFetch) {
-      // No user data and not loading, user is not authenticated
-      setUser(null);
-      setIsLoading(false);
-      setShouldFetch(false);
-      // Clear any stale cache
-      localStorage.removeItem('user');
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('loginTimestamp');
+      // Query completed but no user data returned
+      console.log("loadUser query completed but no user data found");
+      
+      // Only clear cache if we're sure there's no session (not just a network error)
+      // Don't clear on initial load - might be checking for Auth0 cookies
+      const hasCached = typeof window !== 'undefined' && localStorage.getItem('user');
+      if (!hasCached) {
+        setUser(null);
+        setIsLoading(false);
+        setShouldFetch(false);
+      } else {
+        // Keep cached data if query failed but we have cache
+        console.log("Query failed but cache exists, keeping cached user");
+        setIsLoading(false);
+        setShouldFetch(false);
+      }
     }
   }, [data, queryLoading, shouldFetch, reduxIsAuthenticated, reduxUser]);
 

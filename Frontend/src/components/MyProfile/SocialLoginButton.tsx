@@ -93,11 +93,51 @@ export function SocialLoginButton({
               popup.postMessage({ type: 'CLOSE_POPUP' }, window.location.origin);
             }
             
-            // Simply refresh the page after a short delay
-            setTimeout(() => {
-              console.log("Refreshing page after Auth0 success");
-              window.location.reload();
-            }, 1000);
+            // Wait a bit for cookies to be set, then fetch user session
+            setTimeout(async () => {
+              try {
+                console.log("Fetching user session after Auth0 success");
+                // Explicitly fetch user from server (cookies should be set)
+                const userResponse = await fetch(
+                  `${process.env.NEXT_PUBLIC_SERVER_URI}me`,
+                  {
+                    method: "GET",
+                    credentials: "include",
+                  }
+                );
+
+                if (userResponse.ok) {
+                  const userData = await userResponse.json();
+                  console.log("User session fetched:", userData);
+                  
+                  if (userData.user && userData.accessToken) {
+                    // Update Redux state
+                    dispatch(userLoggedIn({
+                      accessToken: userData.accessToken,
+                      user: userData.user
+                    }));
+                    
+                    // Update localStorage
+                    localStorage.setItem('user', JSON.stringify(userData.user));
+                    localStorage.setItem('accessToken', userData.accessToken);
+                    localStorage.setItem('loginTimestamp', Date.now().toString());
+                    
+                    // Redirect to dashboard
+                    console.log("Redirecting to dashboard");
+                    router.push(redirectTo);
+                    return;
+                  }
+                }
+                
+                // Fallback: refresh page if fetch fails
+                console.log("User fetch failed, refreshing page as fallback");
+                window.location.reload();
+              } catch (error) {
+                console.error("Error fetching user session:", error);
+                // Fallback: refresh page
+                window.location.reload();
+              }
+            }, 1500);
           } else if (event.data.type === 'AUTH0_ERROR') {
             console.log("Processing AUTH0_ERROR message");
             setIsProcessing(true);
