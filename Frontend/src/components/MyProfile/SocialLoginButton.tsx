@@ -146,25 +146,33 @@ export function SocialLoginButton({
                 if (userResponse.ok) {
                   const userData = await userResponse.json();
                   console.log("✅ User data fetched with token:", userData.user?.email);
+                  console.log("Full response:", userData);
                   
-                  if (userData.user && userData.accessToken) {
+                  // /me endpoint returns user but not accessToken
+                  // Use the token from URL parameter instead
+                  if (userData.user && userData.success) {
                     // Clear explicit logout flag
                     sessionStorage.removeItem('explicit_logout');
                     
+                    // Use token from URL parameter (we already have it)
+                    const accessTokenToUse = token; // Use token from message
+                    
+                    console.log("Using token from URL parameter for login");
+                    
                     // Update Redux immediately
                     dispatch(userLoggedIn({
-                      accessToken: userData.accessToken,
+                      accessToken: accessTokenToUse,
                       user: userData.user
                     }));
                     
                     // Update localStorage
                     localStorage.setItem('user', JSON.stringify(userData.user));
-                    localStorage.setItem('accessToken', userData.accessToken);
+                    localStorage.setItem('accessToken', accessTokenToUse);
                     localStorage.setItem('loginTimestamp', Date.now().toString());
                     
                     console.log("✅ User logged in successfully!");
                     console.log("User data:", userData.user);
-                    console.log("Access token:", userData.accessToken ? "Present" : "Missing");
+                    console.log("Access token:", accessTokenToUse ? "Present (from URL)" : "Missing");
                     console.log("Redux state after dispatch:", "Check Redux DevTools");
                     console.log("LocalStorage:", {
                       user: localStorage.getItem('user') ? "Present" : "Missing",
@@ -177,6 +185,8 @@ export function SocialLoginButton({
                     // setTimeout(() => {
                     //   router.push(redirectTo);
                     // }, 300);
+                  } else {
+                    console.error("❌ Response missing user or success flag:", userData);
                   }
                 } else {
                   console.warn("⚠️ Token-based fetch failed with status:", userResponse.status);
@@ -223,24 +233,36 @@ export function SocialLoginButton({
                   console.log("✅ User session fetched successfully via cookies:", userData.user?.email);
                   console.log("Cookie fetch result:", userData);
                   
-                  if (userData.user && userData.accessToken) {
+                  // /me endpoint returns user but not accessToken
+                  // When using cookie-based auth, cookies handle authentication
+                  // We can use a placeholder token or check if token exists in response
+                  if (userData.user && userData.success) {
                     // Clear explicit logout flag
                     sessionStorage.removeItem('explicit_logout');
                     
+                    // For cookie-based auth, accessToken might not be in response
+                    // Check if it's in the response, otherwise use empty string
+                    // (cookies will handle auth, but Redux might need a token value)
+                    const accessTokenToUse = userData.accessToken || 'cookie-auth'; // Placeholder for cookie-based auth
+                    
                     // Update Redux and localStorage manually
                     dispatch(userLoggedIn({
-                      accessToken: userData.accessToken,
+                      accessToken: accessTokenToUse,
                       user: userData.user
                     }));
                     
                     localStorage.setItem('user', JSON.stringify(userData.user));
-                    localStorage.setItem('accessToken', userData.accessToken);
+                    // Only store accessToken if we have it, otherwise rely on cookies
+                    if (userData.accessToken) {
+                      localStorage.setItem('accessToken', userData.accessToken);
+                    }
                     localStorage.setItem('loginTimestamp', Date.now().toString());
                     
+                    console.log("✅ Cookie-based login successful!");
                     console.log("Redux state after cookie fetch:", "Check Redux DevTools");
                     console.log("LocalStorage after cookie fetch:", {
                       user: localStorage.getItem('user') ? "Present" : "Missing",
-                      accessToken: localStorage.getItem('accessToken') ? "Present" : "Missing"
+                      accessToken: localStorage.getItem('accessToken') ? "Present" : "Missing (using cookies)"
                     });
                     
                     // TEMPORARILY DISABLED FOR DEBUGGING - Don't redirect yet
@@ -249,7 +271,7 @@ export function SocialLoginButton({
                     setIsFetchingUser(false);
                     return;
                   } else {
-                    console.error("❌ Cookie fetch returned data but missing user or accessToken:", userData);
+                    console.error("❌ Cookie fetch returned data but missing user or success flag:", userData);
                   }
                 } else {
                   const errorText = await userResponse.text();
