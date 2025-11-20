@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { UserModel } from "../../models/user.mode";
+import UserModel from "../../models/user.mode";
 import { CourseModel } from "../../models/course.model";
 import { MarketplaceProductModel } from "../../models/marketplace/MarketplaceProduct.model";
 import { MarketplaceServiceModel } from "../../models/marketplace/MarketplaceService.model";
@@ -43,9 +43,11 @@ export const getTotalUsers = async (req: Request, res: Response) => {
 // Get total instructors count
 export const getTotalInstructors = async (req: Request, res: Response) => {
   try {
+    console.log("Fetching total instructors...");
     const totalInstructors = await UserModel.countDocuments({ 
       role: "instructor" 
     });
+    console.log("Total instructors found:", totalInstructors);
     
     // Calculate growth from last month
     const lastMonth = new Date();
@@ -56,7 +58,7 @@ export const getTotalInstructors = async (req: Request, res: Response) => {
     });
     const growth = lastMonthInstructors > 0 
       ? ((totalInstructors - lastMonthInstructors) / lastMonthInstructors * 100).toFixed(0)
-      : "0";
+      : totalInstructors > 0 ? "100" : "0";
 
     res.status(200).json({
       success: true,
@@ -68,9 +70,11 @@ export const getTotalInstructors = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Error fetching total instructors:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch total instructors"
+      message: error.message || "Failed to fetch total instructors",
+      error: error.toString()
     });
   }
 };
@@ -78,7 +82,9 @@ export const getTotalInstructors = async (req: Request, res: Response) => {
 // Get total courses count
 export const getTotalCourses = async (req: Request, res: Response) => {
   try {
+    console.log("Fetching total courses...");
     const totalCourses = await CourseModel.countDocuments();
+    console.log("Total courses found:", totalCourses);
     
     // Calculate growth from last month
     const lastMonth = new Date();
@@ -88,7 +94,7 @@ export const getTotalCourses = async (req: Request, res: Response) => {
     });
     const growth = lastMonthCourses > 0 
       ? ((totalCourses - lastMonthCourses) / lastMonthCourses * 100).toFixed(0)
-      : "0";
+      : totalCourses > 0 ? "100" : "0";
 
     res.status(200).json({
       success: true,
@@ -100,9 +106,11 @@ export const getTotalCourses = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Error fetching total courses:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch total courses"
+      message: error.message || "Failed to fetch total courses",
+      error: error.toString()
     });
   }
 };
@@ -110,10 +118,12 @@ export const getTotalCourses = async (req: Request, res: Response) => {
 // Get total products count
 export const getTotalProducts = async (req: Request, res: Response) => {
   try {
+    console.log("Fetching total products...");
     const totalProducts = await MarketplaceProductModel.countDocuments({ 
       isApproved: true, 
       isActive: true 
     });
+    console.log("Total products found:", totalProducts);
     
     // Calculate growth from last month
     const lastMonth = new Date();
@@ -125,7 +135,7 @@ export const getTotalProducts = async (req: Request, res: Response) => {
     });
     const growth = lastMonthProducts > 0 
       ? ((totalProducts - lastMonthProducts) / lastMonthProducts * 100).toFixed(0)
-      : "0";
+      : totalProducts > 0 ? "100" : "0";
 
     res.status(200).json({
       success: true,
@@ -137,9 +147,11 @@ export const getTotalProducts = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Error fetching total products:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch total products"
+      message: error.message || "Failed to fetch total products",
+      error: error.toString()
     });
   }
 };
@@ -147,10 +159,12 @@ export const getTotalProducts = async (req: Request, res: Response) => {
 // Get total services count
 export const getTotalServices = async (req: Request, res: Response) => {
   try {
+    console.log("Fetching total services...");
     const totalServices = await MarketplaceServiceModel.countDocuments({ 
       isApproved: true, 
       isActive: true 
     });
+    console.log("Total services found:", totalServices);
     
     // Calculate growth from last month
     const lastMonth = new Date();
@@ -162,7 +176,7 @@ export const getTotalServices = async (req: Request, res: Response) => {
     });
     const growth = lastMonthServices > 0 
       ? ((totalServices - lastMonthServices) / lastMonthServices * 100).toFixed(0)
-      : "0";
+      : totalServices > 0 ? "100" : "0";
 
     res.status(200).json({
       success: true,
@@ -174,9 +188,11 @@ export const getTotalServices = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Error fetching total services:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch total services"
+      message: error.message || "Failed to fetch total services",
+      error: error.toString()
     });
   }
 };

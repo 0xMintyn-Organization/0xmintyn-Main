@@ -168,6 +168,7 @@ export default function EnhancedDashboard() {
         setLoading(true);
 
         // Fetch all stats in parallel (excluding Total Users - admin only)
+        // Wrap each call in error handling so one failure doesn't break all
         const [
           instructorsData,
           coursesData,
@@ -182,17 +183,50 @@ export default function EnhancedDashboard() {
           activityList,
           enrolledCoursesData
         ] = await Promise.all([
-          dashboardAPI.getTotalInstructors(),
-          dashboardAPI.getTotalCourses(),
-          dashboardAPI.getTotalProducts(),
-          dashboardAPI.getTotalServices(),
-          dashboardAPI.getAvgRating(),
-          dashboardAPI.getTopInstructors(12), // Fetch more for the instructors tab
-          dashboardAPI.getTopProducts(4),
-          dashboardAPI.getTopServices(4),
-          dashboardAPI.getTopSellers(4),
-          dashboardAPI.getTrendingCategories(),
-          dashboardAPI.getRecentActivity(10),
+          dashboardAPI.getTotalInstructors().catch((err) => {
+            console.error("Error fetching instructors:", err);
+            return { success: false, data: { totalInstructors: 0, change: "+0%" } };
+          }),
+          dashboardAPI.getTotalCourses().catch((err) => {
+            console.error("Error fetching courses:", err);
+            return { success: false, data: { totalCourses: 0, change: "+0%" } };
+          }),
+          dashboardAPI.getTotalProducts().catch((err) => {
+            console.error("Error fetching products:", err);
+            return { success: false, data: { totalProducts: 0, change: "+0%" } };
+          }),
+          dashboardAPI.getTotalServices().catch((err) => {
+            console.error("Error fetching services:", err);
+            return { success: false, data: { totalServices: 0, change: "+0%" } };
+          }),
+          dashboardAPI.getAvgRating().catch((err) => {
+            console.error("Error fetching rating:", err);
+            return { success: false, data: { avgRating: 0, change: "+0.0" } };
+          }),
+          dashboardAPI.getTopInstructors(12).catch((err) => {
+            console.error("Error fetching top instructors:", err);
+            return { success: false, data: { instructors: [] } };
+          }),
+          dashboardAPI.getTopProducts(4).catch((err) => {
+            console.error("Error fetching top products:", err);
+            return { success: false, data: { products: [] } };
+          }),
+          dashboardAPI.getTopServices(4).catch((err) => {
+            console.error("Error fetching top services:", err);
+            return { success: false, data: { services: [] } };
+          }),
+          dashboardAPI.getTopSellers(4).catch((err) => {
+            console.error("Error fetching top sellers:", err);
+            return { success: false, data: { sellers: [] } };
+          }),
+          dashboardAPI.getTrendingCategories().catch((err) => {
+            console.error("Error fetching categories:", err);
+            return { success: false, data: { categories: [] } };
+          }),
+          dashboardAPI.getRecentActivity(10).catch((err) => {
+            console.error("Error fetching activity:", err);
+            return { success: false, data: { activities: [] } };
+          }),
           apiCall({
             method: 'GET',
             url: 'enrollment/my-courses'
@@ -200,40 +234,59 @@ export default function EnhancedDashboard() {
         ]);
 
         // Update platform stats (Total Users removed - admin only)
+        // Log data for debugging
+        console.log("Dashboard API Responses:", {
+          instructors: instructorsData,
+          courses: coursesData,
+          products: productsData,
+          services: servicesData,
+          rating: ratingData
+        });
+        
         setPlatformStats([
           {
             icon: GraduationCap,
             label: "Instructors",
-            value: instructorsData.data?.totalInstructors?.toLocaleString() || "0",
-            change: instructorsData.data?.change || "+0%",
+            value: (instructorsData?.success && instructorsData?.data?.totalInstructors) 
+              ? instructorsData.data.totalInstructors.toLocaleString() 
+              : "0",
+            change: instructorsData?.data?.change || instructorsData?.data?.growth || "+0%",
             color: "text-slate-400"
           },
           {
             icon: BookOpen,
             label: "Courses",
-            value: coursesData.data?.totalCourses?.toLocaleString() || "0",
-            change: coursesData.data?.change || "+0%",
+            value: (coursesData?.success && coursesData?.data?.totalCourses) 
+              ? coursesData.data.totalCourses.toLocaleString() 
+              : "0",
+            change: coursesData?.data?.change || coursesData?.data?.growth || "+0%",
             color: "text-slate-400"
           },
           {
             icon: Package,
             label: "Products",
-            value: productsData.data?.totalProducts?.toLocaleString() || "0",
-            change: productsData.data?.change || "+0%",
+            value: (productsData?.success && productsData?.data?.totalProducts) 
+              ? productsData.data.totalProducts.toLocaleString() 
+              : "0",
+            change: productsData?.data?.change || productsData?.data?.growth || "+0%",
             color: "text-slate-400"
           },
           {
             icon: Briefcase,
             label: "Services",
-            value: servicesData.data?.totalServices?.toLocaleString() || "0",
-            change: servicesData.data?.change || "+0%",
+            value: (servicesData?.success && servicesData?.data?.totalServices) 
+              ? servicesData.data.totalServices.toLocaleString() 
+              : "0",
+            change: servicesData?.data?.change || servicesData?.data?.growth || "+0%",
             color: "text-slate-400"
           },
           {
             icon: Star,
             label: "Avg Rating",
-            value: ratingData.data?.avgRating?.toFixed(1) || "0.0",
-            change: ratingData.data?.change || "+0.0",
+            value: (ratingData?.success && ratingData?.data?.avgRating !== undefined) 
+              ? ratingData.data.avgRating.toFixed(1) 
+              : "0.0",
+            change: ratingData?.data?.change || ratingData?.data?.growth || "+0.0",
             color: "text-slate-400"
           }
         ]);
@@ -305,8 +358,22 @@ export default function EnhancedDashboard() {
           setEnrolledCourses([]);
         }
 
-      } catch (error: unknown) {
+      } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
+        console.error("Error details:", {
+          message: error?.message,
+          response: error?.response?.data,
+          status: error?.response?.status
+        });
+        
+        // Set default values on error but don't crash
+        setPlatformStats([
+          { icon: GraduationCap, label: "Instructors", value: "0", change: "+0%", color: "text-slate-400" },
+          { icon: BookOpen, label: "Courses", value: "0", change: "+0%", color: "text-slate-400" },
+          { icon: Package, label: "Products", value: "0", change: "+0%", color: "text-slate-400" },
+          { icon: Briefcase, label: "Services", value: "0", change: "+0%", color: "text-slate-400" },
+          { icon: Star, label: "Avg Rating", value: "0.0", change: "+0.0", color: "text-slate-400" }
+        ]);
       } finally {
         setLoading(false);
       }
