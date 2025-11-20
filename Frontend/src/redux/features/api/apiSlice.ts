@@ -29,6 +29,12 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
         } else {
             console.log('Token refresh failed, logging out user');
             // Refresh failed, log out the user
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('user');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('loginTimestamp');
+                localStorage.removeItem('refreshToken');
+            }
             api.dispatch(userLoggedOut());
         }
     }
@@ -59,21 +65,54 @@ export const apiSlice = createApi({
                 try {
                     const result = await queryFulfilled;
                     
-                    // Only log in if user is not already logged out
-                    // Check Redux state to prevent auto-login after logout
-                    const state = getState() as any;
-                    const isLoggedOut = !state.auth?.isAuthenticated && !state.auth?.user;
-                    
-                    if (!isLoggedOut && result.data?.user) {
-                        dispatch(userLoggedIn({
-                            accessToken: result.data.accessToken,
-                            user: result.data.user
-                        }));
+                    // If API returns user data, log them in
+                    // On page refresh, Redux state is empty, so we trust the API response
+                    if (result.data?.user) {
+                        const state = getState() as any;
+                        
+                        // Only check Redux state if it explicitly says user is logged out
+                        // On initial load, state.auth will be empty (not explicitly logged out)
+                        const explicitlyLoggedOut = state.auth?.isAuthenticated === false && 
+                                                     state.auth?.user === null &&
+                                                     !localStorage.getItem('user'); // Also check localStorage
+                        
+                        // If not explicitly logged out, log in the user
+                        if (!explicitlyLoggedOut) {
+                            dispatch(userLoggedIn({
+                                accessToken: result.data.accessToken,
+                                user: result.data.user
+                            }));
+                            
+                            // Also update localStorage for persistence
+                            if (typeof window !== 'undefined') {
+                                localStorage.setItem('user', JSON.stringify(result.data.user));
+                                if (result.data.accessToken) {
+                                    localStorage.setItem('accessToken', result.data.accessToken);
+                                }
+                            }
+                        }
                     }
-                } catch (error) {
-                    console.log(error);
-                    // On error (401, etc.), ensure user is logged out
-                    dispatch(userLoggedOut());
+                } catch (error: any) {
+                    console.log('Load user error:', error);
+                    
+                    // Only log out if it's an authentication error (401, 403)
+                    // Don't log out on network errors or other issues
+                    const isAuthError = error?.status === 401 || 
+                                       error?.status === 403 ||
+                                       (error?.error?.status === 401) ||
+                                       (error?.error?.status === 403);
+                    
+                    if (isAuthError) {
+                        // Clear localStorage on auth error
+                        if (typeof window !== 'undefined') {
+                            localStorage.removeItem('user');
+                            localStorage.removeItem('accessToken');
+                            localStorage.removeItem('loginTimestamp');
+                            localStorage.removeItem('refreshToken');
+                        }
+                        dispatch(userLoggedOut());
+                    }
+                    // For other errors (network, etc.), don't log out - user might still be valid
                 }
             }
         }),
