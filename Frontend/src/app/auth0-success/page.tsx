@@ -13,17 +13,32 @@ export default function Auth0SuccessPage() {
   useEffect(() => {
     const handleAuth0Success = async () => {
       try {
+        // Extract token and userId from URL (passed by backend)
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const userId = urlParams.get('userId');
+        
+        // Remove token from URL for security (after extracting)
+        if (token) {
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
+        }
+        
+        console.log("Auth0 success - token in URL:", !!token, "userId:", userId);
+        
         // Check if we're in a popup
         if (window.opener) {
           console.log("Auth0 success page loaded in popup");
           
-          // Send success signal immediately
+          // Send success signal with token to parent window
           const message = {
             type: 'AUTH0_SUCCESS',
+            token: token || null, // Pass token if available
+            userId: userId || null,
             timestamp: Date.now(),
           };
           
-          console.log("Sending success signal to parent window");
+          console.log("Sending success signal to parent window with token:", !!message.token);
           
           // Send message immediately and multiple times
           window.opener.postMessage(message, window.location.origin);
@@ -47,7 +62,35 @@ export default function Auth0SuccessPage() {
           console.log("Message sent, waiting for parent to close popup");
           
         } else {
-          // We're not in a popup - redirect normally
+          // We're not in a popup - if we have token, save it and redirect
+          if (token && userId) {
+            // Fetch full user data with token
+            try {
+              const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}me`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              });
+              
+              if (response.ok) {
+                const userData = await response.json();
+                if (userData.user && userData.accessToken) {
+                  dispatch(userLoggedIn({
+                    accessToken: userData.accessToken,
+                    user: userData.user
+                  }));
+                  localStorage.setItem('user', JSON.stringify(userData.user));
+                  localStorage.setItem('accessToken', userData.accessToken);
+                  localStorage.setItem('loginTimestamp', Date.now().toString());
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching user:", error);
+            }
+          }
+          
           router.push("/dashboard");
         }
       } catch (error) {

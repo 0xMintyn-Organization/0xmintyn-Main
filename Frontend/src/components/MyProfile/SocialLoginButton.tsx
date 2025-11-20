@@ -101,98 +101,129 @@ export function SocialLoginButton({
               popup.postMessage({ type: 'CLOSE_POPUP' }, window.location.origin);
             }
             
-            // Wait a bit for cookies to be set, then fetch user session using RTK Query
+            // Extract token from message if available (passed from backend via URL)
+            const token = event.data.token;
+            const userId = event.data.userId;
+            
+            console.log("=== Auth0 Success Handler ===");
+            console.log("Token in message:", !!token, "UserId:", userId);
+            
+            // If we have token from URL, use it immediately (fastest path)
+            if (token && userId) {
+              console.log("✅ Using token from popup message for immediate login");
+              
+              try {
+                // Fetch user data using the token
+                const userResponse = await fetch(
+                  `${process.env.NEXT_PUBLIC_SERVER_URI}me`,
+                  {
+                    method: "GET",
+                    credentials: "include",
+                    headers: {
+                      'Accept': 'application/json',
+                      'Authorization': `Bearer ${token}`,
+                    },
+                  }
+                );
+
+                if (userResponse.ok) {
+                  const userData = await userResponse.json();
+                  console.log("✅ User data fetched with token:", userData.user?.email);
+                  
+                  if (userData.user && userData.accessToken) {
+                    // Update Redux immediately
+                    dispatch(userLoggedIn({
+                      accessToken: userData.accessToken,
+                      user: userData.user
+                    }));
+                    
+                    // Update localStorage
+                    localStorage.setItem('user', JSON.stringify(userData.user));
+                    localStorage.setItem('accessToken', userData.accessToken);
+                    localStorage.setItem('loginTimestamp', Date.now().toString());
+                    
+                    console.log("✅ User logged in, redirecting to dashboard");
+                    // Small delay to ensure state propagates
+                    setTimeout(() => {
+                      router.push(redirectTo);
+                    }, 300);
+                    return;
+                  }
+                } else {
+                  console.warn("⚠️ Token-based fetch failed, falling back to cookie-based");
+                }
+              } catch (error) {
+                console.error("❌ Error with token-based fetch:", error);
+                // Fall through to cookie-based approach
+              }
+            }
+            
+            // Fallback: Wait for cookies to be set, then fetch using RTK Query
+            console.log("Using cookie-based authentication (fallback)");
             setTimeout(async () => {
               try {
-                console.log("=== Auth0 Success Handler ===");
-                console.log("Checking for cookies...");
-                console.log("Document cookies:", document.cookie);
-                console.log("Fetching user session after Auth0 success using RTK Query");
+                console.log("Fetching user session using RTK Query (cookies)");
                 
                 // Use RTK Query's refetch - this properly handles cookies and updates Redux
                 const result = await refetchUser();
                 
                 console.log("Refetch result:", {
-                  data: result.data,
-                  error: result.error,
                   isSuccess: result.isSuccess,
                   isError: result.isError,
+                  hasData: !!result.data,
                 });
                 
                 if (result.isSuccess && result.data?.user && result.data?.accessToken) {
                   console.log("✅ User session fetched successfully:", result.data.user.email);
                   
                   // RTK Query's onQueryStarted already updates Redux and localStorage
-                  // Wait a moment for state to propagate
                   await new Promise(resolve => setTimeout(resolve, 500));
                   
                   console.log("Redirecting to dashboard");
-                  // Use router.push for client-side navigation (faster, no reload)
                   router.push(redirectTo);
                   return;
-                } else if (result.isError) {
-                  console.error("❌ RTK Query refetch error:", result.error);
-                } else {
-                  console.warn("⚠️ No user data in RTK Query response");
                 }
                 
-                // Fallback: try manual fetch
-                console.log("Trying manual fetch as fallback...");
-                try {
-                  const userResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URI}me`,
-                    {
-                      method: "GET",
-                      credentials: "include",
-                      headers: {
-                        'Accept': 'application/json',
-                      },
-                    }
-                  );
-
-                  console.log("Manual fetch response status:", userResponse.status);
-                  
-                  if (userResponse.ok) {
-                    const userData = await userResponse.json();
-                    console.log("✅ Manual fetch successful:", userData);
-                    
-                    if (userData.user && userData.accessToken) {
-                      dispatch(userLoggedIn({
-                        accessToken: userData.accessToken,
-                        user: userData.user
-                      }));
-                      
-                      localStorage.setItem('user', JSON.stringify(userData.user));
-                      localStorage.setItem('accessToken', userData.accessToken);
-                      localStorage.setItem('loginTimestamp', Date.now().toString());
-                      
-                      await new Promise(resolve => setTimeout(resolve, 500));
-                      console.log("Redirecting to dashboard (manual fetch)");
-                      router.push(redirectTo);
-                      return;
-                    }
-                  } else {
-                    const errorText = await userResponse.text();
-                    console.error("❌ Manual fetch failed:", userResponse.status, errorText);
+                // Final fallback: manual fetch with cookies
+                console.log("Trying manual fetch with cookies...");
+                const userResponse = await fetch(
+                  `${process.env.NEXT_PUBLIC_SERVER_URI}me`,
+                  {
+                    method: "GET",
+                    credentials: "include",
+                    headers: {
+                      'Accept': 'application/json',
+                    },
                   }
-                } catch (fetchError) {
-                  console.error("❌ Manual fetch exception:", fetchError);
+                );
+
+                if (userResponse.ok) {
+                  const userData = await userResponse.json();
+                  if (userData.user && userData.accessToken) {
+                    dispatch(userLoggedIn({
+                      accessToken: userData.accessToken,
+                      user: userData.user
+                    }));
+                    
+                    localStorage.setItem('user', JSON.stringify(userData.user));
+                    localStorage.setItem('accessToken', userData.accessToken);
+                    localStorage.setItem('loginTimestamp', Date.now().toString());
+                    
+                    setTimeout(() => {
+                      router.push(redirectTo);
+                    }, 500);
+                    return;
+                  }
                 }
                 
-                // Final fallback: full page reload to let AuthContext handle it
-                console.log("🔄 All fetch methods failed, doing full page reload");
-                toast({
-                  title: "Session detected",
-                  description: "Reloading to complete login...",
-                });
+                // Ultimate fallback: reload page
+                console.log("🔄 All methods failed, reloading page");
                 window.location.reload();
               } catch (error) {
-                console.error("❌ Error in Auth0 success handler:", error);
-                // Final fallback: reload page
-                console.log("🔄 Error occurred, reloading page");
+                console.error("❌ Error in cookie-based fetch:", error);
                 window.location.reload();
               }
-            }, 2000); // Increased delay to ensure cookies are set
+            }, 1500); // Shorter delay since we tried token first
           } else if (event.data.type === 'AUTH0_ERROR') {
             console.log("Processing AUTH0_ERROR message");
             setIsProcessing(true);
