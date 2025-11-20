@@ -32,11 +32,21 @@ import {
   Shield,
   CheckCircle2,
   XCircle,
-  Loader2
+  Loader2,
+  Grid3x3,
+  List,
+  X,
+  ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import OfferCard from './OfferCard';
 import TradeModal from './TradeModal';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Link from 'next/link';
 
 // Mock data types - Replace with API types later
 export interface P2POffer {
@@ -46,6 +56,8 @@ export interface P2POffer {
   traderRating: number;
   completedTrades: number;
   completionRate: number;
+  responseRate: number; // New: Response rate percentage (like Binance)
+  responseTime: number; // New: Response time in minutes
   price: number;
   available: number; // Available amount in OXM
   minLimit: number;
@@ -55,6 +67,8 @@ export interface P2POffer {
   timeLimit: number; // Minutes
   isVerified: boolean;
   isOnline: boolean;
+  requiresVerification?: boolean; // New: Requires KYC/Verification badge
+  traderId?: string; // New: For profile link
 }
 
 export interface UserBalance {
@@ -68,9 +82,12 @@ const mockBuyOffers: P2POffer[] = [
   {
     id: '1',
     traderName: 'CryptoTrader_01',
+    traderId: 'trader-1',
     traderRating: 4.9,
     completedTrades: 1247,
     completionRate: 98.5,
+    responseRate: 99.1,
+    responseTime: 15,
     price: 1.02,
     available: 5000,
     minLimit: 50,
@@ -80,13 +97,17 @@ const mockBuyOffers: P2POffer[] = [
     timeLimit: 15,
     isVerified: true,
     isOnline: true,
+    requiresVerification: false,
   },
   {
     id: '2',
     traderName: 'OXM_Exchange',
+    traderId: 'trader-2',
     traderRating: 4.8,
     completedTrades: 892,
     completionRate: 97.2,
+    responseRate: 98.5,
+    responseTime: 15,
     price: 1.03,
     available: 3000,
     minLimit: 100,
@@ -96,13 +117,17 @@ const mockBuyOffers: P2POffer[] = [
     timeLimit: 30,
     isVerified: true,
     isOnline: true,
+    requiresVerification: true,
   },
   {
     id: '3',
     traderName: 'TrustedSeller',
+    traderId: 'trader-3',
     traderRating: 5.0,
     completedTrades: 2156,
     completionRate: 99.1,
+    responseRate: 100,
+    responseTime: 15,
     price: 1.01,
     available: 8000,
     minLimit: 25,
@@ -112,13 +137,17 @@ const mockBuyOffers: P2POffer[] = [
     timeLimit: 20,
     isVerified: true,
     isOnline: false,
+    requiresVerification: false,
   },
   {
     id: '4',
     traderName: 'QuickTrade_Pro',
+    traderId: 'trader-4',
     traderRating: 4.7,
     completedTrades: 634,
     completionRate: 96.8,
+    responseRate: 99.4,
+    responseTime: 15,
     price: 1.04,
     available: 2000,
     minLimit: 50,
@@ -128,6 +157,7 @@ const mockBuyOffers: P2POffer[] = [
     timeLimit: 15,
     isVerified: false,
     isOnline: true,
+    requiresVerification: false,
   },
 ];
 
@@ -135,9 +165,12 @@ const mockSellOffers: P2POffer[] = [
   {
     id: '5',
     traderName: 'Buyer_Expert',
+    traderId: 'trader-5',
     traderRating: 4.9,
     completedTrades: 1890,
     completionRate: 98.8,
+    responseRate: 99.2,
+    responseTime: 15,
     price: 1.06,
     available: 6000,
     minLimit: 50,
@@ -147,13 +180,17 @@ const mockSellOffers: P2POffer[] = [
     timeLimit: 15,
     isVerified: true,
     isOnline: true,
+    requiresVerification: false,
   },
   {
     id: '6',
     traderName: 'FastBuyer',
+    traderId: 'trader-6',
     traderRating: 4.8,
     completedTrades: 1123,
     completionRate: 97.5,
+    responseRate: 98.7,
+    responseTime: 20,
     price: 1.07,
     available: 4000,
     minLimit: 100,
@@ -163,13 +200,17 @@ const mockSellOffers: P2POffer[] = [
     timeLimit: 20,
     isVerified: true,
     isOnline: true,
+    requiresVerification: true,
   },
   {
     id: '7',
     traderName: 'ReliableBuyer',
+    traderId: 'trader-7',
     traderRating: 5.0,
     completedTrades: 2456,
     completionRate: 99.3,
+    responseRate: 100,
+    responseTime: 15,
     price: 1.05,
     available: 10000,
     minLimit: 25,
@@ -179,6 +220,7 @@ const mockSellOffers: P2POffer[] = [
     timeLimit: 30,
     isVerified: true,
     isOnline: false,
+    requiresVerification: false,
   },
 ];
 
@@ -190,9 +232,15 @@ const mockUserBalance: UserBalance = {
 
 export default function P2PTrade() {
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table'); // New: View mode toggle
   const [searchQuery, setSearchQuery] = useState('');
+  const [transactionAmount, setTransactionAmount] = useState(''); // New: Transaction amount filter
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('all'); // New: Payment method filter
   const [sortBy, setSortBy] = useState<'price' | 'rating' | 'trades'>('price');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showMoreFilters, setShowMoreFilters] = useState(false); // New: More filters toggle
+  const [filterVerifiedOnly, setFilterVerifiedOnly] = useState(false); // New: Verified only filter
+  const [filterOnlineOnly, setFilterOnlineOnly] = useState(false); // New: Online only filter
   const [selectedOffer, setSelectedOffer] = useState<P2POffer | null>(null);
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [tradeAmount, setTradeAmount] = useState('');
@@ -202,15 +250,48 @@ export default function P2PTrade() {
   // Get offers based on active tab
   const allOffers = activeTab === 'buy' ? mockBuyOffers : mockSellOffers;
 
+  // Get all unique payment methods
+  const allPaymentMethods = useMemo(() => {
+    const methods = new Set<string>();
+    allOffers.forEach(offer => {
+      offer.paymentMethods.forEach(method => methods.add(method));
+    });
+    return Array.from(methods).sort();
+  }, [allOffers]);
+
   // Filter and sort offers
   const filteredAndSortedOffers = useMemo(() => {
     let filtered = allOffers.filter(offer => {
+      // Search filter
       const matchesSearch = 
         offer.traderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         offer.paymentMethods.some(method => 
           method.toLowerCase().includes(searchQuery.toLowerCase())
         );
-      return matchesSearch;
+      if (!matchesSearch) return false;
+
+      // Transaction amount filter
+      if (transactionAmount) {
+        const amount = parseFloat(transactionAmount);
+        if (!isNaN(amount)) {
+          const minUSD = offer.minLimit * offer.price;
+          const maxUSD = offer.maxLimit * offer.price;
+          if (amount < minUSD || amount > maxUSD) return false;
+        }
+      }
+
+      // Payment method filter
+      if (selectedPaymentMethod !== 'all') {
+        if (!offer.paymentMethods.includes(selectedPaymentMethod)) return false;
+      }
+
+      // Verified only filter
+      if (filterVerifiedOnly && !offer.isVerified) return false;
+
+      // Online only filter
+      if (filterOnlineOnly && !offer.isOnline) return false;
+
+      return true;
     });
 
     // Sort offers
@@ -231,7 +312,7 @@ export default function P2PTrade() {
     });
 
     return filtered;
-  }, [allOffers, searchQuery, sortBy, sortOrder]);
+  }, [allOffers, searchQuery, transactionAmount, selectedPaymentMethod, filterVerifiedOnly, filterOnlineOnly, sortBy, sortOrder]);
 
   const handleTradeClick = (offer: P2POffer) => {
     setSelectedOffer(offer);
@@ -301,71 +382,127 @@ export default function P2PTrade() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Balance Display - Full Width */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            Your Balances
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 text-center border-2 border-blue-200 dark:border-blue-800">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">OXM</p>
-              <p className="text-2xl font-bold">{userBalance.OXM.toLocaleString()}</p>
+    <div className="space-y-3">
+      {/* Balance Display - Compact */}
+      <Card className="border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">OXM:</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{userBalance.OXM.toLocaleString()}</span>
             </div>
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 text-center border-2 border-green-200 dark:border-green-800">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">USD</p>
-              <p className="text-2xl font-bold">${userBalance.USD.toLocaleString()}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">USD:</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">${userBalance.USD.toLocaleString()}</span>
             </div>
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 text-center border-2 border-yellow-200 dark:border-yellow-800">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">USDT</p>
-              <p className="text-2xl font-bold">{userBalance.USDT.toLocaleString()}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">USDT:</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{userBalance.USDT.toLocaleString()}</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Main Trading Section */}
-      <Card className="border-0 shadow-xl bg-white dark:bg-zinc-900">
-        <CardContent className="p-6">
-          <div className="space-y-4">
+      <Card className="border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <CardContent className="p-4">
+          <div className="space-y-3">
             {/* Buy/Sell Tabs */}
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'buy' | 'sell')}>
-              <TabsList className="grid w-full grid-cols-2 bg-gray-100 dark:bg-zinc-800 h-12">
+              <TabsList className="grid w-full grid-cols-2 bg-gray-100 dark:bg-zinc-800 h-9 rounded-md p-0.5">
                 <TabsTrigger 
                   value="buy"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white font-semibold text-base"
+                  className="data-[state=active]:bg-green-600 data-[state=active]:text-white font-normal text-xs px-3 py-1.5 h-8"
                 >
-                  <ArrowUp className="w-5 h-5 mr-2" />
-                  Buy OXM
+                  Buy
                 </TabsTrigger>
                 <TabsTrigger 
                   value="sell"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-rose-600 data-[state=active]:text-white font-semibold text-base"
+                  className="data-[state=active]:bg-red-600 data-[state=active]:text-white font-normal text-xs px-3 py-1.5 h-8"
                 >
-                  <ArrowDown className="w-5 h-5 mr-2" />
-                  Sell OXM
+                  Sell
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value={activeTab} className="mt-6 space-y-4">
-                {/* Search and Filter */}
-                <div className="space-y-3">
-                  <div className="flex gap-3">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <TabsContent value={activeTab} className="mt-3 space-y-1.5">
+                {/* Binance-style Filters - Compact & Small */}
+                <div className="space-y-1.5">
+                  {/* First Row: Transaction Amount, Payment Method, More Filters, Sort */}
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    {/* Transaction Amount Input */}
+                    <div className="relative flex-1 min-w-[140px]">
                       <Input
-                        placeholder="Search trader name or payment method..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12 h-12 bg-white dark:bg-zinc-800 text-base"
+                        type="number"
+                        placeholder="Transaction amount"
+                        value={transactionAmount}
+                        onChange={(e) => setTransactionAmount(e.target.value)}
+                        className="h-7 bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-[11px] px-2 py-1"
                       />
                     </div>
+
+                    {/* Payment Method Filter */}
+                    <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                      <SelectTrigger className="w-[140px] h-7 bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-[11px] px-2 py-1">
+                        <SelectValue placeholder="All payment methods" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All payment methods</SelectItem>
+                        {allPaymentMethods.map((method) => (
+                          <SelectItem key={method} value={method}>
+                            {method}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* More Filters Button */}
+                    <Popover open={showMoreFilters} onOpenChange={setShowMoreFilters}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="h-7 px-2 bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-[11px]"
+                        >
+                          <Filter className="w-3 h-3 mr-1" />
+                          More Filters
+                          {showMoreFilters && (
+                            <X className="w-3 h-3 ml-1" />
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-72 p-3" align="end">
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-gray-900 dark:text-gray-100">Advanced Filters</Label>
+                            <div className="flex items-center space-x-2 pt-1">
+                              <Checkbox
+                                id="verified-only"
+                                checked={filterVerifiedOnly}
+                                onCheckedChange={(checked) => setFilterVerifiedOnly(checked as boolean)}
+                                className="h-3.5 w-3.5"
+                              />
+                              <Label htmlFor="verified-only" className="cursor-pointer text-xs text-gray-700 dark:text-gray-300">
+                                Verified traders only
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="online-only"
+                                checked={filterOnlineOnly}
+                                onCheckedChange={(checked) => setFilterOnlineOnly(checked as boolean)}
+                                className="h-3.5 w-3.5"
+                              />
+                              <Label htmlFor="online-only" className="cursor-pointer text-xs text-gray-700 dark:text-gray-300">
+                                Online traders only
+                              </Label>
+                            </div>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Sort By */}
                     <Select value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
-                      <SelectTrigger className="w-40 h-12 bg-white dark:bg-zinc-800">
+                      <SelectTrigger className="w-[110px] h-7 bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-[11px] px-2 py-1">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -374,35 +511,183 @@ export default function P2PTrade() {
                         <SelectItem value="trades">Sort by Trades</SelectItem>
                       </SelectContent>
                     </Select>
+
+                    {/* Sort Order Toggle */}
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={toggleSortOrder}
-                      className="h-12 w-12 bg-white dark:bg-zinc-800"
+                      className="h-7 w-7 bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700"
                     >
-                      <ArrowUpDown className="w-5 h-5" />
+                      <ArrowUpDown className="w-3 h-3" />
                     </Button>
+
+                    {/* View Mode Toggle */}
+                    <div className="flex border border-gray-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 overflow-hidden">
+                      <Button
+                        variant={viewMode === 'table' ? 'default' : 'ghost'}
+                        size="icon"
+                        onClick={() => setViewMode('table')}
+                        className={`h-7 w-7 rounded-none ${viewMode === 'table' ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900' : 'text-gray-600 dark:text-gray-400'}`}
+                      >
+                        <List className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                        size="icon"
+                        onClick={() => setViewMode('cards')}
+                        className={`h-7 w-7 rounded-none ${viewMode === 'cards' ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900' : 'text-gray-600 dark:text-gray-400'}`}
+                      >
+                        <Grid3x3 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                    <Input
+                      placeholder="Search trader name or payment method..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-7 h-7 bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-[11px]"
+                    />
                   </div>
                 </div>
 
-                {/* Offers List */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredAndSortedOffers.length === 0 ? (
-                    <div className="col-span-full p-12 text-center bg-gray-50 dark:bg-zinc-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-zinc-700">
-                      <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-lg font-medium text-gray-500 dark:text-gray-400">No offers found</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Try adjusting your search or filters</p>
+                {/* Offers Display - Table or Cards */}
+                {filteredAndSortedOffers.length === 0 ? (
+                  <div className="p-8 text-center bg-gray-50 dark:bg-zinc-800/50 rounded border border-gray-200 dark:border-zinc-700">
+                    <Users className="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">No offers found</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Try adjusting your search or filters</p>
+                  </div>
+                ) : viewMode === 'table' ? (
+                  /* Table View (Binance-style) - Compact & Clean */
+                  <div className="border border-gray-200 dark:border-zinc-800 rounded overflow-x-auto">
+                    <div className="min-w-full inline-block">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50 dark:bg-zinc-800/50 border-b border-gray-200 dark:border-zinc-700">
+                            <th className="min-w-[260px] text-left text-[11px] font-medium text-gray-600 dark:text-gray-400 uppercase py-2 px-2.5">Advertisers</th>
+                            <th className="min-w-[90px] text-left text-[11px] font-medium text-gray-600 dark:text-gray-400 uppercase py-2 px-2.5">Price</th>
+                            <th className="min-w-[170px] text-left text-[11px] font-medium text-gray-600 dark:text-gray-400 uppercase py-2 px-2.5">Available/Order Limit</th>
+                            <th className="min-w-[150px] text-left text-[11px] font-medium text-gray-600 dark:text-gray-400 uppercase py-2 px-2.5">Payment</th>
+                            <th className="min-w-[110px] text-right text-[11px] font-medium text-gray-600 dark:text-gray-400 uppercase py-2 px-2.5">Trade</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredAndSortedOffers.map((offer) => (
+                            <tr key={offer.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-800/30 border-b border-gray-100 dark:border-zinc-800 transition-colors">
+                              <td className="py-2.5 px-2.5 align-top">
+                                <div className="flex items-start gap-2 min-w-0">
+                                  <div className="relative flex-shrink-0">
+                                    <Avatar className="w-7 h-7 border border-gray-200 dark:border-zinc-700">
+                                      <AvatarImage src={offer.traderAvatar} />
+                                      <AvatarFallback className="text-[10px] bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300">
+                                        {offer.traderName.charAt(0).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    {offer.isOnline && (
+                                      <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border-2 border-white dark:border-zinc-900" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 min-w-0 mb-0.5">
+                                      <Link
+                                        href={`/p2p-trading/trader/${offer.traderId || offer.id}`}
+                                        className="font-medium text-xs text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:underline truncate transition-colors"
+                                        title={offer.traderName}
+                                      >
+                                        {offer.traderName}
+                                      </Link>
+                                    {offer.isVerified && (
+                                      <Shield className="w-3 h-3 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+                                    )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-[10px] text-gray-600 dark:text-gray-400 leading-tight">
+                                      <span>{offer.completedTrades.toLocaleString()} orders</span>
+                                      <span className="text-gray-400">•</span>
+                                      <span>{offer.completionRate}% completion</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-[10px] text-gray-600 dark:text-gray-400 leading-tight mt-0.5">
+                                      <span>{offer.responseRate}%</span>
+                                      <span className="text-gray-400">•</span>
+                                      <div className="flex items-center gap-0.5">
+                                        <Clock className="w-2.5 h-2.5 flex-shrink-0" />
+                                        <span>{offer.responseTime} min</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-2.5 align-top">
+                                <div className="font-medium text-xs text-gray-900 dark:text-gray-100">
+                                  ${offer.price.toFixed(3)}
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-2.5 align-top">
+                                <div className="space-y-0.5">
+                                  <div className="font-medium text-xs text-gray-900 dark:text-gray-100">
+                                    {offer.available.toLocaleString()} OXM
+                                  </div>
+                                  <div className="text-[10px] text-gray-600 dark:text-gray-400">
+                                    ${(offer.minLimit * offer.price).toFixed(2)} - ${(offer.maxLimit * offer.price).toFixed(2)}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-2.5 align-top">
+                                <div className="flex flex-wrap gap-1">
+                                  {offer.paymentMethods.slice(0, 2).map((method, idx) => (
+                                    <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700 h-4.5">
+                                      {method}
+                                    </Badge>
+                                  ))}
+                                  {offer.paymentMethods.length > 2 && (
+                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700 h-4.5">
+                                      +{offer.paymentMethods.length - 2}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="text-right py-2.5 px-2.5 align-top">
+                                <div className="flex flex-col items-end gap-1">
+                                  <Button
+                                    onClick={() => handleTradeClick(offer)}
+                                    size="sm"
+                                    className={`h-7 px-2.5 text-[11px] font-normal ${
+                                      activeTab === 'buy'
+                                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                                        : 'bg-red-600 hover:bg-red-700 text-white'
+                                    }`}
+                                  >
+                                    {activeTab === 'buy' ? 'Buy' : 'Sell'} OXM
+                                  </Button>
+                                  {offer.requiresVerification && (
+                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-3.5 text-amber-600 dark:text-amber-500 border-amber-600 dark:border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+                                      Requires Verification
+                                    </Badge>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  ) : (
-                    filteredAndSortedOffers.map((offer) => (
+                  </div>
+                ) : (
+                  /* Card View */
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredAndSortedOffers.map((offer) => (
                       <OfferCard
                         key={offer.id}
                         offer={offer}
                         onTradeClick={() => handleTradeClick(offer)}
                       />
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
