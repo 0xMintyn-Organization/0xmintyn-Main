@@ -91,6 +91,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(reduxUser);
       setIsLoading(false);
       setShouldFetch(false);
+      
+      // Clear explicit logout flag if user is authenticated
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('explicit_logout');
+      }
       return;
     }
 
@@ -103,6 +108,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const parsedUser = JSON.parse(cachedUser);
         setUser(parsedUser);
         setIsLoading(false);
+        
+        // Clear explicit logout flag if we have valid cached user
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('explicit_logout');
+        }
+        
         // Still fetch fresh data in background
         setShouldFetch(true);
       } catch (error) {
@@ -145,11 +156,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [reduxUser, reduxIsAuthenticated]);
 
   useEffect(() => {
-    // Check Redux state first - only skip if EXPLICITLY logged out (not just empty on initial load)
-    // After page refresh, Redux state is empty but we still need to check server-side session
+    // Check if user explicitly logged out (using sessionStorage flag that persists only for this tab)
+    // This flag is set during logout and cleared on successful login
+    const explicitLogoutFlag = typeof window !== 'undefined' && 
+                               sessionStorage.getItem('explicit_logout') === 'true';
+    
+    // Check Redux state and cached data
     const hasCachedData = typeof window !== 'undefined' && 
                           (localStorage.getItem('user') || localStorage.getItem('accessToken'));
-    const explicitlyLoggedOut = reduxIsAuthenticated === false && reduxUser === null && !hasCachedData;
+    
+    // Only skip fetch if BOTH:
+    // 1. Redux explicitly says logged out (isAuthenticated === false, not just undefined)
+    // 2. AND we have the explicit logout flag OR no cached data
+    const explicitlyLoggedOut = reduxIsAuthenticated === false && 
+                                reduxUser === null && 
+                                (explicitLogoutFlag || !hasCachedData);
     
     if (explicitlyLoggedOut) {
       console.log("User explicitly logged out, skipping fetch");
@@ -158,12 +179,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setShouldFetch(false);
       return;
     }
+    
+    // Clear explicit logout flag if we have cached data or Redux says authenticated
+    // This handles the case where user logged in after logout
+    if (explicitLogoutFlag && (hasCachedData || (reduxUser && reduxIsAuthenticated))) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('explicit_logout');
+      }
+    }
 
     if (data?.user && reduxIsAuthenticated !== false) {
       console.log("User data received from API:", data.user.email);
       setUser(data.user);
       setIsLoading(false);
       setShouldFetch(false);
+      
+      // Clear explicit logout flag on successful login
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('explicit_logout');
+      }
       
       // Cache user data
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -198,7 +232,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    // Clear Redux state FIRST - this is critical
+    console.log("Logout initiated - setting explicit logout flag");
+    
+    // Set explicit logout flag FIRST - prevents re-authentication attempts
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('explicit_logout', 'true');
+    }
+    
+    // Clear Redux state - this is critical
     dispatch(userLoggedOut());
     
     // Clear all local storage items
@@ -206,10 +247,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('loginTimestamp');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('activationToken');
     
-    // Clear session storage
+    // Clear session storage (but keep explicit_logout flag for now)
     if (typeof window !== 'undefined') {
+      const logoutFlag = sessionStorage.getItem('explicit_logout');
       sessionStorage.clear();
+      // Restore logout flag after clearing
+      if (logoutFlag) {
+        sessionStorage.setItem('explicit_logout', 'true');
+      }
       
       // Clear all cookies that might be accessible from client side
       // Note: httpOnly cookies can only be cleared by backend
@@ -227,6 +274,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setIsLoading(false);
     setShouldFetch(false);
+    
+    // Call backend logout to clear httpOnly cookies
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}logout`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error("Backend logout error (non-critical):", error);
+    }
     
     // Use replace instead of push to prevent back navigation
     router.replace('/login');

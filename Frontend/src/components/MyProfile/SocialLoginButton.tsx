@@ -130,25 +130,28 @@ export function SocialLoginButton({
                   const userData = await userResponse.json();
                   console.log("✅ User data fetched with token:", userData.user?.email);
                   
-                  if (userData.user && userData.accessToken) {
-                    // Update Redux immediately
-                    dispatch(userLoggedIn({
-                      accessToken: userData.accessToken,
-                      user: userData.user
-                    }));
-                    
-                    // Update localStorage
-                    localStorage.setItem('user', JSON.stringify(userData.user));
-                    localStorage.setItem('accessToken', userData.accessToken);
-                    localStorage.setItem('loginTimestamp', Date.now().toString());
-                    
-                    console.log("✅ User logged in, redirecting to dashboard");
-                    // Small delay to ensure state propagates
-                    setTimeout(() => {
-                      router.push(redirectTo);
-                    }, 300);
-                    return;
-                  }
+                    if (userData.user && userData.accessToken) {
+                      // Clear explicit logout flag
+                      sessionStorage.removeItem('explicit_logout');
+                      
+                      // Update Redux immediately
+                      dispatch(userLoggedIn({
+                        accessToken: userData.accessToken,
+                        user: userData.user
+                      }));
+                      
+                      // Update localStorage
+                      localStorage.setItem('user', JSON.stringify(userData.user));
+                      localStorage.setItem('accessToken', userData.accessToken);
+                      localStorage.setItem('loginTimestamp', Date.now().toString());
+                      
+                      console.log("✅ User logged in, redirecting to dashboard");
+                      // Small delay to ensure state propagates
+                      setTimeout(() => {
+                        router.push(redirectTo);
+                      }, 300);
+                      return;
+                    }
                 } else {
                   console.warn("⚠️ Token-based fetch failed, falling back to cookie-based");
                 }
@@ -176,6 +179,9 @@ export function SocialLoginButton({
                 if (result.isSuccess && result.data?.user && result.data?.accessToken) {
                   console.log("✅ User session fetched successfully:", result.data.user.email);
                   
+                  // Clear explicit logout flag
+                  sessionStorage.removeItem('explicit_logout');
+                  
                   // RTK Query's onQueryStarted already updates Redux and localStorage
                   await new Promise(resolve => setTimeout(resolve, 500));
                   
@@ -200,6 +206,9 @@ export function SocialLoginButton({
                 if (userResponse.ok) {
                   const userData = await userResponse.json();
                   if (userData.user && userData.accessToken) {
+                    // Clear explicit logout flag
+                    sessionStorage.removeItem('explicit_logout');
+                    
                     dispatch(userLoggedIn({
                       accessToken: userData.accessToken,
                       user: userData.user
