@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -32,57 +32,114 @@ interface PriceData {
   volume: number;
 }
 
-// Dummy data - will be replaced with Bitget API
-const generatePriceData = (interval: string): PriceData[] => {
-  const data: PriceData[] = [];
-  const basePrice = 1.05;
-  let currentPrice = basePrice;
-  
-  const intervals = {
-    '1h': 60,
-    '24h': 24,
-    '7d': 7,
-    '30d': 30
-  };
-  
-  const count = intervals[interval as keyof typeof intervals] || 24;
-  
-  for (let i = 0; i < count; i++) {
-    // Random price fluctuation
-    const change = (Math.random() - 0.5) * 0.1;
-    currentPrice = Math.max(0.9, Math.min(1.2, currentPrice + change));
-    
-    data.push({
-      time: interval === '1h' 
-        ? `${i}:00` 
-        : interval === '24h'
-        ? `${i}:00`
-        : `${i + 1}${interval === '7d' ? 'd' : 'd'}`,
-      price: Number(currentPrice.toFixed(4)),
-      volume: Math.floor(Math.random() * 1000000) + 100000
-    });
-  }
-  
-  return data;
+const BITGET_BASE_URL = 'https://api.bitget.com';
+
+const intervalConfig: Record<string, { granularityLabel: string; intervalSeconds: number; limit: number }> = {
+  '1m': { granularityLabel: '1min', intervalSeconds: 60, limit: 60 },
+  '5m': { granularityLabel: '5min', intervalSeconds: 300, limit: 60 },
+  '15m': { granularityLabel: '15min', intervalSeconds: 900, limit: 60 },
+  '1h': { granularityLabel: '1h', intervalSeconds: 3600, limit: 48 },
+  '4h': { granularityLabel: '4h', intervalSeconds: 14400, limit: 36 },
+  '24h': { granularityLabel: '1day', intervalSeconds: 86400, limit: 48 },
+  '7d': { granularityLabel: '1week', intervalSeconds: 86400 * 7, limit: 26 },
+  '30d': { granularityLabel: '1M', intervalSeconds: 86400 * 30, limit: 24 },
 };
 
+const DEFAULT_PAIR = 'BTCUSDT';
+
 const coinPairs = [
-  { value: 'OXM/USD', label: 'OXM/USD' },
-  { value: 'OXM/USDT', label: 'OXM/USDT' },
-  { value: 'OXM/BTC', label: 'OXM/BTC' },
-  { value: 'OXM/ETH', label: 'OXM/ETH' },
+  { value: 'BTCUSDT', label: 'BTC/USDT' },
+  { value: 'ETHUSDT', label: 'ETH/USDT' },
+  { value: 'SOLUSDT', label: 'SOL/USDT' },
+  { value: 'OXMUSDT', label: 'OXM/USDT' },
 ];
 
 export default function TradingChart() {
-  const [selectedPair, setSelectedPair] = useState('OXM/USD');
+  const [selectedPair, setSelectedPair] = useState(DEFAULT_PAIR);
   const [timeInterval, setTimeInterval] = useState('24h');
   const [chartType, setChartType] = useState<'line' | 'area'>('area');
-  
-  const priceData = generatePriceData(timeInterval);
-  const currentPrice = priceData[priceData.length - 1]?.price || 1.05;
-  const previousPrice = priceData[0]?.price || 1.05;
+  const [priceData, setPriceData] = useState<PriceData[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [availablePairs, setAvailablePairs] = useState<string[]>([]);
+
+  const fetchAvailablePairs = async () => {
+    try {
+      const url = new URL(`${BITGET_BASE_URL}/api/v2/spot/public/symbols`);
+      const response = await fetch(url.toString());
+      const payload = await response.json();
+      if (response.ok && Array.isArray(payload.data)) {
+        const symbols = payload.data.map((symbol: any) => symbol.symbol).filter(Boolean);
+        setAvailablePairs(symbols);
+        if (!symbols.includes(selectedPair)) {
+          setSelectedPair(symbols[0] || DEFAULT_PAIR);
+        }
+      }
+    } catch (fetchError) {
+      console.error('Unable to load Bitget symbols:', fetchError);
+    }
+  };
+
+  const fetchPriceData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { granularityLabel, intervalSeconds, limit } = intervalConfig[timeInterval];
+      const url = new URL(`${BITGET_BASE_URL}/api/v2/spot/market/history-candles`);
+      url.searchParams.set('symbol', selectedPair);
+      url.searchParams.set('granularity', granularityLabel);
+      url.searchParams.set('limit', String(limit));
+      const endTime = Date.now();
+      const startTime = endTime - limit * intervalSeconds * 1000;
+      url.searchParams.set('endTime', String(endTime));
+      url.searchParams.set('startTime', String(startTime));
+
+      const response = await fetch(url.toString());
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Bitget API responded with an error');
+      }
+
+      const chartData: PriceData[] = (payload.data || []).map((row: string[]) => {
+        const timestamp = Number(row[0]);
+        const close = Number(row[2]);
+        const volume = Number(row[5]);
+        const date = new Date(timestamp);
+        const formattedTime = timeInterval === '1h'
+          ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : date.toLocaleDateString();
+
+        return {
+          time: formattedTime,
+          price: close,
+          volume,
+        };
+      });
+
+      setPriceData(chartData.reverse());
+    } catch (fetchError: any) {
+      setError(fetchError.message || 'Failed to fetch price data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailablePairs();
+  }, []);
+
+  useEffect(() => {
+    if (selectedPair) {
+      fetchPriceData();
+    }
+  }, [selectedPair, timeInterval]);
+  const currentPrice = priceData[priceData.length - 1]?.price || 0;
+  const previousPrice = priceData[0]?.price || 0;
   const priceChange = currentPrice - previousPrice;
-  const priceChangePercent = ((priceChange / previousPrice) * 100).toFixed(2);
+  const priceChangePercent = previousPrice
+    ? ((priceChange / previousPrice) * 100).toFixed(2)
+    : '0.00';
   const isPositive = priceChange >= 0;
 
   return (
@@ -101,9 +158,9 @@ export default function TradingChart() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {coinPairs.map((pair) => (
-                  <SelectItem key={pair.value} value={pair.value}>
-                    {pair.label}
+                {(availablePairs.length > 0 ? availablePairs : [DEFAULT_PAIR]).map((symbol) => (
+                  <SelectItem key={symbol} value={symbol}>
+                    {symbol}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -275,6 +332,13 @@ export default function TradingChart() {
         </div>
 
         {/* Volume Chart */}
+        {loading && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">Updating chart...</p>
+        )}
+        {error && (
+          <p className="text-sm text-red-500 dark:text-red-400 mt-3">{error}</p>
+        )}
+
         <div className="mt-4">
           <h4 className="text-sm font-semibold mb-2 text-gray-600 dark:text-gray-400">
             24h Volume
