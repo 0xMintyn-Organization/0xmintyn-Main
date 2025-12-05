@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   LineChart,
   Line,
@@ -25,24 +25,26 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import useLiveTicker from '@/hooks/useLiveTicker';
 
 interface PriceData {
   time: string;
   price: number;
   volume: number;
+  timestamp: number;
 }
 
 const BITGET_BASE_URL = 'https://api.bitget.com';
 
-const intervalConfig: Record<string, { granularityLabel: string; intervalSeconds: number; limit: number }> = {
-  '1m': { granularityLabel: '1min', intervalSeconds: 60, limit: 60 },
-  '5m': { granularityLabel: '5min', intervalSeconds: 300, limit: 60 },
-  '15m': { granularityLabel: '15min', intervalSeconds: 900, limit: 60 },
-  '1h': { granularityLabel: '1h', intervalSeconds: 3600, limit: 48 },
-  '4h': { granularityLabel: '4h', intervalSeconds: 14400, limit: 36 },
-  '24h': { granularityLabel: '1day', intervalSeconds: 86400, limit: 48 },
-  '7d': { granularityLabel: '1week', intervalSeconds: 86400 * 7, limit: 26 },
-  '30d': { granularityLabel: '1M', intervalSeconds: 86400 * 30, limit: 24 },
+const intervalConfig: Record<string, { granularityLabel: string; granularitySeconds: number; windowSeconds: number; limit: number }> = {
+  '1m': { granularityLabel: '1min', granularitySeconds: 60, windowSeconds: 60 * 60, limit: 60 },
+  '5m': { granularityLabel: '5min', granularitySeconds: 300, windowSeconds: 5 * 60 * 60, limit: 60 },
+  '15m': { granularityLabel: '15min', granularitySeconds: 900, windowSeconds: 15 * 60 * 60, limit: 60 },
+  '1h': { granularityLabel: '1min', granularitySeconds: 60, windowSeconds: 60 * 60, limit: 60 },
+  '4h': { granularityLabel: '4h', granularitySeconds: 14400, windowSeconds: 4 * 60 * 60, limit: 36 },
+  '24h': { granularityLabel: '1day', granularitySeconds: 86400, windowSeconds: 24 * 60 * 60, limit: 48 },
+  '7d': { granularityLabel: '1week', granularitySeconds: 86400 * 7, windowSeconds: 7 * 24 * 60 * 60, limit: 26 },
+  '30d': { granularityLabel: '1M', granularitySeconds: 86400 * 30, windowSeconds: 30 * 24 * 60 * 60, limit: 24 },
 };
 
 const DEFAULT_PAIR = 'BTCUSDT';
@@ -62,6 +64,21 @@ export default function TradingChart() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availablePairs, setAvailablePairs] = useState<string[]>([]);
+  const liveTicker = useLiveTicker();
+  const previousLivePrice = useRef<number | null>(null);
+  const [direction, setDirection] = useState<'up' | 'down' | null>(null);
+
+  useEffect(() => {
+    if (liveTicker.price == null) return;
+    if (previousLivePrice.current != null) {
+      if (liveTicker.price > previousLivePrice.current) {
+        setDirection('up');
+      } else if (liveTicker.price < previousLivePrice.current) {
+        setDirection('down');
+      }
+    }
+    previousLivePrice.current = liveTicker.price;
+  }, [liveTicker.price]);
 
   const fetchAvailablePairs = async () => {
     try {
@@ -84,13 +101,13 @@ export default function TradingChart() {
     setLoading(true);
     setError(null);
     try {
-      const { granularityLabel, intervalSeconds, limit } = intervalConfig[timeInterval];
+      const { granularityLabel, windowSeconds, limit } = intervalConfig[timeInterval];
       const url = new URL(`${BITGET_BASE_URL}/api/v2/spot/market/history-candles`);
       url.searchParams.set('symbol', selectedPair);
       url.searchParams.set('granularity', granularityLabel);
       url.searchParams.set('limit', String(limit));
       const endTime = Date.now();
-      const startTime = endTime - limit * intervalSeconds * 1000;
+      const startTime = endTime - windowSeconds * 1000;
       url.searchParams.set('endTime', String(endTime));
       url.searchParams.set('startTime', String(startTime));
 
@@ -114,10 +131,12 @@ export default function TradingChart() {
           time: formattedTime,
           price: close,
           volume,
+          timestamp,
         };
       });
 
-      setPriceData(chartData.reverse());
+      chartData.sort((a, b) => a.timestamp - b.timestamp);
+      setPriceData(chartData);
     } catch (fetchError: any) {
       setError(fetchError.message || 'Failed to fetch price data');
     } finally {
@@ -134,8 +153,10 @@ export default function TradingChart() {
       fetchPriceData();
     }
   }, [selectedPair, timeInterval]);
-  const currentPrice = priceData[priceData.length - 1]?.price || 0;
-  const previousPrice = priceData[0]?.price || 0;
+  const currentPrice = liveTicker.price ?? priceData[priceData.length - 1]?.price ?? 0;
+  const previousPrice = liveTicker.price != null && priceData[0]?.price
+    ? priceData[0].price
+    : priceData[0]?.price ?? 0;
   const priceChange = currentPrice - previousPrice;
   const priceChangePercent = previousPrice
     ? ((priceChange / previousPrice) * 100).toFixed(2)
@@ -168,16 +189,16 @@ export default function TradingChart() {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="text-right bg-white dark:bg-zinc-800 p-4 rounded-xl shadow-md border-2 border-gray-200 dark:border-zinc-700">
+            <div className="text-right bg-white dark:bg-zinc-800 p-4 rounded-xl shadow-md border-2 border-gray-200 dark:border-zinc-700 space-y-1 transition-all duration-300">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-3xl font-bold text-gray-900 dark:text-white">
                   ${currentPrice.toFixed(4)}
                 </span>
-                {isPositive ? (
+                {direction === 'up' ? (
                   <TrendingUp className="w-6 h-6 text-green-500 animate-pulse" />
-                ) : (
+                ) : direction === 'down' ? (
                   <TrendingDown className="w-6 h-6 text-red-500 animate-pulse" />
-                )}
+                ) : null}
               </div>
               <Badge
                 variant="outline"
@@ -196,7 +217,7 @@ export default function TradingChart() {
       <CardContent>
         {/* Time Interval Buttons */}
         <div className="flex gap-2 mb-4 flex-wrap">
-          {['1h', '24h', '7d', '30d'].map((interval) => (
+          {['1m','5m','15m','1h', '24h', '7d', '30d'].map((interval) => (
             <Button
               key={interval}
               variant={timeInterval === interval ? 'default' : 'outline'}
@@ -212,6 +233,15 @@ export default function TradingChart() {
             </Button>
           ))}
         </div>
+
+        {liveTicker.loading && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Loading live price…</p>
+        )}
+        {liveTicker.timestamp && (
+          <p className="text-xs text-muted-foreground/70">
+            Updated at {new Date(liveTicker.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </p>
+        )}
 
         {/* Chart Type Toggle */}
         <div className="flex gap-2 mb-4">
@@ -376,4 +406,3 @@ export default function TradingChart() {
     </Card>
   );
 }
-

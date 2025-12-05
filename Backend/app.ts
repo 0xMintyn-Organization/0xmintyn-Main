@@ -30,9 +30,9 @@ import marketplaceOfferRouter from './routes/marketplace/marketplaceOffer.route'
 import marketplaceReviewRouter from './routes/marketplace/marketplaceReview.route';
 import dashboardRouter from './routes/dashboard/dashboard.route';
 import auth0Router from './routes/auth0.route';
+import marketRouter from './routes/market.route';
 require('dotenv').config();
 export const app = express();
-
 
 // bodyparser
 app.use(express.json({ limit: '50mb' }));
@@ -114,9 +114,7 @@ app.use('/api/v1/dashboard', dashboardRouter);
 app.use('/api/v1/proposal', proposalRoutes);
 app.use('/api/v1/vote', voteRoutes);
 app.use('/api/v1', auth0Router);
-
-
-
+app.use('/api/market', marketRouter);
 
 // testing api
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
