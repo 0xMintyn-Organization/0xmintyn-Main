@@ -4,6 +4,7 @@ A comprehensive educational platform with integrated governance, marketplace, an
 
 ## Table of Contents
 
+
 - [Backend Documentation](#backend-documentation)
   - [Technology Stack](#technology-stack)
   - [API Architecture](#api-architecture)
