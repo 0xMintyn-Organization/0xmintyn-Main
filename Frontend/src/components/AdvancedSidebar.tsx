@@ -48,7 +48,7 @@ const navigation: NavItem[] = [
     name: "Dashboard",
     href: "/dashboard",
     icon: Home,
-    roles: ["user", "instructor", "admin"],
+    roles: ["user", "instructor", "admin", "influencer"],
   },
   
   // Public Pages - Available to all
@@ -56,31 +56,31 @@ const navigation: NavItem[] = [
     name: "Education Hub",
     href: "/educationhub",
     icon: BookOpen,
-    roles: ["user", "instructor", "admin"],
+    roles: ["user", "instructor", "admin", "influencer"],
   },
   {
     name: "Governance",
     href: "/governance",
     icon: Vote,
-    roles: ["user", "instructor", "admin"],
+    roles: ["user", "instructor", "admin", "influencer"],
   },
   {
     name: "Exchange",
     href: "/exchange",
     icon: ArrowLeftRight,
-    roles: ["user", "instructor", "admin"],
+    roles: ["user", "instructor", "admin", "influencer"],
   },
   {
     name: "Settings",
     href: "/settings",
     icon: Settings,
-    roles: ["user", "instructor", "admin"],
+    roles: ["user", "instructor", "admin", "influencer"],
   },
   {
     name: "Profile",
     href: "/profile",
     icon: User,
-    roles: ["user", "instructor", "admin"],
+    roles: ["user", "instructor", "admin", "influencer"],
   },
 
   // User-specific navigation
@@ -152,6 +152,14 @@ const navigation: NavItem[] = [
     ],
   },
 
+  // Influencer-specific navigation
+  {
+    name: "Influencer Analytics",
+    href: "/influencer",
+    icon: BarChart3,
+    roles: ["influencer", "admin"],
+  },
+
   // Admin-specific navigation
   {
     name: "Admin Panel",
@@ -209,25 +217,25 @@ const navigation: NavItem[] = [
     name: "Support",
     href: "/support",
     icon: HelpCircle,
-    roles: ["user", "instructor", "admin"],
+    roles: ["user", "instructor", "admin", "influencer"],
     children: [
       {
         name: "Help Center",
         href: "/help",
         icon: HelpCircle,
-        roles: ["user", "instructor", "admin"],
+        roles: ["user", "instructor", "admin", "influencer"],
       },
       {
         name: "Contact Us",
         href: "/contact",
         icon: MessageSquare,
-        roles: ["user", "instructor", "admin"],
+        roles: ["user", "instructor", "admin", "influencer"],
       },
       {
         name: "Documentation",
         href: "/docs",
         icon: FileText,
-        roles: ["user", "instructor", "admin"],
+        roles: ["user", "instructor", "admin", "influencer"],
       },
     ],
   },
@@ -243,25 +251,49 @@ export default function AdvancedSidebar({ className }: AdvancedSidebarProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { bookmarkCount } = useBookmarkCount();
 
-  if (!user) return null;
+  if (!user) {
+    console.log("Sidebar: No user found");
+    return null;
+  }
+
+  console.log("Sidebar: User role:", user.role);
 
   const filteredNavigation = navigation.map((item) => {
     if (item.name === "My Learning" && item.children) {
       return {
         ...item,
-        children: item.children.map((child) => {
-          if (child.name === "Bookmarks") {
-            return {
-              ...child,
-              badge: bookmarkCount > 0 ? bookmarkCount.toString() : undefined
-            };
-          }
-          return child;
-        })
+        children: item.children
+          .filter((child) => child.roles.includes(user.role))
+          .map((child) => {
+            if (child.name === "Bookmarks") {
+              return {
+                ...child,
+                badge: bookmarkCount > 0 ? bookmarkCount.toString() : undefined
+              };
+            }
+            return child;
+          })
+      };
+    }
+    // Filter children for items with children
+    if (item.children) {
+      return {
+        ...item,
+        children: item.children.filter((child) => child.roles.includes(user.role))
       };
     }
     return item;
-  }).filter((item) => item.roles.includes(user.role));
+  }).filter((item) => {
+    // Show item if user role matches, or if it has children that match
+    if (item.roles.includes(user.role)) {
+      return true;
+    }
+    // If item has children, check if any child matches
+    if (item.children && item.children.length > 0) {
+      return item.children.some((child) => child.roles.includes(user.role));
+    }
+    return false;
+  });
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev =>
@@ -363,6 +395,8 @@ export default function AdvancedSidebar({ className }: AdvancedSidebarProps) {
               <Crown className="w-5 h-5 text-green-600 dark:text-green-400" />
             ) : user.role === 'instructor' ? (
               <GraduationCap className="w-5 h-5 text-green-600 dark:text-green-400" />
+            ) : user.role === 'influencer' ? (
+              <BarChart3 className="w-5 h-5 text-green-600 dark:text-green-400" />
             ) : (
               <User className="w-5 h-5 text-green-600 dark:text-green-400" />
             )}

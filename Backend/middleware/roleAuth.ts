@@ -22,8 +22,11 @@ export const requireAdmin = requireRole(['admin']);
 // Instructor or Admin access
 export const requireInstructorOrAdmin = requireRole(['instructor', 'admin']);
 
+// Influencer or Admin access
+export const requireInfluencerOrAdmin = requireRole(['influencer', 'admin']);
+
 // Any authenticated user
-export const requireAuth = requireRole(['user', 'instructor', 'admin']);
+export const requireAuth = requireRole(['user', 'instructor', 'admin', 'influencer']);
 
 // Check if user can access resource
 export const canAccessResource = (resourceUserId: string, currentUserId: string, currentUserRole: string) => {

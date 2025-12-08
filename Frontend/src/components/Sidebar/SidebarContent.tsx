@@ -231,6 +231,17 @@ const getNavItems = (
     }
   ];
 
+  const influencerItems = [
+    { 
+      name: "Influencer Analytics", 
+      href: "/influencer", 
+      icon: BarChart3,
+      badge: "View Only",
+      badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+      description: "User Statistics & Growth"
+    }
+  ];
+
   const adminItems = [
     { 
       name: "Admin Panel", 
@@ -352,7 +363,9 @@ const getNavItems = (
   } else if (userRole === 'instructor') {
     items = [...publicItems, ...instructorItems];
   } else if (userRole === 'admin') {
-    items = [...publicItems, ...adminItems];
+    items = [...publicItems, ...adminItems, ...influencerItems];
+  } else if (userRole === 'influencer') {
+    items = [...publicItems, ...influencerItems];
   }
 
   return items;
@@ -418,7 +431,8 @@ export default function Sidebar() {
               <p className="font-semibold text-sm">{user?.username || user?.name || "User"}</p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 capitalize">
                 {user?.role === 'instructor' ? 'Instructor' : 
-                 user?.role === 'admin' ? 'Administrator' : 'Member'}
+                 user?.role === 'admin' ? 'Administrator' : 
+                 user?.role === 'influencer' ? 'Influencer' : 'Member'}
               </p>
             </div>
           </div>

@@ -78,7 +78,7 @@ export const updateUserRole = CatchAsyncError(
       
       console.log("Role update request:", { userId, role, user: req.user?._id });
 
-      if (!['user', 'instructor', 'admin'].includes(role)) {
+      if (!['user', 'instructor', 'admin', 'influencer'].includes(role)) {
         return next(new ErrorHandler("Invalid role", 400));
       }
 
@@ -247,6 +247,9 @@ export const getRoleDashboard = CatchAsyncError(
         case 'user':
           dashboardData = await getUserDashboard(user._id);
           break;
+        case 'influencer':
+          dashboardData = await getInfluencerDashboard();
+          break;
         default:
           return next(new ErrorHandler("Invalid user role", 400));
       }
@@ -326,6 +329,26 @@ async function getUserDashboard(userId: string) {
   return {
     message: "User dashboard data",
     userId
+  };
+}
+
+async function getInfluencerDashboard() {
+  // Get ONLY user statistics for influencer view - NO courses, orders, or financial data
+  const totalUsers = await UserModel.countDocuments();
+
+  // Get recent user registrations (last 10)
+  const recentUsers = await UserModel.find()
+    .select('-password')
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+  // Get user growth data
+  const userGrowth = await getUserGrowthData();
+
+  return {
+    totalUsers,
+    recentUsers,
+    userGrowth
   };
 }
 

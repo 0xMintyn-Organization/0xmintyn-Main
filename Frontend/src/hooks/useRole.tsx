@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 interface User {
   _id: string;
-  role: 'user' | 'instructor' | 'admin';
+  role: 'user' | 'instructor' | 'admin' | 'influencer';
   isSeller: boolean;
   [key: string]: any;
 }
@@ -30,7 +30,9 @@ export const useRole = () => {
   const isAdmin = (): boolean => hasRole('admin');
   const isInstructor = (): boolean => hasRole('instructor');
   const isUser = (): boolean => hasRole('user');
+  const isInfluencer = (): boolean => hasRole('influencer');
   const isInstructorOrAdmin = (): boolean => hasRole(['instructor', 'admin']);
+  const isInfluencerOrAdmin = (): boolean => hasRole(['influencer', 'admin']);
 
   const requireRole = (roles: string | string[], redirectTo: string = '/dashboard') => {
     if (!hasRole(roles)) {
@@ -42,7 +44,9 @@ export const useRole = () => {
 
   const requireAdmin = (redirectTo: string = '/dashboard') => requireRole('admin', redirectTo);
   const requireInstructor = (redirectTo: string = '/dashboard') => requireRole('instructor', redirectTo);
+  const requireInfluencer = (redirectTo: string = '/dashboard') => requireRole('influencer', redirectTo);
   const requireInstructorOrAdmin = (redirectTo: string = '/dashboard') => requireRole(['instructor', 'admin'], redirectTo);
+  const requireInfluencerOrAdmin = (redirectTo: string = '/dashboard') => requireRole(['influencer', 'admin'], redirectTo);
 
   return {
     user,
@@ -51,11 +55,15 @@ export const useRole = () => {
     isAdmin,
     isInstructor,
     isUser,
+    isInfluencer,
     isInstructorOrAdmin,
+    isInfluencerOrAdmin,
     requireRole,
     requireAdmin,
     requireInstructor,
+    requireInfluencer,
     requireInstructorOrAdmin,
+    requireInfluencerOrAdmin,
   };
 };
 
@@ -81,14 +89,16 @@ export const withRole = (WrappedComponent: React.ComponentType<any>, allowedRole
 
 // Hook for role-based conditional rendering
 export const useRoleAccess = () => {
-  const { hasRole, isAdmin, isInstructor, isUser, isInstructorOrAdmin } = useRole();
+  const { hasRole, isAdmin, isInstructor, isUser, isInfluencer, isInstructorOrAdmin, isInfluencerOrAdmin } = useRole();
 
   return {
     canAccessAdmin: isAdmin(),
     canAccessInstructor: isInstructorOrAdmin(),
+    canAccessInfluencer: isInfluencerOrAdmin(),
     canCreateCourses: isInstructorOrAdmin(),
     canManageUsers: isAdmin(),
     canViewAnalytics: isInstructorOrAdmin(),
+    canViewInfluencerAnalytics: isInfluencerOrAdmin(),
     canViewInstructorAnalytics: isInstructorOrAdmin(),
     hasRole,
   };

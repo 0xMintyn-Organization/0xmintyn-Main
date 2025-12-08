@@ -111,7 +111,15 @@ export function AdminOrInstructorProtected({ children, fallback }: { children: R
 
 export function AllRolesProtected({ children, fallback }: { children: ReactNode; fallback?: ReactNode }) {
   return (
-    <RoleProtected allowedRoles={["user", "instructor", "admin"]} fallback={fallback}>
+    <RoleProtected allowedRoles={["user", "instructor", "admin", "influencer"]} fallback={fallback}>
+      {children}
+    </RoleProtected>
+  );
+}
+
+export function InfluencerProtected({ children, fallback }: { children: ReactNode; fallback?: ReactNode }) {
+  return (
+    <RoleProtected allowedRoles={["influencer", "admin"]} fallback={fallback}>
       {children}
     </RoleProtected>
   );
