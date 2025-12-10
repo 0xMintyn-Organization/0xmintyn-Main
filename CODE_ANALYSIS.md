@@ -3,6 +3,7 @@
 ## Executive Summary
 
 The 0xMintyn platform is a comprehensive Universal Basic Income (UBI) platform that combines:
+
 - **Educational Platform**: Course creation, enrollment, and learning management
 - **Digital Marketplace**: Digital products and services marketplace
 - **Governance System**: Decentralized proposal and voting system
