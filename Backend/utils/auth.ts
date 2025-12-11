@@ -8,9 +8,10 @@ import UserModel from '../models/user.mode';
 // authenticated user 
 export const isAthenticated = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const access_token = req.cookies.access_token;
-    console.log('Access Token:', access_token);
+    console.log('isAuthenticated - Path:', req.originalUrl, 'Access Token:', access_token ? 'Present' : 'Missing');
     if (!access_token) {
-        return next(new ErrorHandler('Access Token Issuue Please login to access this resource', 400));
+        console.log('isAuthenticated - No access token, returning 401');
+        return next(new ErrorHandler('Access Token Issue. Please login to access this resource', 401));
     }
 
     const decoded = jwt.verify(access_token, process.env.ACCESS_TOKEN as string) as JwtPayload;

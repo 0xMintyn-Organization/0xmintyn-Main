@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useMemo } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -20,32 +20,18 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import useKycStatus from '@/hooks/useKycStatus';
 
 const kycSteps = [
-  {
-    id: 1,
-    title: 'Basic Information',
-    description: 'Verify your personal details and nationality.',
-    icon: FileText,
-  },
-  {
-    id: 2,
-    title: 'Identity Verification',
-    description: 'Upload government-issued ID (Passport, ID card).',
-    icon: IdCard,
-  },
-  {
-    id: 3,
-    title: 'Facial Recognition',
-    description: 'Complete a quick selfie/liveness check.',
-    icon: Video,
-  },
+  { id: 1, title: 'Basic Information', description: 'Verify your personal details and nationality.', icon: FileText },
+  { id: 2, title: 'Identity Verification', description: 'Upload government-issued ID (Passport, ID card).', icon: IdCard },
+  { id: 3, title: 'Facial Recognition', description: 'Complete a quick selfie/liveness check.', icon: Video },
 ];
 
-type KycStatus = 'not_started' | 'in_progress' | 'pending_review' | 'verified' | 'rejected';
+type ViewStatus = 'not_started' | 'pending_review' | 'verified' | 'rejected';
 
 const statusConfig: Record<
-  KycStatus,
+  ViewStatus,
   {
     badge: string;
     badgeClass: string;
@@ -53,7 +39,6 @@ const statusConfig: Record<
     title: string;
     description: string;
     primaryAction: string;
-    secondaryAction?: string;
     helperText?: string;
   }
 > = {
@@ -61,76 +46,81 @@ const statusConfig: Record<
     badge: 'Verification Required',
     badgeClass: 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
     icon: AlertTriangle,
-    title: "Complete KYC to start trading",
+    title: 'Complete KYC to start trading',
     description:
-      'To comply with Bitget regulations, please complete identity verification to enable buying, selling, deposits, and withdrawals.',
-    primaryAction: 'Start Verification',
-    secondaryAction: 'Learn More',
-    helperText: 'Takes approximately 5 minutes. Requires government ID and smartphone camera.',
-  },
-  in_progress: {
-    badge: 'In Progress',
-    badgeClass: 'bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-    icon: Clock,
-    title: 'Continue your verification',
-    description:
-      'You have a verification in progress. Complete the remaining steps to enable trading features.',
-    primaryAction: 'Resume Verification',
-    secondaryAction: 'Start Over',
-    helperText: 'Pending steps highlighted below. Your progress is saved automatically.',
+      'To keep your account secure and enable trading, please complete identity verification for buying, selling, deposits, and withdrawals.',
+    primaryAction: 'Start verification',
+    helperText: 'Takes a few minutes. Requires government ID and liveness.',
   },
   pending_review: {
     badge: 'Under Review',
     badgeClass: 'bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
     icon: Clock,
     title: 'Verification submitted, awaiting review',
-    description:
-      'Our compliance team is reviewing your documents. You will be notified via email once the verification is complete.',
-    primaryAction: 'Refresh Status',
-    secondaryAction: 'Contact Support',
-    helperText: 'Review typically takes 5-30 minutes. Make sure emails from Bitget are not blocked.',
+    description: 'We are reviewing your documents. You will be notified once complete.',
+    primaryAction: 'Refresh status',
+    helperText: 'Reviews typically complete within minutes.',
   },
   verified: {
     badge: 'Verified',
     badgeClass: 'bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
     icon: ShieldCheck,
     title: 'KYC verification complete',
-    description:
-      'Your identity verification is complete. Trading, deposits, and withdrawals are fully enabled.',
-    primaryAction: 'Start Trading',
-    secondaryAction: 'View Limits',
-    helperText: 'Need to update your information? You can re-submit verification from settings.',
+    description: 'Your identity verification is complete. Trading, deposits, and withdrawals are enabled.',
+    primaryAction: 'Start trading',
+    helperText: 'Need to update your information? Contact support.',
   },
   rejected: {
     badge: 'Verification Failed',
     badgeClass: 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
     icon: AlertTriangle,
     title: 'Verification needs attention',
-    description:
-      'Your previous submission was rejected. Please review the requirements and resubmit your documents.',
-    primaryAction: 'Resubmit Documents',
-    secondaryAction: 'View Requirements',
-    helperText: 'Common rejection reasons: blurry document, expired ID, mismatched information.',
+    description: 'Your previous submission was rejected. Please retry your verification.',
+    primaryAction: 'Retry verification',
+    helperText: 'Common reasons: blurry document, expired ID, mismatched information.',
   },
 };
 
 export default function KycStatusCard() {
-  const [status, setStatus] = useState<KycStatus>('not_started');
-  const [currentStep, setCurrentStep] = useState(0);
+  const { status, details, loading, error, starting, refresh, startKyc } = useKycStatus();
 
-  const config = statusConfig[status];
+  // Debug log to see what status we're getting
+  React.useEffect(() => {
+    console.log('🎯 KYC Status Card - Current status:', status, 'Details:', details, 'Loading:', loading);
+  }, [status, details, loading]);
+
+  // Ensure we always have a valid viewStatus
+  const viewStatus: ViewStatus = React.useMemo(() => {
+    if (status === 'pending_review' || status === 'verified' || status === 'rejected') {
+      return status;
+    }
+    return 'not_started';
+  }, [status]);
+
+  const config = statusConfig[viewStatus];
   const StatusIcon = config.icon;
 
-  const completedSteps =
-    status === 'verified'
-      ? kycSteps.length
-      : status === 'in_progress'
-      ? currentStep
-      : status === 'pending_review' || status === 'rejected'
-      ? kycSteps.length
-      : 0;
+  const completedSteps = useMemo(() => {
+    if (viewStatus === 'verified') return kycSteps.length;
+    if (viewStatus === 'pending_review' || viewStatus === 'rejected') return Math.max(0, kycSteps.length - 1);
+    return 0;
+  }, [viewStatus]);
 
   const progressValue = Math.round((completedSteps / kycSteps.length) * 100);
+
+  const handlePrimary = async () => {
+    if (viewStatus === 'pending_review') {
+      await refresh();
+      return;
+    }
+    if (viewStatus === 'verified') {
+      return;
+    }
+    const url = await startKyc();
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-zinc-900">
@@ -144,7 +134,26 @@ export default function KycStatusCard() {
               <StatusIcon className="w-6 h-6" />
               {config.title}
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-300 max-w-2xl">{config.description}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 max-w-2xl">
+              {viewStatus === 'rejected' && details?.rejectionReason ? `Reason: ${details.rejectionReason}` : config.description}
+            </p>
+            {error ? <p className="text-xs text-red-500">{error}</p> : null}
+            {loading ? (
+              <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <RefreshCcw className="w-3 h-3 animate-spin" />
+                Loading verification status...
+              </p>
+            ) : null}
+            {viewStatus === 'pending_review' && !loading ? (
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                Status auto-refreshes every 10 seconds. Click "Refresh status" to check now.
+              </p>
+            ) : null}
+            {!loading && !error && viewStatus !== 'not_started' ? (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Last updated: {new Date().toLocaleTimeString()}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-col gap-3 items-start md:items-end">
             <Progress value={progressValue} className="w-48" />
@@ -152,21 +161,20 @@ export default function KycStatusCard() {
             <div className="flex gap-2">
               <Button
                 size="sm"
+                disabled={starting || loading}
+                onClick={handlePrimary}
                 className={cn(
                   'font-semibold shadow-md',
-                  status === 'verified'
+                  viewStatus === 'verified'
                     ? 'bg-emerald-600 hover:bg-emerald-700'
                     : 'bg-green-600 hover:bg-green-700'
                 )}
               >
-                {status === 'pending_review' ? <RefreshCcw className="w-4 h-4 mr-2" /> : null}
-                {config.primaryAction}
+                {viewStatus === 'pending_review' ? (
+                  <RefreshCcw className={cn('w-4 h-4 mr-2', loading && 'animate-spin')} />
+                ) : null}
+                {starting ? 'Starting…' : loading && viewStatus === 'pending_review' ? 'Refreshing…' : config.primaryAction}
               </Button>
-              {config.secondaryAction ? (
-                <Button variant="outline" size="sm" className="border-gray-300 dark:border-zinc-700">
-                  {config.secondaryAction}
-                </Button>
-              ) : null}
             </div>
           </div>
         </div>
@@ -182,7 +190,7 @@ export default function KycStatusCard() {
             {kycSteps.map((step, index) => {
               const StepIcon = step.icon;
               const isCompleted = index < completedSteps;
-              const isCurrent = index === completedSteps && status === 'in_progress';
+              const isCurrent = viewStatus === 'pending_review' && index === completedSteps;
 
               return (
                 <div
@@ -238,6 +246,29 @@ export default function KycStatusCard() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {(viewStatus === 'not_started' || viewStatus === 'rejected') && (
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                  <IdCard className="w-4 h-4" /> Start verification with Didit
+                </h4>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                We’ll open a secure Didit verification link to capture your ID and liveness. Once done, refresh status to see the result.
+              </p>
+              <Button
+                onClick={handlePrimary}
+                disabled={starting || loading}
+                className="w-full font-semibold"
+              >
+                {starting ? 'Opening…' : 'Open verification link'}
+              </Button>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                Verification is handled by Didit; your data is processed securely.
+              </p>
+            </div>
+          )}
+
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-700 dark:bg-zinc-900/60">
             <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4" /> Why KYC is required
@@ -255,7 +286,7 @@ export default function KycStatusCard() {
             </h4>
             <div className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-green-600" /> compliance@bitget.com
+                <Mail className="w-4 h-4 text-green-600" /> support@0xmintyn.com
               </div>
               <div className="flex items-center gap-2">
                 <PhoneCall className="w-4 h-4 text-green-600" /> 24/7 support hotline
@@ -269,36 +300,6 @@ export default function KycStatusCard() {
                 {config.helperText}
               </p>
             ) : null}
-          </div>
-
-          {/* Debug / Demo controls (remove when API connects) */}
-          <div className="rounded-xl border border-dashed border-gray-300 p-3 text-xs text-gray-500 dark:border-zinc-700 dark:text-gray-400">
-            <p className="font-semibold mb-2 flex items-center gap-2">
-              Demo Controls
-              <Badge variant="secondary" className="text-[10px]">Remove in production</Badge>
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {(['not_started', 'in_progress', 'pending_review', 'verified', 'rejected'] as KycStatus[]).map((state) => (
-                <Button
-                  key={state}
-                  variant={status === state ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => {
-                    setStatus(state);
-                    if (state === 'in_progress') setCurrentStep(1);
-                    if (state === 'verified') setCurrentStep(kycSteps.length);
-                  }}
-                  className={cn(
-                    'text-[11px] font-semibold',
-                    status === state
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'hover:bg-gray-100 dark:hover:bg-zinc-800'
-                  )}
-                >
-                  {state.replace('_', ' ')}
-                </Button>
-              ))}
-            </div>
           </div>
         </div>
       </CardContent>

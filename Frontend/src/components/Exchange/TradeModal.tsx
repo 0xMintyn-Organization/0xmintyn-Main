@@ -32,7 +32,7 @@ interface TradeModalProps {
   offer: P2POffer;
   side: 'buy' | 'sell';
   userBalance: UserBalance;
-  onConfirm: (amount: number) => Promise<void>;
+  onConfirm: (amount: number, paymentMethod: string) => Promise<void>;
   isProcessing: boolean;
 }
 
@@ -133,7 +133,11 @@ export default function TradeModal({
       return;
     }
 
-    await onConfirm(amountNum);
+    if (!selectedPaymentMethod) {
+      setErrors({ ...errors, payment: 'Please select a payment method' });
+      return;
+    }
+    await onConfirm(amountNum, selectedPaymentMethod);
   };
 
   return (

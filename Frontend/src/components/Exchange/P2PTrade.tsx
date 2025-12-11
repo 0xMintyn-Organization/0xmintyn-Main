@@ -48,9 +48,10 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 
-// Mock data types - Replace with API types later
+// Types
 export interface P2POffer {
   id: string;
+  traderId?: string;
   traderName: string;
   traderAvatar?: string;
   traderRating: number;
@@ -67,8 +68,6 @@ export interface P2POffer {
   timeLimit: number;
   isVerified: boolean;
   isOnline: boolean;
-  requiresVerification?: boolean;
-  traderId?: string;
   asset: string;
 }
 
@@ -304,20 +303,46 @@ export default function P2PTrade() {
   const [selectedAsset, setSelectedAsset] = useState<string>(assetSymbols[0]);
   const [showAllAssets, setShowAllAssets] = useState(false);
   const [selectedFiat, setSelectedFiat] = useState<(typeof fiatCurrencies)[number]['code']>(fiatCurrencies[0].code);
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table'); // New: View mode toggle
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [searchQuery, setSearchQuery] = useState('');
-  const [transactionAmount, setTransactionAmount] = useState(''); // New: Transaction amount filter
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('all'); // New: Payment method filter
+  const [transactionAmount, setTransactionAmount] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'price' | 'rating' | 'trades'>('price');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [showMoreFilters, setShowMoreFilters] = useState(false); // New: More filters toggle
-  const [filterVerifiedOnly, setFilterVerifiedOnly] = useState(false); // New: Verified only filter
-  const [filterOnlineOnly, setFilterOnlineOnly] = useState(false); // New: Online only filter
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [filterVerifiedOnly, setFilterVerifiedOnly] = useState(false);
+  const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<P2POffer | null>(null);
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [tradeAmount, setTradeAmount] = useState('');
-  const [userBalance] = useState<UserBalance>(mockUserBalance);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Use mock data
+  const assetOfferCatalog: Record<string, { buy: P2POffer[]; sell: P2POffer[] }> = useMemo(() => {
+    const catalog: Record<string, { buy: P2POffer[]; sell: P2POffer[] }> = {};
+    assetSymbols.forEach((asset) => {
+      catalog[asset] = {
+        buy: baseBuyOffers.map((offer, idx) => ({
+          ...offer,
+          id: `${asset}-buy-${idx}`,
+          asset,
+        })),
+        sell: baseSellOffers.map((offer, idx) => ({
+          ...offer,
+          id: `${asset}-sell-${idx}`,
+          asset,
+        })),
+      };
+    });
+    return catalog;
+  }, []);
+
+  const allOffers = useMemo(() => {
+    const catalog = assetOfferCatalog[selectedAsset] || { buy: [], sell: [] };
+    return activeTab === 'buy' ? catalog.sell : catalog.buy;
+  }, [selectedAsset, activeTab, assetOfferCatalog]);
+
+  const userBalance = mockUserBalance;
   const selectedAssetBalance = userBalance[selectedAsset] ?? 0;
   const usdBalance = userBalance.USD ?? 0;
   const usdtBalance = userBalance.USDT ?? 0;
@@ -326,10 +351,6 @@ export default function P2PTrade() {
   const visibleAssetCount = 12;
   const canShowMoreAssets = assetSymbols.length > visibleAssetCount;
   const displayedAssets = showAllAssets ? assetSymbols : assetSymbols.slice(0, visibleAssetCount);
-  const offersForAsset = assetOfferCatalog[selectedAsset] ?? assetOfferCatalog[assetSymbols[0]];
-
-  // Get offers based on active tab
-  const allOffers = activeTab === 'buy' ? offersForAsset.buy : offersForAsset.sell;
 
   // Get all unique payment methods
   const allPaymentMethods = useMemo(() => {
@@ -400,24 +421,20 @@ export default function P2PTrade() {
     setIsTradeModalOpen(true);
   };
 
-  const handleTradeConfirm = async (amount: number) => {
+  const handleTradeConfirm = async (amount: number, paymentMethod: string) => {
     if (!selectedOffer) return;
 
-    setIsProcessing(true);
-    
     // Validate balance
     if (activeTab === 'buy') {
       const requiredFiat = amount * selectedOffer.price;
       if ((userBalance.USD ?? 0) < requiredFiat && (userBalance.USDT ?? 0) < requiredFiat) {
         toast.error('Insufficient USD/USDT balance for this purchase');
-        setIsProcessing(false);
         return;
       }
     } else {
       const assetBalance = userBalance[selectedOffer.asset] ?? 0;
       if (assetBalance < amount) {
         toast.error(`Insufficient ${selectedOffer.asset} balance`);
-        setIsProcessing(false);
         return;
       }
     }
@@ -427,33 +444,20 @@ export default function P2PTrade() {
       toast.error(
         `Amount must be between ${selectedOffer.minLimit} and ${selectedOffer.maxLimit} ${selectedOffer.asset}`,
       );
-      setIsProcessing(false);
       return;
     }
 
-    // Simulate API call
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // TODO: Replace with actual API call
-      // await tradeP2P({
-      //   offerId: selectedOffer.id,
-      //   amount,
-      //   side: activeTab,
-      // });
-
+    // Simulate trade execution
+    setIsProcessing(true);
+    setTimeout(() => {
       toast.success(`${activeTab === 'buy' ? 'Buy' : 'Sell'} order placed successfully!`, {
         description: `${amount} ${selectedOffer.asset} at $${selectedOffer.price} per unit`,
       });
-
       setIsTradeModalOpen(false);
       setSelectedOffer(null);
       setTradeAmount('');
-    } catch (error) {
-      toast.error('Trade failed. Please try again.');
-    } finally {
       setIsProcessing(false);
-    }
+    }, 1000);
   };
 
   const toggleSortOrder = () => {

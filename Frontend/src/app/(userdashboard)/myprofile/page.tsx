@@ -105,7 +105,7 @@ function MyProfile() {
                   </div>
                   <Badge variant="outline" className="hidden sm:flex border-green-300 dark:border-green-700 text-green-700 dark:text-green-300">
                     <Lock className="w-3 h-3 mr-1" />
-                    Secured
+                    Secured 
                   </Badge>
                 </div>
               </CardHeader>

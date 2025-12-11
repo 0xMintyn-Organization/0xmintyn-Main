@@ -42,8 +42,17 @@ export const ErrorMiddleware = (err:any , req: Request, res: Response, next : Ne
 
     
 
+    // Log error for debugging
+    console.error('Error Middleware:', {
+        statusCode: err.statusCode,
+        message: err.message,
+        path: req.originalUrl,
+        method: req.method,
+    });
+
     res.status(err.statusCode).json({
         success: false,
+        ok: false,
         error: err.message,
     });
     

@@ -45,6 +45,20 @@ export interface IUser extends Document {
     walletAddress: string;
     walletProvider: string;
     walletConnectedAt: Date;
+    kycStatus: 'not_started' | 'pending_review' | 'verified' | 'rejected';
+    kycData: {
+        fullName?: string;
+        country?: string;
+        idType?: string;
+        idNumber?: string;
+        submittedAt?: Date;
+        reviewedAt?: Date | null;
+        rejectionReason?: string;
+        verificationUrl?: string;
+        verificationId?: string;
+        diditSessionId?: string;
+        userId?: string;
+    };
     comparePassword: (password: string) => Promise<boolean>;
     SignAccessToken: () => string;
     SignRefreshToken: () => string;
@@ -163,6 +177,32 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     walletConnectedAt: {
         type: Date,
         default: null,
+    },
+    kycStatus: {
+        type: String,
+        enum: ['not_started', 'pending_review', 'verified', 'rejected'],
+        default: 'not_started',
+    },
+    kycData: {
+        type: {
+            fullName: { type: String, default: null },
+            country: { type: String, default: null },
+            idType: { type: String, default: null },
+            idNumber: { type: String, default: null },
+            submittedAt: { type: Date, default: null },
+            reviewedAt: { type: Date, default: null },
+            rejectionReason: { type: String, default: null },
+            verificationUrl: { type: String, default: null },
+            verificationId: { type: String, default: null },
+            diditSessionId: { type: String, default: null },
+            userId: { type: String, default: null },
+        },
+        default: null,
+    },
+    balances: {
+        type: Map,
+        of: Number,
+        default: new Map(),
     },
     purchasedProducts: [
         {
