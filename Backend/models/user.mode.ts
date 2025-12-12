@@ -87,6 +87,20 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
         required: [true, 'Please enter your username'],
         unique: true,
     },
+    walletAddress: {
+        type: String,
+        default: null,
+        sparse: true, // Allows multiple nulls but enforces uniqueness for non-null values
+        validate: {
+            validator: function(v: string | null) {
+                if (!v) return true; // Allow null/undefined
+                // Solana addresses are base58 encoded and 32-44 characters
+                const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+                return base58Regex.test(v);
+            },
+            message: 'Invalid Solana wallet address format'
+        }
+    },
     contactNumber: {
         type: String,
         required: [true, 'Please enter your contact number'],

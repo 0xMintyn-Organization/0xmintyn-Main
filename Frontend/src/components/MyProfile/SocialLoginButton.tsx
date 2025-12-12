@@ -181,10 +181,14 @@ export function SocialLoginButton({
                     
                     tokenLoginSuccess = true; // Mark as successful
                     
-                    // TEMPORARILY DISABLED FOR DEBUGGING - Don't redirect yet
-                    // setTimeout(() => {
-                    //   router.push(redirectTo);
-                    // }, 300);
+                    // Check if user has wallet, redirect to connect-wallet if not
+                    setTimeout(() => {
+                      if (!userData.user.walletAddress) {
+                        router.push("/connect-wallet");
+                      } else {
+                        router.push(redirectTo);
+                      }
+                    }, 300);
                   } else {
                     console.error("❌ Response missing user or success flag:", userData);
                   }
@@ -265,10 +269,15 @@ export function SocialLoginButton({
                       accessToken: localStorage.getItem('accessToken') ? "Present" : "Missing (using cookies)"
                     });
                     
-                    // TEMPORARILY DISABLED FOR DEBUGGING - Don't redirect yet
-                    // console.log("Redirecting to dashboard");
-                    // router.push(redirectTo);
+                    // Check if user has wallet, redirect to connect-wallet if not
                     setIsFetchingUser(false);
+                    setTimeout(() => {
+                      if (!userData.user.walletAddress) {
+                        router.push("/connect-wallet");
+                      } else {
+                        router.push(redirectTo);
+                      }
+                    }, 300);
                     return;
                   } else {
                     console.error("❌ Cookie fetch returned data but missing user or success flag:", userData);

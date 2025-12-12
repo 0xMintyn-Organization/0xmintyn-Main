@@ -74,7 +74,7 @@ export const uploadFile = CatchAsyncError(async (req: Request, res: Response, ne
             return next(new ErrorHandler("No file uploaded", 400));
         }
 
-        const fileUrl = `${process.env.SERVER_URI || 'https://appbackend.0xmintyn.com'}/uploads/files/${req.file.filename}`;
+        const fileUrl = `${process.env.SERVER_URI || 'http://localhost:8000'}/uploads/files/${req.file.filename}`;
         
         console.log('File uploaded successfully:', {
             filename: req.file.filename,
@@ -109,7 +109,7 @@ export const uploadMultipleFiles = CatchAsyncError(async (req: Request, res: Res
 
         const files = req.files as Express.Multer.File[];
         const fileUrls = files.map(file => ({
-            url: `${process.env.SERVER_URI || 'https://appbackend.0xmintyn.com'}/uploads/files/${file.filename}`,
+            url: `${process.env.SERVER_URI || 'http://localhost:8000'}/uploads/files/${file.filename}`,
             filename: file.filename,
             originalName: file.originalname,
             size: file.size,

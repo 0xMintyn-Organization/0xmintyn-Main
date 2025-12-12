@@ -150,9 +150,22 @@ export const authApi = apiSlice.injectEndpoints({
                     }
                     
                     // Wait for backend logout to complete
-                    await queryFulfilled;
-                } catch (error) {
-                    console.log(error);
+                    // Suppress 400 errors when user is not logged in (expected behavior)
+                    try {
+                        await queryFulfilled;
+                    } catch (error: any) {
+                        // 400 error is expected when user is not logged in - silently handle it
+                        if (error?.status === 400 || error?.error?.status === 400) {
+                            // User was already logged out, this is fine
+                            return;
+                        }
+                        throw error; // Re-throw other errors
+                    }
+                } catch (error: any) {
+                    // Only log non-400 errors (400 means user wasn't logged in, which is fine)
+                    if (error?.status !== 400 && error?.error?.status !== 400) {
+                        console.log('Logout error:', error);
+                    }
                     // Even on error, clear local state
                     dispatch(userLoggedOut());
                     if (typeof window !== 'undefined') {

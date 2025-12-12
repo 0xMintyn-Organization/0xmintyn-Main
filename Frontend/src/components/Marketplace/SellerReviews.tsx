@@ -52,7 +52,7 @@ export default function SellerReviews({ sellerId }: SellerReviewsProps) {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/reviews/seller/${sellerId}`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/reviews/seller/${sellerId}`,
         { withCredentials: true }
       );
 

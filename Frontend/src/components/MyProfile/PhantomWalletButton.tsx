@@ -119,7 +119,7 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
       // Save to database
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URI}user/update-wallet-address`,
+          `${process.env.NEXT_PUBLIC_SERVER_URI}update-wallet-address`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -419,7 +419,7 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
       // Remove wallet address from database
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URI}user/remove-wallet-address`,
+          `${process.env.NEXT_PUBLIC_SERVER_URI}remove-wallet-address`,
           {
             method: "DELETE",
             credentials: "include",
