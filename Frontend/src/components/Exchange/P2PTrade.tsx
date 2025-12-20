@@ -47,6 +47,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Types
 export interface P2POffer {
@@ -299,6 +301,8 @@ const mockUserBalance: UserBalance = {
 };
 
 export default function P2PTrade() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [selectedAsset, setSelectedAsset] = useState<string>(assetSymbols[0]);
   const [showAllAssets, setShowAllAssets] = useState(false);
@@ -339,7 +343,23 @@ export default function P2PTrade() {
 
   const allOffers = useMemo(() => {
     const catalog = assetOfferCatalog[selectedAsset] || { buy: [], sell: [] };
-    return activeTab === 'buy' ? catalog.sell : catalog.buy;
+    const baseOffers = activeTab === 'buy' ? catalog.sell : catalog.buy;
+
+    // Load custom ads created from /exchange/p2p/merchant (localStorage/sessionStorage)
+    let customOffers: P2POffer[] = [];
+    try {
+      const raw = sessionStorage.getItem('exchange:p2pCustomOffers') || localStorage.getItem('exchange:p2pCustomOffers');
+      const parsed = raw ? (JSON.parse(raw) as any[]) : [];
+      customOffers = parsed
+        .filter(Boolean)
+        .filter((o) => o.asset === selectedAsset)
+        .filter((o) => o.isOnline !== false)
+        .filter((o) => (activeTab === 'buy' ? o.side === 'sell' : o.side === 'buy'));
+    } catch {
+      customOffers = [];
+    }
+
+    return [...customOffers, ...baseOffers];
   }, [selectedAsset, activeTab, assetOfferCatalog]);
 
   const userBalance = mockUserBalance;
@@ -453,10 +473,62 @@ export default function P2PTrade() {
       toast.success(`${activeTab === 'buy' ? 'Buy' : 'Sell'} order placed successfully!`, {
         description: `${amount} ${selectedOffer.asset} at $${selectedOffer.price} per unit`,
       });
+
+      // Create a demo order record for the Exchange Messenger (until backend exists)
+      const orderId = `p2p_${Date.now()}`;
+      const currentUserId = user?._id || 'me';
+      const counterpartyId = selectedOffer.traderId || selectedOffer.id;
+      const counterpartyName = selectedOffer.traderName || 'Counterparty';
+      const currentUserName = user?.name || user?.email || 'You';
+      const totalFiat = amount * selectedOffer.price;
+
+      const buyerUserId = activeTab === 'buy' ? currentUserId : counterpartyId;
+      const sellerUserId = activeTab === 'buy' ? counterpartyId : currentUserId;
+      const buyerName = activeTab === 'buy' ? currentUserName : counterpartyName;
+      const sellerName = activeTab === 'buy' ? counterpartyName : currentUserName;
+
+      const orderRecord = {
+        id: orderId,
+        asset: selectedOffer.asset,
+        fiat: selectedFiat,
+        side: activeTab,
+        price: selectedOffer.price,
+        amount,
+        totalFiat,
+        paymentMethod,
+        buyerUserId,
+        sellerUserId,
+        buyerName,
+        sellerName,
+        counterpartyUserId: counterpartyId,
+        counterpartyName,
+        status: 'created',
+        createdAt: new Date().toISOString(),
+      };
+
+      try {
+        sessionStorage.setItem(`exchange:p2pOrder:${orderId}`, JSON.stringify(orderRecord));
+        const initialMessage = {
+          id: `msg_${Date.now()}`,
+          orderId,
+          senderUserId: counterpartyId,
+          message: `Order created. Please complete payment via ${paymentMethod} within ${selectedOffer.timeLimit} minutes.`,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          attachments: [],
+        };
+        sessionStorage.setItem(`exchange:p2pMessages:${orderId}`, JSON.stringify([initialMessage]));
+      } catch (e) {
+        // sessionStorage might be blocked in some contexts; ignore for now
+      }
+
       setIsTradeModalOpen(false);
       setSelectedOffer(null);
       setTradeAmount('');
       setIsProcessing(false);
+
+      // Redirect user to the Exchange order-based messenger
+      router.push(`/exchange/messages?order=${encodeURIComponent(orderId)}`);
     }, 1000);
   };
 
@@ -466,6 +538,29 @@ export default function P2PTrade() {
 
   return (
     <div className="space-y-3">
+      {/* Merchant / Post Ad Buttons */}
+      <div className="flex flex-wrap gap-2 items-center justify-between">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Post your own Buy/Sell ads (merchant mode)
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="h-8 text-xs"
+            onClick={() => router.push('/exchange/p2p/merchant?intent=buy')}
+          >
+            Post Buy Ad
+          </Button>
+          <Button
+            variant="outline"
+            className="h-8 text-xs"
+            onClick={() => router.push('/exchange/p2p/merchant?intent=sell')}
+          >
+            Post Sell Ad
+          </Button>
+        </div>
+      </div>
+
       {/* Balance Display - Compact */}
       <Card className="border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
         <CardContent className="p-3">

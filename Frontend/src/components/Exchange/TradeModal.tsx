@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import { 
   Shield, 
   Star, 
@@ -21,7 +22,13 @@ import {
   AlertCircle,
   Loader2,
   CheckCircle2,
-  XCircle
+  XCircle,
+  ArrowUp,
+  ArrowDown,
+  Info,
+  Wallet,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { P2POffer, UserBalance } from './P2PTrade';
 import { toast } from 'sonner';
@@ -55,17 +62,22 @@ export default function TradeModal({
       setSelectedPaymentMethod('');
       setErrors({});
     }
-  }, [isOpen]);
+  }, [isOpen, offer]);
 
   const amountNum = parseFloat(amount) || 0;
-  const total = amountNum * offer.price;
+  const totalPrice = amountNum * offer.price;
   const isBuy = side === 'buy';
   const assetLabel = offer.asset ?? 'Asset';
 
-  // Calculate available balance
+  // Calculate available balance based on side
   const availableBalance = isBuy
-    ? Math.max(userBalance.USD ?? 0, userBalance.USDT ?? 0)
+    ? (userBalance.USD ?? 0) + (userBalance.USDT ?? 0)
     : userBalance[assetLabel] ?? 0;
+
+  // Max amount user can trade
+  const maxTradeableAmount = isBuy
+    ? Math.min(offer.available, offer.maxLimit, availableBalance / offer.price)
+    : Math.min(offer.available, offer.maxLimit, availableBalance);
 
   // Validate amount
   const validateAmount = () => {
@@ -87,17 +99,17 @@ export default function TradeModal({
     }
 
     if (amountNum > offer.available) {
-      newErrors.amount = `Available amount is ${offer.available} ${assetLabel}`;
+      newErrors.amount = `Available amount is ${offer.available.toLocaleString()} ${assetLabel}`;
       return newErrors;
     }
 
-    if (isBuy && total > availableBalance) {
+    if (isBuy && totalPrice > availableBalance) {
       newErrors.amount = `Insufficient balance. Available: $${availableBalance.toFixed(2)}`;
       return newErrors;
     }
 
     if (!isBuy && amountNum > availableBalance) {
-      newErrors.amount = `Insufficient ${assetLabel}. Available: ${availableBalance} ${assetLabel}`;
+      newErrors.amount = `Insufficient ${assetLabel}. Available: ${availableBalance.toLocaleString()} ${assetLabel}`;
       return newErrors;
     }
 
@@ -109,19 +121,16 @@ export default function TradeModal({
   };
 
   const handleAmountChange = (value: string) => {
-    setAmount(value);
+    // Allow only numbers and decimal point
+    const cleaned = value.replace(/[^0-9.]/g, '');
+    setAmount(cleaned);
     if (errors.amount) {
       setErrors(prev => ({ ...prev, amount: undefined }));
     }
   };
 
   const handleQuickAmount = (percentage: number) => {
-    const maxAmount = Math.min(
-      offer.available,
-      offer.maxLimit,
-      isBuy ? availableBalance / offer.price : availableBalance
-    );
-    const quickAmount = (maxAmount * percentage / 100).toFixed(2);
+    const quickAmount = (maxTradeableAmount * percentage / 100).toFixed(2);
     setAmount(quickAmount);
     setErrors({});
   };
@@ -142,205 +151,301 @@ export default function TradeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {isBuy ? 'Buy' : 'Sell'} {assetLabel} - {offer.traderName}
-          </DialogTitle>
-          <DialogDescription>
-            Complete your {isBuy ? 'purchase' : 'sale'} of {assetLabel} with this trader
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          {/* Trader Info */}
-          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-            <Avatar className="w-12 h-12">
-              <AvatarImage src={offer.traderAvatar} />
-              <AvatarFallback>
-                {offer.traderName.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-semibold">{offer.traderName}</p>
-                {offer.isVerified && (
-                  <Shield className="w-4 h-4 text-blue-600" />
+      <DialogContent className="sm:max-w-[600px] max-h-[95vh] overflow-y-auto p-0">
+        {/* Header with Buy/Sell Badge */}
+        <div className={`${isBuy ? 'bg-gradient-to-r from-green-600 to-emerald-600' : 'bg-gradient-to-r from-red-600 to-rose-600'} text-white p-6`}>
+          <DialogHeader className="space-y-3">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                {isBuy ? (
+                  <>
+                    <ArrowUp className="w-6 h-6" />
+                    Buy {assetLabel}
+                  </>
+                ) : (
+                  <>
+                    <ArrowDown className="w-6 h-6" />
+                    Sell {assetLabel}
+                  </>
                 )}
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm">{offer.traderRating}</span>
-                <span className="text-xs text-gray-500">
-                  ({offer.completedTrades.toLocaleString()} trades, {offer.completionRate}% completion)
-                </span>
+              </DialogTitle>
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/30 text-sm px-3 py-1">
+                {offer.price.toFixed(2)} USD
+              </Badge>
+            </div>
+            <DialogDescription className="text-white/90 text-base">
+              {isBuy 
+                ? `You will pay ${totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : 'USD'} to receive ${amountNum > 0 ? amountNum.toFixed(4) : '0'} ${assetLabel}`
+                : `You will receive ${totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : 'USD'} for selling ${amountNum > 0 ? amountNum.toFixed(4) : '0'} ${assetLabel}`
+              }
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Trader Information Card */}
+          <div className="border border-gray-200 dark:border-zinc-800 rounded-lg p-4 bg-gray-50 dark:bg-zinc-900/50">
+            <div className="flex items-center gap-4">
+              <Avatar className="w-14 h-14 border-2 border-gray-300 dark:border-zinc-700">
+                <AvatarImage src={offer.traderAvatar} />
+                <AvatarFallback className="text-lg bg-gray-200 dark:bg-zinc-800">
+                  {offer.traderName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="font-semibold text-lg">{offer.traderName}</p>
+                  {offer.isVerified && (
+                    <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  )}
+                  {offer.isOnline && (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 text-xs">
+                      Online
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <span className="font-medium">{offer.traderRating}</span>
+                  </div>
+                  <span>•</span>
+                  <span>{offer.completedTrades.toLocaleString()} orders</span>
+                  <span>•</span>
+                  <span>{offer.completionRate}% completion</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-500">
+                  <Clock className="w-3 h-3" />
+                  <span>Response time: {offer.responseTime} min</span>
+                  <span>•</span>
+                  <span>{offer.responseRate}% response rate</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Price Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Price</p>
-              <p className="text-xl font-bold">${offer.price.toFixed(2)}</p>
+          {/* Order Details Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Order Details</h3>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Available: <span className="font-semibold text-gray-900 dark:text-gray-100">{offer.available.toLocaleString()} {assetLabel}</span>
+              </div>
             </div>
-            <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Available</p>
-              <p className="text-xl font-bold">
-                {offer.available.toLocaleString()} {assetLabel}
-              </p>
-            </div>
-          </div>
 
-          {/* Amount Input */}
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount ({assetLabel})</Label>
-            <Input
-              id="amount"
-              type="number"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => handleAmountChange(e.target.value)}
-              className={errors.amount ? 'border-red-500' : ''}
-              min={offer.minLimit}
-              max={Math.min(offer.maxLimit, offer.available)}
-              step="0.01"
-            />
-            {errors.amount && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {errors.amount}
-              </p>
+            {/* Amount Input Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="amount" className="text-base font-medium">
+                  {isBuy ? `Amount to Buy (${assetLabel})` : `Amount to Sell (${assetLabel})`}
+                </Label>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Balance: <span className="font-semibold text-gray-900 dark:text-gray-100">
+                    {isBuy 
+                      ? `$${availableBalance.toFixed(2)}`
+                      : `${availableBalance.toLocaleString()} ${assetLabel}`
+                    }
+                  </span>
+                </div>
+              </div>
+              
+              <div className="relative">
+                <Input
+                  id="amount"
+                  type="text"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  className={`text-2xl font-bold h-16 pr-24 ${errors.amount ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Badge variant="outline" className="text-sm px-3 py-1.5 bg-gray-100 dark:bg-zinc-800">
+                    {assetLabel}
+                  </Badge>
+                </div>
+              </div>
+
+              {errors.amount && (
+                <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 p-3 rounded-lg">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{errors.amount}</span>
+                </div>
+              )}
+
+              {/* Quick Amount Buttons */}
+              <div className="flex gap-2">
+                {[25, 50, 75, 100].map((percentage) => {
+                  const quickAmount = (maxTradeableAmount * percentage / 100);
+                  return (
+                    <Button
+                      key={percentage}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickAmount(percentage)}
+                      className="flex-1 text-sm"
+                      disabled={maxTradeableAmount <= 0}
+                    >
+                      {percentage}% ({quickAmount.toFixed(2)})
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Total Price Display */}
+            {amountNum > 0 && (
+              <div className={`p-5 rounded-lg border-2 ${isBuy ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {isBuy ? 'Total to Pay' : 'Total to Receive'}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {isBuy ? (
+                      <TrendingDown className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <TrendingUp className="w-5 h-5 text-red-600" />
+                    )}
+                    <span className={`text-3xl font-bold ${isBuy ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                      ${totalPrice.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {amountNum.toFixed(4)} {assetLabel} × ${offer.price.toFixed(2)} = ${totalPrice.toFixed(2)} USD
+                </div>
+              </div>
             )}
-            
-            {/* Quick Amount Buttons */}
-            <div className="flex gap-2">
-              {[25, 50, 75, 100].map((percentage) => (
-                <Button
-                  key={percentage}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuickAmount(percentage)}
-                  className="flex-1 text-xs"
-                >
-                  {percentage}%
-                </Button>
-              ))}
-            </div>
-          </div>
 
-          {/* Total Calculation */}
-          {amountNum > 0 && (
-            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Total</span>
-                <span className="text-2xl font-bold">${total.toFixed(2)}</span>
+            {/* Payment Method Selection */}
+            <div className="space-y-3">
+              <Label className="text-base font-medium">
+                {isBuy ? 'Select Payment Method' : 'Select Receiving Method'}
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                {offer.paymentMethods.map((method) => (
+                  <Button
+                    key={method}
+                    variant={selectedPaymentMethod === method ? 'default' : 'outline'}
+                    onClick={() => {
+                      setSelectedPaymentMethod(method);
+                      setErrors(prev => ({ ...prev, payment: undefined }));
+                    }}
+                    className={`h-14 text-base font-medium transition-all ${
+                      selectedPaymentMethod === method
+                        ? isBuy
+                          ? 'bg-green-600 hover:bg-green-700 text-white border-green-600'
+                          : 'bg-red-600 hover:bg-red-700 text-white border-red-600'
+                        : 'hover:border-gray-400 dark:hover:border-zinc-600'
+                    }`}
+                  >
+                    {method}
+                    {selectedPaymentMethod === method && (
+                      <CheckCircle2 className="w-5 h-5 ml-2" />
+                    )}
+                  </Button>
+                ))}
               </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                {amountNum.toFixed(2)} {assetLabel} × ${offer.price.toFixed(2)} = ${total.toFixed(2)}
+              {errors.payment && (
+                <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 p-3 rounded-lg">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{errors.payment}</span>
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Trade Limits & Info */}
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="space-y-2 text-sm">
+                  <p className="font-semibold text-blue-900 dark:text-blue-200">Trade Limits & Terms</p>
+                  <div className="space-y-1 text-blue-800 dark:text-blue-300">
+                    <p>• Min order: <span className="font-semibold">{offer.minLimit} {assetLabel}</span> (${(offer.minLimit * offer.price).toFixed(2)})</p>
+                    <p>• Max order: <span className="font-semibold">{offer.maxLimit.toLocaleString()} {assetLabel}</span> (${(offer.maxLimit * offer.price).toFixed(2)})</p>
+                    <p>• Payment time limit: <span className="font-semibold">{offer.timeLimit} minutes</span></p>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Payment Method Selection */}
-          <div className="space-y-2">
-            <Label>Payment Method</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {offer.paymentMethods.map((method) => (
-                <Button
-                  key={method}
-                  variant={selectedPaymentMethod === method ? 'default' : 'outline'}
-                  onClick={() => {
-                    setSelectedPaymentMethod(method);
-                    setErrors(prev => ({ ...prev, payment: undefined }));
-                  }}
-                  className={`${
-                    selectedPaymentMethod === method
-                      ? isBuy
-                        ? 'bg-green-600 hover:bg-green-700 text-white'
-                        : 'bg-red-600 hover:bg-red-700 text-white'
-                      : ''
-                  }`}
-                >
-                  {method}
-                </Button>
-              ))}
-            </div>
-            {errors.payment && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {errors.payment}
-              </p>
-            )}
-          </div>
-
-          {/* Trade Limits */}
-          <div className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
-              <div className="text-xs space-y-1">
-                <p className="font-medium text-yellow-800 dark:text-yellow-200">
-                  Trade Limits
-                </p>
-                <p className="text-yellow-700 dark:text-yellow-300">
-                  Min: {offer.minLimit} {assetLabel} | Max: {offer.maxLimit} {assetLabel}
-                </p>
-                <p className="text-yellow-700 dark:text-yellow-300">
-                  Time Limit: {offer.timeLimit} minutes
-                </p>
+              {/* Balance Summary */}
+              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-zinc-900/50 rounded-lg border border-gray-200 dark:border-zinc-800">
+                <Wallet className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Your Balance</p>
+                  <div className="grid grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">{assetLabel}:</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100 ml-2">
+                        {(userBalance[assetLabel] ?? 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">USD:</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100 ml-2">
+                        ${(userBalance.USD ?? 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">USDT:</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100 ml-2">
+                        {(userBalance.USDT ?? 0).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Balance Info */}
-          <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Your Balance</p>
-            <div className="flex justify-between text-sm">
-              <span>{assetLabel}:</span>
-              <span className="font-semibold">
-                {(userBalance[assetLabel] ?? 0).toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>USD:</span>
-              <span className="font-semibold">${(userBalance.USD ?? 0).toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>USDT:</span>
-              <span className="font-semibold">{(userBalance.USDT ?? 0).toLocaleString()}</span>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isProcessing}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={isProcessing || !amount || amountNum <= 0}
-            className={`${
-              isBuy
-                ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
-                : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700'
-            } text-white`}
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              `Confirm ${isBuy ? 'Buy' : 'Sell'}`
-            )}
-          </Button>
+        {/* Footer Actions */}
+        <DialogFooter className="p-6 border-t border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50">
+          <div className="flex gap-3 w-full">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isProcessing}
+              className="flex-1 h-12 text-base"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={isProcessing || !amount || amountNum <= 0 || !selectedPaymentMethod}
+              className={`flex-1 h-12 text-base font-semibold ${
+                isBuy
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                  : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700'
+              } text-white`}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  {isBuy ? (
+                    <>
+                      <ArrowUp className="w-5 h-5 mr-2" />
+                      Place Buy Order
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDown className="w-5 h-5 mr-2" />
+                      Place Sell Order
+                    </>
+                  )}
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-

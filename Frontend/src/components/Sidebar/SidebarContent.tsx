@@ -145,6 +145,20 @@ const getNavItems = (userRole: string, bookmarkCount: number, hasPurchases: bool
       description: "Trade 0xMintyn Tokens"
     },
     { 
+      name: "Exchange Messages", 
+      href: "/exchange/messages", 
+      icon: MessageSquare,
+      badge: null,
+      description: "P2P Order Chat"
+    },
+    { 
+      name: "P2P Merchant", 
+      href: "/exchange/p2p/merchant", 
+      icon: Store,
+      badge: null,
+      description: "Post Buy/Sell Ads"
+    },
+    { 
       name: "Settings", 
       href: "/settings", 
       icon: Settings,

@@ -70,7 +70,23 @@ import sendEmail from '../utils/sendMail';
                     activationToken: activationToken.token
                 });
             } catch (error) {
-                return next(new ErrorHandler(error.message, 500));
+                /**
+                 * Local/dev environments often don't have SMTP configured.
+                 * Don't hard-fail registration in development; return activation details
+                 * so the user can activate manually.
+                 */
+                const isDev = process.env.NODE_ENV === 'development';
+                if (isDev) {
+                    console.warn('⚠️ SMTP unavailable in development. Returning activation token for manual activation.');
+                    return res.status(200).json({
+                        success: true,
+                        message: `SMTP not configured. Use the activation code to activate your account manually.`,
+                        activationToken: activationToken.token,
+                        activationCode,
+                    });
+                }
+
+                return next(new ErrorHandler((error as any).message, 500));
             }
 
         } catch (error: any) {
