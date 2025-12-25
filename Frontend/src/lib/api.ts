@@ -404,7 +404,69 @@ export const p2pAPI = {
   markMessagesAsRead: (orderId: string) => apiCall({
     method: 'PATCH',
     url: `p2p/messages/order/${orderId}/read`
-  })
+  }),
+
+  // Swap API (Bitget)
+  getSwapPairs: (params?: { baseCoin?: string; quoteCoin?: string }) => apiCall({
+    method: 'GET',
+    url: 'swap/pairs',
+    params,
+  }),
+
+  getTickerPrice: (symbol: string) => apiCall({
+    method: 'GET',
+    url: `swap/ticker/${symbol}`,
+  }),
+
+  getConversionRate: (fromToken: string, toToken: string) => apiCall({
+    method: 'GET',
+    url: 'swap/rate',
+    params: { fromToken, toToken },
+  }),
+
+  getBitgetAccount: () => apiCall({
+    method: 'GET',
+    url: 'swap/account',
+  }),
+
+  // Get swap quote (Bitget Wallet Swap API)
+  getSwapQuote: (data: {
+    fromToken: string;
+    toToken: string;
+    amount: number;
+    fromChain?: string;
+    toChain?: string;
+    fromAddress?: string;
+    estimateGas?: boolean;
+  }) => apiCall({
+    method: 'POST',
+    url: 'swap/quote',
+    data,
+  }),
+
+  // Place swap order (Bitget Wallet Swap API - returns calldata)
+  placeSwapOrder: (data: {
+    fromToken: string;
+    toToken: string;
+    amount: number;
+    fromChain?: string;
+    toChain?: string;
+    fromAddress: string;
+    toAddress: string;
+    slippage?: number;
+    market: string; // From quote response
+    toMinAmount?: number;
+  }) => apiCall({
+    method: 'POST',
+    url: 'swap/order',
+    data,
+  }),
+
+  getSwapOrderStatus: (params: { orderId?: string; clientOid?: string }) => apiCall({
+    method: 'GET',
+    url: 'swap/order/status',
+    params,
+  }),
 };
 
 export default api;

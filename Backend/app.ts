@@ -32,6 +32,7 @@ import dashboardRouter from './routes/dashboard/dashboard.route';
 import auth0Router from './routes/auth0.route';
 import marketRouter from './routes/market.route';
 import kycRouter from './routes/kyc.route';
+import swapRouter from './routes/swap/bitgetSwap.route';
 import p2pMerchantRouter from './routes/p2p/p2pMerchant.route';
 import p2pOfferRouter from './routes/p2p/p2pOffer.route';
 import p2pTradeRouter from './routes/p2p/p2pTrade.route';
@@ -125,6 +126,7 @@ app.use('/api/v1/p2p/merchant', p2pMerchantRouter);
 app.use('/api/v1/p2p/offers', p2pOfferRouter);
 app.use('/api/v1/p2p/trades', p2pTradeRouter);
 app.use('/api/v1/p2p/messages', p2pMessageRouter);
+app.use('/api/v1/swap', swapRouter);
 
 // testing api
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
