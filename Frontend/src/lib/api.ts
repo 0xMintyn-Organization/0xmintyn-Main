@@ -250,4 +250,161 @@ export const dashboardAPI = {
   })
 };
 
+// P2P API functions
+export const p2pAPI = {
+  // Merchant profile
+  getMerchantProfile: () => apiCall({
+    method: 'GET',
+    url: 'p2p/merchant/profile'
+  }),
+
+  updateMerchantProfile: (data: {
+    displayName?: string;
+    paymentMethods?: string[];
+    paymentMethodDetails?: Array<{
+      method: string;
+      accountNumber?: string;
+      accountHolderName?: string;
+      bankName?: string;
+      iban?: string;
+      swiftCode?: string;
+      routingNumber?: string;
+      email?: string;
+      phoneNumber?: string;
+      walletAddress?: string;
+      notes?: string;
+    }>;
+    timeLimitMinutes?: number;
+    terms?: string;
+  }) => apiCall({
+    method: 'PUT',
+    url: 'p2p/merchant/profile',
+    data
+  }),
+
+  // Merchant ads
+  getMyAds: () => apiCall({
+    method: 'GET',
+    url: 'p2p/merchant/ads'
+  }),
+
+  createAd: (data: {
+    asset: string;
+    side: 'buy' | 'sell';
+    price: number;
+    available: number;
+    minLimit: number;
+    maxLimit: number;
+  }) => apiCall({
+    method: 'POST',
+    url: 'p2p/merchant/ads',
+    data
+  }),
+
+  updateAd: (adId: string, data: {
+    asset?: string;
+    side?: 'buy' | 'sell';
+    price?: number;
+    available?: number;
+    minLimit?: number;
+    maxLimit?: number;
+  }) => apiCall({
+    method: 'PUT',
+    url: `p2p/merchant/ads/${adId}`,
+    data
+  }),
+
+  toggleAdStatus: (adId: string) => apiCall({
+    method: 'PATCH',
+    url: `p2p/merchant/ads/${adId}/toggle`
+  }),
+
+  deleteAd: (adId: string) => apiCall({
+    method: 'DELETE',
+    url: `p2p/merchant/ads/${adId}`
+  }),
+
+  duplicateAd: (adId: string) => apiCall({
+    method: 'POST',
+    url: `p2p/merchant/ads/${adId}/duplicate`
+  }),
+
+  // Public offers
+  getAllOffers: (params?: {
+    asset?: string;
+    side?: 'buy' | 'sell';
+    minPrice?: number;
+    maxPrice?: number;
+    paymentMethod?: string;
+  }) => apiCall({
+    method: 'GET',
+    url: 'p2p/offers',
+    params
+  }),
+
+  getOfferById: (offerId: string) => apiCall({
+    method: 'GET',
+    url: `p2p/offers/${offerId}`
+  }),
+
+  // Get merchant profile by userId (public, for buyers to see payment details)
+  getMerchantProfileByUserId: (userId: string) => apiCall({
+    method: 'GET',
+    url: `p2p/offers/merchant/${userId}`
+  }),
+
+  // P2P Trades (Orders)
+  createTrade: (data: {
+    offerId: string;
+    amount: number;
+    paymentMethod: string;
+  }) => apiCall({
+    method: 'POST',
+    url: 'p2p/trades',
+    data
+  }),
+
+  getMyTrades: (params?: {
+    status?: string;
+  }) => apiCall({
+    method: 'GET',
+    url: 'p2p/trades',
+    params
+  }),
+
+  getTradeById: (tradeId: string) => apiCall({
+    method: 'GET',
+    url: `p2p/trades/${tradeId}`
+  }),
+
+  // P2P Messages
+  getOrderMessages: (orderId: string, params?: {
+    page?: number;
+    limit?: number;
+  }) => apiCall({
+    method: 'GET',
+    url: `p2p/messages/order/${orderId}`,
+    params
+  }),
+
+  saveMessage: (data: {
+    orderId: string;
+    message: string;
+    attachments?: Array<{
+      name: string;
+      size: number;
+      type: string;
+    }>;
+  }) => apiCall({
+    method: 'POST',
+    url: 'p2p/messages',
+    data
+  }),
+
+  markMessagesAsRead: (orderId: string) => apiCall({
+    method: 'PATCH',
+    url: `p2p/messages/order/${orderId}/read`
+  })
+};
+
 export default api;

@@ -32,7 +32,7 @@ const p2pTradeSchema = new Schema<IP2PTrade>(
     tradeNumber: {
       type: String,
       unique: true,
-      required: true,
+      required: false, // Will be auto-generated in pre-save hook
       trim: true,
       index: true,
     },
@@ -150,8 +150,16 @@ p2pTradeSchema.index({ status: 1, expiresAt: 1 });
 // Generate unique trade number before saving
 p2pTradeSchema.pre('save', async function (next) {
   if (!this.tradeNumber) {
-    const count = await mongoose.model('P2PTrade').countDocuments();
-    this.tradeNumber = `P2P-${Date.now()}-${String(count + 1).padStart(6, '0')}`;
+    try {
+      // Try to get count from the model if it's already registered
+      const Model = mongoose.models.P2PTrade || mongoose.model('P2PTrade');
+      const count = await Model.countDocuments();
+      this.tradeNumber = `P2P-${Date.now()}-${String(count + 1).padStart(6, '0')}`;
+    } catch (error) {
+      // Fallback: use timestamp + random string for uniqueness
+      // This ensures we always have a trade number even if count fails
+      this.tradeNumber = `P2P-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
   }
   next();
 });

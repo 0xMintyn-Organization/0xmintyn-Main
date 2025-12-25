@@ -25,7 +25,8 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import useLiveTicker from '@/hooks/useLiveTicker';
+// DISABLED: useLiveTicker temporarily disabled to stop live-price API calls
+// import useLiveTicker from '@/hooks/useLiveTicker';
 
 interface PriceData {
   time: string;
@@ -64,21 +65,24 @@ export default function TradingChart() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availablePairs, setAvailablePairs] = useState<string[]>([]);
-  const liveTicker = useLiveTicker();
+  // DISABLED: Live ticker completely disabled to stop API calls
+  // const liveTicker = useLiveTicker();
+  const liveTicker = { price: null, bid: null, ask: null, high: null, low: null, open: null, timestamp: null, loading: false };
   const previousLivePrice = useRef<number | null>(null);
   const [direction, setDirection] = useState<'up' | 'down' | null>(null);
 
-  useEffect(() => {
-    if (liveTicker.price == null) return;
-    if (previousLivePrice.current != null) {
-      if (liveTicker.price > previousLivePrice.current) {
-        setDirection('up');
-      } else if (liveTicker.price < previousLivePrice.current) {
-        setDirection('down');
-      }
-    }
-    previousLivePrice.current = liveTicker.price;
-  }, [liveTicker.price]);
+  // DISABLED: No live price tracking
+  // useEffect(() => {
+  //   if (liveTicker.price == null) return;
+  //   if (previousLivePrice.current != null) {
+  //     if (liveTicker.price > previousLivePrice.current) {
+  //       setDirection('up');
+  //     } else if (liveTicker.price < previousLivePrice.current) {
+  //       setDirection('down');
+  //     }
+  //   }
+  //   previousLivePrice.current = liveTicker.price;
+  // }, [liveTicker.price]);
 
   const fetchAvailablePairs = async () => {
     try {

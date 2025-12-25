@@ -12,6 +12,7 @@ import "./globals.css";
 import { Providers } from "./Provider";
 import { logEnvironmentInfo } from "@/utils/envCheck";
 import { useEffect } from "react";
+import { SocketProvider } from "@/contexts/SocketContext";
 
 const inter = Inter({ 
   subsets: ['latin'], 
@@ -40,9 +41,11 @@ export default function RootLayout({
                 <Providers>
                   <SessionProvider >
                     <SocialAuthProvider>
-                      {children}
-                      <Toaster />
-                      <GlobalTextSelection />
+                      <SocketProvider>
+                        {children}
+                        <Toaster />
+                        <GlobalTextSelection />
+                      </SocketProvider>
                     </SocialAuthProvider>
                   </SessionProvider>
                 </Providers>

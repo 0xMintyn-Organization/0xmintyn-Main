@@ -62,13 +62,17 @@ export default function useMarketPrices(symbols: string[] = ['OXMUSDT', 'BTCUSDT
   };
 
   useEffect(() => {
+    // DISABLED: Polling stopped - was calling every 5 seconds
+    // fetchPrices();
+    // intervalRef.current = setInterval(fetchPrices, POLL_INTERVAL);
+    // return () => {
+    //   if (intervalRef.current) {
+    //     clearInterval(intervalRef.current);
+    //   }
+    // };
+    
+    // Only fetch once on mount (no polling)
     fetchPrices();
-    intervalRef.current = setInterval(fetchPrices, POLL_INTERVAL);
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
   }, []);
 
   const indexLookup = useMemo(() => {

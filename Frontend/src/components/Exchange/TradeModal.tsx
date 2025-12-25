@@ -32,6 +32,11 @@ import {
 } from 'lucide-react';
 import { P2POffer, UserBalance } from './P2PTrade';
 import { toast } from 'sonner';
+import {
+  getAvailableBalance,
+  calculateMaxTradeable,
+  validateTradeAmount,
+} from '@/utils/p2pValidation';
 
 interface TradeModalProps {
   isOpen: boolean;
@@ -69,52 +74,29 @@ export default function TradeModal({
   const isBuy = side === 'buy';
   const assetLabel = offer.asset ?? 'Asset';
 
-  // Calculate available balance based on side
-  const availableBalance = isBuy
-    ? (userBalance.USD ?? 0) + (userBalance.USDT ?? 0)
-    : userBalance[assetLabel] ?? 0;
+  // Calculate available balance and max tradeable amount
+  const availableBalance = getAvailableBalance(side, assetLabel, userBalance);
+  const maxTradeableAmount = calculateMaxTradeable(side, offer, availableBalance);
 
-  // Max amount user can trade
-  const maxTradeableAmount = isBuy
-    ? Math.min(offer.available, offer.maxLimit, availableBalance / offer.price)
-    : Math.min(offer.available, offer.maxLimit, availableBalance);
-
-  // Validate amount
+  // Validate amount using centralized validation
   const validateAmount = () => {
+    const validation = validateTradeAmount({
+      amount: amountNum,
+      offer,
+      userBalance,
+      side,
+      paymentMethod: selectedPaymentMethod,
+    });
+
     const newErrors: { amount?: string; payment?: string } = {};
 
-    if (!amount || amountNum <= 0) {
-      newErrors.amount = 'Please enter a valid amount';
-      return newErrors;
-    }
-
-    if (amountNum < offer.minLimit) {
-      newErrors.amount = `Minimum amount is ${offer.minLimit} ${assetLabel}`;
-      return newErrors;
-    }
-
-    if (amountNum > offer.maxLimit) {
-      newErrors.amount = `Maximum amount is ${offer.maxLimit} ${assetLabel}`;
-      return newErrors;
-    }
-
-    if (amountNum > offer.available) {
-      newErrors.amount = `Available amount is ${offer.available.toLocaleString()} ${assetLabel}`;
-      return newErrors;
-    }
-
-    if (isBuy && totalPrice > availableBalance) {
-      newErrors.amount = `Insufficient balance. Available: $${availableBalance.toFixed(2)}`;
-      return newErrors;
-    }
-
-    if (!isBuy && amountNum > availableBalance) {
-      newErrors.amount = `Insufficient ${assetLabel}. Available: ${availableBalance.toLocaleString()} ${assetLabel}`;
-      return newErrors;
-    }
-
-    if (!selectedPaymentMethod) {
-      newErrors.payment = 'Please select a payment method';
+    if (!validation.isValid) {
+      // Check if it's a payment method error
+      if (validation.error?.includes('payment method')) {
+        newErrors.payment = validation.error;
+      } else {
+        newErrors.amount = validation.error;
+      }
     }
 
     return newErrors;
@@ -124,8 +106,29 @@ export default function TradeModal({
     // Allow only numbers and decimal point
     const cleaned = value.replace(/[^0-9.]/g, '');
     setAmount(cleaned);
+    
+    // Clear errors when user starts typing
     if (errors.amount) {
       setErrors(prev => ({ ...prev, amount: undefined }));
+    }
+    
+    // Real-time validation for better UX (optional - can be disabled if too aggressive)
+    // Only validate if amount is entered and not empty
+    if (cleaned && parseFloat(cleaned) > 0) {
+      const quickValidation = validateTradeAmount({
+        amount: parseFloat(cleaned) || 0,
+        offer,
+        userBalance,
+        side,
+        paymentMethod: 'skip', // Skip payment method for real-time validation
+      });
+      
+      if (!quickValidation.isValid && quickValidation.error) {
+        // Only show error if it's not a payment method error
+        if (!quickValidation.error.includes('payment method')) {
+          setErrors(prev => ({ ...prev, amount: quickValidation.error }));
+        }
+      }
     }
   };
 

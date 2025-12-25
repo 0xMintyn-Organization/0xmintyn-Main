@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +49,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { p2pAPI } from '@/lib/api';
+import { validateTradeAmount } from '@/utils/p2pValidation';
 
 // Types
 export interface P2POffer {
@@ -75,154 +77,10 @@ export interface P2POffer {
 
 export type UserBalance = Record<string, number>;
 
-// Mock data - Replace with API calls
-const baseBuyOffers: Omit<P2POffer, 'asset'>[] = [
-  {
-    id: '1',
-    traderName: 'CryptoTrader_01',
-    traderId: 'trader-1',
-    traderRating: 4.9,
-    completedTrades: 1247,
-    completionRate: 98.5,
-    responseRate: 99.1,
-    responseTime: 15,
-    price: 1.02,
-    available: 5000,
-    minLimit: 50,
-    maxLimit: 5000,
-    paymentMethods: ['Bank Transfer', 'PayPal', 'Wise'],
-    side: 'buy',
-    timeLimit: 15,
-    isVerified: true,
-    isOnline: true,
-    requiresVerification: false,
-  },
-  {
-    id: '2',
-    traderName: 'OXM_Exchange',
-    traderId: 'trader-2',
-    traderRating: 4.8,
-    completedTrades: 892,
-    completionRate: 97.2,
-    responseRate: 98.5,
-    responseTime: 15,
-    price: 1.03,
-    available: 3000,
-    minLimit: 100,
-    maxLimit: 3000,
-    paymentMethods: ['Bank Transfer', 'Revolut'],
-    side: 'buy',
-    timeLimit: 30,
-    isVerified: true,
-    isOnline: true,
-    requiresVerification: true,
-  },
-  {
-    id: '3',
-    traderName: 'TrustedSeller',
-    traderId: 'trader-3',
-    traderRating: 5.0,
-    completedTrades: 2156,
-    completionRate: 99.1,
-    responseRate: 100,
-    responseTime: 15,
-    price: 1.01,
-    available: 8000,
-    minLimit: 25,
-    maxLimit: 8000,
-    paymentMethods: ['PayPal', 'Wise', 'Bank Transfer'],
-    side: 'buy',
-    timeLimit: 20,
-    isVerified: true,
-    isOnline: false,
-    requiresVerification: false,
-  },
-  {
-    id: '4',
-    traderName: 'QuickTrade_Pro',
-    traderId: 'trader-4',
-    traderRating: 4.7,
-    completedTrades: 634,
-    completionRate: 96.8,
-    responseRate: 99.4,
-    responseTime: 15,
-    price: 1.04,
-    available: 2000,
-    minLimit: 50,
-    maxLimit: 2000,
-    paymentMethods: ['Bank Transfer'],
-    side: 'buy',
-    timeLimit: 15,
-    isVerified: false,
-    isOnline: true,
-    requiresVerification: false,
-  },
-];
-
-const baseSellOffers: Omit<P2POffer, 'asset'>[] = [
-  {
-    id: '5',
-    traderName: 'Buyer_Expert',
-    traderId: 'trader-5',
-    traderRating: 4.9,
-    completedTrades: 1890,
-    completionRate: 98.8,
-    responseRate: 99.2,
-    responseTime: 15,
-    price: 1.06,
-    available: 6000,
-    minLimit: 50,
-    maxLimit: 6000,
-    paymentMethods: ['Bank Transfer', 'PayPal'],
-    side: 'sell',
-    timeLimit: 15,
-    isVerified: true,
-    isOnline: true,
-    requiresVerification: false,
-  },
-  {
-    id: '6',
-    traderName: 'FastBuyer',
-    traderId: 'trader-6',
-    traderRating: 4.8,
-    completedTrades: 1123,
-    completionRate: 97.5,
-    responseRate: 98.7,
-    responseTime: 20,
-    price: 1.07,
-    available: 4000,
-    minLimit: 100,
-    maxLimit: 4000,
-    paymentMethods: ['Wise', 'Bank Transfer'],
-    side: 'sell',
-    timeLimit: 20,
-    isVerified: true,
-    isOnline: true,
-    requiresVerification: true,
-  },
-  {
-    id: '7',
-    traderName: 'ReliableBuyer',
-    traderId: 'trader-7',
-    traderRating: 5.0,
-    completedTrades: 2456,
-    completionRate: 99.3,
-    responseRate: 100,
-    responseTime: 15,
-    price: 1.05,
-    available: 10000,
-    minLimit: 25,
-    maxLimit: 10000,
-    paymentMethods: ['PayPal', 'Wise', 'Bank Transfer', 'Revolut'],
-    side: 'sell',
-    timeLimit: 30,
-    isVerified: true,
-    isOnline: false,
-    requiresVerification: false,
-  },
-];
+// Mock data removed - Now using only real merchant ads from backend
 
 const assetSymbols = [
+  'OXM',
   'USDT',
   'BTC',
   'USDC',
@@ -241,37 +99,6 @@ const assetSymbols = [
   'DOLO',
 ] as const;
 
-const generateOffersForAsset = (
-  symbol: string,
-  index: number,
-): { buy: P2POffer[]; sell: P2POffer[] } => {
-  const priceFactor = 1 + index * 0.02;
-  const availabilityFactor = 1 + index * 0.08;
-
-  const mapOffer = (offer: Omit<P2POffer, 'asset'>, i: number, side: 'buy' | 'sell'): P2POffer => ({
-    ...offer,
-    id: `${symbol}-${side}-${i}`,
-    asset: symbol,
-    price: parseFloat((offer.price * priceFactor * (side === 'buy' ? 1 : 1.03)).toFixed(3)),
-    available: Math.max(10, Math.round(offer.available * availabilityFactor)),
-    minLimit: Math.max(5, Math.round(offer.minLimit * (1 + index * 0.03))),
-    maxLimit: Math.max(offer.maxLimit, Math.round(offer.maxLimit * availabilityFactor)),
-  });
-
-  return {
-    buy: baseBuyOffers.map((offer, i) => mapOffer(offer, i, 'buy')),
-    sell: baseSellOffers.map((offer, i) => mapOffer(offer, i, 'sell')),
-  };
-};
-
-const assetOfferCatalog: Record<string, { buy: P2POffer[]; sell: P2POffer[] }> = assetSymbols.reduce(
-  (acc, symbol, index) => {
-    acc[symbol] = generateOffersForAsset(symbol, index);
-    return acc;
-  },
-  {} as Record<string, { buy: P2POffer[]; sell: P2POffer[] }>,
-);
-
 const fiatCurrencies = [
   { code: 'USD', label: 'USD', symbol: '$', badgeClass: 'bg-amber-500/90 text-white' },
   { code: 'USDT', label: 'USDT', symbol: '₮', badgeClass: 'bg-emerald-500 text-white' },
@@ -281,6 +108,7 @@ const fiatCurrencies = [
 ] as const;
 
 const mockUserBalance: UserBalance = {
+  OXM: 5000,
   USD: 1500,
   USDT: 800,
   BTC: 0.85,
@@ -320,47 +148,104 @@ export default function P2PTrade() {
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [tradeAmount, setTradeAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [backendOffers, setBackendOffers] = useState<P2POffer[]>([]);
+  const [isLoadingOffers, setIsLoadingOffers] = useState(false);
 
-  // Use mock data
-  const assetOfferCatalog: Record<string, { buy: P2POffer[]; sell: P2POffer[] }> = useMemo(() => {
-    const catalog: Record<string, { buy: P2POffer[]; sell: P2POffer[] }> = {};
-    assetSymbols.forEach((asset) => {
-      catalog[asset] = {
-        buy: baseBuyOffers.map((offer, idx) => ({
-          ...offer,
-          id: `${asset}-buy-${idx}`,
-          asset,
-        })),
-        sell: baseSellOffers.map((offer, idx) => ({
-          ...offer,
-          id: `${asset}-sell-${idx}`,
-          asset,
-        })),
-      };
-    });
-    return catalog;
-  }, []);
+  // Fetch offers from backend
+  useEffect(() => {
+    const loadOffers = async () => {
+      try {
+        setIsLoadingOffers(true);
+        // Fetch all offers for the selected asset and correct side
+        // When user wants to BUY, we show SELL offers (people selling)
+        // When user wants to SELL, we show BUY offers (people buying)
+        const requestedSide = activeTab === 'buy' ? 'sell' : 'buy';
+        
+        console.log('🔍 Fetching P2P offers:', {
+          activeTab,
+          selectedAsset,
+          requestedSide,
+          explanation: activeTab === 'buy' 
+            ? 'User wants to BUY, so showing SELL offers (merchants selling)'
+            : 'User wants to SELL, so showing BUY offers (merchants buying)'
+        });
+        
+        const res = await p2pAPI.getAllOffers({
+          asset: selectedAsset,
+          side: requestedSide,
+        });
+        
+        console.log('📥 P2P offers response:', {
+          success: res.success,
+          offersCount: res.offers?.length || 0,
+          offers: res.offers?.slice(0, 3).map((o: any) => ({
+            id: o.id,
+            asset: o.asset,
+            side: o.side,
+            traderName: o.traderName,
+            isOnline: o.isOnline,
+          })) || []
+        });
 
+        if (res.success && res.offers && Array.isArray(res.offers)) {
+          // Backend already filters by asset, side, and isOnline, so just transform
+          const transformed: P2POffer[] = res.offers
+            .filter((offer: any) => {
+              // Double-check filtering (backend should handle this, but just in case)
+              const matchesAsset = !selectedAsset || offer.asset === selectedAsset;
+              const matchesSide = offer.side === requestedSide;
+              const isOnline = offer.isOnline !== false;
+              return matchesAsset && matchesSide && isOnline;
+            })
+            .map((offer: any) => ({
+              id: offer.id || offer._id,
+              traderId: offer.traderId || '',
+              traderName: offer.traderName || 'Trader',
+              traderRating: offer.traderRating || 0,
+              completedTrades: offer.completedTrades || 0,
+              completionRate: offer.completionRate || 0,
+              responseRate: offer.responseRate || 0,
+              responseTime: offer.responseTime || 15,
+              price: offer.price,
+              available: offer.available,
+              minLimit: offer.minLimit,
+              maxLimit: offer.maxLimit,
+              paymentMethods: offer.paymentMethods || [],
+              side: offer.side,
+              timeLimit: offer.timeLimit,
+              isVerified: offer.isVerified || false,
+              isOnline: offer.isOnline !== false,
+              asset: offer.asset,
+            }));
+          
+          setBackendOffers(transformed);
+        } else {
+          setBackendOffers([]);
+        }
+      } catch (error: any) {
+        console.error('Failed to load P2P offers:', error);
+        // Fallback to empty array on error
+        setBackendOffers([]);
+      } finally {
+        setIsLoadingOffers(false);
+      }
+    };
+
+    loadOffers();
+    
+    // Auto-refresh offers every 30 seconds to show new merchant ads dynamically
+    const refreshInterval = setInterval(() => {
+      loadOffers();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [selectedAsset, activeTab]);
+
+  // Use only real merchant ads from backend - no mock data
   const allOffers = useMemo(() => {
-    const catalog = assetOfferCatalog[selectedAsset] || { buy: [], sell: [] };
-    const baseOffers = activeTab === 'buy' ? catalog.sell : catalog.buy;
-
-    // Load custom ads created from /exchange/p2p/merchant (localStorage/sessionStorage)
-    let customOffers: P2POffer[] = [];
-    try {
-      const raw = sessionStorage.getItem('exchange:p2pCustomOffers') || localStorage.getItem('exchange:p2pCustomOffers');
-      const parsed = raw ? (JSON.parse(raw) as any[]) : [];
-      customOffers = parsed
-        .filter(Boolean)
-        .filter((o) => o.asset === selectedAsset)
-        .filter((o) => o.isOnline !== false)
-        .filter((o) => (activeTab === 'buy' ? o.side === 'sell' : o.side === 'buy'));
-    } catch {
-      customOffers = [];
-    }
-
-    return [...customOffers, ...baseOffers];
-  }, [selectedAsset, activeTab, assetOfferCatalog]);
+    // Only show real merchant ads from backend
+    return backendOffers;
+  }, [backendOffers]);
 
   const userBalance = mockUserBalance;
   const selectedAssetBalance = userBalance[selectedAsset] ?? 0;
@@ -383,9 +268,27 @@ export default function P2PTrade() {
 
   // Filter and sort offers
   const filteredAndSortedOffers = useMemo(() => {
-    let filtered = allOffers.filter(offer => {
+    // Backend already filters by asset and side, so we just need to filter by online status
+    // Logic: 
+    // - User on "Buy" tab wants to BUY → show "sell" offers (merchants selling)
+    // - User on "Sell" tab wants to SELL → show "buy" offers (merchants buying)
+    let preFiltered = allOffers.filter(offer => {
+      // Must match selected asset
+      if (offer.asset !== selectedAsset) return false;
+      // Must be online
+      if (!offer.isOnline) return false;
+      // Side is already filtered by backend API, but double-check:
+      // When user wants to BUY (activeTab='buy'), show SELL offers
+      // When user wants to SELL (activeTab='sell'), show BUY offers
+      const expectedSide = activeTab === 'buy' ? 'sell' : 'buy';
+      if (offer.side !== expectedSide) return false;
+      return true;
+    });
+
+    let filtered = preFiltered.filter(offer => {
       // Search filter
       const matchesSearch = 
+        !searchQuery.trim() ||
         offer.traderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         offer.paymentMethods.some(method => 
           method.toLowerCase().includes(searchQuery.toLowerCase())
@@ -418,6 +321,15 @@ export default function P2PTrade() {
 
     // Sort offers
     filtered.sort((a, b) => {
+      // Prioritize backend offers (real merchant ads) over mock data
+      // Backend offers have MongoDB ObjectId format, mock offers have format like "USDT-buy-0"
+      const aIsBackend = !a.id.includes('-') || a.id.length > 20;
+      const bIsBackend = !b.id.includes('-') || b.id.length > 20;
+      
+      if (aIsBackend && !bIsBackend) return -1; // Backend offers first
+      if (!aIsBackend && bIsBackend) return 1;
+      
+      // If both are same type, sort by selected criteria
       let comparison = 0;
       switch (sortBy) {
         case 'price':
@@ -433,7 +345,9 @@ export default function P2PTrade() {
       return sortOrder === 'asc' ? comparison : -comparison;
     });
 
-    return filtered;
+    // Truncate to show only top 20 offers (prioritizing backend offers)
+    // This ensures new merchant ads are visible and the list is manageable
+    return filtered.slice(0, 20);
   }, [allOffers, searchQuery, transactionAmount, selectedPaymentMethod, filterVerifiedOnly, filterOnlineOnly, sortBy, sortOrder]);
 
   const handleTradeClick = (offer: P2POffer) => {
@@ -444,92 +358,56 @@ export default function P2PTrade() {
   const handleTradeConfirm = async (amount: number, paymentMethod: string) => {
     if (!selectedOffer) return;
 
-    // Validate balance
-    if (activeTab === 'buy') {
-      const requiredFiat = amount * selectedOffer.price;
-      if ((userBalance.USD ?? 0) < requiredFiat && (userBalance.USDT ?? 0) < requiredFiat) {
-        toast.error('Insufficient USD/USDT balance for this purchase');
-        return;
-      }
-    } else {
-      const assetBalance = userBalance[selectedOffer.asset] ?? 0;
-      if (assetBalance < amount) {
-        toast.error(`Insufficient ${selectedOffer.asset} balance`);
-        return;
-      }
-    }
+    // Use centralized validation
+    const validation = validateTradeAmount({
+      amount,
+      offer: selectedOffer,
+      userBalance,
+      side: activeTab,
+      paymentMethod,
+    });
 
-    // Validate limits
-    if (amount < selectedOffer.minLimit || amount > selectedOffer.maxLimit) {
-      toast.error(
-        `Amount must be between ${selectedOffer.minLimit} and ${selectedOffer.maxLimit} ${selectedOffer.asset}`,
-      );
+    if (!validation.isValid) {
+      toast.error(validation.error || 'Invalid trade amount', {
+        duration: 5000,
+      });
       return;
     }
 
-    // Simulate trade execution
+    // Create trade via backend API
     setIsProcessing(true);
-    setTimeout(() => {
-      toast.success(`${activeTab === 'buy' ? 'Buy' : 'Sell'} order placed successfully!`, {
-        description: `${amount} ${selectedOffer.asset} at $${selectedOffer.price} per unit`,
+    try {
+      // Find the offer ID from the selected offer
+      const offerId = selectedOffer.id; // This should be the MongoDB _id
+
+      const res = await p2pAPI.createTrade({
+        offerId,
+        amount,
+        paymentMethod,
       });
 
-      // Create a demo order record for the Exchange Messenger (until backend exists)
-      const orderId = `p2p_${Date.now()}`;
-      const currentUserId = user?._id || 'me';
-      const counterpartyId = selectedOffer.traderId || selectedOffer.id;
-      const counterpartyName = selectedOffer.traderName || 'Counterparty';
-      const currentUserName = user?.name || user?.email || 'You';
-      const totalFiat = amount * selectedOffer.price;
+      if (res.success && res.trade) {
+        toast.success(`${activeTab === 'buy' ? 'Buy' : 'Sell'} order placed successfully!`, {
+          description: `${amount} ${selectedOffer.asset} at $${selectedOffer.price} per unit`,
+        });
 
-      const buyerUserId = activeTab === 'buy' ? currentUserId : counterpartyId;
-      const sellerUserId = activeTab === 'buy' ? counterpartyId : currentUserId;
-      const buyerName = activeTab === 'buy' ? currentUserName : counterpartyName;
-      const sellerName = activeTab === 'buy' ? counterpartyName : currentUserName;
+        setIsTradeModalOpen(false);
+        setSelectedOffer(null);
+        setTradeAmount('');
+        setIsProcessing(false);
 
-      const orderRecord = {
-        id: orderId,
-        asset: selectedOffer.asset,
-        fiat: selectedFiat,
-        side: activeTab,
-        price: selectedOffer.price,
-        amount,
-        totalFiat,
-        paymentMethod,
-        buyerUserId,
-        sellerUserId,
-        buyerName,
-        sellerName,
-        counterpartyUserId: counterpartyId,
-        counterpartyName,
-        status: 'created',
-        createdAt: new Date().toISOString(),
-      };
-
-      try {
-        sessionStorage.setItem(`exchange:p2pOrder:${orderId}`, JSON.stringify(orderRecord));
-        const initialMessage = {
-          id: `msg_${Date.now()}`,
-          orderId,
-          senderUserId: counterpartyId,
-          message: `Order created. Please complete payment via ${paymentMethod} within ${selectedOffer.timeLimit} minutes.`,
-          createdAt: new Date().toISOString(),
-          isRead: false,
-          attachments: [],
-        };
-        sessionStorage.setItem(`exchange:p2pMessages:${orderId}`, JSON.stringify([initialMessage]));
-      } catch (e) {
-        // sessionStorage might be blocked in some contexts; ignore for now
+        // Redirect user to the Exchange order-based messenger
+        router.push(`/exchange/messages?order=${encodeURIComponent(res.trade.id)}`);
+      } else {
+        throw new Error(res.message || 'Failed to create trade');
       }
-
-      setIsTradeModalOpen(false);
-      setSelectedOffer(null);
-      setTradeAmount('');
+    } catch (error: any) {
+      console.error('Failed to create trade:', error);
+      toast.error(error.response?.data?.message || error.message || 'Failed to create trade', {
+        duration: 5000,
+      });
       setIsProcessing(false);
-
-      // Redirect user to the Exchange order-based messenger
-      router.push(`/exchange/messages?order=${encodeURIComponent(orderId)}`);
-    }, 1000);
+    }
   };
 
   const toggleSortOrder = () => {
@@ -791,11 +669,20 @@ export default function P2PTrade() {
                 </div>
 
                 {/* Offers Display - Table or Cards */}
-                {filteredAndSortedOffers.length === 0 ? (
+                {isLoadingOffers ? (
+                  <div className="p-8 text-center bg-gray-50 dark:bg-zinc-800/50 rounded border border-gray-200 dark:border-zinc-700">
+                    <Loader2 className="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-3 animate-spin" />
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Loading offers...</p>
+                  </div>
+                ) : filteredAndSortedOffers.length === 0 ? (
                   <div className="p-8 text-center bg-gray-50 dark:bg-zinc-800/50 rounded border border-gray-200 dark:border-zinc-700">
                     <Users className="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">No offers found</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Try adjusting your search or filters</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      {backendOffers.length > 0 
+                        ? `Found ${backendOffers.length} backend offer(s) but they don't match current filters. Try adjusting your search or filters.`
+                        : 'No offers available for this asset. Try creating an ad in P2P Merchant section.'}
+                    </p>
                   </div>
                 ) : viewMode === 'table' ? (
                   /* Table View (Binance-style) - Compact & Clean */
@@ -901,11 +788,6 @@ export default function P2PTrade() {
                                   >
                                     {activeTab === 'buy' ? 'Buy' : 'Sell'} {offer.asset}
                                   </Button>
-                                  {offer.requiresVerification && (
-                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-3.5 text-amber-600 dark:text-amber-500 border-amber-600 dark:border-amber-500 bg-amber-50 dark:bg-amber-950/20">
-                                      Requires Verification
-                                    </Badge>
-                                  )}
                                 </div>
                               </td>
                             </tr>

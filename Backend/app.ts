@@ -32,6 +32,10 @@ import dashboardRouter from './routes/dashboard/dashboard.route';
 import auth0Router from './routes/auth0.route';
 import marketRouter from './routes/market.route';
 import kycRouter from './routes/kyc.route';
+import p2pMerchantRouter from './routes/p2p/p2pMerchant.route';
+import p2pOfferRouter from './routes/p2p/p2pOffer.route';
+import p2pTradeRouter from './routes/p2p/p2pTrade.route';
+import p2pMessageRouter from './routes/p2p/p2pMessage.route';
 require('dotenv').config();
 export const app = express();
 
@@ -117,6 +121,10 @@ app.use('/api/v1/vote', voteRoutes);
 app.use('/api/v1', auth0Router);
 app.use('/api/v1/kyc', kycRouter);
 app.use('/api/market', marketRouter);
+app.use('/api/v1/p2p/merchant', p2pMerchantRouter);
+app.use('/api/v1/p2p/offers', p2pOfferRouter);
+app.use('/api/v1/p2p/trades', p2pTradeRouter);
+app.use('/api/v1/p2p/messages', p2pMessageRouter);
 
 // testing api
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
