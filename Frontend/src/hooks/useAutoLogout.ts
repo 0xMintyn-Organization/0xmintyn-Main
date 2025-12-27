@@ -100,8 +100,6 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
 
     // Show toast notification
     if (typeof window !== 'undefined') {
-      // Using console for now, can integrate with toast library
-      console.log('Session expired. You have been logged out.');
     }
   }, [authLogout, clearAllTimers]);
 
@@ -127,15 +125,7 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
       clearAllTimers();
     }
 
-    // Debug logging (can be removed in production)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[AutoLogout] Checking session:', {
-        sessionTimeout,
-        warningTime,
-        hasToken: !!token,
-        loginTimestamp: localStorage.getItem('loginTimestamp'),
-      });
-    }
+    
 
     // If no token in localStorage, try to estimate based on login time
     // For HTTP-only cookies, we'll rely on API responses to detect expiration
@@ -146,9 +136,7 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
       const currentTime = Date.now().toString();
       localStorage.setItem('loginTimestamp', currentTime);
       loginTimeValue = currentTime;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AutoLogout] Initialized loginTimestamp:', currentTime);
-      }
+      
     }
     
     if (!token) {
@@ -162,20 +150,11 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
         const totalLifetime = sessionTimeout * 60 * 1000; // Convert minutes to ms
         const remaining = totalLifetime - elapsed;
         
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AutoLogout] Session timeout check (no token):', {
-            totalLifetime: totalLifetime / (1000 * 60), // minutes
-            elapsed: elapsed / (1000 * 60), // minutes
-            remaining: remaining / (1000 * 60), // minutes
-            warningTime,
-          });
-        }
+        
         
         if (remaining <= 0) {
           // Session expired, logout
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[AutoLogout] Session expired! Logging out...');
-          }
+
           clearAllTimers();
           setState({
             isWarningShown: false,
@@ -191,9 +170,6 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
 
         // Show warning if close to expiration
         if (minutesRemaining <= warningTime) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[AutoLogout] Showing warning! Remaining:', minutesRemaining, 'minutes');
-          }
           setState({
             isWarningShown: true,
             timeRemaining: remaining,
@@ -213,9 +189,7 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
         }
       } else if (!sessionTimeout) {
         // No session timeout set, can't track without token
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AutoLogout] No token and no session timeout, skipping check');
-        }
+        
       }
       return;
     }
@@ -243,9 +217,6 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
       const currentTime = Date.now().toString();
       localStorage.setItem('loginTimestamp', currentTime);
       loginTimeForToken = currentTime;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AutoLogout] Initialized loginTimestamp (with token):', currentTime);
-      }
     }
     
     let sessionRemaining: number | null = null;
@@ -257,13 +228,7 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
       const totalLifetime = sessionTimeout * 60 * 1000; // Convert minutes to ms
       sessionRemaining = totalLifetime - elapsed;
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AutoLogout] Session timeout calculation:', {
-          elapsed: elapsed / (1000 * 60), // minutes
-          totalLifetime: totalLifetime / (1000 * 60), // minutes
-          sessionRemaining: sessionRemaining / (1000 * 60), // minutes
-        });
-      }
+      
     }
     
     // Use whichever expires first: token expiration or session timeout
@@ -272,14 +237,8 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
       // Token expired or invalid, use session timeout if available
       if (sessionRemaining !== null && sessionRemaining > 0) {
         remaining = sessionRemaining;
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AutoLogout] Token expired, using session timeout:', remaining / (1000 * 60), 'minutes');
-        }
       } else {
         // Both expired or no session timeout
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AutoLogout] Both token and session expired! Logging out...');
-        }
         setState({
           isWarningShown: false,
           timeRemaining: 0,
@@ -291,21 +250,12 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
     } else if (sessionTimeout && sessionRemaining !== null && sessionRemaining < tokenRemaining) {
       // Session timeout expires before token - use session timeout
       remaining = sessionRemaining;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AutoLogout] Session timeout expires first:', remaining / (1000 * 60), 'minutes');
-      }
     } else {
       // Token expires before session timeout (or no session timeout set)
       remaining = tokenRemaining ?? Infinity;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AutoLogout] Token expires first:', remaining / (1000 * 60), 'minutes');
-      }
     }
 
     if (remaining <= 0) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AutoLogout] Session/token expired! Logging out...');
-      }
       setState({
         isWarningShown: false,
         timeRemaining: 0,
@@ -318,20 +268,8 @@ export function useAutoLogout(options: AutoLogoutOptions = {}) {
     // Calculate minutes remaining
     const minutesRemaining = remaining / (1000 * 60);
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[AutoLogout] Remaining time:', {
-        minutes: minutesRemaining.toFixed(2),
-        warningTime,
-        shouldShowWarning: minutesRemaining <= warningTime,
-        isWarningShown: state.isWarningShown,
-      });
-    }
-
     // Show warning if close to expiration
     if (minutesRemaining <= warningTime && !state.isWarningShown) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AutoLogout] Showing warning modal!');
-      }
       setState({
         isWarningShown: true,
         timeRemaining: remaining,

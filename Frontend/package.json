@@ -14,8 +14,10 @@
     "admin:fund-treasury:1m": "node scripts/auto-fund-treasury.js 1000000",
     "admin:fund-treasury:500k": "node scripts/auto-fund-treasury.js 500000",
     "admin:fund-treasury:100k": "node scripts/auto-fund-treasury.js 100000",
-    "admin:initialize": "ts-node scripts/initialize-ubi-program.ts",
-    "admin:initialize-user-registry": "node scripts/initialize-user-registry.js"
+    "admin:initialize": "npx ts-node scripts/initialize-ubi-program.ts",
+    "admin:initialize-user-registry": "node scripts/initialize-user-registry.js",
+    "admin:initialize-governance": "node scripts/initialize-governance-simple.js",
+    "admin:initialize-governance:ts": "npx ts-node scripts/initialize-governance.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",

@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import Protected from '@/hooks/useProtected';
 import axiosInstance from '@/utils/axiosInstance';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   BarChart3,
   CheckCircle,
@@ -70,6 +71,8 @@ interface Proposal {
   isPaid: boolean;
   requiredVotes: number;
   quorum: number;
+  blockchainAddress?: string;
+  blockchainTx?: string;
   adminNotes?: string;
   createdAt: string;
   updatedAt: string;
@@ -86,6 +89,7 @@ interface GovernanceStats {
 
 function AdminGovernancePage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   
   // State management
   const [proposals, setProposals] = useState<Proposal[]>([]);
@@ -138,7 +142,16 @@ function AdminGovernancePage() {
       // Fetch governance stats
       const statsResponse = await axiosInstance.get('/proposal/stats');
 
-      setProposals(proposalsResponse.data.data.proposals);
+      const proposalsList = proposalsResponse.data.data.proposals || [];
+      console.log('📋 Fetched proposals:', proposalsList.length, 'proposals');
+      if (proposalsList.length > 0) {
+        console.log('📋 First proposal blockchain fields:', {
+          id: proposalsList[0]._id,
+          blockchainAddress: proposalsList[0].blockchainAddress,
+          blockchainTx: proposalsList[0].blockchainTx
+        });
+      }
+      setProposals(proposalsList);
       setStats(statsResponse.data.data);
       setTotalPages(proposalsResponse.data.data.pagination.pages);
 
@@ -163,20 +176,28 @@ function AdminGovernancePage() {
     setCurrentPage(1);
   }, [filters]);
 
-  // Handle status update
+  // Handle status update - Backend handles blockchain transaction (no wallet needed!)
   const handleStatusUpdate = async () => {
     if (!selectedProposal || !statusUpdate.status) return;
 
     try {
+      // Simple API call - backend handles everything including blockchain transaction
       await axiosInstance.patch(`/proposal/${selectedProposal._id}/status`, {
         status: statusUpdate.status,
         adminNotes: statusUpdate.adminNotes
       });
 
-      toast({
-        title: 'Success',
-        description: 'Proposal status updated successfully',
-      });
+      if (statusUpdate.status === 'Passed' && selectedProposal.blockchainAddress) {
+        toast({
+          title: 'Success!',
+          description: 'Proposal status updated and creator received 100 Mintyn tokens from treasury!',
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Proposal status updated successfully',
+        });
+      }
 
       setShowStatusModal(false);
       setStatusUpdate({ status: '', adminNotes: '' });
@@ -184,9 +205,10 @@ function AdminGovernancePage() {
       fetchGovernanceData();
     } catch (error: unknown) {
       console.error('Error updating proposal status:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update proposal status';
       toast({
         title: 'Error',
-        description: 'Failed to update proposal status',
+        description: errorMessage,
         variant: 'destructive'
       });
     }
@@ -618,7 +640,16 @@ function AdminGovernancePage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => {
+                                  onClick={async () => {
+                                    // Use proposal from list directly (it should have blockchainAddress from the fetch)
+                                    // The proposals list is already fetched with all fields including blockchainAddress
+                                    console.log('📋 Using proposal from list:', {
+                                      id: proposal._id,
+                                      blockchainAddress: proposal.blockchainAddress,
+                                      blockchainTx: proposal.blockchainTx,
+                                      hasBlockchainAddress: !!proposal.blockchainAddress
+                                    });
+                                    
                                     setSelectedProposal(proposal);
                                     setStatusUpdate({ status: proposal.status, adminNotes: proposal.adminNotes || '' });
                                     setShowStatusModal(true);
