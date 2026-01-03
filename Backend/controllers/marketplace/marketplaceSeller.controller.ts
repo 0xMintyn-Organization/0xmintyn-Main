@@ -342,7 +342,7 @@ export const getMarketplaceSellerById = async (req: Request, res: Response) => {
     const { sellerId } = req.params;
 
     const seller = await MarketplaceSellerModel.findById(sellerId)
-      .populate('userId', 'name email avatar');
+      .populate('userId', 'name email avatar walletAddress');
 
     if (!seller) {
       return res.status(404).json({
@@ -358,6 +358,35 @@ export const getMarketplaceSellerById = async (req: Request, res: Response) => {
 
   } catch (error: any) {
     console.error("Error fetching seller:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch seller"
+    });
+  }
+};
+
+// Get seller by userId (public)
+export const getMarketplaceSellerByUserId = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    const seller = await MarketplaceSellerModel.findOne({ userId })
+      .populate('userId', 'name email avatar walletAddress');
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: "Seller not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      seller
+    });
+
+  } catch (error: any) {
+    console.error("Error fetching seller by userId:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch seller"

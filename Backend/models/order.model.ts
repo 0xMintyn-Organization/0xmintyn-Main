@@ -15,7 +15,10 @@ export interface IOrder extends Document {
         paymentStatus?: string,
         transactionId?: string,
         amount?: number,
-        currency?: string
+        currency?: string,
+        transactionSignature?: string, // For Mintyn blockchain transactions
+        instructorAmount?: number, // Amount sent to instructor (95%)
+        adminAmount?: number, // Amount sent to admin (5%)
     },
     enrolledAt?: Date,
     completedAt?: Date,
@@ -64,8 +67,11 @@ const orderSchema = new Schema<IOrder>({
         amount: Number,
         currency: {
             type: String,
-            default: 'USD'
-        }
+            default: '0XM'
+        },
+        transactionSignature: String, // For Mintyn blockchain transactions
+        instructorAmount: Number, // Amount sent to instructor (95%)
+        adminAmount: Number // Amount sent to admin (5%)
     },
     enrolledAt: {
         type: Date,

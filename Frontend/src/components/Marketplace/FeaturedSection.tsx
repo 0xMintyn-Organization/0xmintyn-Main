@@ -186,11 +186,11 @@ export default function FeaturedSection({ activeTab, featuredItems }: FeaturedSe
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-lg font-bold text-gray-900 dark:text-gray-200 dark:text-white">
-                      ${item.price}
+                      {item.price} 0XM
                     </span>
                     {item.originalPrice > item.price && (
                       <span className="text-sm text-gray-500 dark:text-gray-400 line-through ml-2">
-                        ${item.originalPrice}
+                        {item.originalPrice} 0XM
                       </span>
                     )}
                   </div>
@@ -241,11 +241,11 @@ export default function FeaturedSection({ activeTab, featuredItems }: FeaturedSe
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-gray-900 dark:text-gray-200 dark:text-white">
-                      ${item.price}
+                      {item.price} 0XM
                     </div>
                     {item.originalPrice > item.price && (
                       <div className="text-sm text-gray-500 dark:text-gray-400 line-through">
-                        ${item.originalPrice}
+                        {item.originalPrice} 0XM
                       </div>
                     )}
                   </div>

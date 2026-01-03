@@ -191,7 +191,7 @@ function PurchasedCoursesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    ${courses.reduce((sum, course) => sum + course.coursePrice, 0).toFixed(2)}
+                    {courses.reduce((sum, course) => sum + course.coursePrice, 0).toLocaleString()} 0XM
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Total investment
@@ -311,7 +311,7 @@ function PurchasedCoursesPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Star className="w-4 h-4" />
-                          <span>${course.coursePrice}</span>
+                          <span>{course.coursePrice} 0XM</span>
                         </div>
                       </div>
                       

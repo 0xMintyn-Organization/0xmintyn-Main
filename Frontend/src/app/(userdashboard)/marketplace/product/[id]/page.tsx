@@ -329,15 +329,15 @@ export default function ProductDetailPage() {
                 ) : (
                   <>
                     <span className="text-3xl font-bold text-gray-900 dark:text-gray-200">
-                      ${product.price}
+                      {product.price} 0XM
                     </span>
                     {product.originalPrice && product.originalPrice > product.price && (
                       <>
                         <span className="text-xl text-gray-500 line-through">
-                          ${product.originalPrice}
+                          {product.originalPrice} 0XM
                         </span>
                         <Badge className="bg-red-500 text-white">
-                          Save ${product.originalPrice - product.price}
+                          Save {product.originalPrice - product.price} 0XM
                         </Badge>
                       </>
                     )}
@@ -568,7 +568,7 @@ export default function ProductDetailPage() {
                         </div>
                         <span className="text-sm text-gray-600">{relatedProduct.rating || 0}</span>
                       </div>
-                      <div className="text-lg font-bold text-gray-900 dark:text-gray-200">${relatedProduct.price}</div>
+                      <div className="text-lg font-bold text-gray-900 dark:text-gray-200">{relatedProduct.price} 0XM</div>
                     </CardContent>
                   </Card>
                 </Link>

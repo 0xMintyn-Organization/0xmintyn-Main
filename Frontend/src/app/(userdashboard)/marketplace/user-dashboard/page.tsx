@@ -9,7 +9,7 @@ import {
   Heart, 
   TrendingUp, 
   Eye, 
-  DollarSign,
+  Coins,
   Star,
   Clock,
   MessageSquare,
@@ -421,9 +421,9 @@ export default function UserDashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
-                  <p className="text-2xl font-bold text-orange-600">${stats.totalSpent.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.totalSpent.toLocaleString()} 0XM</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-orange-600" />
+                <Coins className="h-8 w-8 text-orange-600" />
               </div>
             </CardContent>
           </Card>
@@ -706,7 +706,7 @@ export default function UserDashboardPage() {
                               <p className={`text-lg font-bold ${
                                 service.isComplete ? 'text-green-600' : 'text-blue-600'
                               }`}>
-                                ${service.price}
+                                {service.price} 0XM
                               </p>
                             </div>
                             <div>
@@ -889,7 +889,7 @@ export default function UserDashboardPage() {
                               </Badge>
                             </div>
                             <span className="font-bold text-lg text-green-600">
-                              ${product.price}
+                              {product.price} 0XM
                             </span>
                           </div>
 

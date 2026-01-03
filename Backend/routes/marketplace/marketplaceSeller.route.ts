@@ -6,6 +6,7 @@ import {
   deleteMarketplaceSeller,
   getAllMarketplaceSellers,
   getMarketplaceSellerById,
+  getMarketplaceSellerByUserId,
   checkSellerProfileStatus
 } from "../../controllers/marketplace/marketplaceSeller.controller";
 import { isAthenticated } from "../../utils/auth";
@@ -16,6 +17,7 @@ const marketplaceSellerRouter = express.Router();
 
 // Public routes
 marketplaceSellerRouter.get("/", getAllMarketplaceSellers);
+marketplaceSellerRouter.get("/by-user/:userId", getMarketplaceSellerByUserId);
 marketplaceSellerRouter.get("/:sellerId", getMarketplaceSellerById);
 
 // Protected routes (require authentication)

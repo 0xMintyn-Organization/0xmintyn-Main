@@ -37,7 +37,7 @@ import {
   CheckCircle, 
   XCircle,
   Clock,
-  DollarSign,
+  Coins,
   Users,
   Package,
   AlertTriangle,
@@ -287,10 +287,10 @@ export default function AdminOrdersManagement() {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
                     <p className="text-2xl font-bold text-zinc-900 dark:text-white">
-                      ${orders.reduce((sum, o) => sum + o.totalAmount, 0).toLocaleString()}
+                      {orders.reduce((sum, o) => sum + o.totalAmount, 0).toLocaleString()} 0XM
                     </p>
                   </div>
-                  <DollarSign className="w-8 h-8 text-green-600" />
+                  <Coins className="w-8 h-8 text-green-600" />
                 </div>
               </CardContent>
             </Card>
@@ -418,7 +418,7 @@ export default function AdminOrdersManagement() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="font-medium">${order.totalAmount}</div>
+                            <div className="font-medium">{order.totalAmount} 0XM</div>
                           </TableCell>
                           <TableCell>
                             {getStatusBadge(order.orderStatus)}

@@ -21,7 +21,7 @@ import {
   Trash2,
   Eye,
   Users,
-  DollarSign,
+  Coins,
   Clock,
   Star,
   Filter,
@@ -60,7 +60,7 @@ interface Course {
     firstName: string;
     lastName: string;
     email: string;
-  };
+  } | null;
   courseData: Array<{
     videos: Array<{
       _id: string;
@@ -353,10 +353,10 @@ export default function AdminCourseManagement() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <Coins className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${(courseStats.totalRevenue || 0).toLocaleString()}</div>
+                <div className="text-2xl font-bold">{(courseStats.totalRevenue || 0).toLocaleString()} 0XM</div>
                 <p className="text-xs text-muted-foreground">
                   From course sales
                 </p>
@@ -509,9 +509,13 @@ export default function AdminCourseManagement() {
                             <GraduationCap className="w-4 h-4 text-green-500" />
                             <div>
                               <p className="text-sm font-medium">
-                                {course.createdBy.firstName} {course.createdBy.lastName}
+                                {course.createdBy 
+                                  ? `${course.createdBy.firstName || ''} ${course.createdBy.lastName || ''}`.trim() || 'Unknown Instructor'
+                                  : 'Unknown Instructor'}
                               </p>
-                              <p className="text-xs text-gray-500">{course.createdBy.email}</p>
+                              <p className="text-xs text-gray-500">
+                                {course.createdBy?.email || 'No email'}
+                              </p>
                             </div>
                           </div>
                         </TableCell>
@@ -533,8 +537,8 @@ export default function AdminCourseManagement() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
-                            <DollarSign className="w-4 h-4 text-green-500" />
-                            <span className="text-sm font-medium">${course.totalRevenue || 0}</span>
+                            <Coins className="w-4 h-4 text-green-500" />
+                            <span className="text-sm font-medium">{course.totalRevenue || 0} 0XM</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -656,11 +660,13 @@ export default function AdminCourseManagement() {
                         <div className="flex items-center gap-2">
                           <GraduationCap className="w-4 h-4 text-blue-500" />
                           <span className="text-sm font-medium">
-                            {course.createdBy.firstName} {course.createdBy.lastName}
+                            {course.createdBy 
+                              ? `${course.createdBy.firstName || ''} ${course.createdBy.lastName || ''}`.trim() || 'Unknown Instructor'
+                              : 'Unknown Instructor'}
                           </span>
                         </div>
                         <span className="text-lg font-bold text-green-600">
-                          ${course.price || 0}
+                          {course.price || 0} 0XM
                         </span>
                       </div>
 

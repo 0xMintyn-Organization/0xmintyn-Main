@@ -25,7 +25,6 @@ import {
   BookOpen,
   Calendar,
   User,
-  DollarSign,
   Tag,
   ChevronRight,
   Eye,
@@ -404,7 +403,7 @@ export default function BookmarksPage() {
                               {bookmark.courseLevel}
                             </Badge>
                             <span className="text-lg font-bold text-green-600">
-                              ${bookmark.coursePrice}
+                              {bookmark.coursePrice} 0XM
                             </span>
                           </div>
                           <Button
@@ -494,7 +493,7 @@ export default function BookmarksPage() {
 
                         <div className="flex items-center justify-between">
                           <span className="text-lg font-bold text-green-600">
-                            ${bookmark.coursePrice}
+                            {bookmark.coursePrice} 0XM
                           </span>
                           <Button
                             size="sm"

@@ -171,10 +171,10 @@ function EnhancedEducationCard({ course }: { course: Course }) {
                 <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-zinc-700">
                     <div className="flex items-center gap-2">
                         <span className="text-2xl font-bold text-green-700 dark:text-green-400">
-                            ${course.price}
+                            {course.price} 0XM
                         </span>
                         <span className="text-sm text-gray-500 line-through">
-                            ${course.originalPrice}
+                            {course.originalPrice} 0XM
                         </span>
                         <Badge className="bg-green-100 text-green-800 border-0">
                             {discountPercentage}% OFF
@@ -708,10 +708,10 @@ function EducationHub() {
                                                     <div className="flex items-center gap-4">
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-2xl font-bold text-green-700 dark:text-green-400">
-                                                                ${course.price}
+                                                                {course.price} 0XM
                                                             </span>
                                                             <span className="text-sm text-gray-500 line-through">
-                                                                ${course.originalPrice}
+                                                                {course.originalPrice} 0XM
                                                             </span>
                                                         </div>
                                                         <Button 

@@ -375,7 +375,7 @@ export default function CheckoutPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">${item.price}</div>
+                      <div className="font-medium">{item.price} 0XM</div>
                       <div className="text-xs text-muted-foreground">Qty: {item.quantity}</div>
                     </div>
                   </div>
@@ -384,15 +384,15 @@ export default function CheckoutPage() {
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>{subtotal.toLocaleString()} 0XM</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span>${tax.toFixed(2)}</span>
+                    <span>{tax.toLocaleString()} 0XM</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold border-t pt-2">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>{total.toLocaleString()} 0XM</span>
                   </div>
                 </div>
               </CardContent>

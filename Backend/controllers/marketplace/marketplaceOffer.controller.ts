@@ -237,6 +237,9 @@ export const acceptOffer = CatchAsyncError(async (req: Request, res: Response, n
             return next(new ErrorHandler("Seller profile not found", 404));
         }
 
+        // Get escrow info from request body (sent from frontend)
+        const { escrowSignature, escrowAccount } = req.body;
+
         // Create order
         const orderData = {
             buyerId: offer.buyerId,
@@ -258,13 +261,15 @@ export const acceptOffer = CatchAsyncError(async (req: Request, res: Response, n
                 } : undefined
             }],
             orderTotal: offer.price,
-            currency: 'USD',
-            paymentStatus: 'pending' as const,
-            paymentMethod: 'pending', // Will be updated when payment is processed
+            currency: '0XM',
+            paymentStatus: escrowSignature ? 'completed' as const : 'pending' as const, // Escrow = payment secured
+            paymentMethod: escrowSignature ? 'escrow' : 'pending',
             paymentDetails: {
                 amount: offer.price,
                 fees: platformFee,
-                netAmount: sellerNetAmount
+                netAmount: sellerNetAmount,
+                transactionSignature: escrowSignature, // Escrow transaction signature
+                escrowAccount: escrowAccount, // Escrow account PDA
             },
             orderStatus: 'processing' as const, // Start with processing since offer is accepted
             estimatedDeliveryDate: estimatedDeliveryDate,
@@ -272,7 +277,9 @@ export const acceptOffer = CatchAsyncError(async (req: Request, res: Response, n
             statusHistory: [{
                 status: 'processing',
                 timestamp: now,
-                note: `Order created from accepted offer. Estimated delivery: ${estimatedDeliveryDate.toLocaleDateString()}`
+                note: escrowSignature 
+                    ? `Order created from accepted offer. Payment secured in escrow. Estimated delivery: ${estimatedDeliveryDate.toLocaleDateString()}`
+                    : `Order created from accepted offer. Estimated delivery: ${estimatedDeliveryDate.toLocaleDateString()}`
             }],
             notes: offer.additionalTerms || '',
             isActive: true

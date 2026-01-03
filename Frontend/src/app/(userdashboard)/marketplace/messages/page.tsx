@@ -378,7 +378,12 @@ export default function MessengerPage() {
       }
     }
     
-    setIsServiceOwner(isOwner);
+    // Update ownership status based on the calculated isOwner value
+    setOwnershipStatus({
+      isOwner: isOwner,
+      status: isOwner ? 'owner' : 'buyer',
+      message: isOwner ? 'You are the service/product owner' : 'You are the buyer in this conversation'
+    });
 
     // Mark unread messages as read (only messages TO current user)
     const unreadMessages = conversation.messages.filter((msg: any) => {

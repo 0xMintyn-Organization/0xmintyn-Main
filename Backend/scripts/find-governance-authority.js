@@ -83,3 +83,4 @@ if (foundKeypair && foundPath) {
   console.log('3. Or manually provide the keypair path via SOLANA_KEYPAIR_PATH\n');
 }
 
+

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Clock, RefreshCw, CheckCircle, XCircle, AlertCircle, Loader2, FileText } from 'lucide-react';
+import { Coins, Clock, RefreshCw, CheckCircle, XCircle, AlertCircle, Loader2, FileText } from 'lucide-react';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -117,8 +117,8 @@ export default function OfferCard({ offer, currentUserId, onOfferUpdate }: Offer
           <div className="grid grid-cols-3 gap-4 py-3 bg-gray-50 dark:bg-gray-900 rounded-lg px-4">
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <DollarSign className="w-4 h-4 text-green-600" />
-                <span className="text-lg font-bold text-green-600">${offer.price}</span>
+                <Coins className="w-4 h-4 text-green-600" />
+                <span className="text-lg font-bold text-green-600">{offer.price} 0XM</span>
               </div>
               <p className="text-xs text-gray-600 dark:text-gray-400">Price</p>
             </div>

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { 
   Package, Eye, MessageSquare, Search, Clock, CheckCircle, 
-  TrendingUp, DollarSign, Truck, RefreshCw, XCircle,
+  TrendingUp, Coins, Truck, RefreshCw, XCircle,
   ChevronLeft, ChevronRight, ShoppingBag, AlertCircle, Loader2,
   ArrowLeft, Download
 } from 'lucide-react';
@@ -285,9 +285,9 @@ export default function BuyerOrdersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-yellow-600 dark:text-yellow-400">Total Spent</p>
-                <p className="text-xl font-bold text-yellow-700 dark:text-yellow-300">${stats.totalSpent.toFixed(0)}</p>
+                <p className="text-xl font-bold text-yellow-700 dark:text-yellow-300">{stats.totalSpent.toLocaleString()} 0XM</p>
               </div>
-              <DollarSign className="h-8 w-8 text-yellow-600" />
+              <Coins className="h-8 w-8 text-yellow-600" />
             </div>
           </CardContent>
         </Card>
@@ -441,7 +441,7 @@ export default function BuyerOrdersPage() {
                                   </p>
                                 </div>
                                 <span className="text-xl font-bold text-green-600">
-                                  ${order.orderTotal}
+                                  {order.orderTotal} 0XM
                                 </span>
                               </div>
 

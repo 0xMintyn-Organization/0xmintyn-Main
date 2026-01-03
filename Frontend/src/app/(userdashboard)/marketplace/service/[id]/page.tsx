@@ -10,7 +10,6 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
-import PurchaseModal from '@/components/Marketplace/PurchaseModal';
 import ContactSellerModal from '@/components/Marketplace/ContactSellerModal';
 import SellerReviews from '@/components/Marketplace/SellerReviews';
 
@@ -23,7 +22,6 @@ export default function ServiceDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPackage, setSelectedPackage] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
 
   // Helper function to construct full image URLs
@@ -225,11 +223,11 @@ export default function ServiceDetailPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-gray-900 dark:text-gray-200">
-                          ${pkg.price}
+                          {pkg.price} 0XM
                         </div>
                         {pkg.originalPrice > pkg.price && (
                           <div className="text-sm text-gray-500 line-through">
-                            ${pkg.originalPrice}
+                            {pkg.originalPrice} 0XM
                           </div>
                         )}
                       </div>
@@ -257,9 +255,9 @@ export default function ServiceDetailPage() {
             <Button 
               size="lg" 
               className="w-full bg-green-600 hover:bg-green-700"
-              onClick={() => setShowPurchaseModal(true)}
+              onClick={() => setShowContactModal(true)}
             >
-              Order Now - ${service.packages?.[selectedPackage]?.price || service.price}
+              Order Now - {service.packages?.[selectedPackage]?.price || service.price} 0XM
             </Button>
 
             <div className="flex space-x-2">
@@ -552,7 +550,7 @@ export default function ServiceDetailPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-lg font-bold text-gray-900 dark:text-gray-200">
-                          ${relatedService.price}
+                          {relatedService.price} 0XM
                         </span>
                         <div className="flex items-center text-sm text-gray-600">
                           <Clock className="w-4 h-4 mr-1" />
@@ -582,22 +580,6 @@ export default function ServiceDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Purchase Modal */}
-      {service && (
-        <PurchaseModal
-          isOpen={showPurchaseModal}
-          onClose={() => setShowPurchaseModal(false)}
-          item={{
-            id: service._id,
-            title: service.title,
-            price: service.packages?.[selectedPackage]?.price || service.price,
-            image: getFullImageUrl(service.thumbnailImage),
-            type: 'service',
-            sellerName: service.sellerId?.sellerName
-          }}
-        />
-      )}
 
       {/* Contact Seller Modal */}
       {service && service.sellerId && (

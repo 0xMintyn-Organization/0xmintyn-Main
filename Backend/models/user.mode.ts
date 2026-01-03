@@ -44,6 +44,7 @@ export interface IUser extends Document {
     }[];
     walletAddress: string;
     walletProvider: string;
+    walletPrivateKey?: string; // Encrypted private key for backend transactions
     walletConnectedAt: Date;
     comparePassword: (password: string) => Promise<boolean>;
     SignAccessToken: () => string;
@@ -166,13 +167,14 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
             }
         }
     ],
-    walletAddress: {
-        type: String,
-        default: null,
-    },
     walletProvider: {
         type: String,
         default: null,
+    },
+    walletPrivateKey: {
+        type: String,
+        default: null,
+        select: false // Never return in queries unless explicitly requested
     },
     walletConnectedAt: {
         type: Date,

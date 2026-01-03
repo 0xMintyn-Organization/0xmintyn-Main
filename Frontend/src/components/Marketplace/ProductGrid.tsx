@@ -231,11 +231,11 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
                   <div className="text-right ml-6">
                     <div className="mb-2">
                       <span className="text-2xl font-bold text-gray-900 dark:text-gray-200">
-                        ${product.price}
+                        {product.price} 0XM
                       </span>
                       {product.originalPrice > product.price && (
                         <span className="text-sm text-gray-500 line-through ml-2">
-                          ${product.originalPrice}
+                          {product.originalPrice} 0XM
                         </span>
                       )}
                     </div>
@@ -334,11 +334,11 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
             <div className="flex items-center justify-between mb-3">
               <div>
                 <span className="text-xl font-bold text-gray-900 dark:text-gray-200 dark:text-white">
-                  ${product.price}
+                  {product.price} 0XM
                 </span>
                 {product.originalPrice > product.price && (
                   <span className="text-sm text-gray-500 dark:text-gray-400 line-through ml-2">
-                    ${product.originalPrice}
+                    {product.originalPrice} 0XM
                   </span>
                 )}
               </div>

@@ -4,6 +4,12 @@ import UserModel from "../models/user.mode";
 import OrderModel from "../models/order.model";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/errorHandler";
+import { 
+  checkMintynBalance, 
+  submitSignedTransaction,
+  RPC_URL 
+} from "../utils/mintynPayment";
+import { Connection, PublicKey } from "@solana/web3.js";
 
 // Enroll in a course
 export const enrollInCourse = CatchAsyncError(
@@ -38,7 +44,63 @@ export const enrollInCourse = CatchAsyncError(
         return next(new ErrorHandler("You cannot enroll in your own course", 400));
       }
 
-      // Create order for enrollment
+      // Verify course has a price
+      if (!course.price || course.price <= 0) {
+        return next(new ErrorHandler("This course is not available for enrollment. Please contact support.", 400));
+      }
+
+      // Get user's wallet address
+      const user = await UserModel.findById(userId).select("walletAddress");
+      if (!user) {
+        return next(new ErrorHandler("User not found", 404));
+      }
+
+      if (!user.walletAddress) {
+        return next(new ErrorHandler("Wallet address not found. Please connect your wallet first.", 400));
+      }
+
+      // Get instructor wallet address
+      const instructor = await UserModel.findById(course.createdBy._id).select("walletAddress");
+      if (!instructor || !instructor.walletAddress) {
+        return next(new ErrorHandler("Instructor wallet address not found. The instructor needs to connect their wallet to receive payments.", 400));
+      }
+
+      // Get signed transaction from frontend
+      const { signedTransaction } = req.body;
+      if (!signedTransaction) {
+        return next(new ErrorHandler("Signed transaction is required. Please complete the payment in your wallet.", 400));
+      }
+
+      // Submit signed transaction to blockchain
+      let transactionSignature: string;
+      let instructorAmount: number;
+      let adminAmount: number;
+
+      try {
+        const paymentResult = await submitSignedTransaction(
+          signedTransaction,
+          user.walletAddress,
+          instructor.walletAddress,
+          course.price
+        );
+
+        transactionSignature = paymentResult.signature;
+        instructorAmount = paymentResult.instructorAmount;
+        adminAmount = paymentResult.adminAmount;
+
+        console.log("✅ Payment successful!");
+        console.log(`Transaction: ${transactionSignature}`);
+        console.log(`Instructor receives: ${instructorAmount} 0XM`);
+        console.log(`Admin receives: ${adminAmount} 0XM`);
+      } catch (error: any) {
+        console.error("❌ Payment error:", error);
+        return next(new ErrorHandler(
+          error.message || "Payment failed. Please try again.",
+          400
+        ));
+      }
+
+      // Create order for enrollment (use amounts from payment result)
       const orderData = {
         courseId: courseId,
         userId: userId,
@@ -47,12 +109,15 @@ export const enrollInCourse = CatchAsyncError(
         courseThumbnail: course.thumbnail,
         instructorId: course.createdBy._id.toString(),
         instructorName: `${(course.createdBy as any).firstName} ${(course.createdBy as any).lastName}`,
-        status: 'completed', // For now, auto-complete enrollment (payment will be handled later)
+        status: 'completed',
         payment_info: {
-          paymentMethod: 'free_enrollment', // Temporary for free courses
+          paymentMethod: 'mintyn',
           paymentStatus: 'completed',
           amount: course.price,
-          currency: 'USD'
+          currency: '0XM',
+          transactionSignature: transactionSignature,
+          instructorAmount: instructorAmount,
+          adminAmount: adminAmount,
         },
         enrolledAt: new Date(),
         completedAt: new Date()
@@ -446,6 +511,54 @@ export const markLectureComplete = CatchAsyncError(
     } catch (error: any) {
       console.error("Mark Lecture Complete Error:", error);
       return next(new ErrorHandler("Failed to mark lecture as complete", 500));
+    }
+  }
+);
+
+// Check user's Mintyn balance for a course
+export const checkUserBalance = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { courseId } = req.params;
+      const userId = req.user?._id;
+
+      if (!userId) {
+        return next(new ErrorHandler("User not authenticated", 401));
+      }
+
+      // Get course
+      const course = await CourseModel.findById(courseId);
+      if (!course) {
+        return next(new ErrorHandler("Course not found", 404));
+      }
+
+      // Get user's wallet address
+      const user = await UserModel.findById(userId).select("walletAddress");
+      if (!user || !user.walletAddress) {
+        return res.status(200).json({
+          success: true,
+          balance: 0,
+          hasEnough: false,
+          required: course.price,
+          message: "Wallet not connected"
+        });
+      }
+
+      // Check balance
+      const connection = new Connection(RPC_URL, "confirmed");
+      const userWallet = new PublicKey(user.walletAddress);
+      const balanceCheck = await checkMintynBalance(userWallet, course.price, connection);
+
+      res.status(200).json({
+        success: true,
+        balance: balanceCheck.balance,
+        hasEnough: balanceCheck.hasEnough,
+        required: course.price,
+        coursePrice: course.price
+      });
+    } catch (error: any) {
+      console.error("Check Balance Error:", error);
+      return next(new ErrorHandler("Failed to check balance", 500));
     }
   }
 );

@@ -182,7 +182,7 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
                         <div className="flex flex-wrap gap-2">
                           {service.packages.slice(0, 3).map((pkg: any, idx: number) => (
                             <div key={idx} className="text-xs bg-muted px-2 py-1 rounded">
-                              {pkg.name}: ${pkg.price}
+                              {pkg.name}: {pkg.price} 0XM
                             </div>
                           ))}
                         </div>
@@ -192,7 +192,7 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
                     <div className="text-right ml-6">
                       <div className="mb-2">
                         <span className="text-2xl font-bold text-foreground">
-                          Starting at ${minPrice}
+                          Starting at {minPrice} 0XM
                         </span>
                       </div>
                       
@@ -284,7 +284,7 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <span className="text-xl font-bold text-gray-900 dark:text-gray-200">
-                    Starting at ${minPrice}
+                    Starting at {minPrice} 0XM
                   </span>
                 </div>
               </div>
@@ -293,7 +293,7 @@ export default function ServiceGrid({ viewMode, searchQuery, services, loading, 
                 <div className="flex flex-wrap gap-1 mb-3">
                   {service.packages.slice(0, 2).map((pkg: any, idx: number) => (
                     <div key={idx} className="text-xs bg-gray-100 dark:bg-zinc-700 px-2 py-1 rounded">
-                      {pkg.name}: ${pkg.price}
+                      {pkg.name}: {pkg.price} 0XM
                     </div>
                   ))}
                 </div>

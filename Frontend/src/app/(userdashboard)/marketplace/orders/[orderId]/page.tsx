@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { 
   Package, Clock, CheckCircle, MessageSquare, 
   Download, Star, AlertCircle, ArrowLeft, 
-  Calendar, DollarSign, Truck, FileText, XCircle, Loader2,
+  Calendar, Coins, Truck, FileText, XCircle, Loader2,
   TrendingUp, Award, Zap, AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
@@ -25,6 +25,8 @@ import RevisionRequestModal from '@/components/Marketplace/RevisionRequestModal'
 import RevisionStatus from '@/components/Marketplace/RevisionStatus';
 import AcceptDeliveryModal from '@/components/Marketplace/AcceptDeliveryModal';
 import ReviewModal from '@/components/Marketplace/ReviewModal';
+import CancellationRequestModal from '@/components/Marketplace/CancellationRequestModal';
+import CancellationStatus from '@/components/Marketplace/CancellationStatus';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -40,6 +42,7 @@ export default function OrderDetailPage() {
   const [revisionModalOpen, setRevisionModalOpen] = useState(false);
   const [acceptDeliveryModalOpen, setAcceptDeliveryModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [cancellationModalOpen, setCancellationModalOpen] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [canReview, setCanReview] = useState(false);
   const [checkingReview, setCheckingReview] = useState(false);
@@ -402,7 +405,7 @@ export default function OrderDetailPage() {
                         </Badge>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-green-600">${item.itemPrice}</p>
+                        <p className="text-lg font-bold text-green-600">{item.itemPrice} 0XM</p>
                         <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                       </div>
                     </div>
@@ -452,6 +455,20 @@ export default function OrderDetailPage() {
                 orderId={orderId}
                 orderStatus={order.orderStatus}
                 revisionRequest={order.revisionRequest}
+              />
+            </div>
+          )}
+
+          {/* Cancellation Request Section */}
+          {order.cancellationRequest && (
+            <div data-cancellation-status>
+              <CancellationStatus
+                orderId={orderId}
+                cancellationRequest={order.cancellationRequest}
+                isSeller={isSellerByOwnership}
+                onResponseSuccess={() => {
+                  fetchOrderDetails();
+                }}
               />
             </div>
           )}
@@ -546,7 +563,7 @@ export default function OrderDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
+                <Coins className="h-5 w-5 text-green-600" />
                 Payment Details
               </CardTitle>
             </CardHeader>
@@ -554,7 +571,7 @@ export default function OrderDetailPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Order Total</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">${order.orderTotal}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{order.orderTotal} 0XM</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Payment Status</p>
@@ -570,15 +587,15 @@ export default function OrderDetailPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
-                      <span className="font-medium">${order.paymentDetails.amount?.toFixed(2)}</span>
+                      <span className="font-medium">{order.paymentDetails.amount?.toLocaleString()} 0XM</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Platform Fee (10%)</span>
-                      <span className="font-medium">${order.paymentDetails.fees?.toFixed(2)}</span>
+                      <span className="font-medium">{order.paymentDetails.fees?.toLocaleString()} 0XM</span>
                     </div>
                     <div className="flex justify-between text-base font-bold pt-2 border-t">
                       <span>Seller Receives</span>
-                      <span className="text-green-600">${order.paymentDetails.netAmount?.toFixed(2)}</span>
+                      <span className="text-green-600">{order.paymentDetails.netAmount?.toLocaleString()} 0XM</span>
                     </div>
                   </div>
                 </>
@@ -867,21 +884,46 @@ export default function OrderDetailPage() {
               )}
 
               {/* Buyer-Specific Actions */}
-              {!isSellerByOwnership && order.orderStatus !== 'cancelled' && order.orderStatus !== 'completed' && (
+              {!isSellerByOwnership && 
+               order.orderStatus !== 'cancelled' && 
+               order.orderStatus !== 'completed' && 
+               !order.cancellationRequest && (
                 <Button 
                   variant="outline" 
                   className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => {
-                    if (confirm('Are you sure you want to cancel this order?')) {
-                      toast({
-                        title: "Order Cancellation",
-                        description: "Please contact the seller to discuss cancellation.",
-                      });
-                    }
-                  }}
+                  onClick={() => setCancellationModalOpen(true)}
                 >
                   <XCircle className="h-4 w-4 mr-2" />
-                  Cancel Order
+                  Request Cancellation
+                </Button>
+              )}
+
+              {/* Show cancellation request status for buyer */}
+              {!isSellerByOwnership && order.cancellationRequest && order.cancellationRequest.status === 'pending' && (
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                  onClick={() => {
+                    const cancellationSection = document.querySelector('[data-cancellation-status]');
+                    cancellationSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  View Cancellation Request
+                </Button>
+              )}
+
+              {/* Seller action for pending cancellation */}
+              {isSellerByOwnership && order.cancellationRequest && order.cancellationRequest.status === 'pending' && (
+                <Button 
+                  className="w-full justify-start bg-amber-600 hover:bg-amber-700 text-white"
+                  onClick={() => {
+                    const cancellationSection = document.querySelector('[data-cancellation-status]');
+                    cancellationSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Respond to Cancellation
                 </Button>
               )}
 
@@ -1037,6 +1079,15 @@ export default function OrderDetailPage() {
           });
           fetchOrderDetails();
           checkReviewStatus(); // Refresh review status
+        }}
+      />
+
+      <CancellationRequestModal
+        isOpen={cancellationModalOpen}
+        onClose={() => setCancellationModalOpen(false)}
+        orderId={orderId}
+        onSuccess={() => {
+          fetchOrderDetails();
         }}
       />
     </div>

@@ -8,7 +8,8 @@ import {
   getOrderDetails, 
   updateOrderStatus,
   markLectureComplete,
-  getCourseProgress
+  getCourseProgress,
+  checkUserBalance
 } from "../controllers/enrollment.controller";
 import { isAthenticated } from "../utils/auth";
 import { updateAccessTokenMiddleware } from "../controllers/user.controller";
@@ -20,6 +21,7 @@ const router = express.Router();
 router.post("/enroll/:courseId", updateAccessTokenMiddleware, isAthenticated, enrollInCourse);
 router.get("/my-courses", updateAccessTokenMiddleware, isAthenticated, getUserEnrolledCourses);
 router.get("/check/:courseId", updateAccessTokenMiddleware, isAthenticated, checkEnrollment);
+router.get("/check-balance/:courseId", updateAccessTokenMiddleware, isAthenticated, checkUserBalance);
 router.get("/access/:courseId", updateAccessTokenMiddleware, isAthenticated, checkCourseAccess);
 
 // Order management routes (Admin only)

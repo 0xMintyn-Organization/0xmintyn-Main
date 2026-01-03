@@ -48,7 +48,7 @@ import {
   Trash2,
   Star,
   Clock,
-  DollarSign,
+  Coins,
   Users,
   TrendingUp,
   AlertTriangle
@@ -472,7 +472,7 @@ export default function AdminServicesManagement() {
                           </TableCell>
                           <TableCell>
                             <div className="font-medium">
-                              ${getMinPrice(service.packages)} - ${getMaxPrice(service.packages)}
+                              {getMinPrice(service.packages)} - {getMaxPrice(service.packages)} 0XM
                             </div>
                           </TableCell>
                           <TableCell>

@@ -39,7 +39,7 @@ import {
   Star,
   TrendingUp,
   Calendar,
-  DollarSign,
+  Coins,
   Package,
   MessageSquare,
   Settings
@@ -184,10 +184,7 @@ export default function AdminSellersManagement() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return `${amount.toLocaleString()} 0XM`;
   };
 
   const handleToggleStatus = (sellerId: string) => {

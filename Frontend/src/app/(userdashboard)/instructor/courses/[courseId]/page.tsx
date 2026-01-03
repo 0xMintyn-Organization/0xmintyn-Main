@@ -15,7 +15,7 @@ import {
   Users,
   Star,
   Clock,
-  DollarSign,
+  Coins,
   Calendar,
   BookOpen,
   Play,
@@ -381,7 +381,7 @@ export default function CourseDetailPage() {
                       Current Price
                     </span>
                     <span className="text-2xl font-bold text-green-600">
-                      ${course.price}
+                      {course.price} 0XM
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -389,7 +389,7 @@ export default function CourseDetailPage() {
                       Original Price
                     </span>
                     <span className="text-lg line-through text-gray-500">
-                      ${course.estimatedPrice}
+                      {course.estimatedPrice} 0XM
                     </span>
                   </div>
                   <div className="flex items-center justify-between">

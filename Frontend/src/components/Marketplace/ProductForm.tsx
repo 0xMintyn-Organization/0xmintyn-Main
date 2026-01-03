@@ -20,7 +20,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  DollarSign,
+  Coins,
   Tag,
   Info,
   FileText,
@@ -343,7 +343,7 @@ export default function ProductForm({ mode, productId, initialData, onSuccess }:
             <span className="hidden sm:inline">Basic Info</span>
           </TabsTrigger>
           <TabsTrigger value="pricing" className="gap-2">
-            <DollarSign className="h-4 w-4" />
+            <Coins className="h-4 w-4" />
             <span className="hidden sm:inline">Pricing</span>
           </TabsTrigger>
           <TabsTrigger value="details" className="gap-2">
@@ -462,7 +462,7 @@ export default function ProductForm({ mode, productId, initialData, onSuccess }:
                     Price (USD) <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="price"
                       type="number"
@@ -483,17 +483,17 @@ export default function ProductForm({ mode, productId, initialData, onSuccess }:
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="originalPrice">Original Price (Optional)</Label>
+                  <Label htmlFor="originalPrice">Original Price (0XM) (Optional)</Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="originalPrice"
                       type="number"
                       value={formData.originalPrice}
                       onChange={(e) => handleInputChange("originalPrice", e.target.value)}
-                      placeholder="0.00"
+                      placeholder="0"
                       min="0"
-                      step="0.01"
+                      step="1"
                       className="pl-10"
                     />
                   </div>

@@ -20,7 +20,7 @@ import {
   Trash2,
   Image as ImageIcon,
   FileText,
-  DollarSign,
+  Coins,
   Tag,
   Settings,
   AlertCircle,
@@ -491,26 +491,26 @@ export default function EditProductPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price ($) *</Label>
+                  <Label htmlFor="price">Price (0XM) *</Label>
                   <Input
                     id="price"
                     type="number"
                     value={formData.price}
                     onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    step="0.01"
+                    placeholder="0"
+                    step="1"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="originalPrice">Original Price ($)</Label>
+                  <Label htmlFor="originalPrice">Original Price (0XM)</Label>
                   <Input
                     id="originalPrice"
                     type="number"
                     value={formData.originalPrice}
                     onChange={(e) => handleInputChange('originalPrice', parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    step="0.01"
+                    placeholder="0"
+                    step="1"
                   />
                 </div>
                 <div className="space-y-2">

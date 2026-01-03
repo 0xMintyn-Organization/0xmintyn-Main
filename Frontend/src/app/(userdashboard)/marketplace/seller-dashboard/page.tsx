@@ -13,7 +13,7 @@ import {
   Edit, 
   Trash2,
   BarChart3,
-  DollarSign,
+  Coins,
   Star,
   Clock,
   MessageSquare,
@@ -528,9 +528,9 @@ export default function SellerDashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Earnings</p>
-                  <p className="text-2xl font-bold text-orange-600">${stats.totalEarnings.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.totalEarnings.toLocaleString()} 0XM</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-orange-600" />
+                <Coins className="h-8 w-8 text-orange-600" />
               </div>
             </CardContent>
           </Card>
@@ -748,7 +748,7 @@ export default function SellerDashboardPage() {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium text-sm">{product.name}</h4>
-                          <p className="text-sm text-muted-foreground">${product.price}</p>
+                          <p className="text-sm text-muted-foreground">{product.price} 0XM</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant={product.status === 'Active' ? 'default' : 'secondary'}>
@@ -830,7 +830,7 @@ export default function SellerDashboardPage() {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium text-sm">{service.name}</h4>
-                          <p className="text-sm text-muted-foreground">${service.price}</p>
+                          <p className="text-sm text-muted-foreground">{service.price} 0XM</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant={service.status === 'Active' ? 'default' : 'secondary'}>

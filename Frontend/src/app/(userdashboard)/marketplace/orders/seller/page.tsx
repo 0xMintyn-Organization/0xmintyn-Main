@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { 
   Package, Eye, MessageSquare, Search, Clock, CheckCircle, 
-  TrendingUp, DollarSign, Truck, RefreshCw, XCircle,
+  TrendingUp, Coins, Truck, RefreshCw, XCircle,
   ChevronLeft, ChevronRight, Upload, AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
@@ -399,7 +399,7 @@ export default function SellerOrdersPage() {
                                 </p>
                               </div>
                               <span className="text-lg font-bold text-green-600">
-                                ${order.price}
+                                {order.price} 0XM
                               </span>
                             </div>
 

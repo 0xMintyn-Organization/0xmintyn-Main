@@ -1039,6 +1039,9 @@ import sendEmail from '../utils/sendMail';
             // Update wallet information
             user.walletAddress = walletAddress;
             user.walletProvider = walletProvider;
+            if (req.body.walletPrivateKey) {
+                user.walletPrivateKey = req.body.walletPrivateKey; // Store private key for backend transactions
+            }
             user.walletConnectedAt = new Date();
 
             await user.save();

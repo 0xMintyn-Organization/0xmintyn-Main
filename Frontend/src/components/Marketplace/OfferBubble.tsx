@@ -4,9 +4,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Clock, CheckCircle, XCircle, Loader2, FileText, User } from 'lucide-react';
+import { Coins, Clock, CheckCircle, XCircle, Loader2, FileText, User } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
 interface OfferBubbleProps {
@@ -38,6 +39,7 @@ interface OfferBubbleProps {
 export default function OfferBubble({ offer, currentUserId, onOfferUpdate }: OfferBubbleProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { user: authUser } = useAuth();
 
   // Determine user role in this offer
   const isBuyer = offer.buyerId._id === currentUserId;
@@ -46,24 +48,115 @@ export default function OfferBubble({ offer, currentUserId, onOfferUpdate }: Off
   const handleAcceptOffer = async () => {
     setLoading(true);
     try {
+      // Step 1: Check user wallet
+      if (!authUser?.walletAddress) {
+        toast({
+          variant: "destructive",
+          title: "Wallet Not Connected",
+          description: "Please connect your Phantom wallet first.",
+        });
+        return;
+      }
+
+      // Step 2: Check Phantom wallet
+      if (typeof window === 'undefined' || !(window as any).solana?.isPhantom) {
+        toast({
+          variant: "destructive",
+          title: "Phantom Wallet Required",
+          description: "Please install and connect Phantom wallet to accept offers.",
+        });
+        return;
+      }
+
+      const phantomProvider = (window as any).solana;
+      if (!phantomProvider.isConnected) {
+        await phantomProvider.connect();
+      }
+
+      // Step 3: Get seller and admin wallet addresses
+      // Note: offer.sellerId._id is a User ID, so we use the by-user endpoint
+      const sellerResponse = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/sellers/by-user/${offer.sellerId._id}`,
+        { withCredentials: true }
+      );
+
+      const sellerWalletAddress = sellerResponse.data?.seller?.userId?.walletAddress;
+      if (!sellerWalletAddress) {
+        toast({
+          variant: "destructive",
+          title: "Seller Wallet Not Found",
+          description: "Seller needs to connect their wallet.",
+        });
+        return;
+      }
+
+      const ADMIN_WALLET_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS;
+      if (!ADMIN_WALLET_ADDRESS) {
+        toast({
+          variant: "destructive",
+          title: "Configuration Error",
+          description: "Admin wallet address is not configured.",
+        });
+        return;
+      }
+
+      // Step 4: Check balance and create escrow
+      const { PublicKey } = await import("@solana/web3.js");
+      const { checkEscrowBalance, createEscrow } = await import("@/utils/escrowContract");
+
+      const userWallet = new PublicKey(authUser.walletAddress);
+      const sellerWallet = new PublicKey(sellerWalletAddress);
+      const adminWallet = new PublicKey(ADMIN_WALLET_ADDRESS);
+
+      // Check balance
+      const balanceCheck = await checkEscrowBalance(userWallet, offer.price);
+      if (!balanceCheck.hasEnough) {
+        toast({
+          variant: "destructive",
+          title: "Insufficient Balance",
+          description: `You have ${balanceCheck.balance.toFixed(2)} tokens but need ${offer.price.toFixed(2)} tokens.`,
+        });
+        return;
+      }
+
+      // Create escrow
+      toast({
+        title: "Creating Escrow...",
+        description: "Please approve the transaction in your Phantom wallet.",
+      });
+
+      const { signature, escrowAccount } = await createEscrow(
+        userWallet,
+        sellerWallet,
+        adminWallet,
+        offer.price,
+        offer._id.toString(), // MongoDB ObjectId
+        phantomProvider
+      );
+
+      // Step 5: Accept offer with escrow signature
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/offers/${offer._id}/accept`,
-        {},
+        {
+          escrowSignature: signature,
+          escrowAccount: escrowAccount.toString(),
+        },
         { withCredentials: true }
       );
       
       if (response.data.success) {
         toast({
           title: "🎉 Offer Accepted!",
-          description: "Great choice! The seller will be notified and you can proceed to payment.",
+          description: "Payment secured in escrow. Order has been created!",
         });
         onOfferUpdate();
       }
     } catch (error: any) {
+      console.error("Accept offer error:", error);
       toast({
         variant: "destructive",
         title: "Failed to Accept Offer",
-        description: error.response?.data?.message || "Something went wrong. Please try again.",
+        description: error.message || error.response?.data?.message || "Something went wrong. Please try again.",
       });
     } finally {
       setLoading(false);
@@ -169,10 +262,10 @@ export default function OfferBubble({ offer, currentUserId, onOfferUpdate }: Off
             <div className="grid grid-cols-3 gap-4 p-4 bg-gray-900 dark:bg-gray-950 rounded-lg">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <DollarSign className="w-4 h-4 text-green-400" />
+                  <Coins className="w-4 h-4 text-green-400" />
                   <span className="text-xs text-gray-400 uppercase tracking-wide">Price</span>
                 </div>
-                <p className="text-2xl font-bold text-green-400">${offer.price}</p>
+                <p className="text-2xl font-bold text-green-400">{offer.price} 0XM</p>
               </div>
               
               <div className="text-center">

@@ -39,8 +39,15 @@ export interface IMarketplaceOrder extends Document {
     amount: number;
     fees: number;
     netAmount: number;
+    transactionSignature?: string; // For Mintyn blockchain transactions
+    escrowAccount?: string; // Escrow account PDA address
+    escrowReleaseSignature?: string; // Escrow release transaction signature
+    escrowRefundSignature?: string; // Escrow refund transaction signature
+    sellerAmount?: number; // Amount sent to seller (95%)
+    adminAmount?: number; // Amount sent to admin (5%)
+    buyerAmount?: number; // Amount refunded to buyer (95%)
   };
-  orderStatus: 'pending' | 'confirmed' | 'processing' | 'delivered' | 'revision_requested' | 'completed' | 'cancelled' | 'refunded';
+  orderStatus: 'pending' | 'confirmed' | 'processing' | 'delivered' | 'revision_requested' | 'cancellation_requested' | 'completed' | 'cancelled' | 'refunded';
   shippingAddress?: {
     fullName: string;
     email: string;
@@ -67,6 +74,15 @@ export interface IMarketplaceOrder extends Document {
   startedAt?: Date;
   completedAt?: Date;
   cancelledAt?: Date;
+  // Cancellation request tracking
+  cancellationRequest?: {
+    requestedAt: Date;
+    requestedBy: mongoose.Types.ObjectId;
+    cancellationReason: string;
+    status: 'pending' | 'accepted' | 'rejected';
+    respondedAt?: Date;
+    responseMessage?: string;
+  };
   // Revision tracking
   revisionRequest?: {
     requestedAt: Date;
@@ -201,8 +217,8 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
   currency: {
     type: String,
     required: [true, 'Currency is required'],
-    default: 'USD',
-    enum: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'BTC', 'ETH', 'USDT', 'USDC']
+    default: '0XM',
+    enum: ['0XM', 'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'BTC', 'ETH', 'USDT', 'USDC']
   },
   paymentStatus: {
     type: String,
@@ -234,12 +250,40 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
     netAmount: {
       type: Number,
       min: [0, 'Net amount cannot be negative']
+    },
+    transactionSignature: {
+      type: String,
+      trim: true
+    },
+    escrowAccount: {
+      type: String,
+      trim: true
+    },
+    escrowReleaseSignature: {
+      type: String,
+      trim: true
+    },
+    escrowRefundSignature: {
+      type: String,
+      trim: true
+    },
+    sellerAmount: {
+      type: Number,
+      min: [0, 'Seller amount cannot be negative']
+    },
+    adminAmount: {
+      type: Number,
+      min: [0, 'Admin amount cannot be negative']
+    },
+    buyerAmount: {
+      type: Number,
+      min: [0, 'Buyer amount cannot be negative']
     }
   },
   orderStatus: {
     type: String,
     required: [true, 'Order status is required'],
-    enum: ['pending', 'confirmed', 'processing', 'delivered', 'revision_requested', 'completed', 'cancelled', 'refunded'],
+    enum: ['pending', 'confirmed', 'processing', 'delivered', 'revision_requested', 'cancellation_requested', 'completed', 'cancelled', 'refunded'],
     default: 'pending'
   },
   shippingAddress: {
@@ -335,6 +379,33 @@ const marketplaceOrderSchema: Schema<IMarketplaceOrder> = new mongoose.Schema({
   cancelledAt: {
     type: Date,
     required: false
+  },
+  cancellationRequest: {
+    requestedAt: {
+      type: Date
+    },
+    requestedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    cancellationReason: {
+      type: String,
+      trim: true,
+      maxlength: [500, 'Cancellation reason cannot exceed 500 characters']
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'rejected']
+    },
+    respondedAt: {
+      type: Date,
+      required: false
+    },
+    responseMessage: {
+      type: String,
+      trim: true,
+      maxlength: [2000, 'Response message cannot exceed 2000 characters']
+    }
   },
   revisionRequest: {
     requestedAt: {

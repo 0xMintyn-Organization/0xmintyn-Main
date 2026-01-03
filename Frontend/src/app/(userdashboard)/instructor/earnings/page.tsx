@@ -51,7 +51,6 @@ import {
   AreaChart,
 } from "recharts";
 import {
-  DollarSign,
   TrendingUp,
   TrendingDown,
   Download,
@@ -79,6 +78,7 @@ import {
   Receipt,
   FileText,
 } from "lucide-react";
+import { formatMintynDisplay, formatMintynPrecise } from "@/lib/formatters";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/Spinner";
 import { useToast } from "@/hooks/use-toast";
@@ -212,12 +212,7 @@ function InstructorEarnings() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    return formatMintynDisplay(value);
   };
 
   const getTransactionIcon = (type: string) => {
@@ -360,7 +355,7 @@ function InstructorEarnings() {
                 <CardTitle className="text-sm font-medium">
                   Total Earnings
                 </CardTitle>
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <Coins className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">

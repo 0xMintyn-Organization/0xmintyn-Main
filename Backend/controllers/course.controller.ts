@@ -72,7 +72,7 @@ export const getAllCourses = CatchAsyncError(
       .select(
         "name description thumbnail categories level price estimatedPrice averageRating totalReviews createdBy"
       )
-      .populate("createdBy", "username avatar");
+      .populate("createdBy", "username avatar walletAddress");
 
     // Transform to match frontend expectations
     const formattedCourses = courses.map((course) => ({
@@ -105,7 +105,7 @@ export const getCourseById = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     const courseId = req.params.id;
 
-    const course = await CourseModel.findById(courseId).populate("createdBy");
+    const course = await CourseModel.findById(courseId).populate("createdBy", "firstName lastName email username avatar walletAddress");
 
     if (!course) {
       return next(new ErrorHandler("Course not found", 404));
@@ -146,7 +146,7 @@ export const getPurchasedCourseById = CatchAsyncError(
     const courseId = req.params.id;
     const userId = req.user?._id;
 
-    const course = await CourseModel.findById(courseId).populate("createdBy");
+    const course = await CourseModel.findById(courseId).populate("createdBy", "firstName lastName email username avatar walletAddress");
     if (!course) {
       return next(new ErrorHandler("Course not found", 404));
     }
@@ -251,7 +251,7 @@ export const getInstructorCourses = CatchAsyncError(
 
     const courses = await CourseModel.find({ createdBy: instructorId })
       .sort({ createdAt: -1 })
-      .populate("createdBy", "username avatar");
+      .populate("createdBy", "username avatar walletAddress");
 
     res.status(200).json({
       success: true,
@@ -506,20 +506,33 @@ export const getAdminCourses = CatchAsyncError(async (req: Request, res: Respons
 
     // Get courses with populated instructor data
     const courses = await CourseModel.find(filter)
-      .populate('createdBy', 'firstName lastName email')
+      .populate('createdBy', 'firstName lastName email walletAddress')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    // Add default values for missing fields
-    const coursesWithDefaults = courses.map(course => ({
-      ...course.toObject(),
-      enrolledStudents: course.enrolledStudents || 0,
-      totalRevenue: course.totalRevenue || 0,
-      rating: course.averageRating || 0,
-      reviews: course.totalReviews || 0,
-      status: course.status || 'active'
-    }));
+    // Add default values for missing fields and handle null createdBy
+    const coursesWithDefaults = courses.map(course => {
+      const courseObj = course.toObject();
+      // Ensure createdBy is an object even if populate returned null
+      if (!courseObj.createdBy) {
+        courseObj.createdBy = {
+          _id: courseObj.createdBy?._id || 'unknown',
+          firstName: 'Unknown',
+          lastName: 'Instructor',
+          email: 'N/A',
+          walletAddress: null
+        };
+      }
+      return {
+        ...courseObj,
+        enrolledStudents: course.enrolledStudents || 0,
+        totalRevenue: course.totalRevenue || 0,
+        rating: course.averageRating || 0,
+        reviews: course.totalReviews || 0,
+        status: course.status || 'active'
+      };
+    });
 
     // Get total count for pagination
     const totalCourses = await CourseModel.countDocuments(filter);
