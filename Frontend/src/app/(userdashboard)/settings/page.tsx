@@ -38,6 +38,14 @@ import {
 import { useState, useEffect } from "react";
 import { useAutoLogout } from "@/hooks/useAutoLogout";
 import { useToast } from "@/hooks/use-toast";
+import { PhantomWalletButton } from "@/components/MyProfile/PhantomWalletButton";
+import { useSelector } from "react-redux";
+import { 
+  getGasFeeInfo, 
+  calculateGasFeeEstimate, 
+  formatFee,
+  getFeeStrategyDescription 
+} from "@/utils/gasFeeUtils";
 
 const AUTO_LOGOUT_STORAGE_KEY = 'autoLogout_time';
 const AUTO_LOGOUT_ENABLED_KEY = 'autoLogout_enabled';
@@ -47,6 +55,7 @@ export default function Settings() {
   const { theme, toggleTheme } = useTheme();
   const { fontSize, setFontSize, resetFontSize } = useFontSize();
   const { toast } = useToast();
+  const { user } = useSelector((state: any) => state.auth);
   const { 
     isEnabled: ttsEnabled, 
     isSpeaking, 
@@ -106,7 +115,7 @@ export default function Settings() {
 
   // Payment preferences state
   const [paymentPrefs, setPaymentPrefs] = useState({
-    preferredCurrency: "usd",
+    preferredCurrency: "0xm", // Default to Mintyn 0XM
     autoConversion: true,
     gasFeeStrategy: "balanced",
     autoAdjustGas: true,
@@ -118,6 +127,11 @@ export default function Settings() {
     start: 22,
     end: 8,
   });
+
+  // Gas fee state
+  const [gasFeeInfo, setGasFeeInfo] = useState<any>(null);
+  const [currentFeeEstimate, setCurrentFeeEstimate] = useState<any>(null);
+  const [isLoadingFees, setIsLoadingFees] = useState(false);
 
   // Load auto-logout preferences from localStorage
   useEffect(() => {
@@ -137,6 +151,42 @@ export default function Settings() {
       }
     }
   }, []);
+
+  // Fetch gas fee information
+  useEffect(() => {
+    const fetchGasFees = async () => {
+      setIsLoadingFees(true);
+      try {
+        const info = await getGasFeeInfo();
+        setGasFeeInfo(info);
+        
+        // Calculate estimate for current strategy
+        const estimate = await calculateGasFeeEstimate(paymentPrefs.gasFeeStrategy);
+        setCurrentFeeEstimate(estimate);
+      } catch (error) {
+        console.error("Error fetching gas fees:", error);
+      } finally {
+        setIsLoadingFees(false);
+      }
+    };
+
+    fetchGasFees();
+    
+    // Refresh fees every 30 seconds
+    const interval = setInterval(fetchGasFees, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update fee estimate when strategy changes
+  useEffect(() => {
+    const updateEstimate = async () => {
+      if (paymentPrefs.gasFeeStrategy) {
+        const estimate = await calculateGasFeeEstimate(paymentPrefs.gasFeeStrategy);
+        setCurrentFeeEstimate(estimate);
+      }
+    };
+    updateEstimate();
+  }, [paymentPrefs.gasFeeStrategy]);
 
   // Save auto-logout time preference
   const handleAutoLogoutTimeChange = (value: number) => {
@@ -859,24 +909,66 @@ export default function Settings() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-3 pt-2 space-y-2">
-                  <div className="p-2 rounded-md border border-border bg-muted/50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Wallet className="h-4 w-4 text-green-600" />
-                      <div>
-                        <p className="text-xs font-medium text-foreground">MetaMask</p>
-                        <p className="text-[10px] text-muted-foreground font-mono">0x71C...F3E2</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="h-7 text-xs text-red-600 hover:text-red-700 px-2">
-                      Disconnect
-                    </Button>
-                  </div>
-                  <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 h-8 text-xs">
-                    + Connect Wallet
-                  </Button>
+                <CardContent className="p-3 pt-2">
+                  <PhantomWalletButton 
+                    onConnect={() => {
+                      toast({
+                        title: "Wallet Connected",
+                        description: "Your wallet has been successfully connected",
+                      });
+                    }}
+                    onDisconnect={() => {
+                      toast({
+                        title: "Wallet Disconnected",
+                        description: "Your wallet has been disconnected",
+                      });
+                    }}
+                  />
                 </CardContent>
               </Card>
+
+              {/* Saved Wallet Address */}
+              {user?.walletAddress && (
+                <Card>
+                  <CardHeader className="p-3 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-md bg-green-100 dark:bg-green-900/20">
+                        <CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm font-semibold">Saved Wallet</CardTitle>
+                        <CardDescription className="text-xs">Wallet linked to your account</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-3 pt-2">
+                    <div className="p-2 rounded-md border border-border bg-muted/50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-foreground">Provider:</span>
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {user?.walletProvider?.toUpperCase() || 'PHANTOM'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-foreground">Address:</span>
+                        <code className="text-[10px] text-muted-foreground font-mono">
+                          {user.walletAddress.length > 10
+                            ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}`
+                            : user.walletAddress}
+                        </code>
+                      </div>
+                      {user?.walletConnectedAt && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-foreground">Connected:</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(user.walletConnectedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Gas Fee Settings */}
               <Card>
@@ -885,10 +977,13 @@ export default function Settings() {
                     <div className="p-1.5 rounded-md bg-green-100 dark:bg-green-900/20">
                       <Gauge className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-sm font-semibold">Gas Fees</CardTitle>
                       <CardDescription className="text-xs">Optimize transaction costs</CardDescription>
                     </div>
+                    {isLoadingFees && (
+                      <Zap className="h-3 w-3 text-muted-foreground animate-spin" />
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="p-3 pt-2 space-y-3">
@@ -902,7 +997,7 @@ export default function Settings() {
                     <label className="text-xs font-medium text-foreground mb-1.5 block">Strategy</label>
                     <Select 
                       value={paymentPrefs.gasFeeStrategy}
-                      onValueChange={(value) => setPaymentPrefs({...paymentPrefs, gasFeeStrategy: value})}
+                      onValueChange={(value) => setPaymentPrefs({...paymentPrefs, gasFeeStrategy: value as 'fast' | 'balanced' | 'economic'})}
                     >
                       <SelectTrigger className="h-8 text-xs">
                         <SelectValue />
@@ -913,7 +1008,46 @@ export default function Settings() {
                         <SelectItem value="economic" className="text-xs">💰 Economic (Slower)</SelectItem>
                       </SelectContent>
                     </Select>
+                    {currentFeeEstimate && (
+                      <div className="mt-2 p-2 rounded-md bg-muted/50 border border-border">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-medium text-foreground">Est. Fee:</span>
+                          <span className="text-xs font-semibold text-green-600">
+                            {formatFee(currentFeeEstimate.totalFeeSOL)}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          {getFeeStrategyDescription(paymentPrefs.gasFeeStrategy)}
+                        </p>
+                        {gasFeeInfo && (
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            Updated {new Date(gasFeeInfo.lastUpdated).toLocaleTimeString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
+                  
+                  {/* Fee Comparison */}
+                  {gasFeeInfo && (
+                    <div className="p-2 rounded-md bg-muted/30 border border-border">
+                      <p className="text-[10px] font-medium text-foreground mb-1.5">Network Fees:</p>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[10px]">
+                          <span className="text-muted-foreground">⚡ Fast:</span>
+                          <span className="text-foreground">{formatFee((5000 + (gasFeeInfo.fast * 200000 / 1_000_000)) / 1_000_000_000)}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px]">
+                          <span className="text-muted-foreground">⚖️ Balanced:</span>
+                          <span className="text-foreground">{formatFee((5000 + (gasFeeInfo.balanced * 200000 / 1_000_000)) / 1_000_000_000)}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px]">
+                          <span className="text-muted-foreground">💰 Economic:</span>
+                          <span className="text-foreground">{formatFee((5000 + (gasFeeInfo.economic * 200000 / 1_000_000)) / 1_000_000_000)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -941,13 +1075,14 @@ export default function Settings() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="usd" className="text-xs">💵 USD</SelectItem>
-                        <SelectItem value="eur" className="text-xs">💶 EUR</SelectItem>
-                        <SelectItem value="gbp" className="text-xs">💷 GBP</SelectItem>
-                        <SelectItem value="btc" className="text-xs">₿ BTC</SelectItem>
-                        <SelectItem value="eth" className="text-xs">Ξ ETH</SelectItem>
-                        <SelectItem value="usdt" className="text-xs">USDT</SelectItem>
-                        <SelectItem value="usdc" className="text-xs">USDC</SelectItem>
+                        <SelectItem value="0xm" className="text-xs">🪙 0XM - Mintyn</SelectItem>
+                        <SelectItem value="usd" className="text-xs">💵 USD - US Dollar</SelectItem>
+                        <SelectItem value="eur" className="text-xs">💶 EUR - Euro</SelectItem>
+                        <SelectItem value="gbp" className="text-xs">💷 GBP - British Pound</SelectItem>
+                        <SelectItem value="btc" className="text-xs">₿ BTC - Bitcoin</SelectItem>
+                        <SelectItem value="eth" className="text-xs">Ξ ETH - Ethereum</SelectItem>
+                        <SelectItem value="usdt" className="text-xs">USDT - Tether</SelectItem>
+                        <SelectItem value="usdc" className="text-xs">USDC - USD Coin</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -960,28 +1095,6 @@ export default function Settings() {
                 </CardContent>
               </Card>
 
-              {/* Transaction History */}
-              <Card>
-                <CardHeader className="p-3 pb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-md bg-green-100 dark:bg-green-900/20">
-                      <Zap className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-sm font-semibold">History</CardTitle>
-                      <CardDescription className="text-xs">Transaction records</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-3 pt-2">
-                  <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs">
-                    <span className="flex items-center gap-1.5">
-                      📊 View History
-                    </span>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </Button>
-                </CardContent>
-              </Card>
             </TabsContent>
           </Tabs>
         </div>

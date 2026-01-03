@@ -568,34 +568,7 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
         </div>
       )}
 
-      {/* Debug Info (only in development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs">
-          <div className="font-semibold mb-2">Debug Info:</div>
-          <div>Phantom Installed: {phantomInstalled ? 'Yes' : 'No'}</div>
-          <div>Provider Available: {phantomProvider ? 'Yes' : 'No'}</div>
-          <div>Wallet Connected: {walletState.connected ? 'Yes' : 'No'}</div>
-          {phantomProvider && (
-            <div>Provider Connected: {phantomProvider.isConnected ? 'Yes' : 'No'}</div>
-          )}
-          {phantomProvider && phantomProvider.publicKey && (
-            <div>Public Key: {phantomProvider.publicKey.toString().slice(0, 8)}...</div>
-          )}
-          <div className="mt-2">
-            <Button
-              onClick={() => {
-                console.log("Manual refresh triggered");
-                window.location.reload();
-              }}
-              variant="outline"
-              size="sm"
-              className="text-xs"
-            >
-              Refresh Page
-            </Button>
-          </div>
-        </div>
-      )}
+  
     </div>
   );
 }
