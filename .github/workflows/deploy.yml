@@ -41,10 +41,16 @@ jobs:
           key: ${{ runner.os }}-backend-${{ hashFiles('Backend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-backend-
+        continue-on-error: true
 
       - name: Install Backend dependencies
         working-directory: ./Backend
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Build Backend
         working-directory: ./Backend
@@ -58,10 +64,16 @@ jobs:
           key: ${{ runner.os }}-frontend-${{ hashFiles('Frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-frontend-
+        continue-on-error: true
 
       - name: Install Frontend dependencies
         working-directory: ./Frontend
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Build Frontend
         working-directory: ./Frontend
