@@ -9,6 +9,7 @@ import { getUserById } from '../services/user.services';
 import ErrorHandler from '../utils/errorHandler';
 import { accessTokenOptions, refreshTokenOptions, sendToken } from '../utils/jwt';
 import sendEmail from '../utils/sendMail';
+import logger from '../utils/logger';
 
     // Register a user
     interface IRegistrationBody {
@@ -92,7 +93,7 @@ import sendEmail from '../utils/sendMail';
             // @ts-ignore
             const activationToken = createActivationToken(user); 
             const activationCode = activationToken.activationCode;
-            console.log(activationCode);
+            logger.debug('Activation code generated', { email: user.email });
 
             // Build activation link for token-based email verification
             const clientUrl =
@@ -743,7 +744,7 @@ import sendEmail from '../utils/sendMail';
                     message: 'If an account exists with this email, you will receive password reset instructions.',
                 });
             } catch (error: any) {
-                console.error('Error sending reset email:', error);
+                logger.error('Error sending reset email:', { error: error.message, email });
                 return next(new ErrorHandler('Failed to send reset email. Please try again later.', 500));
             }
         } catch (error: any) {

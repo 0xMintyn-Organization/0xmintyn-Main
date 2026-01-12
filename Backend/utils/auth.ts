@@ -4,32 +4,56 @@ import { CatchAsyncError } from '../middleware/catchAsyncError';
 import ErrorHandler from './errorHandler';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import UserModel from '../models/user.mode';
+import logger from './logger';
 
 // authenticated user 
 export const isAthenticated = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const access_token = req.cookies.access_token;
-    console.log('Access Token:', access_token);
-    if (!access_token) {
-        return next(new ErrorHandler('Access Token Issuue Please login to access this resource', 400));
-    }
-
-    const decoded = jwt.verify(access_token, process.env.ACCESS_TOKEN as string) as JwtPayload;
-    if (!decoded) {
-        return next(new ErrorHandler('Decode issue Please login to access this resource', 400));
-    }
-
     
-    const user = await UserModel.findById(decoded.id).select('-password -createdAt -updatedAt -__v');
-
-    console.log(user);
-
-    if (!user) {
-        return next(new ErrorHandler('User not found ', 400));
+    if (!access_token) {
+        logger.warn('Authentication failed: No access token provided', {
+            path: req.path,
+            ip: req.ip
+        });
+        return next(new ErrorHandler('Access Token Issue. Please login to access this resource', 400));
     }
-    req.user = user.toJSON();
-    console.log('User object set in req.user:', req.user);
-    next();
 
+    try {
+        const decoded = jwt.verify(access_token, process.env.ACCESS_TOKEN as string) as JwtPayload;
+        
+        if (!decoded) {
+            logger.warn('Authentication failed: Invalid token decode', {
+                path: req.path,
+                ip: req.ip
+            });
+            return next(new ErrorHandler('Decode issue. Please login to access this resource', 400));
+        }
+
+        const user = await UserModel.findById(decoded.id).select('-password -createdAt -updatedAt -__v');
+
+        if (!user) {
+            logger.warn('Authentication failed: User not found', {
+                userId: decoded.id,
+                path: req.path
+            });
+            return next(new ErrorHandler('User not found', 400));
+        }
+        
+        req.user = user.toJSON();
+        logger.debug('User authenticated successfully', {
+            userId: user._id,
+            role: user.role,
+            path: req.path
+        });
+        next();
+    } catch (error: any) {
+        logger.error('Authentication error:', {
+            error: error.message,
+            path: req.path,
+            ip: req.ip
+        });
+        return next(new ErrorHandler('Invalid access token. Please login again', 401));
+    }
 })
 
 // validate user role

@@ -7,11 +7,17 @@ import { MarketplaceServiceModel } from "../../models/marketplace/MarketplaceSer
 import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
 import UserModel from "../../models/user.mode";
 
+import logger from '../../utils/logger';
+
 // Helper function to update seller stats after order creation
 const updateSellerStatsAfterOrder = async (sellerId: string, orderItems: any[], totalAmount: number) => {
   try {
-    console.log('🔄 Updating seller stats for sellerId:', sellerId, 'totalAmount:', totalAmount);
-    console.log('📦 Order items:', orderItems.map(item => `${item.itemTitle} (${item.itemType}) x${item.quantity}`));
+    logger.operation('updateSellerStatsAfterOrder', {
+      sellerId,
+      totalAmount,
+      itemCount: orderItems.length,
+      items: orderItems.map(item => ({ title: item.itemTitle, type: item.itemType, quantity: item.quantity }))
+    });
     
     // Update seller's total earnings
     const sellerUpdate = await MarketplaceSellerModel.findByIdAndUpdate(

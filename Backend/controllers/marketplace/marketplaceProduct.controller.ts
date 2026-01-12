@@ -5,46 +5,55 @@ import { MarketplaceOrderModel } from "../../models/marketplace/MarketplaceOrder
 import { CatchAsyncError } from "../../middleware/catchAsyncError";
 import ErrorHandler from "../../utils/errorHandler";
 import UserModel from "../../models/user.mode";
+import logger from "../../utils/logger";
 
 // Create Marketplace Product
 export const createMarketplaceProduct = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        console.log('Creating marketplace product...');
-        console.log('Request body keys:', Object.keys(req.body));
-        console.log('Request body sample:', {
-            title: req.body.title,
-            price: req.body.price,
-            category: req.body.category,
-            fileUrl: req.body.fileUrl
+        logger.operation('createMarketplaceProduct', {
+            userId: req.user?._id,
+            bodyKeys: Object.keys(req.body),
+            hasFiles: !!req.files,
+            filesCount: Array.isArray(req.files) ? req.files.length : (req.files ? 1 : 0)
         });
-        console.log('Request files:', req.files);
-        console.log('User ID:', req.user?._id);
         
         const userId = req.user?._id;
         
         // Check if user exists and is a seller
         const user = await UserModel.findById(userId);
         if (!user) {
-            console.log('User not found:', userId);
+            logger.warn('User not found for product creation', { userId });
             return next(new ErrorHandler("User not found", 404));
         }
 
-        console.log('User found:', { id: user._id, isSeller: user.isSeller, role: user.role });
+        logger.debug('User found for product creation', { 
+            userId: user._id, 
+            isSeller: user.isSeller, 
+            role: user.role 
+        });
 
         // Check if user is seller or admin
         if (!user.isSeller && user.role !== 'admin') {
-            console.log('User is not a seller or admin');
+            logger.warn('Unauthorized product creation attempt', { 
+                userId: user._id, 
+                isSeller: user.isSeller, 
+                role: user.role 
+            });
             return next(new ErrorHandler("Only sellers and admins can create products", 403));
         }
 
         // Get or verify seller profile
         const seller = await MarketplaceSellerModel.findOne({ userId });
-        console.log('Seller profile:', seller ? 'Found' : 'Not found');
+        logger.debug('Seller profile check', { 
+            userId, 
+            sellerFound: !!seller,
+            sellerId: seller?._id 
+        });
         
         // For testing purposes, allow product creation even without seller profile
         // In production, you might want to enforce seller profile creation
         if (!seller && user.role !== 'admin') {
-            console.log('No seller profile found for non-admin user - allowing for testing');
+            logger.debug('No seller profile found for non-admin user - allowing for testing', { userId });
             // return next(new ErrorHandler("Please complete your seller profile first", 400));
         }
 
@@ -68,9 +77,12 @@ export const createMarketplaceProduct = CatchAsyncError(async (req: Request, res
 
         // Handle uploaded images
         const uploadedImages = req.files as Express.Multer.File[];
-        console.log('Uploaded images:', uploadedImages?.map(img => ({ filename: img.filename, originalname: img.originalname })));
+        logger.debug('Processing uploaded images', {
+            imageCount: uploadedImages?.length || 0,
+            imageFiles: uploadedImages?.map(img => ({ filename: img.filename, size: img.size }))
+        });
         const imageUrls = uploadedImages?.map(file => `/uploads/images/${file.filename}`) || [];
-        console.log('Image URLs:', imageUrls);
+        logger.debug('Generated image URLs', { imageUrls, count: imageUrls.length });
         
         // Prepare product data
         const productData = {
@@ -95,18 +107,22 @@ export const createMarketplaceProduct = CatchAsyncError(async (req: Request, res
             isActive: true
         };
 
-        console.log('Product data to create:', {
+        logger.debug('Creating product with data', {
             title: productData.title,
             price: productData.price,
             category: productData.category,
-            thumbnailImage: productData.thumbnailImage,
-            images: productData.images,
-            sellerId: productData.sellerId
+            sellerId: productData.sellerId,
+            imageCount: productData.images.length
         });
 
         const product = await MarketplaceProductModel.create(productData);
 
-        console.log('Product created successfully:', product._id);
+        logger.operation('productCreated', {
+            productId: product._id,
+            title: product.title,
+            sellerId: product.sellerId,
+            price: product.price
+        });
 
         res.status(201).json({
             success: true,

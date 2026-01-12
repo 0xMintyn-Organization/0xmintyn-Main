@@ -1,8 +1,9 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
-import { rateLimit } from 'express-rate-limit';
 import { ErrorMiddleware } from './middleware/error';
+import { requestIdMiddleware, advancedRequestLogger } from './middleware/advancedLogging';
+import './middleware/databaseLogger'; // Initialize database logging
 import userRouter from './routes/user.route';
 import path from 'path';
 import uploadRoutes from './routes/upload.route';
@@ -31,9 +32,17 @@ import marketplaceReviewRouter from './routes/marketplace/marketplaceReview.rout
 import dashboardRouter from './routes/dashboard/dashboard.route';
 import auth0Router from './routes/auth0.route';
 import influencerRouter from './routes/influencer.route';
+import healthRouter from './routes/health.route';
+import logger from './utils/logger';
 require('dotenv').config();
 export const app = express();
 
+
+// Request ID middleware (must be first)
+app.use(requestIdMiddleware);
+
+// Advanced request logging (must be early)
+app.use(advancedRequestLogger);
 
 // bodyparser
 app.use(express.json({ limit: '50mb' }));
@@ -50,43 +59,8 @@ app.use(cors({
 // Serve static files
 app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
 
-// Rate limiter
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 1000, // Increased from 100 to 1000 requests per window
-    standardHeaders: 'draft-8',
-    legacyHeaders: false,
-    message: {
-        error: "Too many requests from this IP, please try again later.",
-        retryAfter: "15 minutes"
-    },
-    // Skip rate limiting in development
-    skip: (req) => {
-        return process.env.NODE_ENV === 'development';
-    }
-})
-
-// Apply rate limiter before routes
-app.use(limiter);
-
-// More lenient rate limiter for authentication endpoints
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 200, // 200 requests per window for auth endpoints
-    standardHeaders: 'draft-8',
-    legacyHeaders: false,
-    message: {
-        error: "Too many authentication requests, please try again later.",
-        retryAfter: "15 minutes"
-    },
-    // Skip rate limiting in development
-    skip: (req) => {
-        return process.env.NODE_ENV === 'development';
-    }
-});
-
-// Apply auth rate limiter to user routes
-app.use('/api/v1/user', authLimiter);
+// Health check routes (before other routes)
+app.use('/api/v1/health', healthRouter);
 
 // routes
 app.use('/api/v1', userRouter);
@@ -122,7 +96,13 @@ app.use('/api/v1', auth0Router);
 
 // testing api
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
-    res.status(200).json({ success: true, message: 'API is working' });
+    logger.info('Health check endpoint called');
+    res.status(200).json({ 
+        success: true, 
+        message: 'API is working',
+        timestamp: new Date().toISOString(),
+        requestId: req.headers['x-request-id'] || 'unknown'
+    });
 });
 
 // unknown route 
