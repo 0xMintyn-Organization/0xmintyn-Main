@@ -32,10 +32,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: |
-            Backend/package-lock.json
-            Frontend/package-lock.json
+          # Cache will be set up separately for each directory
+
+      - name: Cache Backend dependencies
+        uses: actions/cache@v4
+        with:
+          path: Backend/node_modules
+          key: ${{ runner.os }}-backend-${{ hashFiles('Backend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-backend-
 
       - name: Install Backend dependencies
         working-directory: ./Backend
@@ -45,6 +50,14 @@ jobs:
         working-directory: ./Backend
         run: npm run build
         continue-on-error: true
+
+      - name: Cache Frontend dependencies
+        uses: actions/cache@v4
+        with:
+          path: Frontend/node_modules
+          key: ${{ runner.os }}-frontend-${{ hashFiles('Frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-frontend-
 
       - name: Install Frontend dependencies
         working-directory: ./Frontend
