@@ -12,3 +12,4 @@ scripts/fresh-os-setup.sh
 scripts/QUICK_START.md
 scripts/FIX_INFLIGHT_MEMORY_LEAK.md
 scripts/FIX_NODE_VERSION_AND_SECURITY.md
+scripts/NEXT_STEPS_AFTER_INSTALL.md
