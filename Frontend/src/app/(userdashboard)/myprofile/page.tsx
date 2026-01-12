@@ -2,6 +2,8 @@
 "use client";
 import ProfileInformation from "@/components/MyProfile/ProfileInformation";
 import SecurityAuth from "@/components/MyProfile/SecurityAuth";
+import { RegisterUserButton } from "@/components/UserRegistry/RegisterUserButton";
+import { UserRegistryStatus } from "@/components/UserRegistry/UserRegistryStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Protected from "@/hooks/useProtected";
@@ -13,7 +15,8 @@ import {
   Star,
   Globe,
   MessageCircle,
-  Lock
+  Lock,
+  Link as LinkIcon
 } from "lucide-react";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -87,6 +90,41 @@ function MyProfile() {
               </CardContent>
             </Card>
 
+
+            {/* Blockchain Registration */}
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                      <LinkIcon className="w-6 h-6 text-slate-700 dark:text-slate-300" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+                        Blockchain Registration
+                      </CardTitle>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Link your wallet to your account on-chain</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="hidden sm:flex border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300">
+                    <LinkIcon className="w-3 h-3 mr-1" />
+                    Solana
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6">
+                <UserRegistryStatus 
+                  userWalletAddress={user?.walletAddress || null}
+                />
+                <RegisterUserButton
+                  userWalletAddress={user?.walletAddress || null}
+                  platformUserId={user?._id}
+                  onSuccess={(signature) => {
+                    toast.success(`Registration successful! Transaction: ${signature.slice(0, 8)}...`);
+                  }}
+                />
+              </CardContent>
+            </Card>
 
             {/* Security & Authentication */}
             <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300">

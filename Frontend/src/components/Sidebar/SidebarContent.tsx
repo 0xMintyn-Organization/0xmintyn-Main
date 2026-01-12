@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -7,13 +7,16 @@ import { useBookmarkCount } from "@/hooks/useBookmarkCount";
 import { useGovernanceStats } from "@/hooks/useGovernanceStats";
 import { useTotalCourses } from "@/hooks/useTotalCourses";
 import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/contexts/AuthContext";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { getMintynBalance, RPC_URL } from "@/utils/mintynPayment";
 import {
   BarChart3,
   Bookmark,
   BookOpen,
   ChevronRight,
   ChevronDown,
-  DollarSign,
+  Coins,
   FileText,
   GraduationCap,
   LayoutDashboard,
@@ -218,7 +221,7 @@ const getNavItems = (
         {
           name: "Earnings",
           href: "/instructor/earnings",
-          icon: DollarSign,
+          icon: Coins,
           description: "Revenue & Payouts"
         },
         {
@@ -374,9 +377,14 @@ const getNavItems = (
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useRole();
+  const { user: authUser } = useAuth();
   const { bookmarkCount } = useBookmarkCount();
   const { pendingCount: pendingGovernanceCount } = useGovernanceStats();
   const { totalCourses } = useTotalCourses();
+  
+  // Wallet balance state
+  const [mintynBalance, setMintynBalance] = useState<number | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
   
   // Check if user has any purchased items
   const hasPurchases = user && (
@@ -397,6 +405,47 @@ export default function Sidebar() {
     totalCourses
   );
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+
+  // Fetch Mintyn balance when wallet is available
+  useEffect(() => {
+    const fetchBalance = async () => {
+      const walletAddress = authUser?.walletAddress || user?.walletAddress;
+      
+      if (!walletAddress) {
+        setMintynBalance(null);
+        return;
+      }
+
+      try {
+        setBalanceLoading(true);
+        const connection = new Connection(RPC_URL, "confirmed");
+        const userWallet = new PublicKey(walletAddress);
+        const { balance } = await getMintynBalance(userWallet, connection);
+        setMintynBalance(balance);
+      } catch (error) {
+        console.error("Error fetching Mintyn balance:", error);
+        setMintynBalance(0);
+      } finally {
+        setBalanceLoading(false);
+      }
+    };
+
+    fetchBalance();
+    
+    // Refresh balance every 30 seconds
+    const interval = setInterval(fetchBalance, 30000);
+    
+    return () => clearInterval(interval);
+  }, [authUser?.walletAddress, user?.walletAddress]);
+
+  // Calculate progress bar value (based on balance tiers: 0-100 = 0-25%, 100-500 = 25-50%, 500-1000 = 50-75%, 1000+ = 75-100%)
+  const calculateProgress = (balance: number | null): number => {
+    if (balance === null || balance === 0) return 0;
+    if (balance < 100) return (balance / 100) * 25;
+    if (balance < 500) return 25 + ((balance - 100) / 400) * 25;
+    if (balance < 1000) return 50 + ((balance - 500) / 500) * 25;
+    return Math.min(75 + ((balance - 1000) / 1000) * 25, 100);
+  };
 
   return (
     <div className="fixed left-0 w-72 h-screen bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-900 dark:to-zinc-800 border-r border-zinc-200 dark:border-zinc-700 flex flex-col">
@@ -441,9 +490,26 @@ export default function Sidebar() {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-zinc-600 dark:text-zinc-400">Wallet Balance</span>
-              <span className="font-semibold text-green-600">$200</span>
+              <span className="font-semibold text-green-600 flex items-center gap-1">
+                {balanceLoading ? (
+                  <span className="text-xs">Loading...</span>
+                ) : mintynBalance !== null ? (
+                  <>
+                    <Coins className="w-3 h-3" />
+                    {mintynBalance.toLocaleString("en-US", { maximumFractionDigits: 0 })} 0XM
+                  </>
+                ) : (
+                  <>
+                    <Coins className="w-3 h-3" />
+                    <span className="text-zinc-500">Connect Wallet</span>
+                  </>
+                )}
+              </span>
             </div>
-            <Progress value={75} className="h-1.5" />
+            <Progress 
+              value={calculateProgress(mintynBalance)} 
+              className="h-1.5" 
+            />
           </div>
         </div>
       </div>

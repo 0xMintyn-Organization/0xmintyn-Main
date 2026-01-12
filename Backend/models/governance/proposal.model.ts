@@ -34,6 +34,8 @@ export interface IProposal extends Document {
   isPaid: boolean;
   requiredVotes: number;
   quorum: number;
+  blockchainAddress?: string;
+  blockchainTx?: string;
   adminNotes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -161,12 +163,12 @@ const ProposalSchema: Schema = new Schema({
   },
   proposalFee: {
     type: Number,
-    default: 0.1,
+    default: 0,
     min: 0
   },
   isPaid: {
     type: Boolean,
-    default: true
+    default: true // Free proposals are considered "paid"
   },
   requiredVotes: {
     type: Number,
@@ -178,6 +180,14 @@ const ProposalSchema: Schema = new Schema({
     default: 65,
     min: 0,
     max: 100
+  },
+  blockchainAddress: {
+    type: String,
+    trim: true
+  },
+  blockchainTx: {
+    type: String,
+    trim: true
   },
   adminNotes: {
     type: String,

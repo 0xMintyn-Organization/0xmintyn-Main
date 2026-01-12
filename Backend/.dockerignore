@@ -1,0 +1,61 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Build output (will be built in container)
+build
+dist
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+README.md
+CODE_ANALYSIS.md
+
+# Test files
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+test
+tests
+__tests__
+
+# Debug files
+*.log
+debug*.js
+test*.js
+check*.js
+fix*.js
+createTestData.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# CI/CD
+.github
+

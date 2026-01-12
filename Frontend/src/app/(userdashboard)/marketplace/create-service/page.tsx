@@ -20,7 +20,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Briefcase,
-  DollarSign,
+  Coins,
   FileText,
   Package as PackageIcon,
   Tag,
@@ -622,31 +622,33 @@ export default function CreateService() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Price (USD) {packageIndex === 0 && <span className="text-red-500">*</span>}</Label>
+                        <Label>Price (0XM) {packageIndex === 0 && <span className="text-red-500">*</span>}</Label>
                         <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
                             type="number"
                             value={pkg.price}
                             onChange={(e) => handlePackageChange(packageIndex, "price", e.target.value)}
-                            placeholder="0.00"
+                            placeholder="0"
                             min="0"
-                            step="0.01"
+                            step="1"
                             className="pl-10"
                           />
                         </div>
+                        <p className="text-sm text-gray-500">Price in Mintyn tokens (0XM)</p>
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Original Price</Label>
+                        <Label>Original Price (0XM)</Label>
                         <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
                             type="number"
                             value={pkg.originalPrice}
                             onChange={(e) => handlePackageChange(packageIndex, "originalPrice", e.target.value)}
-                            placeholder="0.00"
+                            placeholder="0"
                             min="0"
+                            step="1"
                             step="0.01"
                             className="pl-10"
                           />

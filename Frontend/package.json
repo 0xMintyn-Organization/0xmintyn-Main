@@ -1,14 +1,26 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "ubi-platform-frontend",
+  "version": "1.0.0",
+  "description": "UBI Platform - Universal Basic Income Platform with Solana Integration",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "admin:check-treasury": "node scripts/check-treasury.js",
+    "admin:fund-treasury": "node scripts/auto-fund-treasury.js",
+    "admin:fund-treasury:1m": "node scripts/auto-fund-treasury.js 1000000",
+    "admin:fund-treasury:500k": "node scripts/auto-fund-treasury.js 500000",
+    "admin:fund-treasury:100k": "node scripts/auto-fund-treasury.js 100000",
+    "admin:initialize": "npx ts-node scripts/initialize-ubi-program.ts",
+    "admin:initialize-user-registry": "node scripts/initialize-user-registry.js",
+    "admin:initialize-governance": "node scripts/initialize-governance-simple.js",
+    "admin:initialize-governance:ts": "npx ts-node scripts/initialize-governance.ts"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
     "@headlessui/react": "^2.2.2",
     "@hookform/resolvers": "^4.1.3",
     "@mux/mux-player-react": "^3.6.0",
@@ -30,6 +42,7 @@
     "@radix-ui/react-tabs": "^1.1.3",
     "@radix-ui/react-toast": "^1.2.6",
     "@reduxjs/toolkit": "^2.6.1",
+    "@solana/spl-token": "^0.4.14",
     "@solana/wallet-adapter-react": "^0.15.36",
     "@solana/wallet-adapter-wallets": "^0.19.33",
     "@solana/web3.js": "^1.98.0",
@@ -48,29 +61,25 @@
     "react-day-picker": "^9.11.0",
     "react-dom": "19.1.1",
     "react-hook-form": "^7.54.2",
-    "react-hot-toast": "^2.6.0",
-    "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
-    "recharts": "^2.15.1",
-    "sonner": "^2.0.7",
-    "sooner": "^1.1.4",
-    "tailwind-merge": "^3.0.1",
+    "recharts": "^2.15.0",
+    "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.24.2"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@types/node": "^20",
-    "@types/react": "19.1.12",
-    "@types/react-dom": "19.1.9",
-    "eslint": "^9",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.2",
+    "eslint": "^9.18.0",
     "eslint-config-next": "15.5.2",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "ts-node": "^10.9.2"
   },
-  "overrides": {
-    "@types/react": "19.1.12",
-    "@types/react-dom": "19.1.9"
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }

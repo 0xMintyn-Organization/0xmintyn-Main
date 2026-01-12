@@ -5,7 +5,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DollarSign } from "lucide-react";
+import { Coins } from "lucide-react";
 import { CourseData } from "./types";
 
 interface Props {
@@ -46,16 +46,16 @@ export default function CoursePricingForm({
       {/* Pricing Tip Alert */}
       <Alert className="bg-green-50 border-green-200 dark:bg-green-900/20">
         <AlertDescription className="text-green-800 dark:text-green-300">
-          Set competitive pricing for your course. The estimated price can be
+          Set competitive pricing for your course in Mintyn tokens (0XM). The estimated price can be
           higher to showcase value and discounts.
         </AlertDescription>
       </Alert>
 
       {/* Course Price */}
       <div>
-        <Label htmlFor="price">Course Price ($) *</Label>
+        <Label htmlFor="price">Course Price (0XM) *</Label>
         <div className="relative mt-1">
-          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             id="price"
             type="number"
@@ -63,21 +63,25 @@ export default function CoursePricingForm({
             onChange={(e) =>
               handleInputChange("price", parseFloat(e.target.value) || 0)
             }
-            placeholder="0.00"
+            placeholder="0"
             className={`pl-10 ${errors.price ? "border-red-500" : ""}`}
             min="0"
+            step="1"
           />
         </div>
         {errors.price && (
           <p className="text-red-500 text-sm mt-1">{errors.price}</p>
         )}
+        <p className="text-sm text-gray-500 mt-1">
+          Price in Mintyn tokens (0XM). Example: 100 0XM
+        </p>
       </div>
 
       {/* Estimated Price */}
       <div>
-        <Label htmlFor="estimatedPrice">Estimated Price ($) *</Label>
+        <Label htmlFor="estimatedPrice">Estimated Price (0XM) *</Label>
         <div className="relative mt-1">
-          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             id="estimatedPrice"
             type="number"
@@ -88,11 +92,12 @@ export default function CoursePricingForm({
                 parseFloat(e.target.value) || 0
               )
             }
-            placeholder="0.00"
+            placeholder="0"
             className={`pl-10 ${
               errors.estimatedPrice ? "border-red-500" : ""
             }`}
             min="0"
+            step="1"
           />
         </div>
         {errors.estimatedPrice && (
@@ -102,7 +107,7 @@ export default function CoursePricingForm({
         )}
         <p className="text-sm text-gray-500 mt-1">
           This should be higher than the actual price to display discounted
-          value.
+          value. Example: 150 0XM (if course price is 100 0XM)
         </p>
       </div>
 

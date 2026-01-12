@@ -67,148 +67,123 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
             return response.value / 1_000_000_000;
           }
         } catch (balanceError) {
-          console.log(`Balance fetch attempt ${attempt + 1} failed:`, balanceError);
           if (attempt === 2) throw balanceError; // Throw on last attempt
           await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
         }
       }
       return 0;
     } catch (error) {
-      console.error("Error fetching balance after all attempts:", error);
       return 0;
     }
   }, [phantomProvider]);
 
-  // Handle wallet connection
-  const handleWalletConnected = useCallback(async (provider: PhantomProvider) => {
-    // Prevent multiple simultaneous connection processing
-    if (isProcessingConnection) {
-      console.log("Connection already being processed, skipping...");
-      return;
-    }
-    
-    setIsProcessingConnection(true);
-    
-    try {
-      const publicKey = provider.publicKey;
-      if (!publicKey) {
-        throw new Error("Public key not found after connection");
-      }
-      
-      const address = publicKey.toString();
-      
-      // Prevent duplicate connections
-      if (walletState.connected && walletState.address === address) {
-        console.log("Wallet already connected with same address, skipping...");
+  const handleWalletConnected = useCallback(
+    async (provider: PhantomProvider) => {
+      if (isProcessingConnection) {
         return;
       }
-      
-      console.log("Processing wallet connection for:", address);
-      
-      const balance = await getSolBalance(address);
-      
-      const newWalletState = {
-        connected: true,
-        publicKey: publicKey,
-        balance: balance,
-        address: address,
-      };
-      
-      setWalletState(newWalletState);
-      
-      // Save to database
+
+      setIsProcessingConnection(true);
+
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URI}user/update-wallet-address`,
-          {
+        const publicKey = provider.publicKey;
+        if (!publicKey) {
+          throw new Error("Public key not found after connection");
+        }
+
+        const address = publicKey.toString();
+
+        if (walletState.connected && walletState.address === address) {
+          return;
+        }
+
+        const balance = await getSolBalance(address);
+
+        const newWalletState = {
+          connected: true,
+          publicKey: publicKey,
+          balance: balance,
+          address: address,
+        };
+
+        setWalletState(newWalletState);
+
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}update-wallet-address`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
-            body: JSON.stringify({ 
-              walletAddress: address, 
-              walletProvider: 'phantom' 
+            body: JSON.stringify({
+              walletAddress: address,
+              walletProvider: "phantom",
             }),
+          });
+
+          if (response.ok) {
+            await response.json();
           }
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Wallet address saved to database:", data);
-        } else {
-          console.error("Failed to save wallet address to database");
+        } catch (_error) {
+          /* ignore */
         }
-      } catch (error) {
-        console.error("Error saving wallet address:", error);
+
+        dispatch(
+          walletConnected({
+            provider: "phantom",
+            publicKey: address,
+            balance: balance,
+            address: address,
+          })
+        );
+
+        toast({
+          title: "Wallet Connected!",
+          description: "Phantom wallet connected successfully",
+        });
+
+        if (onConnect) {
+          onConnect();
+        }
+      } catch (_error) {
+        /* ignore */
+      } finally {
+        setIsProcessingConnection(false);
       }
-      
-      dispatch(walletConnected({ 
-        provider: 'phantom', 
-        publicKey: address, 
-        balance: balance, 
-        address: address 
-      }));
-      
-      toast({ 
-        title: "Wallet Connected!", 
-        description: `Phantom wallet connected successfully` 
-      });
-      
-      if (onConnect) { 
-        onConnect(); 
-      }
-    } catch (error) {
-      console.error("Error handling wallet connection:", error);
-    } finally {
-      setIsProcessingConnection(false);
-    }
-  }, [dispatch, onConnect, getSolBalance, toast, walletState.connected, walletState.address, isProcessingConnection]);
+    },
+    [dispatch, onConnect, getSolBalance, toast, walletState.connected, walletState.address, isProcessingConnection]
+  );
 
   useEffect(() => {
-    // Enhanced Phantom detection with proper event handling
     const checkPhantom = () => {
-      if (typeof window !== 'undefined') {
-        // Try multiple ways to detect Phantom
+      if (typeof window !== "undefined") {
         const provider = (window as any).solana || (window as any).phantom?.solana;
-        console.log("Checking Phantom provider:", provider);
-        
+
         if (provider?.isPhantom) {
-          console.log("Phantom wallet detected");
           setPhantomInstalled(true);
           setPhantomProvider(provider);
-          
-          // Set up event listeners immediately
+
           setupEventListeners(provider);
-          
-          // Check if already connected
+
           if (provider.isConnected && provider.publicKey) {
-            console.log("Wallet already connected:", provider.publicKey.toString());
             handleWalletConnected(provider);
           }
         } else {
-          console.log("Phantom wallet not detected");
           setPhantomInstalled(false);
           setPhantomProvider(null);
         }
       }
     };
 
-    // Set up event listeners for Phantom
     const setupEventListeners = (provider: any) => {
       try {
-        // Remove existing listeners first to prevent duplicates
         if (provider.removeAllListeners) {
           provider.removeAllListeners();
         }
-        
-        // Listen for connect events
-        provider.on('connect', () => {
-          console.log("Phantom connected event fired");
+
+        provider.on("connect", () => {
           handleWalletConnected(provider);
         });
 
-        // Listen for disconnect events
-        provider.on('disconnect', () => {
-          console.log("Phantom disconnected event fired");
+        provider.on("disconnect", () => {
           setIsProcessingConnection(false);
           setWalletState({
             connected: false,
@@ -219,13 +194,10 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
           dispatch(walletDisconnected());
         });
 
-        // Listen for account changes
-        provider.on('accountChanged', (publicKey: any) => {
-          console.log("Account changed:", publicKey?.toString());
+        provider.on("accountChanged", (publicKey: any) => {
           if (publicKey) {
             handleWalletConnected(provider);
           } else {
-            // Account disconnected
             setIsProcessingConnection(false);
             setWalletState({
               connected: false,
@@ -236,37 +208,29 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
             dispatch(walletDisconnected());
           }
         });
-      } catch (error) {
-        console.error("Error setting up event listeners:", error);
+      } catch (_error) {
+        /* ignore */
       }
     };
 
-    // Initial check
     checkPhantom();
 
-    // Listen for Phantom installation with multiple triggers
     const handlePhantomInstall = () => {
-      console.log("Window loaded, checking for Phantom again");
       setTimeout(checkPhantom, 100);
     };
 
-    // Multiple event listeners for better detection
-    window.addEventListener('load', handlePhantomInstall);
-    window.addEventListener('DOMContentLoaded', handlePhantomInstall);
-    
-    // Check periodically for Phantom installation
+    window.addEventListener("load", handlePhantomInstall);
+    window.addEventListener("DOMContentLoaded", handlePhantomInstall);
+
     const interval = setInterval(checkPhantom, 2000);
-    
+
     return () => {
-      window.removeEventListener('load', handlePhantomInstall);
-      window.removeEventListener('DOMContentLoaded', handlePhantomInstall);
+      window.removeEventListener("load", handlePhantomInstall);
+      window.removeEventListener("DOMContentLoaded", handlePhantomInstall);
       clearInterval(interval);
-      
-      // Clean up event listeners - Phantom handles this automatically
     };
   }, [dispatch, handleWalletConnected]);
 
-  // Connect wallet with research-based best practices
   const connectWallet = async () => {
     if (!phantomInstalled) {
       toast({
@@ -286,9 +250,7 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
       return;
     }
 
-    // Prevent multiple connection attempts
     if (isConnecting || isProcessingConnection) {
-      console.log("Connection already in progress, skipping...");
       return;
     }
 
@@ -296,74 +258,50 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
       setIsConnecting(true);
       setIsLoading(true);
 
-      // Check if already connected
       if (phantomProvider.isConnected && phantomProvider.publicKey) {
-        console.log("Wallet already connected, using existing connection");
         await handleWalletConnected(phantomProvider);
         return;
       }
 
-      console.log("Starting wallet connection process...");
-      
-      // Research-based approach: Use the most reliable connection method
       try {
-        console.log("Attempting Phantom connection with proper error handling...");
-        
-        // Method 1: Direct connection with proper error handling
         const response = await phantomProvider.connect();
-        
+
         if (response && response.publicKey) {
-          console.log("Connection successful:", response.publicKey.toString());
           await handleWalletConnected(phantomProvider);
           return;
-        } else {
-          throw new Error("No public key received from wallet");
         }
-        
+
+        throw new Error("No public key received from wallet");
       } catch (connectionError: any) {
-        console.log("Primary connection method failed:", connectionError);
-        
-        // Method 2: Try with explicit options if first method fails
         try {
-          console.log("Trying connection with explicit options...");
           const response = await phantomProvider.connect({ onlyIfTrusted: false });
-          
+
           if (response && response.publicKey) {
-            console.log("Explicit options connection successful:", response.publicKey.toString());
             await handleWalletConnected(phantomProvider);
             return;
           }
-        } catch (explicitError: any) {
-          console.log("Explicit options connection failed:", explicitError);
+        } catch (_explicitError) {
+          /* ignore */
         }
-        
-        // Method 3: Try alternative provider detection
+
         try {
-          console.log("Trying alternative provider detection...");
           const altProvider = (window as any).phantom?.solana || (window as any).solana;
-          
+
           if (altProvider && altProvider.isPhantom && altProvider !== phantomProvider) {
-            console.log("Found alternative provider, trying connection...");
             const response = await altProvider.connect();
-            
+
             if (response && response.publicKey) {
-              console.log("Alternative provider connection successful:", response.publicKey.toString());
               await handleWalletConnected(altProvider);
               return;
             }
           }
-        } catch (altError: any) {
-          console.log("Alternative provider connection failed:", altError);
+        } catch (_altError) {
+          /* ignore */
         }
-        
-        // If all methods fail, throw the original error
+
         throw connectionError;
       }
-      
     } catch (error: any) {
-      console.error("All connection methods failed:", error);
-      
-      // Enhanced error handling based on research
       if (error.code === 4001) {
         toast({
           title: "Connection Rejected",
@@ -385,7 +323,8 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
       } else if (error.message?.includes("Unexpected error") || error.message?.includes("Oe:")) {
         toast({
           title: "Connection Error",
-          description: "Phantom wallet connection failed. Please refresh the page and try again, or check if Phantom is unlocked.",
+          description:
+            "Phantom wallet connection failed. Please refresh the page and try again, or check if Phantom is unlocked.",
           variant: "destructive",
         });
       } else {
@@ -401,54 +340,44 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
     }
   };
 
-  // Disconnect wallet
   const disconnectWallet = async () => {
     if (!phantomProvider) return;
 
     try {
       setIsLoading(true);
       await phantomProvider.disconnect();
-      
+
       setWalletState({
         connected: false,
         publicKey: null,
         balance: 0,
         address: null,
       });
-      
-      // Remove wallet address from database
+
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URI}user/remove-wallet-address`,
-          {
-            method: "DELETE",
-            credentials: "include",
-          }
-        );
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}remove-wallet-address`, {
+          method: "DELETE",
+          credentials: "include",
+        });
 
         if (response.ok) {
-          const data = await response.json();
-          console.log("Wallet address removed from database:", data);
-        } else {
-          console.error("Failed to remove wallet address from database");
+          await response.json();
         }
-      } catch (error) {
-        console.error("Error removing wallet address:", error);
+      } catch (_error) {
+        /* ignore */
       }
 
-      // Dispatch to Redux
       dispatch(walletDisconnected());
-      
+
       toast({
         title: "Wallet Disconnected",
         description: "Phantom wallet disconnected successfully",
       });
-      
+
       if (onDisconnect) {
         onDisconnect();
       }
-    } catch (error) {
-      console.error("Error disconnecting wallet:", error);
+    } catch (_error) {
       toast({
         title: "Disconnect Failed",
         description: "Failed to disconnect wallet",
@@ -459,15 +388,15 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
     }
   };
 
-  // Get wallet display information
   const getWalletDisplayInfo = () => {
     if (!walletState.connected || !walletState.address) {
-      return { shortAddress: '', balance: 0 };
+      return { shortAddress: "", balance: 0 };
     }
 
-    const shortAddress = walletState.address.length > 10
-      ? `${walletState.address.slice(0, 6)}...${walletState.address.slice(-4)}`
-      : walletState.address;
+    const shortAddress =
+      walletState.address.length > 10
+        ? `${walletState.address.slice(0, 6)}...${walletState.address.slice(-4)}`
+        : walletState.address;
 
     return {
       shortAddress,
@@ -479,7 +408,6 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
 
   return (
     <div className="space-y-3">
-      {/* Main Connect/Disconnect Button */}
       <Button
         onClick={walletState.connected ? disconnectWallet : connectWallet}
         disabled={isLoading || isConnecting || isProcessingConnection}
@@ -508,43 +436,29 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
         )}
       </Button>
 
-      {/* Wallet Info Display */}
       {walletState.connected && (
         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Wallet Address:
-            </span>
-            <span className="text-sm font-mono text-slate-600 dark:text-slate-400">
-              {shortAddress}
-            </span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Wallet Address:</span>
+            <span className="text-sm font-mono text-slate-600 dark:text-slate-400">{shortAddress}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              SOL Balance:
-            </span>
-            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {balance.toFixed(4)} SOL
-            </span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">SOL Balance:</span>
+            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{balance.toFixed(4)} SOL</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Status:
-            </span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Status:</span>
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-green-600 dark:text-green-400">
-                Connected
-              </span>
+              <span className="text-sm text-green-600 dark:text-green-400">Connected</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Install Phantom Button (if not installed) */}
       {!phantomInstalled && (
         <Button
-          onClick={() => window.open('https://phantom.app/', '_blank')}
+          onClick={() => window.open("https://phantom.app/", "_blank")}
           variant="outline"
           className="w-full border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
         >
@@ -553,7 +467,6 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
         </Button>
       )}
 
-      {/* Connection Troubleshooting */}
       {phantomInstalled && !walletState.connected && (
         <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <div className="text-sm text-yellow-800 dark:text-yellow-200 mb-2">
@@ -567,73 +480,42 @@ export function PhantomWalletButton({ onConnect, onDisconnect }: PhantomWalletBu
           </ul>
         </div>
       )}
-
-      {/* Debug Info (only in development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs">
-          <div className="font-semibold mb-2">Debug Info:</div>
-          <div>Phantom Installed: {phantomInstalled ? 'Yes' : 'No'}</div>
-          <div>Provider Available: {phantomProvider ? 'Yes' : 'No'}</div>
-          <div>Wallet Connected: {walletState.connected ? 'Yes' : 'No'}</div>
-          {phantomProvider && (
-            <div>Provider Connected: {phantomProvider.isConnected ? 'Yes' : 'No'}</div>
-          )}
-          {phantomProvider && phantomProvider.publicKey && (
-            <div>Public Key: {phantomProvider.publicKey.toString().slice(0, 8)}...</div>
-          )}
-          <div className="mt-2">
-            <Button
-              onClick={() => {
-                console.log("Manual refresh triggered");
-                window.location.reload();
-              }}
-              variant="outline"
-              size="sm"
-              className="text-xs"
-            >
-              Refresh Page
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-// Export utility functions for future use
 export const phantomUtils = {
   signMessage: async (message: string) => {
     const provider = (window as any).solana;
     if (!provider?.isPhantom) {
       throw new Error("Phantom wallet not found");
     }
-    
+
     const encodedMessage = new TextEncoder().encode(message);
     return await provider.signMessage(encodedMessage);
   },
-  
+
   getBalance: async (address: string) => {
     const provider = (window as any).solana;
     if (!provider?.isPhantom) {
       throw new Error("Phantom wallet not found");
     }
-    
+
     const response = await provider.request({
-      method: 'getBalance',
+      method: "getBalance",
       params: [address],
     });
-    
-    return response.value / 1_000_000_000; // Convert lamports to SOL
+
+    return response.value / 1_000_000_000;
   },
-  
+
   isConnected: () => {
     const provider = (window as any).solana;
     return provider?.isPhantom && provider.isConnected;
   },
-  
+
   getPublicKey: () => {
     const provider = (window as any).solana;
     return provider?.isPhantom && provider.isConnected ? provider.publicKey?.toString() : null;
-  }
+  },
 };
-

@@ -17,7 +17,8 @@ import {
   getDeliveryFiles,
   requestRevision,
   acceptDelivery,
-  respondToRevision
+  respondToRevision,
+  respondToCancellation
 } from "../../controllers/marketplace/marketplaceOrder.controller";
 
 const marketplaceOrderRouter = express.Router();
@@ -142,6 +143,14 @@ marketplaceOrderRouter.post(
   isAthenticated,
   upload.array("revisionFiles", 10),
   respondToRevision
+);
+
+// Respond to cancellation request (seller only)
+marketplaceOrderRouter.post(
+  "/:orderId/respond-cancellation",
+  updateAccessTokenMiddleware,
+  isAthenticated,
+  respondToCancellation
 );
 
 export default marketplaceOrderRouter;

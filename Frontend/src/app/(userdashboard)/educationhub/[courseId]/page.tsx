@@ -7,10 +7,12 @@ import axios from "axios";
 import { AllRolesProtected } from "@/components/RoleProtected";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/contexts/AuthContext";
 import ReviewSection from "@/components/ReviewSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MuxPlayer  from '@mux/mux-player-react';
+import { formatMintynDisplay } from "@/lib/formatters";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,17 +30,20 @@ export default function CoursePreviewPage() {
   const [course, setCourse] = useState<any>(null);
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
-  const [enrolling, setEnrolling] = useState(false);
   const [enrollmentChecked, setEnrollmentChecked] = useState(false);
   const [isCourseInstructor, setIsCourseInstructor] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [instructorData, setInstructorData] = useState<any>(null);
   const [instructorLoading, setInstructorLoading] = useState(false);
+  const [mintynBalance, setMintynBalance] = useState<number | null>(null);
+  const [checkingBalance, setCheckingBalance] = useState(false);
+  const [payingWithMintyn, setPayingWithMintyn] = useState(false);
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const { user, isInstructor, isAdmin } = useRole();
+  const { user: authUser } = useAuth();
   const courseId = params ? params["courseId"] : undefined;
 
   useEffect(() => {
@@ -70,7 +75,6 @@ export default function CoursePreviewPage() {
             fetchInstructorData(data.createdBy._id);
           }
           
-          console.log(data);
         } else {
           setError("Unable to fetch course details.");
         }
@@ -106,19 +110,120 @@ export default function CoursePreviewPage() {
     }
   };
 
-  const handleEnroll = async () => {
+  // Check Mintyn balance via backend
+  useEffect(() => {
+    const checkBalance = async () => {
+      if (!course || isEnrolled) return;
+      
+      try {
+        setCheckingBalance(true);
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/check-balance/${courseId}`,
+          { withCredentials: true }
+        );
+        
+        if (response.data.success) {
+          setMintynBalance(response.data.balance);
+        }
+      } catch (error) {
+        console.error("Error checking Mintyn balance:", error);
+        setMintynBalance(null);
+      } finally {
+        setCheckingBalance(false);
+      }
+    };
+    
+    if (course && !isEnrolled) {
+      checkBalance();
+    }
+  }, [course, courseId, isEnrolled]);
+
+
+  const handleEnrollWithMintyn = async () => {
+    if (!course || !course.createdBy?._id) {
+      toast({
+        title: "Error",
+        description: "Course information is missing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!authUser?.walletAddress) {
+      toast({
+        title: "Wallet Required",
+        description: "Please connect your wallet to pay with Mintyn tokens",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check Phantom wallet
+    if (typeof window === 'undefined' || !(window as any).solana?.isPhantom) {
+      toast({
+        title: "Phantom Wallet Required",
+        description: "Please install and connect Phantom wallet to pay with Mintyn tokens",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const phantomProvider = (window as any).solana;
+
     try {
-      setEnrolling(true);
+      setPayingWithMintyn(true);
+
+      // Get instructor wallet address
+      const instructorWalletAddress = (course.createdBy as any)?.walletAddress;
+      if (!instructorWalletAddress) {
+        toast({
+          title: "Error",
+          description: "Instructor wallet address not found. The instructor needs to connect their wallet to receive payments.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Import the payment utility
+      const { transferMintynTokensWithFeeSplit } = await import("@/utils/mintynPayment");
+      const ADMIN_WALLET_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS;
+      
+      if (!ADMIN_WALLET_ADDRESS) {
+        toast({
+          title: "Configuration Error",
+          description: "Admin wallet address is not configured. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { PublicKey } = await import("@solana/web3.js");
+      const userWallet = new PublicKey(authUser.walletAddress);
+      const instructorWallet = new PublicKey(instructorWalletAddress);
+      const adminWallet = new PublicKey(ADMIN_WALLET_ADDRESS);
+
+      // Create and sign transaction with Phantom wallet
+      const { signature, instructorAmount, adminAmount, signedTransaction } = await transferMintynTokensWithFeeSplit(
+        userWallet,
+        instructorWallet,
+        adminWallet,
+        course.price,
+        phantomProvider
+      );
+
+      // Send signed transaction to backend for enrollment
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/enroll/${courseId}`,
-        {},
+        {
+          signedTransaction: signedTransaction,
+        },
         { withCredentials: true }
       );
 
       if (response.data.success) {
         toast({
           title: "Success!",
-          description: "You have been enrolled in this course!",
+          description: `Payment successful! ${formatMintynDisplay(instructorAmount)} to instructor, ${formatMintynDisplay(adminAmount)} platform fee. Transaction: ${signature.substring(0, 8)}...`,
         });
         setIsEnrolled(true);
         // Redirect to course content after enrollment
@@ -127,12 +232,12 @@ export default function CoursePreviewPage() {
     } catch (error: any) {
       console.error("Enrollment error:", error);
       toast({
-        title: "Enrollment Failed",
-        description: error.response?.data?.message || "Failed to enroll in course",
+        title: "Payment Failed",
+        description: error.response?.data?.message || error.message || "Failed to complete payment. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setEnrolling(false);
+      setPayingWithMintyn(false);
     }
   };
 
@@ -314,12 +419,36 @@ export default function CoursePreviewPage() {
                 <CardContent className="p-6 space-y-4">
                   {/* Price */}
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl font-bold text-green-700 dark:text-green-400">${course?.price}</span>
-                    <span className="text-xl text-gray-500 line-through">${course?.estimatedPrice}</span>
+                    <span className="text-3xl font-bold text-green-700 dark:text-green-400">
+                      {formatMintynDisplay(course?.price || 0)}
+                    </span>
+                    <span className="text-xl text-gray-500 line-through">
+                      {formatMintynDisplay(course?.estimatedPrice || 0)}
+                    </span>
                     <Badge className="bg-green-100 text-green-800">
                       {Math.round(((course?.estimatedPrice - course?.price) / course?.estimatedPrice) * 100)}% OFF
                     </Badge>
                   </div>
+
+                  {/* Mintyn Balance Display */}
+                  {!isEnrolled && !isCourseInstructor && !isAdmin() && authUser?.walletAddress && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                      {checkingBalance ? (
+                        <p className="text-sm text-blue-600 dark:text-blue-400">Checking balance...</p>
+                      ) : mintynBalance !== null ? (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-blue-800 dark:text-blue-300">
+                            Your Balance: {formatMintynDisplay(mintynBalance)}
+                          </span>
+                          {mintynBalance >= (course?.price || 0) ? (
+                            <Badge className="bg-green-100 text-green-800">Sufficient</Badge>
+                          ) : (
+                            <Badge className="bg-red-100 text-red-800">Insufficient</Badge>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     {isCourseInstructor || isAdmin() ? (
@@ -341,24 +470,32 @@ export default function CoursePreviewPage() {
                         Enter Course
                       </Button>
                     ) : (
-                      <Button 
-                        size="lg" 
-                        className="w-full bg-green-900 text-white"
-                        onClick={handleEnroll}
-                        disabled={enrolling || !enrollmentChecked}
-                      >
-                        {enrolling ? (
-                          <>
-                            <Spinner />
-                            Enrolling...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Enroll Now
-                          </>
+                      <>
+                        {/* Buy Course Button - Backend handles payment */}
+                        <Button 
+                          size="lg" 
+                          className="w-full bg-green-900 text-white"
+                          onClick={handleEnrollWithMintyn}
+                          disabled={payingWithMintyn || !enrollmentChecked || (mintynBalance !== null && mintynBalance < (course?.price || 0))}
+                        >
+                          {payingWithMintyn ? (
+                            <>
+                              <Spinner size="sm" inline />
+                              <span className="ml-2">Processing Payment...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Buy Course - {formatMintynDisplay(course?.price || 0)}
+                            </>
+                          )}
+                        </Button>
+                        {mintynBalance !== null && mintynBalance < (course?.price || 0) && (
+                          <p className="text-xs text-center text-red-500 mt-2">
+                            Insufficient balance. You need {formatMintynDisplay((course?.price || 0) - mintynBalance)} more.
+                          </p>
                         )}
-                      </Button>
+                      </>
                     )}
 
                     {/* Bookmark Button */}
@@ -601,7 +738,7 @@ export default function CoursePreviewPage() {
                                                     <div>
                                                         <h3 className="text-lg font-semibold mb-2">Total Revenue</h3>
                                                         <p className="text-2xl font-bold text-green-600">
-                                                            ${instructorData.stats.totalRevenue.toLocaleString()}
+                                                            {formatMintynDisplay(instructorData.stats.totalRevenue)}
                                                         </p>
                                                     </div>
                                                 )}

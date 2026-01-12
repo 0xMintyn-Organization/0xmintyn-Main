@@ -11,7 +11,7 @@ import CoursePricingForm from "./CoursePricingForm";
 import { CourseData } from "./types";
 import {
   BookOpen,
-  DollarSign,
+  Coins,
   Layers,
   Target,
 } from "lucide-react";
@@ -22,7 +22,7 @@ import { useTokenRefresh } from "@/utils/tokenRefresh";
 
 const tabs = [
   { id: 1, name: "Course Info", icon: BookOpen },
-  { id: 2, name: "Pricing", icon: DollarSign },
+  { id: 2, name: "Pricing", icon: Coins },
   { id: 3, name: "Benefits", icon: Target },
   { id: 4, name: "Content", icon: Layers },
 ];

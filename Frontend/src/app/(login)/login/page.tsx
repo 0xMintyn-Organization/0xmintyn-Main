@@ -53,7 +53,6 @@ export default function LoginPage() {
     // Wait a bit longer after page load to allow Auth0 session to be detected
     const checkAuth = () => {
       if (!isLoading && isAuthenticated) {
-        console.log("User authenticated, redirecting to dashboard");
         router.push("/dashboard");
       }
     };
@@ -79,7 +78,13 @@ export default function LoginPage() {
       });
       // Small delay to ensure state is updated
       setTimeout(() => {
-        router.push("/dashboard");
+        // Check if user has wallet address, redirect to connect-wallet if not
+        const userData = data?.user;
+        if (userData && !userData.walletAddress) {
+          router.push("/connect-wallet");
+        } else {
+          router.push("/dashboard");
+        }
       }, 100);
     }
 
@@ -284,9 +289,7 @@ export default function LoginPage() {
             label="Google"
             isConnected={false}
             redirectTo="/dashboard"
-            onConnect={() => {
-              console.log("Google login successful");
-            }}
+         
           />
           <SocialLoginButton
             provider="GitHub"
@@ -294,9 +297,7 @@ export default function LoginPage() {
             label="GitHub"
             isConnected={false}
             redirectTo="/dashboard"
-            onConnect={() => {
-              console.log("GitHub login successful");
-            }}
+          
           />
           <SocialLoginButton
             provider="Twitter"
@@ -304,9 +305,7 @@ export default function LoginPage() {
             label="Twitter"
             isConnected={false}
             redirectTo="/dashboard"
-            onConnect={() => {
-              console.log("Twitter login successful");
-            }}
+        
           />
           <SocialLoginButton
             provider="Discord"
@@ -314,15 +313,13 @@ export default function LoginPage() {
             label="Discord"
             isConnected={false}
             redirectTo="/dashboard"
-            onConnect={() => {
-              console.log("Discord login successful");
-            }}
+         
           />
         </div>
       </div>
 
       <div className="text-center mt-4 text-sm text-gray-500">
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <a
           href="/registration-form"
           className="text-[#2190ff] hover:underline focus:outline-none focus:ring-2 focus:ring-[#2190ff] focus:ring-offset-2 rounded px-1"

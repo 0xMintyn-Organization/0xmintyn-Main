@@ -31,7 +31,7 @@ export const createCourse = CatchAsyncError(async (req: Request, res: Response, 
     return next(new ErrorHandler("Please upload a course thumbnail image", 400));
   }
 
-  const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
+  const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
   const thumbnail = `${serverUrl}/uploads/files/${req.file.filename}`;
 
   // Parse JSON body fields for arrays
@@ -72,7 +72,7 @@ export const getAllCourses = CatchAsyncError(
       .select(
         "name description thumbnail categories level price estimatedPrice averageRating totalReviews createdBy"
       )
-      .populate("createdBy", "username avatar");
+      .populate("createdBy", "username avatar walletAddress");
 
     // Transform to match frontend expectations
     const formattedCourses = courses.map((course) => ({
@@ -105,7 +105,7 @@ export const getCourseById = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     const courseId = req.params.id;
 
-    const course = await CourseModel.findById(courseId).populate("createdBy");
+    const course = await CourseModel.findById(courseId).populate("createdBy", "firstName lastName email username avatar walletAddress");
 
     if (!course) {
       return next(new ErrorHandler("Course not found", 404));
@@ -146,7 +146,7 @@ export const getPurchasedCourseById = CatchAsyncError(
     const courseId = req.params.id;
     const userId = req.user?._id;
 
-    const course = await CourseModel.findById(courseId).populate("createdBy");
+    const course = await CourseModel.findById(courseId).populate("createdBy", "firstName lastName email username avatar walletAddress");
     if (!course) {
       return next(new ErrorHandler("Course not found", 404));
     }
@@ -206,7 +206,7 @@ export const updateCourse = CatchAsyncError(
 
     // Handle thumbnail update if provided
     if (req.file) {
-      const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
+      const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
       course.thumbnail = `${serverUrl}/uploads/files/${req.file.filename}`;
     }
 
@@ -251,7 +251,7 @@ export const getInstructorCourses = CatchAsyncError(
 
     const courses = await CourseModel.find({ createdBy: instructorId })
       .sort({ createdAt: -1 })
-      .populate("createdBy", "username avatar");
+      .populate("createdBy", "username avatar walletAddress");
 
     res.status(200).json({
       success: true,
@@ -322,8 +322,8 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
         "Willingness to learn and practice regularly",
         "Access to a computer with internet connection"
       ],
-      thumbnail: "https://appbackend.0xmintyn.com/uploads/thumbnail-1757601951839.png",
-      demoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601919817-772207092.mp4",
+      thumbnail: "http://localhost:8000/uploads/thumbnail-1757601951839.png",
+      demoUrl: "http://localhost:8000/uploads/videos/video-1757601919817-772207092.mp4",
       courseData: [
         {
           title: "Introduction to Data Science",
@@ -332,7 +332,7 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           videos: [
             {
               title: "What is Data Science?",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 15,
               description: "Introduction to data science concepts and applications",
               links: [
@@ -348,7 +348,7 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
             },
             {
               title: "The Data Science Process",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 20,
               description: "Understanding the CRISP-DM methodology and data science workflow",
               links: []
@@ -362,7 +362,7 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           videos: [
             {
               title: "Python Basics for Data Science",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 25,
               description: "Essential Python concepts for data manipulation and analysis",
               links: [
@@ -374,7 +374,7 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
             },
             {
               title: "NumPy and Pandas",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 30,
               description: "Master the essential libraries for data manipulation",
               links: []
@@ -388,14 +388,14 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           videos: [
             {
               title: "Descriptive Statistics",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 22,
               description: "Understanding mean, median, mode, and distribution analysis",
               links: []
             },
             {
               title: "Inferential Statistics",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 28,
               description: "Hypothesis testing and confidence intervals",
               links: []
@@ -409,21 +409,21 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           videos: [
             {
               title: "Introduction to Machine Learning",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 18,
               description: "Types of machine learning and when to use each approach",
               links: []
             },
             {
               title: "Linear Regression",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 35,
               description: "Building and evaluating linear regression models",
               links: []
             },
             {
               title: "Classification Algorithms",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 40,
               description: "Logistic regression, decision trees, and ensemble methods",
               links: []
@@ -437,14 +437,14 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           videos: [
             {
               title: "Matplotlib and Seaborn",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 32,
               description: "Creating static and interactive visualizations",
               links: []
             },
             {
               title: "Advanced Visualization Techniques",
-              videoUrl: "https://appbackend.0xmintyn.com/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "http://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 28,
               description: "Dashboard creation and storytelling with data",
               links: []
@@ -506,20 +506,33 @@ export const getAdminCourses = CatchAsyncError(async (req: Request, res: Respons
 
     // Get courses with populated instructor data
     const courses = await CourseModel.find(filter)
-      .populate('createdBy', 'firstName lastName email')
+      .populate('createdBy', 'firstName lastName email walletAddress')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    // Add default values for missing fields
-    const coursesWithDefaults = courses.map(course => ({
-      ...course.toObject(),
-      enrolledStudents: course.enrolledStudents || 0,
-      totalRevenue: course.totalRevenue || 0,
-      rating: course.averageRating || 0,
-      reviews: course.totalReviews || 0,
-      status: course.status || 'active'
-    }));
+    // Add default values for missing fields and handle null createdBy
+    const coursesWithDefaults = courses.map(course => {
+      const courseObj = course.toObject();
+      // Ensure createdBy is an object even if populate returned null
+      if (!courseObj.createdBy) {
+        courseObj.createdBy = {
+          _id: courseObj.createdBy?._id || 'unknown',
+          firstName: 'Unknown',
+          lastName: 'Instructor',
+          email: 'N/A',
+          walletAddress: null
+        };
+      }
+      return {
+        ...courseObj,
+        enrolledStudents: course.enrolledStudents || 0,
+        totalRevenue: course.totalRevenue || 0,
+        rating: course.averageRating || 0,
+        reviews: course.totalReviews || 0,
+        status: course.status || 'active'
+      };
+    });
 
     // Get total count for pagination
     const totalCourses = await CourseModel.countDocuments(filter);

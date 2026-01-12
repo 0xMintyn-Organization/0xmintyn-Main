@@ -119,7 +119,7 @@ export default function FeaturedSection({ activeTab, featuredItems }: FeaturedSe
     if (!imagePath) return '/placeholder-product.jpg';
     if (imagePath.startsWith('http')) return imagePath;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     return `${baseUrl}${normalizedPath}`;
@@ -186,11 +186,11 @@ export default function FeaturedSection({ activeTab, featuredItems }: FeaturedSe
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-lg font-bold text-gray-900 dark:text-gray-200 dark:text-white">
-                      ${item.price}
+                      {item.price} 0XM
                     </span>
                     {item.originalPrice > item.price && (
                       <span className="text-sm text-gray-500 dark:text-gray-400 line-through ml-2">
-                        ${item.originalPrice}
+                        {item.originalPrice} 0XM
                       </span>
                     )}
                   </div>
@@ -241,11 +241,11 @@ export default function FeaturedSection({ activeTab, featuredItems }: FeaturedSe
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-gray-900 dark:text-gray-200 dark:text-white">
-                      ${item.price}
+                      {item.price} 0XM
                     </div>
                     {item.originalPrice > item.price && (
                       <div className="text-sm text-gray-500 dark:text-gray-400 line-through">
-                        ${item.originalPrice}
+                        {item.originalPrice} 0XM
                       </div>
                     )}
                   </div>

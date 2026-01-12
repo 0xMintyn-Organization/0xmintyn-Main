@@ -21,7 +21,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Package,
-  DollarSign,
+  Coins,
   FileText,
   Settings,
   Tag,
@@ -195,8 +195,7 @@ export default function CreateProduct() {
         const formData = new FormData();
         formData.append('file', file);
         
-        console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
-        console.log('Upload URL:', `${process.env.NEXT_PUBLIC_SERVER_URI}upload/file`);
+      
         
         const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}upload/file`, {
           method: 'POST',
@@ -204,12 +203,8 @@ export default function CreateProduct() {
           credentials: 'include'
         });
         
-        console.log('Upload response status:', response.status);
-        console.log('Upload response headers:', response.headers);
-        
         if (response.ok) {
           const data = await response.json();
-          console.log('Upload success:', data);
           setFormData(prev => ({
             ...prev,
             fileUrl: data.url
@@ -331,14 +326,7 @@ export default function CreateProduct() {
         submitData.append("images", image);
       });
 
-      // Make API call to create product
-      console.log('Submitting product data:', {
-        title: formData.title,
-        category: formData.category,
-        price: formData.price,
-        imagesCount: formData.images.length,
-        fileUrl: formData.fileUrl
-      });
+     
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/products/create`, {
         method: 'POST',
@@ -346,11 +334,9 @@ export default function CreateProduct() {
         credentials: 'include'
       });
 
-      console.log('Product creation response status:', response.status);
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Product created successfully:', result);
         
         setUploadProgress(100);
         clearInterval(progressInterval);
@@ -438,7 +424,7 @@ export default function CreateProduct() {
                 <span className="hidden sm:inline">Basic Info</span>
               </TabsTrigger>
               <TabsTrigger value="pricing" className="gap-2">
-                <DollarSign className="h-4 w-4" />
+                <Coins className="h-4 w-4" />
                 <span className="hidden sm:inline">Pricing</span>
               </TabsTrigger>
               <TabsTrigger value="details" className="gap-2">
@@ -558,21 +544,22 @@ export default function CreateProduct() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="price">
-                        Price (USD) <span className="text-red-500">*</span>
+                        Price (0XM) <span className="text-red-500">*</span>
                       </Label>
                       <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="price"
                           type="number"
                           value={formData.price}
                           onChange={(e) => handleInputChange("price", e.target.value)}
-                          placeholder="0.00"
+                          placeholder="0"
                           min="0"
-                          step="0.01"
+                          step="1"
                           className={`pl-10 ${errors.price ? "border-red-500" : ""}`}
                         />
                       </div>
+                      <p className="text-sm text-gray-500">Price in Mintyn tokens (0XM). Example: 100 0XM</p>
                       {errors.price && (
                         <p className="text-sm text-red-500 flex items-center gap-1">
                           <AlertCircle className="h-3 w-3" />
@@ -582,17 +569,17 @@ export default function CreateProduct() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="originalPrice">Original Price (Optional)</Label>
+                      <Label htmlFor="originalPrice">Original Price (0XM) (Optional)</Label>
                       <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="originalPrice"
                           type="number"
                           value={formData.originalPrice}
                           onChange={(e) => handleInputChange("originalPrice", e.target.value)}
-                          placeholder="0.00"
+                          placeholder="0"
                           min="0"
-                          step="0.01"
+                          step="1"
                           className="pl-10"
                         />
                       </div>

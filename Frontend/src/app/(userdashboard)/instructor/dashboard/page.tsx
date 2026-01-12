@@ -39,7 +39,7 @@ import {
   TrendingUp,
   TrendingDown,
   Users,
-  DollarSign,
+  Coins,
   BookOpen,
   Clock,
   Star,
@@ -73,6 +73,7 @@ import {
   Truck,
   RefreshCw,
 } from "lucide-react";
+import { formatMintynDisplay } from "@/lib/formatters";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/Spinner";
 import { useToast } from "@/hooks/use-toast";
@@ -177,12 +178,7 @@ function InstructorDashboard() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    return formatMintynDisplay(value);
   };
 
   const getStatusBadge = (status: string) => {
@@ -320,7 +316,7 @@ function InstructorDashboard() {
                 <CardTitle className="text-sm font-medium">
                   Total Revenue
                 </CardTitle>
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <Coins className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">

@@ -1,6 +1,7 @@
 import express from 'express';
 import { activateUserAccount, activateUserAccountByLink, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus, updateSocialAccount, removeSocialAccount, updateWalletAddress, removeWalletAddress, forgotPassword, resetPassword } from '../controllers/user.controller';
 import { getInstructorStats } from '../controllers/instructor.controller';
+import { getUserPreferences, updateUserPreferences, resetUserPreferences } from '../controllers/userPreferences.controller';
 import { isAthenticated as isAuthenticated } from '../utils/auth';
 import upload from '../middleware/multerConfig';
 
@@ -49,5 +50,10 @@ userRouter.delete("/remove-social-account", updateAccessTokenMiddleware, isAuthe
 userRouter.put("/update-wallet-address", updateAccessTokenMiddleware, isAuthenticated, updateWalletAddress);
 
 userRouter.delete("/remove-wallet-address", updateAccessTokenMiddleware, isAuthenticated, removeWalletAddress);
+
+// User Preferences Routes
+userRouter.get("/preferences", updateAccessTokenMiddleware, isAuthenticated, getUserPreferences);
+userRouter.put("/preferences", updateAccessTokenMiddleware, isAuthenticated, updateUserPreferences);
+userRouter.delete("/preferences/reset", updateAccessTokenMiddleware, isAuthenticated, resetUserPreferences);
 
 export default userRouter;

@@ -43,7 +43,7 @@ app.use(cookieParser());
 
 // cors
 app.use(cors({ 
-    origin: ['https://app.0xmintyn.com', 'http://209.74.89.249:3000' ], 
+    origin: ['http://localhost:3000', 'http://209.74.89.249:3000' ], 
     credentials: true 
 }));
 
@@ -89,7 +89,10 @@ const authLimiter = rateLimit({
 app.use('/api/v1/user', authLimiter);
 
 // routes
+// Mount userRouter at /api/v1 for public routes (login, register, etc.)
 app.use('/api/v1', userRouter);
+// Also mount at /api/v1/user for user-specific routes (preferences, me, etc.)
+app.use('/api/v1/user', userRouter);
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/stream", streamRoutes);
 app.use('/api/v1/course', coursesRoutes);

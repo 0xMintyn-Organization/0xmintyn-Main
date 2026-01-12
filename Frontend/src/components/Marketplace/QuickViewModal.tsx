@@ -64,14 +64,14 @@ export default function QuickViewModal({ isOpen, onClose, product }: QuickViewMo
             {/* Price */}
             <div className="mb-6">
               <div className="flex items-center space-x-2">
-                <span className="text-3xl font-bold text-foreground">${product.price}</span>
+                <span className="text-3xl font-bold text-foreground">{product.price} 0XM</span>
                 {product.originalPrice && product.originalPrice > product.price && (
                   <>
                     <span className="text-xl text-muted-foreground line-through">
-                      ${product.originalPrice}
+                      {product.originalPrice} 0XM
                     </span>
                     <Badge className="bg-red-500 text-white">
-                      Save ${product.originalPrice - product.price}
+                      Save {product.originalPrice - product.price} 0XM
                     </Badge>
                   </>
                 )}
@@ -121,7 +121,7 @@ export default function QuickViewModal({ isOpen, onClose, product }: QuickViewMo
               <div className="space-y-2">
                 <div className="flex items-center text-sm text-gray-600">
                   <Truck className="w-4 h-4 mr-2" />
-                  Free shipping on orders over $50
+                  Free shipping on orders over 50 0XM
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <Shield className="w-4 h-4 mr-2" />

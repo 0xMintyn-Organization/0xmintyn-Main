@@ -87,8 +87,8 @@ export default function SearchFilters({ isOpen, onClose, onApplyFilters }: Searc
                 className="w-full"
               />
               <div className="flex justify-between text-sm text-gray-600">
-                <span>${filters.priceRange[0]}</span>
-                <span>${filters.priceRange[1]}</span>
+                <span>{filters.priceRange[0]} 0XM</span>
+                <span>{filters.priceRange[1]} 0XM</span>
               </div>
             </div>
           </div>

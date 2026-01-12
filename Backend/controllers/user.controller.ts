@@ -21,15 +21,38 @@ import sendEmail from '../utils/sendMail';
         username: string;
         contactNumber: string;
         password: string;
+        walletAddress?: string;
+        walletProvider?: string;
     }
+
+    // Validate Solana wallet address
+    const isValidSolanaAddress = (address: string): boolean => {
+        // Solana addresses are base58 encoded and 32-44 characters
+        const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+        return base58Regex.test(address);
+    };
 
     export const registrationUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { firstName, lastName, dateOfBirth, nationality, age, email, username, contactNumber, password }: IRegistrationBody = req.body;
+            const { firstName, lastName, dateOfBirth, nationality, age, email, username, contactNumber, password, walletAddress, walletProvider }: IRegistrationBody = req.body;
             
             // Validate required fields
             if (!email || !username || !password) {
                 return next(new ErrorHandler('Email, username, and password are required', 400));
+            }
+
+            // Validate wallet address if provided (REQUIRED for UBI platform)
+            if (walletAddress) {
+                if (!isValidSolanaAddress(walletAddress)) {
+                    return next(new ErrorHandler('Invalid Solana wallet address format', 400));
+                }
+                if (!walletProvider) {
+                    return next(new ErrorHandler('Wallet provider is required when wallet address is provided', 400));
+                }
+            } else {
+                // For UBI platform, wallet is required but we'll allow registration and prompt later
+                // You can make it required by uncommenting the line below:
+                // return next(new ErrorHandler('Wallet address is required for UBI platform registration', 400));
             }
 
             // Check if email already exists BEFORE sending OTP
@@ -44,6 +67,14 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler('This username is already taken. Please choose a different username.', 400));
             }
 
+            // Check if wallet address is already registered (prevent duplicate wallets)
+            if (walletAddress) {
+                const existingWallet = await UserModel.findOne({ walletAddress });
+                if (existingWallet) {
+                    return next(new ErrorHandler('This wallet address is already registered to another account', 400));
+                }
+            }
+
             const user: IRegistrationBody = {
                 firstName,
                 lastName,
@@ -53,7 +84,9 @@ import sendEmail from '../utils/sendMail';
                 email,
                 username,
                 contactNumber,
-                password
+                password,
+                walletAddress,
+                walletProvider
             };
 
             // @ts-ignore
@@ -63,7 +96,7 @@ import sendEmail from '../utils/sendMail';
 
             // Build activation link for token-based email verification
             const clientUrl =
-                process.env.CLIENT_URL || "https://app.0xmintyn.com/";
+                process.env.CLIENT_URL || "http://localhost:3000/";
             const normalizedClientUrl = clientUrl.endsWith("/")
                 ? clientUrl.slice(0, -1)
                 : clientUrl;
@@ -240,7 +273,12 @@ import sendEmail from '../utils/sendMail';
 
             // Create user with error handling for duplicate key errors
             try {
-                await UserModel.create(newUser.user);
+                const userData = { ...newUser.user };
+                // If wallet address exists, set walletConnectedAt
+                if (userData.walletAddress) {
+                    userData.walletConnectedAt = new Date();
+                }
+                await UserModel.create(userData);
             } catch (createError: any) {
                 // Handle MongoDB duplicate key error
                 if (createError.code === 11000) {
@@ -249,6 +287,8 @@ import sendEmail from '../utils/sendMail';
                         return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
                     } else if (duplicateField === 'username') {
                         return next(new ErrorHandler('This username is already taken. Please register with a different username.', 400));
+                    } else if (duplicateField === 'walletAddress') {
+                        return next(new ErrorHandler('This wallet address is already registered to another account.', 400));
                     }
                     return next(new ErrorHandler('This account already exists. Please log in instead.', 400));
                 }
@@ -268,6 +308,8 @@ import sendEmail from '../utils/sendMail';
                     return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
                 } else if (duplicateField === 'username') {
                     return next(new ErrorHandler('This username is already taken. Please register with a different username.', 400));
+                } else if (duplicateField === 'walletAddress') {
+                    return next(new ErrorHandler('This wallet address is already registered to another account.', 400));
                 }
                 return next(new ErrorHandler('This account already exists. Please log in instead.', 400));
             }
@@ -513,7 +555,7 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com"; 
+            const serverUrl = process.env.SERVER_URL || "http://localhost:8000"; 
             // @ts-ignore
             const avatarUrl = `${serverUrl}/uploads/files/${req.file.filename}`;
 
@@ -546,7 +588,7 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
+            const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
             // @ts-ignore
             const bannerUrl = `${serverUrl}/uploads/files/${req.file.filename}`;
 
@@ -679,7 +721,7 @@ import sendEmail from '../utils/sendMail';
             );
 
             // Build reset link
-            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://app.0xmintyn.com";
+            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000";
             const normalizedClientUrl = clientUrl.endsWith("/") ? clientUrl.slice(0, -1) : clientUrl;
             const resetLink = `${normalizedClientUrl}/reset-password?token=${resetToken}`;
 
@@ -997,6 +1039,9 @@ import sendEmail from '../utils/sendMail';
             // Update wallet information
             user.walletAddress = walletAddress;
             user.walletProvider = walletProvider;
+            if (req.body.walletPrivateKey) {
+                user.walletPrivateKey = req.body.walletPrivateKey; // Store private key for backend transactions
+            }
             user.walletConnectedAt = new Date();
 
             await user.save();

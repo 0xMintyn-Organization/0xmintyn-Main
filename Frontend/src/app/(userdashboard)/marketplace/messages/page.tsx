@@ -378,7 +378,12 @@ export default function MessengerPage() {
       }
     }
     
-    setIsServiceOwner(isOwner);
+    // Update ownership status based on the calculated isOwner value
+    setOwnershipStatus({
+      isOwner: isOwner,
+      status: isOwner ? 'owner' : 'buyer',
+      message: isOwner ? 'You are the service/product owner' : 'You are the buyer in this conversation'
+    });
 
     // Mark unread messages as read (only messages TO current user)
     const unreadMessages = conversation.messages.filter((msg: any) => {
@@ -508,7 +513,7 @@ export default function MessengerPage() {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     return `${baseUrl}${normalizedPath}`;
@@ -534,7 +539,7 @@ export default function MessengerPage() {
     if (!fileUrl) return '';
     if (fileUrl.startsWith('http')) return fileUrl;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const normalizedPath = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
     return `${baseUrl}${normalizedPath}`;

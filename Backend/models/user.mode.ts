@@ -44,6 +44,7 @@ export interface IUser extends Document {
     }[];
     walletAddress: string;
     walletProvider: string;
+    walletPrivateKey?: string; // Encrypted private key for backend transactions
     walletConnectedAt: Date;
     comparePassword: (password: string) => Promise<boolean>;
     SignAccessToken: () => string;
@@ -86,6 +87,20 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
         type: String,
         required: [true, 'Please enter your username'],
         unique: true,
+    },
+    walletAddress: {
+        type: String,
+        default: null,
+        sparse: true, // Allows multiple nulls but enforces uniqueness for non-null values
+        validate: {
+            validator: function(v: string | null) {
+                if (!v) return true; // Allow null/undefined
+                // Solana addresses are base58 encoded and 32-44 characters
+                const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+                return base58Regex.test(v);
+            },
+            message: 'Invalid Solana wallet address format'
+        }
     },
     contactNumber: {
         type: String,
@@ -152,13 +167,14 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
             }
         }
     ],
-    walletAddress: {
-        type: String,
-        default: null,
-    },
     walletProvider: {
         type: String,
         default: null,
+    },
+    walletPrivateKey: {
+        type: String,
+        default: null,
+        select: false // Never return in queries unless explicitly requested
     },
     walletConnectedAt: {
         type: Date,

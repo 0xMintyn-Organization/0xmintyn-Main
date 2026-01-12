@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, X, DollarSign, Clock, RefreshCw, FileText, Send, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, X, Coins, Clock, RefreshCw, FileText, Send, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 
 interface CreateOfferModalProps {
@@ -238,13 +238,13 @@ export default function CreateOfferModal({
               {/* Pricing and Timeline */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="price" className="text-xs font-semibold">Price (USD) *</Label>
+                  <Label htmlFor="price" className="text-xs font-semibold">Price (0XM) *</Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       id="price"
                       type="number"
-                      placeholder="0.00"
+                      placeholder="0"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
                       disabled={creating}

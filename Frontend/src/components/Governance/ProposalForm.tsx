@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,9 +12,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus, X, Upload, FileText, Image, Link } from 'lucide-react';
+import { CalendarIcon, Plus, X, Upload, FileText, Image, Link, Wallet, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { checkUserHasEnoughTokens, createProposal } from '@/utils/governanceContract';
+import { RPC_URL } from '@/utils/governanceContract';
 
 const proposalSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters').max(200, 'Title cannot exceed 200 characters'),
@@ -58,9 +63,13 @@ const categories = [
 ];
 
 const ProposalForm: React.FC<ProposalFormProps> = ({ onSubmit }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [milestones, setMilestones] = useState<string[]>(['']);
   const [attachments, setAttachments] = useState<Array<{name: string, url: string, type: string}>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkingTokens, setCheckingTokens] = useState(false);
+  const [tokenCheck, setTokenCheck] = useState<{hasEnough: boolean; balance: number; required: number} | null>(null);
 
   const {
     register,
@@ -79,6 +88,27 @@ const ProposalForm: React.FC<ProposalFormProps> = ({ onSubmit }) => {
 
   const watchedStartDate = watch('startDate');
   const watchedEndDate = watch('endDate');
+
+  // Check tokens when wallet is available
+  useEffect(() => {
+    const checkTokens = async () => {
+      if (!user?.walletAddress) return;
+      
+      try {
+        setCheckingTokens(true);
+        const connection = new Connection(RPC_URL, "confirmed");
+        const userWallet = new PublicKey(user.walletAddress);
+        const check = await checkUserHasEnoughTokens(connection, userWallet);
+        setTokenCheck(check);
+      } catch (error) {
+        console.error("Error checking tokens:", error);
+      } finally {
+        setCheckingTokens(false);
+      }
+    };
+
+    checkTokens();
+  }, [user?.walletAddress]);
 
   const addMilestone = () => {
     setMilestones([...milestones, '']);
@@ -117,35 +147,98 @@ const ProposalForm: React.FC<ProposalFormProps> = ({ onSubmit }) => {
   const onFormSubmit = async (data: ProposalFormData) => {
     try {
       setIsSubmitting(true);
-      
-      // Filter out empty milestones
-      const filteredMilestones = data.milestones?.filter(milestone => milestone.trim() !== '') || [];
-      
-      // Filter out empty attachments
-      const filteredAttachments = data.attachments?.filter(attachment => 
-        attachment.name.trim() !== '' && attachment.url.trim() !== ''
-      ) || [];
 
-      const proposalData = {
-        ...data,
-        milestones: filteredMilestones,
-        attachments: filteredAttachments,
-        timeline: {
-          startDate: data.startDate.toISOString(),
-          endDate: data.endDate.toISOString(),
-          milestones: filteredMilestones
-        }
-      };
+      // Check wallet connection
+      if (!user?.walletAddress) {
+        toast({
+          title: 'Wallet Required',
+          description: 'Please connect your wallet to create a proposal',
+          variant: 'destructive'
+        });
+        return;
+      }
 
-      console.log('Submitting proposal data:', proposalData);
-      await onSubmit(proposalData);
+      // Check Phantom wallet
+      if (typeof window === 'undefined' || !(window as any).solana?.isPhantom) {
+        toast({
+          title: 'Phantom Wallet Required',
+          description: 'Please install and connect Phantom wallet',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const phantomProvider = (window as any).solana;
+
+      // Check tokens one more time
+      const connection = new Connection(RPC_URL, "confirmed");
+      const userWallet = new PublicKey(user.walletAddress);
+      const tokenCheck = await checkUserHasEnoughTokens(connection, userWallet);
+      
+      if (!tokenCheck.hasEnough) {
+        toast({
+          title: 'Insufficient Tokens',
+          description: `You need at least ${tokenCheck.required} Mintyn tokens. You have ${tokenCheck.balance.toFixed(2)} tokens.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Create proposal on blockchain
+      // Note: Description is limited to 200 chars to fit Solana transaction size limit (1232 bytes)
+      // Combine summary and detailed description, but keep it concise
+      const fullDescription = `${data.summary}\n\n${data.detailedDescription}`;
+      const description = fullDescription.length > 200 
+        ? fullDescription.substring(0, 197) + '...' 
+        : fullDescription;
+      const { signature, proposalAddress } = await createProposal(
+        user.walletAddress,
+        data.title,
+        description,
+        phantomProvider
+      );
+
+      toast({
+        title: 'Success!',
+        description: 'Proposal created on blockchain successfully!',
+      });
+
+      // Also save to backend (optional - for UI display)
+      try {
+        const filteredMilestones = data.milestones?.filter(milestone => milestone.trim() !== '') || [];
+        const filteredAttachments = data.attachments?.filter(attachment => 
+          attachment.name.trim() !== '' && attachment.url.trim() !== ''
+        ) || [];
+
+        const proposalData = {
+          ...data,
+          milestones: filteredMilestones,
+          attachments: filteredAttachments,
+          timeline: {
+            startDate: data.startDate.toISOString(),
+            endDate: data.endDate.toISOString(),
+            milestones: filteredMilestones
+          },
+          blockchainTx: signature,
+          blockchainAddress: proposalAddress, // Store the proposal PDA address for voting
+        };
+
+        await onSubmit(proposalData);
+      } catch (backendError) {
+        console.error('Backend save failed, but blockchain tx succeeded:', backendError);
+      }
       
       // Reset form after successful submission
       reset();
       setMilestones(['']);
       setAttachments([]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting proposal:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create proposal',
+        variant: 'destructive'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -519,15 +612,48 @@ const ProposalForm: React.FC<ProposalFormProps> = ({ onSubmit }) => {
         </CardContent>
       </Card>
 
-      {/* Submission */}
+      {/* Token Check & Submission */}
       <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
         <CardHeader>
-          <CardTitle className="text-xl text-green-900 dark:text-green-100">6. Submission</CardTitle>
+          <CardTitle className="text-xl text-green-900 dark:text-green-100">6. Token Check & Submission</CardTitle>
           <CardDescription className="text-green-700 dark:text-green-300">
-            Your proposal will be immediately active and available for community voting
+            You need at least 5 Mintyn tokens to create a proposal
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Token Balance Check */}
+          {user?.walletAddress && (
+            <div className="p-4 bg-white dark:bg-green-900 rounded-lg space-y-2">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                <span className="font-medium">Token Balance Check</span>
+              </div>
+              {checkingTokens ? (
+                <p className="text-sm text-muted-foreground">Checking balance...</p>
+              ) : tokenCheck ? (
+                <div className="flex items-center gap-2">
+                  {tokenCheck.hasEnough ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-600">
+                        ✓ You have {tokenCheck.balance.toFixed(2)} Mintyn tokens (Required: {tokenCheck.required})
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-4 w-4 text-red-600" />
+                      <span className="text-sm text-red-600">
+                        ✗ You have {tokenCheck.balance.toFixed(2)} tokens. Need {tokenCheck.required} tokens to create a proposal.
+                      </span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Unable to check balance</p>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center gap-3 p-4 bg-white dark:bg-green-900 rounded-lg">
             <div className="h-8 w-8 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
               <span className="text-yellow-600 dark:text-yellow-400 text-sm">🟡</span>
@@ -535,7 +661,7 @@ const ProposalForm: React.FC<ProposalFormProps> = ({ onSubmit }) => {
             <div>
               <p className="font-medium text-green-800 dark:text-green-200">Status: Active</p>
               <p className="text-xs text-green-600 dark:text-green-400">
-                No admin approval required - your proposal will be live immediately
+                Your proposal will be created on blockchain and live immediately
               </p>
             </div>
           </div>

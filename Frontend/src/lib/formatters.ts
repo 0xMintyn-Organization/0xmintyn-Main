@@ -13,6 +13,27 @@ export function formatCurrency(value: number): string {
   }).format(value);
 }
 
+// Format Mintyn tokens (0XM) - used throughout Education Hub
+export function formatMintyn(value: number, decimals: number = 0): string {
+  // Format number with commas, no decimals by default
+  const formatted = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+  
+  return `${formatted} 0XM`;
+}
+
+// Format Mintyn tokens with decimals (for precise amounts)
+export function formatMintynPrecise(value: number): string {
+  return formatMintyn(value, 2);
+}
+
+// Format Mintyn tokens for display (whole numbers)
+export function formatMintynDisplay(value: number): string {
+  return formatMintyn(value, 0);
+}
+
 // Format timestamp to relative time
 export const formatRelativeTime = (dateString: string): string => {
   const date = new Date(dateString);

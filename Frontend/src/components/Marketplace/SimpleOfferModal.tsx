@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, DollarSign, Clock, FileText, AlertCircle } from 'lucide-react';
+import { Loader2, Coins, Clock, FileText, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 
@@ -217,10 +217,10 @@ export default function SimpleOfferModal({
           {/* Price */}
           <div className="space-y-1.5">
             <Label htmlFor="price" className="text-xs font-semibold">
-              Price (USD) *
+              Price (0XM) *
             </Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 id="price"
                 type="number"
@@ -229,7 +229,7 @@ export default function SimpleOfferModal({
                 placeholder="150"
                 className={`pl-10 ${errors.price ? 'border-red-500' : ''}`}
                 min="0"
-                step="0.01"
+                step="1"
               />
             </div>
             {errors.price && (

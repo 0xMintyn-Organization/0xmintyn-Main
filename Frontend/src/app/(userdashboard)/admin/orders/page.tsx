@@ -80,7 +80,7 @@ import {
   X,
   TrendingUp,
   TrendingDown,
-  DollarSign,
+  Coins,
   Users,
   BookOpen,
   Calendar,
@@ -128,7 +128,7 @@ interface Order {
       _id: string;
       firstName: string;
       lastName: string;
-    };
+    } | null;
   };
   coursePrice: number;
   status: "pending" | "completed" | "cancelled" | "refunded";
@@ -255,12 +255,10 @@ function AdminOrders() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
+    return `${value.toLocaleString("en-US", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(value);
+    })} 0XM`;
   };
 
   const getStatusBadge = (status: string) => {
@@ -352,7 +350,7 @@ function AdminOrders() {
       order.userId.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.userId.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.userId.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.courseId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.courseId?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       order._id.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
@@ -455,7 +453,7 @@ function AdminOrders() {
                 <CardTitle className="text-sm font-medium">
                   Total Revenue
                 </CardTitle>
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <Coins className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -759,12 +757,14 @@ function AdminOrders() {
                               </TableCell>
                               <TableCell>
                                 <div className="font-medium text-sm">
-                                  {order.courseId.name}
+                                  {order.courseId?.name || 'Unknown Course'}
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <div className="text-sm">
-                                  {order.courseId.createdBy.firstName} {order.courseId.createdBy.lastName}
+                                  {order.courseId?.createdBy 
+                                    ? `${order.courseId.createdBy.firstName || ''} ${order.courseId.createdBy.lastName || ''}`.trim() || 'Unknown Instructor'
+                                    : 'Unknown Instructor'}
                                 </div>
                               </TableCell>
                               <TableCell className="font-medium">
@@ -1032,12 +1032,14 @@ function AdminOrders() {
                       <div className="space-y-2">
                         <div>
                           <span className="font-medium">Course:</span>
-                          <p className="text-gray-600">{selectedOrder.courseId.name}</p>
+                          <p className="text-gray-600">{selectedOrder.courseId?.name || 'Unknown Course'}</p>
                         </div>
                         <div>
                           <span className="font-medium">Instructor:</span>
                           <p className="text-gray-600">
-                            {selectedOrder.courseId.createdBy.firstName} {selectedOrder.courseId.createdBy.lastName}
+                            {selectedOrder.courseId?.createdBy 
+                              ? `${selectedOrder.courseId.createdBy.firstName || ''} ${selectedOrder.courseId.createdBy.lastName || ''}`.trim() || 'Unknown Instructor'
+                              : 'Unknown Instructor'}
                           </p>
                         </div>
                         <div>

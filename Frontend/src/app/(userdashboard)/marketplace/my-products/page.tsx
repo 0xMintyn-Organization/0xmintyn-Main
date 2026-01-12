@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  Plus, Eye, Edit, Trash2, Search, Package, DollarSign, Star, 
+  Plus, Eye, Edit, Trash2, Search, Package, Coins, Star, 
   TrendingUp, Download, ChevronLeft, ChevronRight, MoreVertical
 } from 'lucide-react';
 import {
@@ -338,7 +338,7 @@ export default function MyProductsPage() {
                     <div className="grid grid-cols-2 gap-3 mb-3">
                       <div>
                         <p className="text-xs text-gray-600 dark:text-gray-400">Price</p>
-                        <p className="font-semibold text-green-600">${product.price}</p>
+                        <p className="font-semibold text-green-600">{product.price} 0XM</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-600 dark:text-gray-400">Sales</p>

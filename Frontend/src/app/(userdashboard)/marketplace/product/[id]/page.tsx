@@ -34,16 +34,14 @@ export default function ProductDetailPage() {
   // Helper function to construct full image URLs
   const getFullImageUrl = (imagePath: string) => {
     if (!imagePath) {
-      console.log('No image path provided, using placeholder');
       return '/placeholder-product.jpg';
     }
     if (imagePath.startsWith('http')) {
-      console.log('Image already has full URL:', imagePath);
       return imagePath;
     }
     
     // Handle environment variable with trailing slash
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     if (baseUrl.endsWith('/')) {
       baseUrl = baseUrl.slice(0, -1);
     }
@@ -68,16 +66,10 @@ export default function ProductDetailPage() {
         });
         
         if (response.data.success) {
-          console.log('Product data received:', response.data.product);
-          console.log('Product images:', response.data.product.images);
-          console.log('Thumbnail image:', response.data.product.thumbnailImage);
-          console.log('Environment NEXT_PUBLIC_SERVER_URI:', process.env.NEXT_PUBLIC_SERVER_URI);
-          console.log('Full image URLs:', response.data.product.images?.map((img: string) => getFullImageUrl(img)));
           
           // Test image accessibility
           if (response.data.product.images && response.data.product.images.length > 0) {
             const testUrl = getFullImageUrl(response.data.product.images[0]);
-            console.log('Testing image accessibility for:', testUrl);
             fetch(testUrl, { method: 'HEAD' })
               .then(res => console.log('Image accessibility test:', res.status, res.ok ? 'SUCCESS' : 'FAILED'))
               .catch(err => console.error('Image accessibility test failed:', err));
@@ -208,7 +200,7 @@ export default function ProductDetailPage() {
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Product not found</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">The product you're looking for doesn't exist or has been removed.</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">The product you&apos;re looking for doesn&apos;t exist or has been removed.</p>
               <Link href="/marketplace">
                 <Button variant="outline" className="gap-2">
                   <ArrowLeft className="h-4 w-4" />
@@ -329,15 +321,15 @@ export default function ProductDetailPage() {
                 ) : (
                   <>
                     <span className="text-3xl font-bold text-gray-900 dark:text-gray-200">
-                      ${product.price}
+                      {product.price} 0XM
                     </span>
                     {product.originalPrice && product.originalPrice > product.price && (
                       <>
                         <span className="text-xl text-gray-500 line-through">
-                          ${product.originalPrice}
+                          {product.originalPrice} 0XM
                         </span>
                         <Badge className="bg-red-500 text-white">
-                          Save ${product.originalPrice - product.price}
+                          Save {product.originalPrice - product.price} 0XM
                         </Badge>
                       </>
                     )}
@@ -568,7 +560,7 @@ export default function ProductDetailPage() {
                         </div>
                         <span className="text-sm text-gray-600">{relatedProduct.rating || 0}</span>
                       </div>
-                      <div className="text-lg font-bold text-gray-900 dark:text-gray-200">${relatedProduct.price}</div>
+                      <div className="text-lg font-bold text-gray-900 dark:text-gray-200">{relatedProduct.price} 0XM</div>
                     </CardContent>
                   </Card>
                 </Link>

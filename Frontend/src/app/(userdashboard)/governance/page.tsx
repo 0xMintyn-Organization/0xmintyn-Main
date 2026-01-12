@@ -183,28 +183,27 @@ function GovernancePage() {
       fetchGovernanceData();
   }, [fetchGovernanceData]);
 
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [filters]);
 
-  // Handle voting
+  // Handle voting - Simple backend voting (no wallet required)
   const handleVote = async (proposalId: string, vote: 'yes' | 'no' | 'abstain') => {
     try {
       setVoting(proposalId);
       
-      // Check if user has already voted on this proposal
+      // Simple backend voting - no wallet required
       const hasVoted = userVotes[proposalId];
       
       if (hasVoted) {
-        // User has already voted, use update endpoint
         await axiosInstance.put(`/vote/${proposalId}`, { vote });
         toast({
           title: 'Success',
           description: 'Your vote has been updated successfully',
         });
       } else {
-        // User hasn't voted yet, use create endpoint
         await axiosInstance.post(`/vote/${proposalId}`, { vote });
         toast({
           title: 'Success',
@@ -249,6 +248,7 @@ function GovernancePage() {
       });
     }
   };
+
 
   // Get filtered proposals for display
   const getFilteredProposals = () => {

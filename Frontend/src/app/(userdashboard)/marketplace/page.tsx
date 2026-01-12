@@ -93,13 +93,10 @@ export default function MarketplacePage(): React.JSX.Element {
       });
 
       if (response.data.success) {
-        console.log('API Response:', response.data);
         if (activeTab === 'products') {
-          setProducts(response.data.data.items || []);
-          console.log('Set products:', response.data.data.items);
+            setProducts(response.data.data.items || []);
         } else {
           setServices(response.data.data.items || []);
-          console.log('Set services:', response.data.data.items);
         }
         
         setTotalPages(response.data.data.pagination.totalPages || 1);
@@ -128,7 +125,6 @@ export default function MarketplacePage(): React.JSX.Element {
 
       if (response.data.success) {
         setCategoryStats(response.data.categoryStats);
-        console.log('Category stats:', response.data.categoryStats);
       }
     } catch (error: unknown) {
       console.error('Error fetching category stats:', error);

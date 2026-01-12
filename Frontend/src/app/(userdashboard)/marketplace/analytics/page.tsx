@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  TrendingUp, DollarSign, Package, Users, Star, Eye, 
+  TrendingUp, Coins, Package, Users, Star, Eye, 
   ShoppingBag, Clock, CheckCircle, Calendar, Download,
   BarChart3, ArrowUp, ArrowDown
 } from 'lucide-react';
@@ -135,10 +135,10 @@ export default function SellerAnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</p>
-              <DollarSign className="h-5 w-5 text-green-600" />
+              <Coins className="h-5 w-5 text-green-600" />
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              ${stats.totalRevenue.toLocaleString()}
+              {stats.totalRevenue.toLocaleString()} 0XM
             </p>
             <div className="flex items-center gap-1 text-sm">
               <ArrowUp className="h-4 w-4 text-green-600" />
@@ -172,7 +172,7 @@ export default function SellerAnalyticsPage() {
               <TrendingUp className="h-5 w-5 text-purple-600" />
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              ${stats.avgOrderValue}
+              {stats.avgOrderValue} 0XM
             </p>
             <div className="flex items-center gap-1 text-sm">
               <ArrowUp className="h-4 w-4 text-green-600" />
@@ -280,7 +280,7 @@ export default function SellerAnalyticsPage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">{item.month}</span>
                     <span className="text-sm font-semibold text-green-600">
-                      ${item.revenue}
+                      {item.revenue} 0XM
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -358,7 +358,7 @@ export default function SellerAnalyticsPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-green-600">
-                      ${service.revenue.toLocaleString()}
+                      {service.revenue.toLocaleString()} 0XM
                     </p>
                   </div>
                 </div>
@@ -400,7 +400,7 @@ export default function SellerAnalyticsPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-green-600">
-                      ${product.revenue.toLocaleString()}
+                      {product.revenue.toLocaleString()} 0XM
                     </p>
                   </div>
                 </div>

@@ -13,7 +13,7 @@ import {
   Edit, 
   Trash2,
   BarChart3,
-  DollarSign,
+  Coins,
   Star,
   Clock,
   MessageSquare,
@@ -93,7 +93,7 @@ export default function SellerDashboardPage() {
       // Fetch seller products, services, and orders in parallel (removed non-existent stats endpoint)
       const [productsResponse, servicesResponse, ordersResponse] = await Promise.all([
         // Fetch seller products
-        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/products/seller/my-products?limit=5`, {
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/products/seller/my-products?limit=5`, {
           withCredentials: true
         }).catch((error) => {
           console.error('Error fetching seller products:', error);
@@ -101,7 +101,7 @@ export default function SellerDashboardPage() {
         }),
         
         // Fetch seller services
-        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/services/seller/my-services?limit=5`, {
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/services/seller/my-services?limit=5`, {
           withCredentials: true
         }).catch((error) => {
           console.error('Error fetching seller services:', error);
@@ -109,7 +109,7 @@ export default function SellerDashboardPage() {
         }),
         
         // Fetch seller orders for sales calculation
-        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/orders/seller`, {
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/orders/seller`, {
           withCredentials: true
         }).catch((error) => {
           console.error('Error fetching seller orders:', error);
@@ -141,7 +141,6 @@ export default function SellerDashboardPage() {
       
       // Update recent products
       if (productsResponse.data.success && productsResponse.data.products) {
-        console.log('Products fetched successfully:', productsResponse.data.products.length);
         setRecentProducts(productsResponse.data.products.map((product: any) => ({
           id: product._id,
           name: product.title,
@@ -151,12 +150,11 @@ export default function SellerDashboardPage() {
           image: product.thumbnailImage || product.images?.[0]
         })));
       } else {
-        console.log('Products response:', productsResponse.data);
+        // console.log('Products response:', productsResponse.data);
       }
       
       // Update recent services
       if (servicesResponse.data.success && servicesResponse.data.services) {
-        console.log('Services fetched successfully:', servicesResponse.data.services.length);
         setRecentServices(servicesResponse.data.services.map((service: any) => ({
           id: service._id,
           name: service.title,
@@ -166,7 +164,7 @@ export default function SellerDashboardPage() {
           image: service.thumbnailImage || service.images?.[0]
         })));
       } else {
-        console.log('Services response:', servicesResponse.data);
+        // console.log('Services response:', servicesResponse.data);
       }
 
       // Fetch recent messages and seller rating
@@ -187,7 +185,7 @@ export default function SellerDashboardPage() {
     try {
       // Fetch inbox messages
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/messages/inbox?limit=5`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/messages/inbox?limit=5`,
         { withCredentials: true }
       );
 
@@ -197,7 +195,7 @@ export default function SellerDashboardPage() {
 
       // Fetch unread count
       const unreadResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/messages/unread-count`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/messages/unread-count`,
         { withCredentials: true }
       );
 
@@ -214,7 +212,7 @@ export default function SellerDashboardPage() {
     if (!imagePath) return '/placeholder-product.jpg';
     if (imagePath.startsWith('http')) return imagePath;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     return `${baseUrl}${normalizedPath}`;
@@ -236,8 +234,8 @@ export default function SellerDashboardPage() {
     
     try {
       const endpoint = deleteModal.itemType === 'product' 
-        ? `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/products/${deleteModal.itemId}`
-        : `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/services/${deleteModal.itemId}`;
+        ? `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/products/${deleteModal.itemId}`
+        : `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/services/${deleteModal.itemId}`;
       
       await axios.delete(endpoint, { withCredentials: true });
       
@@ -275,7 +273,7 @@ export default function SellerDashboardPage() {
     try {
       // First check if user has a seller profile
       const statusResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/sellers/profile/status`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/sellers/profile/status`,
         { withCredentials: true }
       );
 
@@ -286,7 +284,7 @@ export default function SellerDashboardPage() {
         if (statusResponse.data.hasProfile) {
           // If user has profile, fetch the full profile data
           const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/sellers/profile/me`,
+            `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/sellers/profile/me`,
             { withCredentials: true }
           );
 
@@ -528,9 +526,9 @@ export default function SellerDashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Earnings</p>
-                  <p className="text-2xl font-bold text-orange-600">${stats.totalEarnings.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.totalEarnings.toLocaleString()} 0XM</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-orange-600" />
+                <Coins className="h-8 w-8 text-orange-600" />
               </div>
             </CardContent>
           </Card>
@@ -748,7 +746,7 @@ export default function SellerDashboardPage() {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium text-sm">{product.name}</h4>
-                          <p className="text-sm text-muted-foreground">${product.price}</p>
+                          <p className="text-sm text-muted-foreground">{product.price} 0XM</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant={product.status === 'Active' ? 'default' : 'secondary'}>
@@ -830,7 +828,7 @@ export default function SellerDashboardPage() {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium text-sm">{service.name}</h4>
-                          <p className="text-sm text-muted-foreground">${service.price}</p>
+                          <p className="text-sm text-muted-foreground">{service.price} 0XM</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant={service.status === 'Active' ? 'default' : 'secondary'}>

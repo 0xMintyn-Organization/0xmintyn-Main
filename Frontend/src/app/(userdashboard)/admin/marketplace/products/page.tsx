@@ -37,7 +37,7 @@ import {
   CheckCircle, 
   XCircle,
   Star,
-  DollarSign,
+  Coins,
   Users,
   Download,
   AlertTriangle
@@ -153,10 +153,7 @@ export default function AdminProductsManagement() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return `${amount.toLocaleString()} 0XM`;
   };
 
   const handleApproveProduct = (productId: string) => {

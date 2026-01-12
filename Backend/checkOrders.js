@@ -11,22 +11,16 @@ async function checkOrders() {
     
     // Get all orders
     const orders = await MarketplaceOrderModel.find({}).populate('sellerId');
-    console.log('Total orders:', orders.length);
     
     if (orders.length === 0) {
-      console.log('No orders found in database');
       process.exit(0);
     }
     
     for (const order of orders) {
-      console.log('Order ID:', order._id);
-      console.log('Order Number:', order.orderNumber);
-      console.log('SellerId type:', typeof order.sellerId);
-      console.log('SellerId value:', order.sellerId);
+ 
       
       // Check if sellerId is a user ID (string) instead of seller document
       if (typeof order.sellerId === 'string') {
-        console.log('❌ ISSUE: sellerId is string (user ID) instead of seller document');
         
         // Try to find the seller document for this user ID
         const sellerDoc = await MarketplaceSellerModel.findOne({ userId: order.sellerId });

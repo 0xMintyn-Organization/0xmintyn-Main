@@ -21,7 +21,7 @@ import {
   Tag,
   Image as ImageIcon,
   Users,
-  DollarSign,
+  Coins,
   Clock,
   Settings,
   AlertCircle,
@@ -225,7 +225,7 @@ export default function EditServicePage() {
     }
     
     // Handle environment variable with trailing slash (same as ProductGrid/ServiceGrid)
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     if (baseUrl.endsWith('/')) {
       baseUrl = baseUrl.slice(0, -1);
     }
@@ -582,7 +582,7 @@ export default function EditServicePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
+                <Coins className="h-5 w-5" />
                 Service Packages
               </CardTitle>
             </CardHeader>
@@ -621,7 +621,7 @@ export default function EditServicePage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
                       <span className="font-medium">Price: </span>
-                      ${pkg.price}
+                      {pkg.price} 0XM
                     </div>
                     <div>
                       <span className="font-medium">Delivery: </span>
@@ -659,13 +659,13 @@ export default function EditServicePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Price ($)</Label>
+                      <Label>Price (0XM)</Label>
                       <Input
                         type="number"
                         value={newPackage.price}
                         onChange={(e) => setNewPackage(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                        placeholder="0.00"
-                        step="0.01"
+                        placeholder="0"
+                        step="1"
                       />
                     </div>
                   </div>
@@ -698,13 +698,13 @@ export default function EditServicePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Original Price ($)</Label>
+                      <Label>Original Price (0XM)</Label>
                       <Input
                         type="number"
                         value={newPackage.originalPrice}
                         onChange={(e) => setNewPackage(prev => ({ ...prev, originalPrice: parseFloat(e.target.value) || 0 }))}
-                        placeholder="0.00"
-                        step="0.01"
+                        placeholder="0"
+                        step="1"
                       />
                     </div>
                   </div>

@@ -9,7 +9,7 @@ import {
   Heart, 
   TrendingUp, 
   Eye, 
-  DollarSign,
+  Coins,
   Star,
   Clock,
   MessageSquare,
@@ -86,11 +86,11 @@ export default function UserDashboardPage() {
       
       // Fetch real order data from API
       const [ordersResponse, statsResponse] = await Promise.all([
-        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/orders/buyer`, {
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/orders/buyer`, {
           withCredentials: true,
           params: { limit: 50 } // Get more orders for better stats
         }),
-        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/orders/statistics/overview`, {
+        axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/orders/statistics/overview`, {
           withCredentials: true,
           params: { period: '30d' }
         })
@@ -141,7 +141,7 @@ export default function UserDashboardPage() {
           status: order.orderStatus,
           orderItems: order.items || [], // Store order items for review modal
           downloadLink: order.orderStatus === 'completed' 
-            ? `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/purchase/product/${order.items[0]?.itemId}/file`
+            ? `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/purchase/product/${order.items[0]?.itemId}/file`
             : null,
           thumbnailImage: order.items[0]?.itemImage || '',
           rating: null, // TODO: Get from reviews
@@ -202,7 +202,7 @@ export default function UserDashboardPage() {
     try {
       // Fetch inbox messages
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/messages/inbox?limit=5`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/messages/inbox?limit=5`,
         { withCredentials: true }
       );
 
@@ -212,7 +212,7 @@ export default function UserDashboardPage() {
 
       // Fetch unread count
       const unreadResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/messages/unread-count`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/messages/unread-count`,
         { withCredentials: true }
       );
 
@@ -258,7 +258,7 @@ export default function UserDashboardPage() {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1/', '') || 'https://appbackend.0xmintyn.com';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1/', '') || 'http://localhost:8000';
     if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
     
     const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
@@ -421,9 +421,9 @@ export default function UserDashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
-                  <p className="text-2xl font-bold text-orange-600">${stats.totalSpent.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.totalSpent.toLocaleString()} 0XM</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-orange-600" />
+                <Coins className="h-8 w-8 text-orange-600" />
               </div>
             </CardContent>
           </Card>
@@ -706,7 +706,7 @@ export default function UserDashboardPage() {
                               <p className={`text-lg font-bold ${
                                 service.isComplete ? 'text-green-600' : 'text-blue-600'
                               }`}>
-                                ${service.price}
+                                {service.price} 0XM
                               </p>
                             </div>
                             <div>
@@ -889,7 +889,7 @@ export default function UserDashboardPage() {
                               </Badge>
                             </div>
                             <span className="font-bold text-lg text-green-600">
-                              ${product.price}
+                              {product.price} 0XM
                             </span>
                           </div>
 

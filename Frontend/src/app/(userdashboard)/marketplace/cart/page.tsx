@@ -150,11 +150,11 @@ export default function CartPage() {
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
                           <div className="text-lg font-bold text-gray-900 dark:text-gray-200">
-                            ${item.price}
+                            {item.price} 0XM
                           </div>
                           {item.originalPrice > item.price && (
                             <div className="text-sm text-gray-500 line-through">
-                              ${item.originalPrice}
+                              {item.originalPrice} 0XM
                             </div>
                           )}
                         </div>
@@ -203,7 +203,7 @@ export default function CartPage() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span>Subtotal ({items.length} items)</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{subtotal.toLocaleString()} 0XM</span>
                 </div>
 
                 {/* Coupon Code */}
@@ -222,7 +222,7 @@ export default function CartPage() {
                   {appliedCoupon && (
                     <div className="flex items-center justify-between text-green-600">
                       <span>Coupon "{appliedCoupon.code}" applied</span>
-                      <span>-${discount.toFixed(2)}</span>
+                      <span>-{discount.toLocaleString()} 0XM</span>
                     </div>
                   )}
                 </div>
@@ -238,7 +238,7 @@ export default function CartPage() {
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>{total.toLocaleString()} 0XM</span>
                   </div>
                 </div>
 
@@ -290,7 +290,7 @@ export default function CartPage() {
                   </div>
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-200 mb-2">Recommended Item {item}</h3>
-                    <div className="text-lg font-bold text-gray-900 dark:text-gray-200">$99.99</div>
+                    <div className="text-lg font-bold text-gray-900 dark:text-gray-200">99 0XM</div>
                     <Button size="sm" className="w-full mt-2">
                       Add to Cart
                     </Button>

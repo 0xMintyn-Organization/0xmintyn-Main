@@ -58,7 +58,7 @@ import {
   TrendingUp,
   TrendingDown,
   Users,
-  DollarSign,
+  Coins,
   BookOpen,
   Clock,
   Star,
@@ -87,6 +87,7 @@ import {
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/Spinner";
 import { useToast } from "@/hooks/use-toast";
+import { formatMintynDisplay } from "@/lib/formatters";
 import {
   Dialog,
   DialogContent,
@@ -355,12 +356,7 @@ function InstructorAnalytics() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    return formatMintynDisplay(value);
   };
 
   const exportData = () => {
@@ -448,7 +444,7 @@ function InstructorAnalytics() {
                 <CardTitle className="text-sm font-medium">
                   Total Revenue
                 </CardTitle>
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <Coins className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -562,7 +558,7 @@ function InstructorAnalytics() {
                             stroke="#10b981"
                             fill="#10b981"
                             fillOpacity={0.3}
-                            name="Revenue ($)"
+                            name="Revenue (0XM)"
                           />
                           <Area
                             yAxisId="right"
@@ -598,7 +594,7 @@ function InstructorAnalytics() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">${analyticsData?.overview?.totalRevenue || 0}</div>
+                    <div className="text-2xl font-bold">{formatMintynDisplay(analyticsData?.overview?.totalRevenue || 0)}</div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center">
                       <TrendingUp className="w-3 h-3 mr-1 text-green-600" />
                       <span className="text-green-600">+5.2%</span> from last
@@ -614,7 +610,7 @@ function InstructorAnalytics() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">${analyticsData?.overview?.totalRevenue || 0}</div>
+                    <div className="text-2xl font-bold">{formatMintynDisplay(analyticsData?.overview?.totalRevenue || 0)}</div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center">
                       <TrendingUp className="w-3 h-3 mr-1 text-green-600" />
                       <span className="text-green-600">+12.8%</span> from last
@@ -700,7 +696,7 @@ function InstructorAnalytics() {
                                   {course.averageRating} ⭐ ({course.totalReviews} reviews)
                                 </span>
                                 <span className="text-sm text-gray-500">
-                                  ${course.price}
+                                  {formatMintynDisplay(course.price)}
                                 </span>
                               </div>
                             </div>

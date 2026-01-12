@@ -496,12 +496,10 @@ export default function CoursePlayerPage() {
                 }}
                 autoPlay={false}
                 onEnded={() => {
-                  console.log("Video ended for:", currentLecture?.title);
                   if (currentLecture && !currentLecture.isCompleted) {
-                    console.log("Auto-marking lecture as complete:", currentLecture.id);
                     markLectureAsComplete(currentLecture.id);
                   } else {
-                    console.log("Lecture already completed or no current lecture");
+                    // console.log("Lecture already completed or no current lecture");
                   }
                 }}
               />

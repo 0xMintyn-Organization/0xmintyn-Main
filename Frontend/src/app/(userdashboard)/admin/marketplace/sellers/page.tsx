@@ -39,7 +39,7 @@ import {
   Star,
   TrendingUp,
   Calendar,
-  DollarSign,
+  Coins,
   Package,
   MessageSquare,
   Settings
@@ -98,7 +98,7 @@ export default function AdminSellersManagement() {
       setLoading(true);
       
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/sellers`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/sellers`,
         { withCredentials: true }
       );
 
@@ -110,11 +110,11 @@ export default function AdminSellersManagement() {
           sellersData.map(async (seller: any) => {
             try {
               const [productsRes, servicesRes] = await Promise.all([
-                axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/products`, {
+                axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/products`, {
                   params: { sellerId: seller._id },
                   withCredentials: true
                 }).catch(() => ({ data: { products: [] } })),
-                axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/services`, {
+                axios.get(`${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/services`, {
                   params: { sellerId: seller._id },
                   withCredentials: true
                 }).catch(() => ({ data: { services: [] } }))
@@ -184,10 +184,7 @@ export default function AdminSellersManagement() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return `${amount.toLocaleString()} 0XM`;
   };
 
   const handleToggleStatus = (sellerId: string) => {
@@ -216,7 +213,7 @@ export default function AdminSellersManagement() {
 
     try {
       const response = await axios.delete(
-        `${process.env.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1/'}marketplace/sellers/profile/${sellerToDelete}`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/'}marketplace/sellers/profile/${sellerToDelete}`,
         { withCredentials: true }
       );
 

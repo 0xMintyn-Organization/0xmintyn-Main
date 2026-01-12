@@ -1,4 +1,7 @@
+"use client";
+
 import React from "react";
+import { useSelector } from "react-redux";
 import {
   LineChart,
   Line,
@@ -18,8 +21,13 @@ import {
 } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
+import { ClaimUBIButton } from "@/components/UBI/ClaimUBIButton";
 
 function UBIFinancials() {
+  // Get user wallet address from Redux
+  const { user } = useSelector((state: any) => state.auth);
+  const walletAddress = user?.walletAddress;
+
   return (
     <Card>
       <CardHeader className="text-heading font-semibold">
@@ -37,11 +45,13 @@ function UBIFinancials() {
                     {formatCurrency(ubiBalance?.currentBalance || 0)}
                   </p>
                 </div>
-                <button
+                <ClaimUBIButton
+                  userWalletAddress={walletAddress}
+                  onSuccess={(signature) => {
+                    console.log("UBI claimed successfully! Transaction:", signature);
+                  }}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Claim UBI
-                </button>
+                />
               </div>
               <div className="mt-4">
                 <p className="text-sm text-gray-500">

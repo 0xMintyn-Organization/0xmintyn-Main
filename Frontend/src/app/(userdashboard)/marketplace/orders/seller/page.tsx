@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { 
   Package, Eye, MessageSquare, Search, Clock, CheckCircle, 
-  TrendingUp, DollarSign, Truck, RefreshCw, XCircle,
+  TrendingUp, Coins, Truck, RefreshCw, XCircle,
   ChevronLeft, ChevronRight, Upload, AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
@@ -98,7 +98,7 @@ export default function SellerOrdersPage() {
     if (!imagePath) return '/placeholder-product.jpg';
     if (imagePath.startsWith('http')) return imagePath;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://appbackend.0xmintyn.com';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     return `${baseUrl}${normalizedPath}`;
@@ -399,7 +399,7 @@ export default function SellerOrdersPage() {
                                 </p>
                               </div>
                               <span className="text-lg font-bold text-green-600">
-                                ${order.price}
+                                {order.price} 0XM
                               </span>
                             </div>
 
