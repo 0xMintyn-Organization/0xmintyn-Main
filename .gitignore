@@ -1,1 +1,14 @@
 .github/DEPLOYMENT_SETUP.md
+scripts/README.md
+scripts/restore-server-config.sh
+scripts/RESTORE_GUIDE.md
+scripts/backup-server-config.sh
+scripts/BACKUP_GUIDE.md
+scripts/CLONE_REPOSITORY.md
+scripts/FIX_GIT_SSH.md
+scripts/FIX_LETSENCRYPT.md
+scripts/FRESH_OS_INSTALLATION_GUIDE.md
+scripts/fresh-os-setup.sh
+scripts/QUICK_START.md
+scripts/FIX_INFLIGHT_MEMORY_LEAK.md
+scripts/FIX_NODE_VERSION_AND_SECURITY.md
