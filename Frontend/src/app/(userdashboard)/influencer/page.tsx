@@ -159,9 +159,7 @@ function InfluencerDashboard() {
           ageGroups: Array.isArray(data.ageGroups) ? data.ageGroups : [],
           recentRegistrations: Array.isArray(data.recentRegistrations) ? data.recentRegistrations : []
         };
-        console.log("Influencer analytics data:", formattedData);
-        console.log("User Growth:", formattedData.userGrowth);
-        console.log("Daily Growth:", formattedData.dailyGrowth);
+
         setAnalytics(formattedData);
       } else {
         setError("Failed to load analytics data");

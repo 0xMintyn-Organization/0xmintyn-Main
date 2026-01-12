@@ -143,13 +143,8 @@ function AdminGovernancePage() {
       const statsResponse = await axiosInstance.get('/proposal/stats');
 
       const proposalsList = proposalsResponse.data.data.proposals || [];
-      console.log('📋 Fetched proposals:', proposalsList.length, 'proposals');
       if (proposalsList.length > 0) {
-        console.log('📋 First proposal blockchain fields:', {
-          id: proposalsList[0]._id,
-          blockchainAddress: proposalsList[0].blockchainAddress,
-          blockchainTx: proposalsList[0].blockchainTx
-        });
+  
       }
       setProposals(proposalsList);
       setStats(statsResponse.data.data);
@@ -641,14 +636,7 @@ function AdminGovernancePage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={async () => {
-                                    // Use proposal from list directly (it should have blockchainAddress from the fetch)
-                                    // The proposals list is already fetched with all fields including blockchainAddress
-                                    console.log('📋 Using proposal from list:', {
-                                      id: proposal._id,
-                                      blockchainAddress: proposal.blockchainAddress,
-                                      blockchainTx: proposal.blockchainTx,
-                                      hasBlockchainAddress: !!proposal.blockchainAddress
-                                    });
+                                
                                     
                                     setSelectedProposal(proposal);
                                     setStatusUpdate({ status: proposal.status, adminNotes: proposal.adminNotes || '' });

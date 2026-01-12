@@ -109,8 +109,42 @@ export const userApi = apiSlice.injectEndpoints({
                 }
             }
         }),
+        // User Preferences
+        getUserPreferences: builder.query({
+            query: () => ({
+                url: `user/preferences`,
+                method: 'GET',
+                credentials: 'include' as const,
+            }),
+        }),
+        updateUserPreferences: builder.mutation({
+            query: (preferences) => ({
+                url: `user/preferences`,
+                method: 'PUT',
+                body: preferences,
+                credentials: 'include' as const,
+            }),
+        }),
+        resetUserPreferences: builder.mutation({
+            query: () => ({
+                url: `user/preferences/reset`,
+                method: 'DELETE',
+                credentials: 'include' as const,
+            }),
+        }),
 
     }),
 });
 
-export const { useUpdateAvatarMutation, useEditProfileMutation, useUpdatePasswordMutation , useUpdateBannerMutation , useEditUsernameMutation, useUpdateSocialAccountMutation, useRemoveSocialAccountMutation } = userApi;
+export const { 
+    useUpdateAvatarMutation, 
+    useEditProfileMutation, 
+    useUpdatePasswordMutation, 
+    useUpdateBannerMutation, 
+    useEditUsernameMutation, 
+    useUpdateSocialAccountMutation, 
+    useRemoveSocialAccountMutation,
+    useGetUserPreferencesQuery,
+    useUpdateUserPreferencesMutation,
+    useResetUserPreferencesMutation
+} = userApi;

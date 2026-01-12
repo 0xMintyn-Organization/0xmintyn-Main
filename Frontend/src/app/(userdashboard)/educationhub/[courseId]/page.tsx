@@ -75,7 +75,6 @@ export default function CoursePreviewPage() {
             fetchInstructorData(data.createdBy._id);
           }
           
-          console.log(data);
         } else {
           setError("Unable to fetch course details.");
         }

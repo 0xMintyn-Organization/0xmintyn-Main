@@ -93,7 +93,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = () => {
     // Handle order submission
-    console.log('Order submitted:', formData);
+    // console.log('Order submitted:', formData);
   };
 
   return (

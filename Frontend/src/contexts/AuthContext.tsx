@@ -52,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const hasReduxUser = reduxUser && reduxIsAuthenticated;
     
     if (!hasCachedUser && !hasReduxUser && !shouldFetch) {
-      console.log("No cached user found, checking server-side session (cookies)");
       setShouldFetch(true);
       setIsLoading(true);
     }
@@ -173,7 +172,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 (explicitLogoutFlag || !hasCachedData);
     
     if (explicitlyLoggedOut) {
-      console.log("User explicitly logged out, skipping fetch");
       setUser(null);
       setIsLoading(false);
       setShouldFetch(false);
@@ -189,7 +187,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (data?.user && reduxIsAuthenticated !== false) {
-      console.log("User data received from API:", data.user.email);
       setUser(data.user);
       setIsLoading(false);
       setShouldFetch(false);
@@ -208,7 +205,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } else if (!queryLoading && shouldFetch) {
       // Query completed but no user data returned
-      console.log("loadUser query completed but no user data found");
       
       // Only clear cache if we're sure there's no session (not just a network error)
       // Don't clear on initial load - might be checking for Auth0 cookies
@@ -219,7 +215,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setShouldFetch(false);
       } else {
         // Keep cached data if query failed but we have cache
-        console.log("Query failed but cache exists, keeping cached user");
         setIsLoading(false);
         setShouldFetch(false);
       }
@@ -232,7 +227,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    console.log("Logout initiated - setting explicit logout flag");
     
     // Set explicit logout flag FIRST - prevents re-authentication attempts
     if (typeof window !== 'undefined') {

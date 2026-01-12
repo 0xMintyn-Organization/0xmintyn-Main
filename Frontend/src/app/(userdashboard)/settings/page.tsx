@@ -11,6 +11,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useFontSize } from "@/contexts/FontSizeContext";
 import { useTextToSpeech } from "@/contexts/TextToSpeechContext";
 import { TextToSpeechWrapper } from "@/components/TextToSpeech/TextToSpeechWrapper";
+import { useGetUserPreferencesQuery, useUpdateUserPreferencesMutation } from "@/redux/features/user/userApi";
 import { 
   Bell, 
   ChevronRight, 
@@ -73,6 +74,12 @@ export default function Settings() {
     setVolume 
   } = useTextToSpeech();
   
+  // Fetch user preferences
+  const { data: preferencesData, isLoading: isLoadingPreferences } = useGetUserPreferencesQuery(undefined, {
+    skip: !user?._id,
+  });
+  const [updatePreferences, { isLoading: isUpdatingPreferences }] = useUpdateUserPreferencesMutation();
+  
   // Auto-logout state with persistence
   const [autoLogoutTime, setAutoLogoutTime] = useState<number>(DEFAULT_AUTO_LOGOUT_TIME);
   const [autoLogoutEnabled, setAutoLogoutEnabled] = useState<boolean>(true);
@@ -132,6 +139,40 @@ export default function Settings() {
   const [gasFeeInfo, setGasFeeInfo] = useState<any>(null);
   const [currentFeeEstimate, setCurrentFeeEstimate] = useState<any>(null);
   const [isLoadingFees, setIsLoadingFees] = useState(false);
+
+  // Load preferences from backend
+  useEffect(() => {
+    if (preferencesData?.success && preferencesData?.preferences) {
+      const prefs = preferencesData.preferences;
+      
+      // Update notification preferences
+      setNotifications({
+        email: prefs.email ?? true,
+        transactionAlerts: prefs.transactionAlerts ?? true,
+        claimReminders: prefs.claimReminders ?? true,
+        gasPriceAlerts: prefs.gasPriceAlerts ?? false,
+        failedTransactionAlerts: prefs.failedTransactionAlerts ?? true,
+        weeklyReports: prefs.weeklyReports ?? false,
+        monthlyReports: prefs.monthlyReports ?? true,
+        quarterlyReviews: prefs.quarterlyReviews ?? false,
+        achievementNotifications: prefs.achievementNotifications ?? true,
+        communityUpdates: prefs.communityUpdates ?? true,
+        communityEvents: prefs.communityEvents ?? false,
+        protocolUpdates: prefs.protocolUpdates ?? true,
+        marketingPromotions: prefs.marketingPromotions ?? false,
+        productAnnouncements: prefs.productAnnouncements ?? true,
+      });
+      
+      // Update quiet hours
+      if (prefs.quietHours) {
+        setQuietHours({
+          enabled: prefs.quietHours.enabled ?? false,
+          start: prefs.quietHours.start ?? 22,
+          end: prefs.quietHours.end ?? 8,
+        });
+      }
+    }
+  }, [preferencesData]);
 
   // Load auto-logout preferences from localStorage
   useEffect(() => {
@@ -221,17 +262,22 @@ export default function Settings() {
   const handleSaveAll = async () => {
     setIsSaving(true);
     try {
-      // TODO: Implement API call to save preferences
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Save notification preferences
+      await updatePreferences({
+        ...notifications,
+        quietHours,
+      }).unwrap();
+      
       toast({
         title: "Settings saved",
-        description: "Your preferences have been saved successfully.",
+        description: "Your notification preferences have been saved successfully.",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error saving preferences:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save settings. Please try again.",
+        description: error?.data?.message || "Failed to save settings. Please try again.",
       });
     } finally {
       setIsSaving(false);
@@ -275,11 +321,11 @@ export default function Settings() {
               </div>
               <Button 
                 onClick={handleSaveAll}
-                disabled={isSaving}
+                disabled={isSaving || isUpdatingPreferences || isLoadingPreferences}
                 size="sm"
                 className="bg-green-600 hover:bg-green-700 text-white h-8"
               >
-                {isSaving ? (
+                {(isSaving || isUpdatingPreferences) ? (
                   <>
                     <Zap className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                     Saving...

@@ -195,8 +195,7 @@ export default function CreateProduct() {
         const formData = new FormData();
         formData.append('file', file);
         
-        console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
-        console.log('Upload URL:', `${process.env.NEXT_PUBLIC_SERVER_URI}upload/file`);
+      
         
         const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}upload/file`, {
           method: 'POST',
@@ -204,12 +203,8 @@ export default function CreateProduct() {
           credentials: 'include'
         });
         
-        console.log('Upload response status:', response.status);
-        console.log('Upload response headers:', response.headers);
-        
         if (response.ok) {
           const data = await response.json();
-          console.log('Upload success:', data);
           setFormData(prev => ({
             ...prev,
             fileUrl: data.url
@@ -331,14 +326,7 @@ export default function CreateProduct() {
         submitData.append("images", image);
       });
 
-      // Make API call to create product
-      console.log('Submitting product data:', {
-        title: formData.title,
-        category: formData.category,
-        price: formData.price,
-        imagesCount: formData.images.length,
-        fileUrl: formData.fileUrl
-      });
+     
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/products/create`, {
         method: 'POST',
@@ -346,11 +334,9 @@ export default function CreateProduct() {
         credentials: 'include'
       });
 
-      console.log('Product creation response status:', response.status);
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Product created successfully:', result);
         
         setUploadProgress(100);
         clearInterval(progressInterval);

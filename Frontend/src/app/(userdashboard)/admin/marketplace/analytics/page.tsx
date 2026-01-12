@@ -259,7 +259,7 @@ export default function AdminMarketplaceAnalytics() {
 
   const exportAnalytics = () => {
     // Implement export functionality
-    console.log('Exporting analytics data...');
+    // console.log('Exporting analytics data...');
   };
 
   if (loading) {

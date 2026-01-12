@@ -169,10 +169,8 @@ function AdminDashboard() {
         params.append("status", orderStatusFilter);
       }
 
-      console.log("Fetching orders from:", `${process.env.NEXT_PUBLIC_SERVER_URI}enrollment/orders?${params}`);
       const response = await axiosInstance.get(`/enrollment/orders?${params}`);
 
-      console.log("Orders response:", response.data);
       if (response.data.success) {
         setOrders(response.data.orders);
         setOrderStats(response.data.statistics.orderStats);
@@ -190,7 +188,6 @@ function AdminDashboard() {
   };
 
   const handleRoleChange = (user: User) => {
-    console.log("Opening role change dialog for user:", user);
     setSelectedUser(user);
     setNewRole(user.role);
     setRoleDialogOpen(true);
@@ -200,15 +197,10 @@ function AdminDashboard() {
     if (!selectedUser) return;
 
     try {
-      console.log("Updating role for user:", selectedUser._id, "to role:", newRole);
-      console.log("API URL:", `/role/users/${selectedUser._id}/role`);
-      
       const response = await axiosInstance.put(
         `/role/users/${selectedUser._id}/role`,
         { role: newRole }
       );
-
-      console.log("Role update response:", response.data);
 
       if (response.data.success) {
         toast({

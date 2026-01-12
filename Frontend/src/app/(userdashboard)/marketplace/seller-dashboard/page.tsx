@@ -141,7 +141,6 @@ export default function SellerDashboardPage() {
       
       // Update recent products
       if (productsResponse.data.success && productsResponse.data.products) {
-        console.log('Products fetched successfully:', productsResponse.data.products.length);
         setRecentProducts(productsResponse.data.products.map((product: any) => ({
           id: product._id,
           name: product.title,
@@ -151,12 +150,11 @@ export default function SellerDashboardPage() {
           image: product.thumbnailImage || product.images?.[0]
         })));
       } else {
-        console.log('Products response:', productsResponse.data);
+        // console.log('Products response:', productsResponse.data);
       }
       
       // Update recent services
       if (servicesResponse.data.success && servicesResponse.data.services) {
-        console.log('Services fetched successfully:', servicesResponse.data.services.length);
         setRecentServices(servicesResponse.data.services.map((service: any) => ({
           id: service._id,
           name: service.title,
@@ -166,7 +164,7 @@ export default function SellerDashboardPage() {
           image: service.thumbnailImage || service.images?.[0]
         })));
       } else {
-        console.log('Services response:', servicesResponse.data);
+        // console.log('Services response:', servicesResponse.data);
       }
 
       // Fetch recent messages and seller rating

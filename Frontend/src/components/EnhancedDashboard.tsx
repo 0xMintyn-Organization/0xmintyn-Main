@@ -142,8 +142,8 @@ export default function EnhancedDashboard() {
   
   // Debug: Log user data to help troubleshoot
   useEffect(() => {
-    console.log("Dashboard - User data:", user);
-    console.log("Dashboard - Wallet address:", user?.walletAddress);
+    // console.log("Dashboard - User data:", user);
+    // console.log("Dashboard - Wallet address:", user?.walletAddress);
   }, [user]);
   const [loading, setLoading] = useState(true);
   const [platformStats, setPlatformStats] = useState([

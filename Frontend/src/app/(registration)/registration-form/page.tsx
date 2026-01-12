@@ -295,7 +295,6 @@ function UserRegistartionForm() {
   async function onSubmit(values: z.infer<typeof userSchema>) {
     // Honeypot check - if filled, it's a bot
     if (honeypot) {
-      console.warn("Bot detected via honeypot field");
       toast({
         title: "Error",
         description: "Invalid submission detected",
@@ -765,7 +764,7 @@ function UserRegistartionForm() {
               isConnected={false}
               redirectTo="/dashboard"
               onConnect={() => {
-                console.log("Google registration successful");
+                // Google registration
               }}
             />
             <SocialLoginButton
@@ -775,7 +774,7 @@ function UserRegistartionForm() {
               isConnected={false}
               redirectTo="/dashboard"
               onConnect={() => {
-                console.log("GitHub registration successful");
+                // GitHub registration
               }}
             />
             <SocialLoginButton
@@ -785,7 +784,7 @@ function UserRegistartionForm() {
               isConnected={false}
               redirectTo="/dashboard"
               onConnect={() => {
-                console.log("Twitter registration successful");
+                // Twitter registration
               }}
             />
             <SocialLoginButton
@@ -795,7 +794,7 @@ function UserRegistartionForm() {
               isConnected={false}
               redirectTo="/dashboard"
               onConnect={() => {
-                console.log("Discord registration successful");
+                // Discord registration
               }}
             />
           </div>
