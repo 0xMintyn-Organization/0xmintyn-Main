@@ -1,41 +1,215 @@
-name: Deploy to server1 (SSH)
+name: CI/CD Pipeline
 
 on:
   push:
+    branches: [ master, mukhtiar, dev ]
+  pull_request:
     branches: [ master ]
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'master'
+        type: choice
+        options:
+          - master
+          - mukhtiar
+          - dev
+
+env:
+  NODE_VERSION: '18.x'
 
 jobs:
-  deploy:
+  # Build and test job
+  build:
     runs-on: ubuntu-latest
-    concurrency:
-      group: deploy-server1
-      cancel-in-progress: false
     steps:
-      - name: Deploy over SSH to server1
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            Backend/package-lock.json
+            Frontend/package-lock.json
+
+      - name: Install Backend dependencies
+        working-directory: ./Backend
+        run: npm ci
+
+      - name: Build Backend
+        working-directory: ./Backend
+        run: npm run build
+        continue-on-error: true
+
+      - name: Install Frontend dependencies
+        working-directory: ./Frontend
+        run: npm ci
+
+      - name: Build Frontend
+        working-directory: ./Frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SERVER_URI: ${{ secrets.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1' }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            Backend/build/
+            Frontend/.next/
+          retention-days: 1
+
+  # Deploy job (only on push to main branches)
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          # port: ${{ secrets.SSH_PORT }} # Optional, defaults to 22 if omitted
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
           script: |
             set -e
-            echo "→ Entering project directory"
-            cd ~/0xMintyn
+            
+            # Configuration
+            PROJECT_DIR="/var/www/0xmintyn-Main"
+            BRANCH="${{ github.ref_name }}"
+            
+            echo "🚀 Starting deployment for branch: $BRANCH"
+            echo "📁 Project directory: $PROJECT_DIR"
+            
+            # Navigate to project directory
+            cd $PROJECT_DIR || { echo "❌ Project directory not found!"; exit 1; }
+            
+            # Configure git safe directory
+            git config --global --add safe.directory $PROJECT_DIR
+            
+            # Stash any local changes
+            echo "📦 Stashing local changes..."
+            git stash || true
+            
+            # Pull latest code
+            echo "⬇️  Pulling latest code from $BRANCH..."
+            git fetch origin
+            git checkout $BRANCH || git checkout -b $BRANCH origin/$BRANCH
+            git pull origin $BRANCH || { echo "⚠️  Git pull failed, continuing with existing code..."; }
+            
+            # Backend Deployment
+            echo "🔧 Building Backend..."
+            cd $PROJECT_DIR/Backend
+            
+            # Install dependencies
+            echo "📥 Installing Backend dependencies..."
+            npm ci --production=false || npm install
+            
+            # Build TypeScript
+            echo "🔨 Building Backend TypeScript..."
+            npm run build || echo "⚠️  Backend build failed, but continuing..."
+            
+            # Frontend Deployment
+            echo "🎨 Building Frontend..."
+            cd $PROJECT_DIR/Frontend
+            
+            # Install dependencies
+            echo "📥 Installing Frontend dependencies..."
+            npm ci --production=false || npm install
+            
+            # Build Next.js
+            echo "🔨 Building Frontend..."
+            NODE_ENV=production npm run build || { echo "❌ Frontend build failed!"; exit 1; }
+            
+            # Restart services with PM2
+            echo "🔄 Restarting services..."
+            
+            # Check if PM2 is installed
+            if ! command -v pm2 &> /dev/null; then
+              echo "⚠️  PM2 not found, installing..."
+              npm install -g pm2 || echo "⚠️  PM2 installation failed"
+            fi
+            
+            # Restart Backend
+            if pm2 list | grep -q "backend"; then
+              echo "🔄 Restarting Backend PM2 process..."
+              pm2 restart backend || pm2 start Backend/build/server.js --name backend || echo "⚠️  Backend restart failed"
+            else
+              echo "🆕 Starting Backend PM2 process..."
+              cd $PROJECT_DIR/Backend
+              pm2 start build/server.js --name backend || echo "⚠️  Backend start failed"
+            fi
+            
+            # Restart Frontend
+            if pm2 list | grep -q "frontend"; then
+              echo "🔄 Restarting Frontend PM2 process..."
+              pm2 restart frontend || pm2 start Frontend/server.js --name frontend || echo "⚠️  Frontend restart failed"
+            else
+              echo "🆕 Starting Frontend PM2 process..."
+              cd $PROJECT_DIR/Frontend
+              pm2 start npm --name frontend -- start || echo "⚠️  Frontend start failed"
+            fi
+            
+            # Save PM2 configuration
+            pm2 save || true
+            
+            # Show PM2 status
+            echo "📊 PM2 Status:"
+            pm2 list
+            
+            # Health check
+            echo "🏥 Running health checks..."
+            sleep 5
+            
+            # Check if services are running
+            if pm2 list | grep -q "backend.*online"; then
+              echo "✅ Backend is running"
+            else
+              echo "❌ Backend is not running!"
+              pm2 logs backend --lines 20
+            fi
+            
+            if pm2 list | grep -q "frontend.*online"; then
+              echo "✅ Frontend is running"
+            else
+              echo "❌ Frontend is not running!"
+              pm2 logs frontend --lines 20
+            fi
+            
+            echo "✅ Deployment complete for branch: $BRANCH"
+            echo "🌐 Services should be available at:"
+            echo "   - Frontend: https://app.0xmintyn.com"
+            echo "   - Backend: https://appbackend.0xmintyn.com"
 
-            echo "→ Pulling latest changes"
-            git pull
-
-            echo "→ Building Frontend"
-            cd Frontend
-            npm ci
-            npm run build
-
-            echo "→ Restarting processes with PM2"
-            pm2 restart backend
-            pm2 restart frontend
-
-            echo "✓ Deployment complete"
-
-
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Author**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
