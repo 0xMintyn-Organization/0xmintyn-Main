@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { CourseModel } from "../models/course.model";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/errorHandler";
+import { isValidYouTubeUrl, validateCourseData } from "../utils/youtubeValidator";
+import logger from "../utils/logger";
 
 // Create a new course (Instructor)
 export const createCourse = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
@@ -39,6 +41,19 @@ export const createCourse = CatchAsyncError(async (req: Request, res: Response, 
   const parsedBenefits = typeof benefits === "string" ? JSON.parse(benefits) : benefits;
   const parsedPrerequisites = typeof prerequisites === "string" ? JSON.parse(prerequisites) : prerequisites;
   const parsedCourseData = typeof courseData === "string" ? JSON.parse(courseData) : courseData;
+
+  // Validate demoUrl is a valid YouTube URL
+  if (demoUrl && typeof demoUrl === "string" && !isValidYouTubeUrl(demoUrl)) {
+    logger.warn("Invalid YouTube URL for demoUrl", { demoUrl, userId: createdBy });
+    return next(new ErrorHandler("Please provide a valid YouTube URL for the demo video", 400));
+  }
+
+  // Validate courseData structure and YouTube URLs
+  const courseDataValidation = validateCourseData(parsedCourseData);
+  if (!courseDataValidation.valid) {
+    logger.warn("Invalid course data structure", { errors: courseDataValidation.errors, userId: createdBy });
+    return next(new ErrorHandler(`Invalid course data: ${courseDataValidation.errors.join(", ")}`, 400));
+  }
 
   const course = await CourseModel.create({
     name,
@@ -191,6 +206,21 @@ export const updateCourse = CatchAsyncError(
     const parsedBenefits = typeof benefits === "string" ? JSON.parse(benefits) : benefits;
     const parsedPrerequisites = typeof prerequisites === "string" ? JSON.parse(prerequisites) : prerequisites;
     const parsedCourseData = typeof courseData === "string" ? JSON.parse(courseData) : courseData;
+
+    // Validate demoUrl if provided
+    if (demoUrl && typeof demoUrl === "string" && !isValidYouTubeUrl(demoUrl)) {
+      logger.warn("Invalid YouTube URL for demoUrl in update", { demoUrl, courseId, userId: req.user?._id });
+      return next(new ErrorHandler("Please provide a valid YouTube URL for the demo video", 400));
+    }
+
+    // Validate courseData structure and YouTube URLs if provided
+    if (parsedCourseData) {
+      const courseDataValidation = validateCourseData(parsedCourseData);
+      if (!courseDataValidation.valid) {
+        logger.warn("Invalid course data structure in update", { errors: courseDataValidation.errors, courseId, userId: req.user?._id });
+        return next(new ErrorHandler(`Invalid course data: ${courseDataValidation.errors.join(", ")}`, 400));
+      }
+    }
 
     // Update fields
     if (name) course.name = name;

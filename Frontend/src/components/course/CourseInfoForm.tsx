@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { X, Upload, Video, FileVideo } from "lucide-react";
+import { X, Upload, Video, FileVideo, Youtube } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { CourseData } from "./types";
 import { useState } from "react";
-import { uploadFileToBackend } from "@/lib/uploadFileToBackend";
+import { isValidYouTubeUrl, getYouTubeEmbedUrl, extractYouTubeVideoId } from "@/lib/youtubeUtils";
+import YouTubePlayer from "@/components/YouTubePlayer";
 
 const categories = [
   "Web Development",
@@ -43,7 +44,7 @@ export default function CourseInfoForm({
   setErrors
 }: Props) {
   const [tagInput, setTagInput] = useState("");
-  const [demoUploadProgress, setDemoUploadProgress] = useState<number | null>(null);
+  const [demoUrlInput, setDemoUrlInput] = useState("");
   
 
   const handleInputChange = (field: keyof CourseData, value: any) => {
@@ -53,7 +54,7 @@ export default function CourseInfoForm({
 
   const handleFileUpload = async (
   e: React.ChangeEvent<HTMLInputElement>,
-  field: "thumbnail" | "demoUrl"
+  field: "thumbnail"
 ) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -62,31 +63,6 @@ export default function CourseInfoForm({
     setErrors((prev:any) => ({ ...prev, thumbnail: "Please upload an image file" }));
     return;
   }
-
-  if (field === "demoUrl" && !file.type.startsWith("video/")) {
-    setErrors((prev:any) => ({ ...prev, demoUrl: "Only video files allowed" }));
-    return;
-  }
-
- if (field === "demoUrl") {
-  try {
-    setDemoUploadProgress(0); // Start progress
-    const { url } = await uploadFileToBackend(file, setDemoUploadProgress);
-
-    setCourseData((prev: any) => ({
-      ...prev,
-      demoUrl: url, // ✅ FINAL FIX - set URL
-      demoUrlPreview: url,
-    }));
-    setErrors((prev: any) => ({ ...prev, demoUrl: "" }));
-  } catch (err) {
-    console.error(err);
-    setErrors((prev: any) => ({ ...prev, demoUrl: "Failed to upload demo video" }));
-  } finally {
-    setDemoUploadProgress(null); // End progress
-  }
-  return;
-}
 
   // Thumbnail only local preview
   if (field === "thumbnail") {
@@ -97,6 +73,36 @@ export default function CourseInfoForm({
     }));
   }
 };
+
+  const handleDemoUrlChange = (url: string) => {
+    setDemoUrlInput(url);
+    setErrors((prev: any) => ({ ...prev, demoUrl: "" }));
+  };
+
+  const handleDemoUrlSubmit = () => {
+    const url = demoUrlInput.trim();
+    
+    if (!url) {
+      setErrors((prev: any) => ({ ...prev, demoUrl: "Please enter a YouTube URL" }));
+      return;
+    }
+
+    if (!isValidYouTubeUrl(url)) {
+      setErrors((prev: any) => ({ ...prev, demoUrl: "Please enter a valid YouTube URL" }));
+      return;
+    }
+
+    const videoId = extractYouTubeVideoId(url);
+    if (videoId) {
+      setCourseData((prev: any) => ({
+        ...prev,
+        demoUrl: url,
+        demoUrlPreview: getYouTubeEmbedUrl(url) || url,
+      }));
+      setDemoUrlInput("");
+      setErrors((prev: any) => ({ ...prev, demoUrl: "" }));
+    }
+  };
 
   const addTag = () => {
     const trimmed = tagInput.trim();
@@ -220,48 +226,65 @@ export default function CourseInfoForm({
         {errors.thumbnail && <p className="text-red-500 text-sm mt-1">{errors.thumbnail}</p>}
       </div>
 
-      {/* Demo Video Upload */}
+      {/* Demo Video - YouTube URL */}
       <div>
-        <Label>Demo Video *</Label>
-        <div className={`mt-1 border-2 border-dashed ${errors.demoUrl ? 'border-red-500' : 'border-gray-300'} rounded-lg p-6 text-center`}>
-          {courseData.demoUrlPreview ? (
-            <div className="space-y-2 text-center">
-              <FileVideo className="w-8 h-8 mx-auto text-green-600" />
-              <p className="text-xs text-gray-500">{courseData.demoUrl?.name}</p>
-              <button
-                onClick={() => handleInputChange('demoUrl', null)}
-                className="text-red-500 text-sm hover:underline"
-              >
-                Remove video
-              </button>
-            </div>
-          ) : (
-            <label htmlFor="demoVideo" className="cursor-pointer">
-              <Video className="w-12 h-12 mx-auto text-gray-400" />
-              <p className="text-sm mt-2">Click to upload demo</p>
-              <input
-                id="demoVideo"
-                type="file"
-                accept="video/*"
-                onChange={(e) => handleFileUpload(e, 'demoUrl')}
-                className="hidden"
+        <Label>Demo Video (YouTube URL) *</Label>
+        {courseData.demoUrl ? (
+          <div className="mt-2 space-y-2">
+            <div className="border rounded-md overflow-hidden">
+              <YouTubePlayer
+                url={courseData.demoUrl}
+                title="Course Demo Video"
+                className="w-full"
               />
-              {demoUploadProgress !== null && (
-  <div className="mt-2">
-    <div className="h-2 bg-gray-200 rounded">
-      <div
-        className="h-2 bg-green-500 rounded"
-        style={{ width: `${demoUploadProgress}%` }}
-      />
-    </div>
-    <p className="text-xs text-gray-500 mt-1">
-      Uploading: {demoUploadProgress}%
-    </p>
-  </div>
-)}
-            </label>
-          )}
-        </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                value={courseData.demoUrl}
+                readOnly
+                className="flex-1 bg-gray-50"
+                placeholder="YouTube URL"
+              />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  handleInputChange('demoUrl', null);
+                  handleInputChange('demoUrlPreview', '');
+                }}
+                className="text-red-500"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Remove
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-2 space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={demoUrlInput}
+                onChange={(e) => handleDemoUrlChange(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") {
+                    handleDemoUrlSubmit();
+                  }
+                }}
+                placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                className={errors.demoUrl ? "border-red-500" : ""}
+              />
+              <Button
+                onClick={handleDemoUrlSubmit}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Youtube className="w-4 h-4 mr-1" />
+                Add
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Enter a YouTube video URL for the course demo/preview
+            </p>
+          </div>
+        )}
         {errors.demoUrl && <p className="text-red-500 text-sm mt-1">{errors.demoUrl}</p>}
       </div>
 

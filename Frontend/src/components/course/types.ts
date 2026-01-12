@@ -7,7 +7,7 @@ export interface CourseLink {
 
 export interface CourseVideo {
   title: string;
-  videoUrl: File | null;
+  videoUrl: string | null; // Changed from File | null to string | null (YouTube URL)
   videoLength: number;
   videoPlayer: string;
   links: CourseLink[];
@@ -31,7 +31,7 @@ export interface CourseData {
   thumbnailPreview: string;
   tags: string[];
   level: string;
-  demoUrl: File | null;
+  demoUrl: string | null; // Changed from File | null to string | null (YouTube URL)
   demoUrlPreview: string;
   benefits: string[];
   prerequisites: string[];

@@ -6,8 +6,8 @@ import { performance } from 'perf_hooks';
 const originalExec = mongoose.Query.prototype.exec;
 const originalSave = mongoose.Document.prototype.save;
 
-// Log query execution
-mongoose.Query.prototype.exec = function(callback?: any) {
+// Log query execution - Updated for Mongoose v7+ (promise-based only)
+mongoose.Query.prototype.exec = function() {
     const startTime = performance.now();
     const query = this as any;
     const modelName = query.model?.modelName || 'Unknown';
@@ -25,22 +25,15 @@ mongoose.Query.prototype.exec = function(callback?: any) {
     
     logger.database(`Executing ${operation} on ${modelName}`, logData);
     
-    const result = originalExec.call(this, (err: any, doc: any) => {
-        const duration = performance.now() - startTime;
-        
-        if (err) {
-            logger.database(`Database Error on ${operation}`, {
-                ...logData,
-                error: {
-                    name: err.name,
-                    message: err.message,
-                    code: err.code,
-                    stack: err.stack
-                },
-                duration: `${duration.toFixed(2)}ms`
-            });
-        } else {
+    // Call original exec (returns a promise in Mongoose v7+)
+    const promise = originalExec.call(this);
+    
+    // Handle promise result
+    promise
+        .then((doc: any) => {
+            const duration = performance.now() - startTime;
             const resultCount = Array.isArray(doc) ? doc.length : (doc ? 1 : 0);
+            
             logger.database(`Completed ${operation} on ${modelName}`, {
                 ...logData,
                 resultCount,
@@ -55,16 +48,27 @@ mongoose.Query.prototype.exec = function(callback?: any) {
                     threshold: '100ms'
                 });
             }
-        }
-        
-        if (callback) callback(err, doc);
-    });
+        })
+        .catch((err: any) => {
+            const duration = performance.now() - startTime;
+            
+            logger.database(`Database Error on ${operation}`, {
+                ...logData,
+                error: {
+                    name: err.name,
+                    message: err.message,
+                    code: err.code,
+                    stack: err.stack
+                },
+                duration: `${duration.toFixed(2)}ms`
+            });
+        });
     
-    return result;
+    return promise;
 };
 
-// Log document saves
-mongoose.Document.prototype.save = function(options?: any, callback?: any) {
+// Log document saves - Updated for Mongoose v7+ (promise-based)
+mongoose.Document.prototype.save = function(options?: any) {
     const startTime = performance.now();
     const doc = this as any;
     const modelName = doc.constructor.modelName || 'Unknown';
@@ -76,10 +80,21 @@ mongoose.Document.prototype.save = function(options?: any, callback?: any) {
         operation: 'save'
     });
     
-    const result = originalSave.call(this, options, (err: any, savedDoc: any) => {
-        const duration = performance.now() - startTime;
-        
-        if (err) {
+    // Call original save (returns a promise in Mongoose v7+)
+    const promise = originalSave.call(this, options);
+    
+    // Handle promise result
+    promise
+        .then((savedDoc: any) => {
+            const duration = performance.now() - startTime;
+            logger.database(`Saved document ${modelName}`, {
+                model: modelName,
+                documentId: docId.toString(),
+                duration: `${duration.toFixed(2)}ms`
+            });
+        })
+        .catch((err: any) => {
+            const duration = performance.now() - startTime;
             logger.database(`Save Error on ${modelName}`, {
                 model: modelName,
                 documentId: docId.toString(),
@@ -91,18 +106,9 @@ mongoose.Document.prototype.save = function(options?: any, callback?: any) {
                 },
                 duration: `${duration.toFixed(2)}ms`
             });
-        } else {
-            logger.database(`Saved document ${modelName}`, {
-                model: modelName,
-                documentId: docId.toString(),
-                duration: `${duration.toFixed(2)}ms`
-            });
-        }
-        
-        if (callback) callback(err, savedDoc);
-    });
+        });
     
-    return result;
+    return promise;
 };
 
 // Log connection events

@@ -80,11 +80,18 @@ export const advancedRequestLogger = (req: Request, res: Response, next: NextFun
         }
     });
     
-    // Capture response
-    const originalSend = res.send;
-    const originalJson = res.json;
+    // Capture response methods - MUST bind to original res object
+    const originalSend = res.send.bind(res);
+    const originalJson = res.json.bind(res);
+    const originalEnd = res.end.bind(res);
     
-    res.send = function(body: any) {
+    // Track if response has been sent to avoid double logging
+    let responseSent = false;
+    
+    const logResponse = (body: any) => {
+        if (responseSent) return; // Prevent double logging
+        responseSent = true;
+        
         const duration = performance.now() - startTime;
         const endMemory = process.memoryUsage();
         const memoryDelta = {
@@ -96,13 +103,25 @@ export const advancedRequestLogger = (req: Request, res: Response, next: NextFun
         // Track response time
         systemStats.responseTimeHistory.push(duration);
         
+        // Calculate response size safely
+        let responseSize = 0;
+        try {
+            if (typeof body === 'string') {
+                responseSize = Buffer.byteLength(body, 'utf8');
+            } else if (body !== null && body !== undefined) {
+                responseSize = Buffer.byteLength(JSON.stringify(body), 'utf8');
+            }
+        } catch (e) {
+            responseSize = 0;
+        }
+        
         // Log response
         const logData = {
             method: req.method,
             url: req.originalUrl,
             statusCode: res.statusCode,
             duration: `${duration.toFixed(2)}ms`,
-            responseSize: Buffer.byteLength(JSON.stringify(body || ''), 'utf8'),
+            responseSize,
             memoryDelta,
             memoryAfter: {
                 heapUsed: Math.round(endMemory.heapUsed / 1024 / 1024),
@@ -137,12 +156,26 @@ export const advancedRequestLogger = (req: Request, res: Response, next: NextFun
                 threshold: '500MB'
             });
         }
-        
-        return originalSend.call(this, body);
     };
     
+    // Override res.send
+    res.send = function(body: any) {
+        logResponse(body);
+        return originalSend(body);
+    };
+    
+    // Override res.json - call originalJson directly, not res.send
     res.json = function(body: any) {
-        return res.send(body);
+        logResponse(body);
+        return originalJson(body);
+    };
+    
+    // Override res.end to catch any responses sent via end()
+    res.end = function(chunk?: any, encoding?: any) {
+        if (!responseSent && chunk) {
+            logResponse(chunk);
+        }
+        return originalEnd(chunk, encoding);
     };
     
     next();

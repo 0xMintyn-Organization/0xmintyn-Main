@@ -105,7 +105,7 @@ Create a `.env.local` file with the following variables:
 # Backend API
 NEXT_PUBLIC_API_URL=http://localhost:5000
 # or
-NEXT_PUBLIC_API_URL=https://appbackend.0xmintyn.com
+NEXT_PUBLIC_API_URL=http://localhost:8000
 
 # Solana Configuration
 NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
