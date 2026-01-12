@@ -10,25 +10,30 @@ export const isAthenticated = CatchAsyncError(async (req: Request, res: Response
     const access_token = req.cookies.access_token;
     console.log('Access Token:', access_token);
     if (!access_token) {
-        return next(new ErrorHandler('Access Token Issuue Please login to access this resource', 400));
+        return next(new ErrorHandler('Access Token Issue. Please login to access this resource', 401));
     }
 
-    const decoded = jwt.verify(access_token, process.env.ACCESS_TOKEN as string) as JwtPayload;
-    if (!decoded) {
-        return next(new ErrorHandler('Decode issue Please login to access this resource', 400));
+    try {
+        const decoded = jwt.verify(access_token, process.env.ACCESS_TOKEN as string) as JwtPayload;
+        if (!decoded) {
+            return next(new ErrorHandler('Invalid token. Please login to access this resource', 401));
+        }
+
+        
+        const user = await UserModel.findById(decoded.id).select('-password -createdAt -updatedAt -__v');
+
+        console.log(user);
+
+        if (!user) {
+            return next(new ErrorHandler('User not found', 401));
+        }
+        req.user = user.toJSON();
+        console.log('User object set in req.user:', req.user);
+        next();
+    } catch (error) {
+        // JWT verification failed (expired, invalid, etc.)
+        return next(new ErrorHandler('Invalid or expired token. Please login to access this resource', 401));
     }
-
-    
-    const user = await UserModel.findById(decoded.id).select('-password -createdAt -updatedAt -__v');
-
-    console.log(user);
-
-    if (!user) {
-        return next(new ErrorHandler('User not found ', 400));
-    }
-    req.user = user.toJSON();
-    console.log('User object set in req.user:', req.user);
-    next();
 
 })
 

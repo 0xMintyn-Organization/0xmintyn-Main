@@ -62,6 +62,25 @@ const nextConfig: NextConfig = {
     // ⚠️  Builds will succeed even if there are TypeScript errors
     ignoreBuildErrors: true,
   },
+  // Performance optimizations
+  // Note: swcMinify is enabled by default in Next.js 15, no need to specify
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+  // Optimize bundle size
+  experimental: {
+    optimizePackageImports: [
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      'lucide-react',
+      'recharts',
+    ],
+  },
 };
 
 export default nextConfig;

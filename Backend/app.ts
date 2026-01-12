@@ -43,7 +43,12 @@ app.use(cookieParser());
 
 // cors
 app.use(cors({ 
-    origin: ['https://app.0xmintyn.com', 'http://209.74.89.249:3000' ], 
+    origin: [
+        'https://app.0xmintyn.com', 
+        'http://209.74.89.249:3000',
+        'http://localhost:3000', // Development
+        'http://127.0.0.1:3000'  // Development alternative
+    ], 
     credentials: true 
 }));
 

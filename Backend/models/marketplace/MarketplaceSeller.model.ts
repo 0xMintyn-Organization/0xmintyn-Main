@@ -230,8 +230,7 @@ const marketplaceSellerSchema: Schema<IMarketplaceSeller> = new mongoose.Schema(
 });
 
 // Indexes for better query performance
-marketplaceSellerSchema.index({ userId: 1 });
-marketplaceSellerSchema.index({ storeName: 1 });
+// Note: userId and storeName already have indexes from unique: true, so we don't need to add them again
 marketplaceSellerSchema.index({ sellerLevel: 1 });
 marketplaceSellerSchema.index({ rating: -1 });
 marketplaceSellerSchema.index({ verified: 1 });

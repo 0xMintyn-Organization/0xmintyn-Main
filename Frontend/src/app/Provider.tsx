@@ -9,13 +9,23 @@ interface Props {
     children: ReactNode;
 }
 
-
 export const Providers = ({ children }: Props) => {
+    // Defer Solana check to avoid blocking initial render
     useEffect(() => {
-        if (window.solana && window.solana.isPhantom) {
-            console.log("Phantom wallet detected!");
-        } else {
-            console.log("Phantom wallet not found. Please install it.");
+        // Use requestIdleCallback for non-critical checks
+        const checkSolana = () => {
+            if (typeof window !== 'undefined' && window.solana?.isPhantom) {
+                console.log("Phantom wallet detected!");
+            }
+        };
+
+        if (typeof window !== 'undefined') {
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(checkSolana, { timeout: 2000 });
+            } else {
+                // Fallback for browsers without requestIdleCallback
+                setTimeout(checkSolana, 100);
+            }
         }
     }, []);
 
