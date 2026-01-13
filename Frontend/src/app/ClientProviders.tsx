@@ -25,7 +25,11 @@ export default function ClientProviders({
       <FontSizeProvider>
         <TextToSpeechProvider>
           <Providers>
-            <SessionProvider>
+            <SessionProvider 
+              basePath="/api/auth"
+              refetchInterval={0}
+              refetchOnWindowFocus={false}
+            >
               <SocialAuthProvider>
                 {children}
                 <Toaster />

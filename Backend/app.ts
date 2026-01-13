@@ -34,9 +34,6 @@ import influencerRouter from './routes/influencer.route';
 require('dotenv').config();
 export const app = express();
 
-// Verify app.ts is being loaded - this should appear in logs
-console.log('[APP.TS] File loaded - Starting route registration');
-
 
 
 // bodyparser
@@ -147,16 +144,6 @@ app.get('/test', (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({ success: true, message: 'API is working' });
 });
 
-// Verification route - confirms app.ts is loaded
-app.get('/verify-routes', (req: Request, res: Response) => {
-    res.status(200).json({ 
-        success: true, 
-        message: 'Routes verified',
-        timestamp: new Date().toISOString(),
-        userRouterRegistered: true
-    });
-});
-
 // Debug: List all registered routes (for development only)
 if (process.env.NODE_ENV === 'development') {
     app.get('/debug/routes', (req: Request, res: Response) => {
@@ -174,9 +161,6 @@ if (process.env.NODE_ENV === 'development') {
 
 // unknown route 
 app.all('*', (req: Request, res: Response, next: NextFunction) => {
-    if (req.path.startsWith('/api/v1/user')) {
-        console.log(`[404 DEBUG] Catch-all hit for user route: ${req.method} ${req.originalUrl} - Path: ${req.path}`);
-    }
     const err = new Error(`Can't find ${req.originalUrl} on this server`) as any
     err.statusCode = 404;
     next(err);
