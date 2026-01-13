@@ -6,6 +6,11 @@ import upload from '../middleware/multerConfig';
 
 const userRouter = express.Router();
 
+// Test route to verify router is loaded
+userRouter.get('/test-router', (req, res) => {
+    res.status(200).json({ success: true, message: 'User router is loaded and working!' });
+});
+
 userRouter.post('/register', registrationUser);
 
 userRouter.post('/activate-user', activateUserAccount);

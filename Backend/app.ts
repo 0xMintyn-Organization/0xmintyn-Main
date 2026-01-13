@@ -95,12 +95,9 @@ const authLimiter = rateLimit({
 // app.use('/api/v1/user', authLimiter);
 
 // User routes - must be registered before other /api/v1 routes to avoid conflicts
+console.log('[DEBUG] Registering userRouter at /api/v1/user');
 app.use('/api/v1/user', userRouter);
-
-// Test route to verify /api/v1/user routes are working
-app.get('/api/v1/user/test-route', (req: Request, res: Response) => {
-    res.status(200).json({ success: true, message: 'User routes are working!' });
-});
+console.log('[DEBUG] User router registered successfully');
 
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/stream", streamRoutes);
