@@ -34,6 +34,9 @@ import influencerRouter from './routes/influencer.route';
 require('dotenv').config();
 export const app = express();
 
+// Verify app.ts is being loaded - this should appear in logs
+console.log('[APP.TS] File loaded - Starting route registration');
+
 
 
 // bodyparser
@@ -107,7 +110,9 @@ const authLimiter = rateLimit({
 
 // IMPORTANT: Register userRouter FIRST before any other /api/v1 routes
 // This ensures /api/v1/user routes are matched before /api/v1 routes
+console.log('[ROUTE INIT] About to register userRouter at /api/v1/user');
 app.use('/api/v1/user', userRouter);
+console.log('[ROUTE INIT] userRouter registered successfully');
 
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/stream", streamRoutes);
@@ -161,6 +166,9 @@ if (process.env.NODE_ENV === 'development') {
 
 // unknown route 
 app.all('*', (req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith('/api/v1/user')) {
+        console.log(`[404 DEBUG] Catch-all hit for user route: ${req.method} ${req.originalUrl} - Path: ${req.path}`);
+    }
     const err = new Error(`Can't find ${req.originalUrl} on this server`) as any
     err.statusCode = 404;
     next(err);
