@@ -35,6 +35,7 @@ require('dotenv').config();
 export const app = express();
 
 
+
 // bodyparser
 app.use(express.json({ limit: '50mb' }));
 
@@ -74,13 +75,15 @@ const limiter = rateLimit({
 // Apply rate limiter before routes
 app.use(limiter);
 
-// Debug middleware to log all requests
-app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.path.startsWith('/api/v1/user')) {
-        console.log(`[DEBUG] Request to ${req.method} ${req.path} - Original URL: ${req.originalUrl}`);
-    }
-    next();
-});
+// Debug middleware to log all requests (development only)
+if (process.env.NODE_ENV === 'development') {
+    app.use((req: Request, res: Response, next: NextFunction) => {
+        if (req.path.startsWith('/api/v1/user')) {
+            console.log(`[DEBUG] User route: ${req.method} ${req.path}`);
+        }
+        next();
+    });
+}
 
 // More lenient rate limiter for authentication endpoints
 const authLimiter = rateLimit({
@@ -102,16 +105,9 @@ const authLimiter = rateLimit({
 // Note: Rate limiter is applied conditionally - skip in development
 // app.use('/api/v1/user', authLimiter);
 
-// Test route BEFORE userRouter to verify route registration works
-app.get('/api/v1/user/direct-test', (req: Request, res: Response) => {
-    console.log('[DEBUG] Direct test route hit');
-    res.status(200).json({ success: true, message: 'Direct route works!' });
-});
-
-// User routes - must be registered before other /api/v1 routes to avoid conflicts
-console.log('[DEBUG] Registering userRouter at /api/v1/user');
+// IMPORTANT: Register userRouter FIRST before any other /api/v1 routes
+// This ensures /api/v1/user routes are matched before /api/v1 routes
 app.use('/api/v1/user', userRouter);
-console.log('[DEBUG] User router registered successfully');
 
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/stream", streamRoutes);
@@ -147,6 +143,21 @@ app.use('/api/v1', auth0Router);
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({ success: true, message: 'API is working' });
 });
+
+// Debug: List all registered routes (for development only)
+if (process.env.NODE_ENV === 'development') {
+    app.get('/debug/routes', (req: Request, res: Response) => {
+        const routes: string[] = [];
+        app._router?.stack?.forEach((middleware: any) => {
+            if (middleware.route) {
+                routes.push(`${Object.keys(middleware.route.methods).join(', ').toUpperCase()} ${middleware.route.path}`);
+            } else if (middleware.name === 'router') {
+                routes.push(`ROUTER mounted at: ${middleware.regexp}`);
+            }
+        });
+        res.json({ routes, total: routes.length });
+    });
+}
 
 // unknown route 
 app.all('*', (req: Request, res: Response, next: NextFunction) => {
