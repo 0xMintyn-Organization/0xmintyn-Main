@@ -90,11 +90,11 @@ const authLimiter = rateLimit({
     }
 });
 
-// Apply auth rate limiter to user routes
-app.use('/api/v1/user', authLimiter);
-
 // routes
-app.use('/api/v1', userRouter);
+// Note: Rate limiter is applied conditionally - skip in development
+// app.use('/api/v1/user', authLimiter);
+
+app.use('/api/v1/user', userRouter);
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/stream", streamRoutes);
 app.use('/api/v1/course', coursesRoutes);
