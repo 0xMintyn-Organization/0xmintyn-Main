@@ -74,6 +74,14 @@ const limiter = rateLimit({
 // Apply rate limiter before routes
 app.use(limiter);
 
+// Debug middleware to log all requests
+app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith('/api/v1/user')) {
+        console.log(`[DEBUG] Request to ${req.method} ${req.path} - Original URL: ${req.originalUrl}`);
+    }
+    next();
+});
+
 // More lenient rate limiter for authentication endpoints
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -93,6 +101,12 @@ const authLimiter = rateLimit({
 // routes
 // Note: Rate limiter is applied conditionally - skip in development
 // app.use('/api/v1/user', authLimiter);
+
+// Test route BEFORE userRouter to verify route registration works
+app.get('/api/v1/user/direct-test', (req: Request, res: Response) => {
+    console.log('[DEBUG] Direct test route hit');
+    res.status(200).json({ success: true, message: 'Direct route works!' });
+});
 
 // User routes - must be registered before other /api/v1 routes to avoid conflicts
 console.log('[DEBUG] Registering userRouter at /api/v1/user');
