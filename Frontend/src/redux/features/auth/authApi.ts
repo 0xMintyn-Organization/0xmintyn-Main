@@ -12,7 +12,7 @@ export const authApi = apiSlice.injectEndpoints({
         //    all endpoints here 
         register: builder.mutation<RegistrationResponse, RegistrationData>({
             query: (data) => ({
-                url: "register",
+                url: "user/register",
                 method: "POST",
                 body: data,
                 credentials: "include" as const,
@@ -42,7 +42,7 @@ export const authApi = apiSlice.injectEndpoints({
             // Supports both code-based and link-based activation.
             // If activation_code is null/undefined, backend will use token-only flow.
             query: ({ activation_token, activation_code }) => ({
-                url: activation_code != null ? `activate-user` : `activate-link`,
+                url: activation_code != null ? `user/activate-user` : `user/activate-link`,
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -57,7 +57,7 @@ export const authApi = apiSlice.injectEndpoints({
         }),
         login: builder.mutation({
             query: ({ email, password }) => ({
-                url: "login",
+                url: "user/login",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -93,7 +93,7 @@ export const authApi = apiSlice.injectEndpoints({
         }),
         socialAuth: builder.mutation({
             query: ({ email, avatar }) => ({
-                url: "social-auth",
+                url: "user/social-auth",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -130,7 +130,7 @@ export const authApi = apiSlice.injectEndpoints({
         
         logOut: builder.query({
             query: () => ({
-                url: "logout",
+                url: "user/logout",
                 method: "GET",
                 credentials: "include" as const,
             }),
@@ -165,7 +165,7 @@ export const authApi = apiSlice.injectEndpoints({
 
         forgotPassword: builder.mutation({
             query: ({ email }) => ({
-                url: "forgot-password",
+                url: "user/forgot-password",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -177,7 +177,7 @@ export const authApi = apiSlice.injectEndpoints({
 
         resetPassword: builder.mutation({
             query: ({ token, newPassword }) => ({
-                url: "reset-password",
+                url: "user/reset-password",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
