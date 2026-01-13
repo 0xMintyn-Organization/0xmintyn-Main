@@ -110,9 +110,7 @@ const authLimiter = rateLimit({
 
 // IMPORTANT: Register userRouter FIRST before any other /api/v1 routes
 // This ensures /api/v1/user routes are matched before /api/v1 routes
-console.log('[ROUTE INIT] About to register userRouter at /api/v1/user');
 app.use('/api/v1/user', userRouter);
-console.log('[ROUTE INIT] userRouter registered successfully');
 
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/stream", streamRoutes);
@@ -147,6 +145,16 @@ app.use('/api/v1', auth0Router);
 // testing api
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({ success: true, message: 'API is working' });
+});
+
+// Verification route - confirms app.ts is loaded
+app.get('/verify-routes', (req: Request, res: Response) => {
+    res.status(200).json({ 
+        success: true, 
+        message: 'Routes verified',
+        timestamp: new Date().toISOString(),
+        userRouterRegistered: true
+    });
 });
 
 // Debug: List all registered routes (for development only)
