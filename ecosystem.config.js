@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'backend',
-      script: 'npm',
+      script: '/root/.nvm/versions/node/v24.12.0/bin/npm',
       args: 'run dev',
       cwd: '/var/www/0xmintyn-Main/Backend',
       instances: 1,
@@ -26,7 +26,7 @@ module.exports = {
     },
     {
       name: 'frontend',
-      script: 'npm',
+      script: '/root/.nvm/versions/node/v24.12.0/bin/npm',
       args: 'run dev',
       cwd: '/var/www/0xmintyn-Main/Frontend',
       instances: 1,
