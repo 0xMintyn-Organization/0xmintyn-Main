@@ -197,7 +197,7 @@ npm run build
 ### Environment Variables
 ```bash
 # API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=https://appbackend.0xmintyn.com
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_key
 
 # Image Optimization

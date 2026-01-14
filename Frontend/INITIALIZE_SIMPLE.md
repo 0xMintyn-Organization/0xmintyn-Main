@@ -6,7 +6,7 @@ The dynamic import fails because TypeScript files aren't directly accessible in 
 ## ✅ SOLUTION - Use This Instead
 
 ### Method 1: Use the Test Page (EASIEST)
-1. Go to: `http://localhost:3000/test-ubi`
+1. Go to: `https://app.0xmintyn.com/test-ubi`
 2. Connect your Phantom wallet
 3. Click "Initialize UBI Program" button
 4. Approve the transaction

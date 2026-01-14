@@ -515,8 +515,8 @@ const form = useForm({
 
 **API Base URL:**
 - Environment variable: `NEXT_PUBLIC_SERVER_URI`
-- Production: `http://localhost:8000`
-- Development: `http://localhost:8000`
+- Production: `https://appbackend.0xmintyn.com`
+- Development: `https://appbackend.0xmintyn.com`
 
 **Authentication:**
 - JWT tokens in HTTP-only cookies
@@ -524,7 +524,7 @@ const form = useForm({
 - Automatic token refresh on expiration
 
 **CORS Configuration:**
-- Allowed origins: `['http://localhost:3000', 'http://209.74.89.249:3000']`
+- Allowed origins: `['https://app.0xmintyn.com', 'http://209.74.89.249:3000']`
 - Credentials: `true`
 - Configured in `app.ts`
 

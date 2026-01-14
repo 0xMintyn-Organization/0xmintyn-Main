@@ -203,7 +203,7 @@ WALLET_PATH=/path/to/wallet.json npm run admin:fund-treasury:1m
 
 You can also manage treasury through the web interface:
 
-1. Navigate to: `http://localhost:3000/test-ubi`
+1. Navigate to: `https://app.0xmintyn.com/test-ubi`
 2. Scroll to "Automated Treasury Management" section
 3. Use the UI to:
    - Check treasury status

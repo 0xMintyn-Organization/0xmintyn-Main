@@ -23,7 +23,7 @@ export const checkEnvironment = () => {
   }
 
   // Check if we have fallback URL
-  const fallbackUrl = 'http://localhost:8000/api/v1/';
+  const fallbackUrl = 'https://appbackend.0xmintyn.com/api/v1/';
   console.log('🔄 Fallback URL available:', fallbackUrl);
 
   return {

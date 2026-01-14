@@ -30,7 +30,7 @@ npm run dev
 
 ### Step 4: Open Browser
 
-Navigate to: **http://localhost:3000**
+Navigate to: **https://app.0xmintyn.com**
 
 That's it! 🎉
 

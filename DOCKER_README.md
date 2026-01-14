@@ -44,7 +44,7 @@ JWT_EXPIRE=7d
 JWT_REFRESH_EXPIRE=30d
 
 # Frontend
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=https://appbackend.0xmintyn.com
 
 # Add other environment variables as needed
 # STRIPE_SECRET_KEY=your_stripe_secret
@@ -94,7 +94,7 @@ docker build -t 0xmintyn-frontend:latest .
 docker run -d \
   --name 0xmintyn-frontend \
   -p 3000:3000 \
-  -e NEXT_PUBLIC_API_URL=http://localhost:8000 \
+  -e NEXT_PUBLIC_API_URL=https://appbackend.0xmintyn.com \
   0xmintyn-frontend:latest
 ```
 
@@ -128,8 +128,8 @@ These are mounted from your host machine to persist data.
 
 Both containers include health checks:
 
-- **Backend**: Checks `http://localhost:8000/test` endpoint
-- **Frontend**: Checks `http://localhost:3000` endpoint
+- **Backend**: Checks `https://appbackend.0xmintyn.com/test` endpoint
+- **Frontend**: Checks `https://app.0xmintyn.com` endpoint
 
 View health status:
 ```bash
@@ -272,10 +272,10 @@ docker image prune -a
 
 ```bash
 # Test backend health
-curl http://localhost:8000/test
+curl https://appbackend.0xmintyn.com/test
 
 # Test frontend
-curl http://localhost:3000
+curl https://app.0xmintyn.com
 
 # Test MongoDB connection
 docker-compose exec mongodb mongosh -u admin -p your_password
