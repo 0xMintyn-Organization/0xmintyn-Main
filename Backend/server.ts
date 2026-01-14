@@ -8,6 +8,11 @@ import http from 'http';
 // Create HTTP server
 const server = http.createServer(app);
 
+// Increase timeout for large file uploads (5 minutes)
+server.timeout = 5 * 60 * 1000; // 5 minutes
+server.keepAliveTimeout = 65000; // 65 seconds
+server.headersTimeout = 66000; // 66 seconds
+
 // Initialize Socket.IO
 initSocketServer(server);
 

@@ -30,6 +30,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   // Helper function to construct full image URLs
   const getFullImageUrl = (imagePath: string) => {
@@ -118,21 +119,80 @@ export default function ProductDetailPage() {
     try {
       setDownloading(true);
       
+      const downloadUrl = `${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/purchase/product/${product._id}/file`;
+      console.log('Downloading from:', downloadUrl);
+      
       // Use secure file access endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/purchase/product/${product._id}/file`, {
+      const response = await fetch(downloadUrl, {
         method: 'GET',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Accept': '*/*', // Accept any file type
+        }
       });
 
+      console.log('Download response status:', response.status, response.statusText);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (response.ok) {
+        // Check if response is actually a file (not JSON error)
+        const contentType = response.headers.get('content-type') || '';
+        
+        if (contentType.includes('application/json')) {
+          // If it's JSON, it's likely an error message
+          const errorData = await response.json();
+          console.error('Download failed with JSON response:', errorData);
+          alert(errorData.message || 'Failed to download file. Please try again.');
+          return;
+        }
+
         // Create blob from response
         const blob = await response.blob();
+        
+        if (blob.size === 0) {
+          console.error('Downloaded file is empty');
+          alert('Downloaded file is empty. Please contact support.');
+          return;
+        }
+
+        // Extract filename from Content-Disposition header
+        let downloadFileName = '';
+        const contentDisposition = response.headers.get('content-disposition');
+        if (contentDisposition) {
+          // Parse filename from Content-Disposition header
+          // Format: attachment; filename="filename.zip"; filename*=UTF-8''filename.zip
+          const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+          if (filenameMatch && filenameMatch[1]) {
+            // Remove quotes if present
+            downloadFileName = filenameMatch[1].replace(/['"]/g, '');
+            // Decode URI if needed
+            if (downloadFileName.startsWith("UTF-8''")) {
+              downloadFileName = decodeURIComponent(downloadFileName.substring(7));
+            }
+          }
+        }
+        
+        // Fallback: Use product title with .zip extension (NEVER use fileFormat)
+        if (!downloadFileName) {
+          // Sanitize product title and add .zip extension
+          const sanitizedTitle = product.title
+            ? product.title
+                .replace(/[^\w\s.-]/g, '_')
+                .replace(/\s+/g, '_')
+                .replace(/_{2,}/g, '_')
+                .replace(/^_+|_+$/g, '')
+                .trim()
+                .substring(0, 200) || 'download'
+            : 'download';
+          downloadFileName = `${sanitizedTitle}.zip`;
+        }
+
         const url = window.URL.createObjectURL(blob);
         
         // Create download link
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${product.title}.${product.fileFormat?.toLowerCase() || 'zip'}`;
+        link.download = downloadFileName; // Use filename from header or sanitized title with .zip
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -140,14 +200,49 @@ export default function ProductDetailPage() {
         // Clean up
         window.URL.revokeObjectURL(url);
       } else {
-        const errorData = await response.text();
-        console.error('Download failed:', response.status, errorData);
-        alert('You must purchase this product to download the file');
+        // Try to get error message
+        let errorMessage = 'Failed to download file';
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            try {
+              const errorJson = JSON.parse(errorText);
+              errorMessage = errorJson.message || errorMessage;
+            } catch {
+              errorMessage = errorText.substring(0, 200); // Use first 200 chars if not JSON
+            }
+          }
+        } catch (e) {
+          // If we can't read the error, use status-based message
+          if (response.status === 403) {
+            errorMessage = 'You must purchase this product to download the file';
+          } else if (response.status === 404) {
+            errorMessage = 'File not found';
+          } else if (response.status === 401) {
+            errorMessage = 'Please log in to download files';
+          }
+        }
+        
+        console.error('Download failed:', response.status, errorMessage);
+        alert(errorMessage);
       }
       
-    } catch (error) {
-      console.error('Download failed:', error);
-      alert('Download failed. Please try again.');
+    } catch (error: any) {
+      console.error('Download failed with error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      
+      let errorMessage = 'Download failed. Please try again.';
+      if (error.message?.includes('Failed to fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message?.includes('CORS')) {
+        errorMessage = 'CORS error. Please contact support.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setDownloading(false);
     }
@@ -238,55 +333,93 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Product Images */}
           <div className="space-y-4">
-            <div className="aspect-square relative overflow-hidden rounded-lg bg-card">
-              <Image
-                src={getFullImageUrl(product.images?.[selectedImage] || product.thumbnailImage)}
-                alt={product.title}
-                fill
-                className="object-cover"
-                onError={(e) => {
-                  console.error('Main image load error:', {
-                    error: e,
-                    src: e.currentTarget.src,
-                    alt: e.currentTarget.alt,
-                    originalPath: product.images?.[selectedImage] || product.thumbnailImage
-                  });
-                  // Try fallback to thumbnail if main image fails
-                  if (product.thumbnailImage && e.currentTarget.src !== getFullImageUrl(product.thumbnailImage)) {
-                    e.currentTarget.src = getFullImageUrl(product.thumbnailImage);
-                  } else {
-                    e.currentTarget.src = '/placeholder-product.jpg';
-                  }
-                }}
-              />
+            <div className="aspect-square relative overflow-hidden rounded-lg bg-card bg-gray-100 dark:bg-gray-800">
+              {(() => {
+                const mainImageKey = `main-${selectedImage}`;
+                const mainImageUrl = getFullImageUrl(product.images?.[selectedImage] || product.thumbnailImage || '');
+                const mainImageError = imageErrors.has(mainImageKey);
+                
+                if (!mainImageError && mainImageUrl && mainImageUrl !== '/placeholder-product.jpg') {
+                  return (
+                    <Image
+                      src={mainImageUrl}
+                      alt={product.title || 'Product image'}
+                      fill
+                      className="object-cover"
+                      onError={() => {
+                        setImageErrors(prev => new Set(prev).add(mainImageKey));
+                      }}
+                    />
+                  );
+                }
+                
+                // Fallback to thumbnail if main image fails
+                const thumbnailUrl = product.thumbnailImage && product.images?.[selectedImage] 
+                  ? getFullImageUrl(product.thumbnailImage)
+                  : null;
+                const thumbnailKey = `thumbnail-fallback-${selectedImage}`;
+                const thumbnailError = imageErrors.has(thumbnailKey);
+                
+                if (thumbnailUrl && !thumbnailError && thumbnailUrl !== mainImageUrl && thumbnailUrl !== '/placeholder-product.jpg') {
+                  return (
+                    <Image
+                      src={thumbnailUrl}
+                      alt={product.title || 'Product image'}
+                      fill
+                      className="object-cover"
+                      onError={() => {
+                        setImageErrors(prev => new Set(prev).add(thumbnailKey));
+                      }}
+                    />
+                  );
+                }
+                
+                // Final fallback - placeholder
+                return (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="text-center p-4">
+                      <div className="w-16 h-16 mx-auto mb-2 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                        <FileText className="w-8 h-8 text-gray-500 dark:text-gray-400" />
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">No Image</p>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
             {product.images && product.images.length > 1 && (
               <div className="flex space-x-2">
-                {product.images.map((image: string, index: number) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                      selectedImage === index ? 'border-blue-500' : 'border-gray-200'
-                    }`}
-                  >
-                    <Image
-                      src={getFullImageUrl(image)}
-                      alt={`${product.title} ${index + 1}`}
-                      fill
-                      className="object-cover"
-                      onError={(e) => {
-                        console.error('Thumbnail image load error:', {
-                          error: e,
-                          src: e.currentTarget.src,
-                          alt: e.currentTarget.alt,
-                          originalPath: image
-                        });
-                        e.currentTarget.src = '/placeholder-product.jpg';
-                      }}
-                    />
-                  </button>
-                ))}
+                {product.images.map((image: string, index: number) => {
+                  const thumbKey = `thumb-${index}`;
+                  const thumbUrl = getFullImageUrl(image);
+                  const thumbError = imageErrors.has(thumbKey);
+                  
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImage(index)}
+                      className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 ${
+                        selectedImage === index ? 'border-blue-500' : 'border-gray-200'
+                      } bg-gray-100 dark:bg-gray-800`}
+                    >
+                      {!thumbError && thumbUrl && thumbUrl !== '/placeholder-product.jpg' ? (
+                        <Image
+                          src={thumbUrl}
+                          alt={`${product.title} ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          onError={() => {
+                            setImageErrors(prev => new Set(prev).add(thumbKey));
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                          <FileText className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -536,43 +669,59 @@ export default function ProductDetailPage() {
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-200 mb-6">Related Products</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {relatedProducts.map((relatedProduct) => (
-                <Link key={relatedProduct._id} href={`/marketplace/product/${relatedProduct._id}`}>
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                        <Image
-                          src={getFullImageUrl(relatedProduct.thumbnailImage)}
-                          alt={relatedProduct.title}
-                          fill
-                          className="object-cover"
-                          onError={(e) => {
-                            console.error('Related product image load error:', e);
-                            e.currentTarget.src = '/placeholder-product.jpg';
-                          }}
-                        />
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-200 mb-2">{relatedProduct.title}</h3>
-                      <div className="flex items-center space-x-1 mb-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(relatedProduct.rating || 0)
-                                  ? 'text-yellow-400 fill-current'
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-600">{relatedProduct.rating || 0}</span>
+              {relatedProducts.map((relatedProduct) => {
+                const imageKey = `related-${relatedProduct._id}`;
+                const imageUrl = getFullImageUrl(relatedProduct.thumbnailImage || '');
+                const hasError = imageErrors.has(imageKey);
+                
+                return (
+                  <Link key={relatedProduct._id} href={`/marketplace/product/${relatedProduct._id}`}>
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                      <div className="aspect-square relative overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-800">
+                        {!hasError && imageUrl && imageUrl !== '/placeholder-product.jpg' ? (
+                          <Image
+                            src={imageUrl}
+                            alt={relatedProduct.title || 'Product image'}
+                            fill
+                            className="object-cover"
+                            onError={() => {
+                              setImageErrors(prev => new Set(prev).add(imageKey));
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="text-center p-4">
+                              <div className="w-16 h-16 mx-auto mb-2 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                                <FileText className="w-8 h-8 text-gray-500 dark:text-gray-400" />
+                              </div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">No Image</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-lg font-bold text-gray-900 dark:text-gray-200">${relatedProduct.price}</div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-200 mb-2">{relatedProduct.title}</h3>
+                        <div className="flex items-center space-x-1 mb-2">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < Math.floor(relatedProduct.rating || 0)
+                                    ? 'text-yellow-400 fill-current'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-600">{relatedProduct.rating || 0}</span>
+                        </div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-gray-200">${relatedProduct.price}</div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}

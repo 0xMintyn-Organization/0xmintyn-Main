@@ -44,8 +44,9 @@ app.use(requestIdMiddleware);
 // Advanced request logging (must be early)
 app.use(advancedRequestLogger);
 
-// bodyparser
-app.use(express.json({ limit: '50mb' }));
+// bodyparser - increase limits for large file uploads
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
 // cookie parser
 app.use(cookieParser());

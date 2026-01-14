@@ -3,6 +3,7 @@ import { CourseModel } from "../models/course.model";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/errorHandler";
 import { isValidYouTubeUrl, validateCourseData } from "../utils/youtubeValidator";
+import { uploadCourseThumbnail, extractPublicIdFromUrl, deleteFromCloudinary } from "../utils/cloudinary";
 import logger from "../utils/logger";
 
 // Create a new course (Instructor)
@@ -33,8 +34,8 @@ export const createCourse = CatchAsyncError(async (req: Request, res: Response, 
     return next(new ErrorHandler("Please upload a course thumbnail image", 400));
   }
 
-  const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
-  const thumbnail = `${serverUrl}/uploads/files/${req.file.filename}`;
+  // Upload thumbnail to Cloudinary
+  const thumbnail = await uploadCourseThumbnail(req.file.buffer, createdBy?.toString());
 
   // Parse JSON body fields for arrays
   const parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
@@ -236,8 +237,23 @@ export const updateCourse = CatchAsyncError(
 
     // Handle thumbnail update if provided
     if (req.file) {
-      const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
-      course.thumbnail = `${serverUrl}/uploads/files/${req.file.filename}`;
+      // Delete old thumbnail from Cloudinary if exists
+      if (course.thumbnail) {
+        const oldPublicId = extractPublicIdFromUrl(course.thumbnail);
+        if (oldPublicId) {
+          try {
+            await deleteFromCloudinary(oldPublicId, 'image');
+          } catch (error) {
+            logger.warn('Failed to delete old course thumbnail', { 
+              publicId: oldPublicId, 
+              error: (error as Error).message 
+            });
+          }
+        }
+      }
+      
+      // Upload new thumbnail to Cloudinary
+      course.thumbnail = await uploadCourseThumbnail(req.file.buffer, courseId);
     }
 
     await course.save();
@@ -263,6 +279,21 @@ export const deleteCourse = CatchAsyncError(
     // Check if user owns the course
     if (course.createdBy.toString() !== req.user?._id.toString()) {
       return next(new ErrorHandler("You are not authorized to delete this course", 403));
+    }
+
+    // Delete thumbnail from Cloudinary
+    if (course.thumbnail) {
+      const publicId = extractPublicIdFromUrl(course.thumbnail);
+      if (publicId) {
+        try {
+          await deleteFromCloudinary(publicId, 'image');
+        } catch (error) {
+          logger.warn('Failed to delete course thumbnail on course deletion', { 
+            publicId, 
+            error: (error as Error).message 
+          });
+        }
+      }
     }
 
     await course.deleteOne();

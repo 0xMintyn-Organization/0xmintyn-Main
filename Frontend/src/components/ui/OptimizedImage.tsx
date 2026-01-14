@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { Loader2, AlertCircle } from 'lucide-react';
 
@@ -35,6 +35,15 @@ export default function OptimizedImage({
   const [imageError, setImageError] = useState(false);
   const [currentSrc, setCurrentSrc] = useState(src);
 
+  // Reset state when src changes
+  useEffect(() => {
+    if (src !== currentSrc) {
+      setCurrentSrc(src);
+      setImageLoading(true);
+      setImageError(false);
+    }
+  }, [src, currentSrc]);
+
   const handleLoad = useCallback(() => {
     setImageLoading(false);
     setImageError(false);
@@ -43,14 +52,14 @@ export default function OptimizedImage({
 
   const handleError = useCallback(() => {
     setImageLoading(false);
-    setImageError(true);
     
     // Try fallback image if current src is not already fallback
-    if (currentSrc !== fallbackSrc) {
+    if (currentSrc !== fallbackSrc && !currentSrc.includes(fallbackSrc)) {
       setCurrentSrc(fallbackSrc);
       setImageLoading(true);
       setImageError(false);
     } else {
+      setImageError(true);
       onError?.();
     }
   }, [currentSrc, fallbackSrc, onError]);
@@ -101,6 +110,7 @@ export default function OptimizedImage({
           onLoad={handleLoad}
           onError={handleError}
           sizes={fill ? '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw' : undefined}
+          unoptimized={fullSrc.includes('cloudinary.com')} // Cloudinary handles optimization
         />
       )}
     </div>

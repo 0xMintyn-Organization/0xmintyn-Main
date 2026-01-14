@@ -41,6 +41,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'github.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
     ],
     // Keep domains for backward compatibility (Next.js 12 style)
     domains: [
@@ -52,7 +57,8 @@ const nextConfig: NextConfig = {
       'images.unsplash.com',
       'via.placeholder.com',
       'github.com',
-      '209.74.89.249'
+      '209.74.89.249',
+      'res.cloudinary.com'
     ],
   },
    eslint: {

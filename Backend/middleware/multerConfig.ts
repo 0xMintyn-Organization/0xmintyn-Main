@@ -1,27 +1,8 @@
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 
-// Set storage engine with absolute paths
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // Store images in uploads/images/ and other files in uploads/files/
-        const destDir = file.fieldname === 'images' 
-            ? path.join(__dirname, "../uploads/images")
-            : path.join(__dirname, "../uploads/files");
-        
-        // Ensure directory exists
-        if (!fs.existsSync(destDir)) {
-            fs.mkdirSync(destDir, { recursive: true });
-        }
-        
-        cb(null, destDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Use memory storage - files will be uploaded to Cloudinary
+// This prevents disk storage and allows direct Cloudinary upload
+const storage = multer.memoryStorage();
 
 // File filter to allow only specific file types
 // @ts-ignore

@@ -556,9 +556,8 @@ import logger from '../utils/logger';
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "http://localhost:8000"; 
-            // @ts-ignore
-            const avatarUrl = `${serverUrl}/uploads/files/${req.file.filename}`;
+            // Upload avatar to Cloudinary
+            const avatarUrl = await uploadUserAvatar(req.file.buffer, user._id.toString());
 
             user.avatar = avatarUrl; 
             await user.save();
@@ -589,9 +588,8 @@ import logger from '../utils/logger';
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "http://localhost:8000";
-            // @ts-ignore
-            const bannerUrl = `${serverUrl}/uploads/files/${req.file.filename}`;
+            // Upload banner to Cloudinary
+            const bannerUrl = await uploadUserBanner(req.file.buffer, user._id.toString());
 
             user.banner = bannerUrl;
             await user.save();

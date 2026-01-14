@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
 import UserModel from "../../models/user.mode";
 import { CatchAsyncError } from "../../middleware/catchAsyncError";
+import logger from "../../utils/logger";
 
 // Create marketplace seller profile
 export const createMarketplaceSeller = async (req: Request, res: Response) => {

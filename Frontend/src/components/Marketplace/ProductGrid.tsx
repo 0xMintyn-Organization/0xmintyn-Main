@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import Image from 'next/image';
 import { useAccessibility } from '@/lib/accessibility';
 import { LoadingGrid, EmptyState, ErrorState } from '@/components/ui/LoadingStates';
 
@@ -181,19 +182,30 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
           <Card key={product.id || `product-list-${index}`} className="hover:shadow-md transition-shadow">
             <div className="flex">
               <div className="relative w-48 h-32 flex-shrink-0">
-                {product.thumbnailImage || product.image ? (
-                  <OptimizedImage
-                    src={product.thumbnailImage || product.image}
-                    alt={product.title}
-                    fill
-                    className="object-cover rounded-l-lg"
-                    fallbackSrc="/placeholder-product.jpg"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 rounded-l-lg flex items-center justify-center">
-                    <FileText className="w-8 h-8 text-gray-400" />
-                  </div>
-                )}
+                {(() => {
+                  // Try thumbnailImage first, then image, then first image from images array
+                  const imageUrl = product.thumbnailImage || product.image || (product.images && Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null);
+                  
+                  if (!imageUrl || imageUrl.trim() === '') {
+                    return (
+                      <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 rounded-l-lg flex items-center justify-center">
+                        <FileText className="w-8 h-8 text-gray-400" />
+                      </div>
+                    );
+                  }
+                  
+                  // Use direct Next.js Image for Cloudinary URLs
+                  const fullUrl = getFullImageUrl(imageUrl);
+                  return (
+                    <Image
+                      src={fullUrl}
+                      alt={product.title}
+                      fill
+                      className="object-cover rounded-l-lg"
+                      unoptimized={fullUrl.includes('cloudinary.com')}
+                    />
+                  );
+                })()}
                 {product.badge && (
                   <Badge className="absolute top-2 left-2 bg-red-500 text-white">
                     {product.badge}
@@ -279,20 +291,31 @@ export default function ProductGrid({ viewMode, searchQuery, onQuickView, produc
           <div className="relative">
             <Link href={`/marketplace/product/${product._id || product.id}`}>
               <div className="aspect-square relative overflow-hidden rounded-t-lg cursor-pointer">
-                {product.thumbnailImage || product.image ? (
-                  <OptimizedImage
-                    src={product.thumbnailImage || product.image}
-                    alt={product.title}
-                    fill
-                    className="group-hover:scale-110 transition-transform duration-300"
-                    fallbackSrc="/placeholder-product.jpg"
-                    priority={index < 4}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
-                    <FileText className="w-12 h-12 text-gray-400" />
-                  </div>
-                )}
+                {(() => {
+                  // Try thumbnailImage first, then image, then first image from images array
+                  const imageUrl = product.thumbnailImage || product.image || (product.images && Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null);
+                  
+                  if (!imageUrl || imageUrl.trim() === '') {
+                    return (
+                      <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
+                        <FileText className="w-12 h-12 text-gray-400" />
+                      </div>
+                    );
+                  }
+                  
+                  // Use direct Next.js Image for Cloudinary URLs (same as FeaturedSection)
+                  const fullUrl = getFullImageUrl(imageUrl);
+                  return (
+                    <Image
+                      src={fullUrl}
+                      alt={product.title || 'Product image'}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-300"
+                      unoptimized={fullUrl.includes('cloudinary.com')}
+                      priority={index < 4}
+                    />
+                  );
+                })()}
               </div>
             </Link>
             {product.badge && (

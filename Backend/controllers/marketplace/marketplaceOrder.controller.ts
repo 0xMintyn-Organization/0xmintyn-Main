@@ -6,7 +6,8 @@ import { MarketplaceProductModel } from "../../models/marketplace/MarketplacePro
 import { MarketplaceServiceModel } from "../../models/marketplace/MarketplaceService.model";
 import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
 import UserModel from "../../models/user.mode";
-
+import { uploadDeliveryFile } from "../../utils/cloudinary";
+import axios from "axios";
 import logger from '../../utils/logger';
 
 // Helper function to update seller stats after order creation
@@ -757,14 +758,17 @@ export const deliverOrder = CatchAsyncError(async (req: Request, res: Response, 
       return next(new ErrorHandler(`Cannot deliver order with status: ${order.orderStatus}`, 400));
     }
 
-    // Handle file uploads
+    // Handle file uploads - upload to Cloudinary
     const deliveryFiles = [];
     if (req.files && Array.isArray(req.files)) {
       for (const file of req.files) {
+        // Upload to Cloudinary
+        const cloudinaryUrl = await uploadDeliveryFile(file.buffer, orderId);
+        
         deliveryFiles.push({
-          filename: file.filename,
+          filename: file.originalname, // Keep original name for display
           originalName: file.originalname,
-          fileUrl: file.path,
+          fileUrl: cloudinaryUrl, // Cloudinary URL
           fileSize: file.size,
           mimeType: file.mimetype,
           uploadedAt: new Date()
@@ -851,28 +855,109 @@ export const downloadDeliveryFile = CatchAsyncError(async (req: Request, res: Re
       return next(new ErrorHandler("File not found in this order", 404));
     }
 
-    // Set headers for file download
-    res.setHeader('Content-Disposition', `attachment; filename="${deliveryFile.originalName}"`);
-    res.setHeader('Content-Type', deliveryFile.mimeType);
-    res.setHeader('Content-Length', deliveryFile.fileSize);
+    // Check if file is on Cloudinary
+    if (deliveryFile.fileUrl && deliveryFile.fileUrl.includes('cloudinary.com')) {
+      try {
+        logger.debug('Downloading delivery file from Cloudinary', { 
+          orderId, 
+          fileId,
+          fileUrl: deliveryFile.fileUrl 
+        });
 
-    // Stream the file
+        // Clean Cloudinary URL - remove any transformations that might cause issues
+        let cleanFileUrl = deliveryFile.fileUrl;
+        
+        // If URL contains transformations (like /fl_attachment/), remove them
+        if (cleanFileUrl.includes('/upload/')) {
+          const uploadIndex = cleanFileUrl.indexOf('/upload/');
+          const afterUpload = cleanFileUrl.substring(uploadIndex + '/upload/'.length);
+          
+          // Find the version and public_id part (format: v1234567890/folder/filename)
+          const versionMatch = afterUpload.match(/^(v\d+\/)/);
+          if (versionMatch) {
+            // Reconstruct clean URL: base + /upload/ + version + public_id
+            const baseUrl = cleanFileUrl.substring(0, uploadIndex + '/upload/'.length);
+            const versionAndPath = afterUpload.substring(versionMatch[0].length);
+            // Remove any transformation flags (fl_attachment, etc.)
+            const cleanPath = versionAndPath.split('/').filter(part => !part.startsWith('fl_')).join('/');
+            cleanFileUrl = `${baseUrl}${versionMatch[0]}${cleanPath}`;
+          }
+        }
+
+        logger.debug('Cleaned Cloudinary URL for delivery file', {
+          original: deliveryFile.fileUrl,
+          cleaned: cleanFileUrl
+        });
+
+        // Download file from Cloudinary
+        const response = await axios.get(cleanFileUrl, {
+          responseType: 'stream',
+          timeout: 30000, // 30 second timeout
+          maxRedirects: 5, // Allow redirects
+        });
+
+        // Set headers for file download
+        res.setHeader('Content-Disposition', `attachment; filename="${deliveryFile.originalName || 'download'}"`);
+        
+        // Use the mime type from the file or detect from Cloudinary response
+        const contentType = deliveryFile.mimeType || response.headers['content-type'] || 'application/octet-stream';
+        res.setHeader('Content-Type', contentType);
+        
+        // Set content length if available
+        if (deliveryFile.fileSize) {
+          res.setHeader('Content-Length', deliveryFile.fileSize);
+        } else if (response.headers['content-length']) {
+          res.setHeader('Content-Length', response.headers['content-length']);
+        }
+
+        // Stream the file to the client
+        response.data.pipe(res);
+
+        // Handle stream errors
+        response.data.on('error', (error: any) => {
+          logger.error('Error streaming delivery file from Cloudinary', { 
+            error: error.message, 
+            orderId,
+            fileId
+          });
+          if (!res.headersSent) {
+            return next(new ErrorHandler("Error downloading file", 500));
+          }
+        });
+
+        return;
+      } catch (error: any) {
+        logger.error('Error downloading delivery file from Cloudinary', { 
+          error: error.message, 
+          orderId,
+          fileId,
+          fileUrl: deliveryFile.fileUrl
+        });
+        return next(new ErrorHandler("Failed to download file from Cloudinary", 500));
+      }
+    }
+
+    // Fallback for local files (legacy support)
     const fs = require('fs');
     const path = require('path');
     
     const filePath = path.join(process.cwd(), deliveryFile.fileUrl);
     
-    if (!fs.existsSync(filePath)) {
+    if (fs.existsSync(filePath)) {
+      res.setHeader('Content-Disposition', `attachment; filename="${deliveryFile.originalName}"`);
+      res.setHeader('Content-Type', deliveryFile.mimeType);
+      res.setHeader('Content-Length', deliveryFile.fileSize);
+
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+
+      fileStream.on('error', (error: any) => {
+        logger.error('File stream error', { error: error.message });
+        return next(new ErrorHandler("Error streaming file", 500));
+      });
+    } else {
       return next(new ErrorHandler("File not found on server", 404));
     }
-
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
-
-    fileStream.on('error', (error: any) => {
-      console.error('File stream error:', error);
-      return next(new ErrorHandler("Error streaming file", 500));
-    });
 
   } catch (error: any) {
     console.error('Error downloading delivery file:', error);
@@ -1131,14 +1216,17 @@ export const respondToRevision = CatchAsyncError(async (req: Request, res: Respo
       'revisionRequest.responseMessage': responseMessage?.trim() || ''
     };
 
-    // Handle file uploads for accepted revisions
+    // Handle file uploads for accepted revisions - upload to Cloudinary
     const revisionFiles = [];
     if (req.files && Array.isArray(req.files) && action === 'accept') {
       for (const file of req.files) {
+        // Upload to Cloudinary
+        const cloudinaryUrl = await uploadDeliveryFile(file.buffer, orderId);
+        
         revisionFiles.push({
-          filename: file.filename,
+          filename: file.originalname, // Keep original name for display
           originalName: file.originalname,
-          fileUrl: file.path,
+          fileUrl: cloudinaryUrl, // Cloudinary URL
           fileSize: file.size,
           mimeType: file.mimetype,
           uploadedAt: new Date()
