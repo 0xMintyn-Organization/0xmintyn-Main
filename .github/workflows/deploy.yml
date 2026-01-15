@@ -86,8 +86,16 @@ jobs:
             # Pull latest code
             echo "⬇️  Pulling latest code..."
             git fetch origin
-            git checkout $BRANCH 2>/dev/null || git checkout -b $BRANCH origin/$BRANCH
-            git pull origin $BRANCH || echo "⚠️  Pull had conflicts, continuing..."
+            
+            # Clean up any untracked files that might conflict
+            echo "🧹 Cleaning untracked files..."
+            git clean -fd || true
+            
+            # Force checkout to handle any conflicts
+            git checkout -f $BRANCH 2>/dev/null || git checkout -b $BRANCH origin/$BRANCH
+            
+            # Reset to match remote exactly
+            git reset --hard origin/$BRANCH || echo "⚠️  Reset failed, continuing..."
             
             # Get change flags
             BACKEND_UPDATE="${{ steps.changes.outputs.backend }}"
