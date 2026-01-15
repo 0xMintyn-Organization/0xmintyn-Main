@@ -76,8 +76,35 @@ jobs:
             
             PROJECT_DIR="/var/www/0xmintyn-Main"
             BRANCH="${{ github.ref_name }}"
-            NODE_PATH="/root/.nvm/versions/node/v24.12.0/bin"
+            
+            # Find Node.js path dynamically
+            if [ -d "/root/.nvm" ]; then
+              # Try to find the default/current version
+              export NVM_DIR="/root/.nvm"
+              [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+              NODE_PATH=$(which node | sed 's|/node$||')
+            else
+              # Fallback to common paths
+              NODE_PATH=$(dirname $(which node 2>/dev/null || echo "/usr/local/bin/node"))
+            fi
+            
+            # If still not found, try common NVM paths
+            if [ -z "$NODE_PATH" ] || [ "$NODE_PATH" = "/" ]; then
+              # Find latest Node.js version in NVM
+              if [ -d "/root/.nvm/versions/node" ]; then
+                LATEST_NODE=$(ls -d /root/.nvm/versions/node/v* 2>/dev/null | sort -V | tail -1)
+                if [ -n "$LATEST_NODE" ]; then
+                  NODE_PATH="$LATEST_NODE/bin"
+                fi
+              fi
+            fi
+            
+            # Final fallback
+            NODE_PATH="${NODE_PATH:-/usr/local/bin}"
             PM2_CMD="$NODE_PATH/pm2"
+            
+            echo "📍 Using Node.js path: $NODE_PATH"
+            echo "📍 PM2 command: $PM2_CMD"
             
             echo "🚀 Smart Deployment - Branch: $BRANCH"
             cd $PROJECT_DIR
@@ -97,11 +124,20 @@ jobs:
             # Reset to match remote exactly
             git reset --hard origin/$BRANCH || echo "⚠️  Reset failed, continuing..."
             
-            # Get change flags
+            # Get change flags (with fallback to true if empty - deploy everything on push)
             BACKEND_UPDATE="${{ steps.changes.outputs.backend }}"
             FRONTEND_UPDATE="${{ steps.changes.outputs.frontend }}"
             INSTALL_BACKEND="${{ steps.changes.outputs.needs_install_backend }}"
             INSTALL_FRONTEND="${{ steps.changes.outputs.needs_install_frontend }}"
+            
+            # If outputs are empty (change detection failed), deploy everything
+            if [ -z "$BACKEND_UPDATE" ] && [ -z "$FRONTEND_UPDATE" ]; then
+              echo "⚠️  Change detection returned empty, deploying everything..."
+              BACKEND_UPDATE="true"
+              FRONTEND_UPDATE="true"
+              INSTALL_BACKEND="true"
+              INSTALL_FRONTEND="true"
+            fi
             
             # Check if ecosystem.config.js changed (handle first commit)
             if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
