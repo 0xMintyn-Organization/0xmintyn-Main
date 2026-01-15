@@ -4,6 +4,25 @@ Complete guide to remove existing installation and set up fresh from master bran
 
 ## Quick Start (Automated)
 
+**With GitHub Token (Recommended):**
+```bash
+# On your VPS - Set your token
+export GIT_TOKEN="your_github_token_here"
+export GIT_USERNAME="your_github_username"
+
+# Run the script
+cd /var/www/0xmintyn-Main/scripts
+chmod +x clean-reinstall-master.sh
+sudo ./clean-reinstall-master.sh
+```
+
+**Or with token in one command:**
+```bash
+# On your VPS
+GIT_USERNAME="your_username" GIT_TOKEN="your_token" sudo -E ./clean-reinstall-master.sh
+```
+
+**Without token (will prompt or use SSH):**
 ```bash
 # On your VPS
 cd /var/www/0xmintyn-Main/scripts
@@ -52,12 +71,30 @@ cd /var/www/0xmintyn-Main
 
 ### Step 4: Clone Repository
 
-```bash
-# Clone from GitHub
-git clone https://github.com/0xMintyn-Organization/0xmintyn-Main.git .
+**Option A: Using GitHub Token (Recommended)**
 
-# Or if using SSH
-# git clone git@github.com:0xMintyn-Organization/0xmintyn-Main.git .
+```bash
+# Clone with token (replace YOUR_TOKEN with your actual token)
+git clone https://YOUR_TOKEN@github.com/0xMintyn-Organization/0xmintyn-Main.git .
+
+# Or set token in URL directly
+GIT_TOKEN="your_github_token_here"
+git clone https://${GIT_TOKEN}@github.com/0xMintyn-Organization/0xmintyn-Main.git .
+```
+
+**Option B: Using SSH (If SSH key is set up)**
+
+```bash
+# Clone using SSH
+git clone git@github.com:0xMintyn-Organization/0xmintyn-Main.git .
+```
+
+**Option C: Using Existing Git Credentials**
+
+```bash
+# If you've already configured git credentials
+git clone https://github.com/0xMintyn-Organization/0xmintyn-Main.git .
+# It will use stored credentials
 ```
 
 ### Step 5: Checkout Master Branch

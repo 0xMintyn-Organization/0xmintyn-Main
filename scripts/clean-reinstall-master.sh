@@ -60,7 +60,30 @@ echo "✅ Created $PROJECT_DIR"
 
 echo ""
 echo "Step 4: Cloning repository..."
-git clone https://github.com/0xMintyn-Organization/0xmintyn-Main.git .
+
+# Check if GIT_TOKEN environment variable is set
+if [ -n "$GIT_TOKEN" ]; then
+    echo "Using provided GitHub token..."
+    git clone https://${GIT_TOKEN}@github.com/0xMintyn-Organization/0xmintyn-Main.git .
+# Check if GIT_USERNAME and GIT_TOKEN are set together
+elif [ -n "$GIT_USERNAME" ] && [ -n "$GIT_TOKEN" ]; then
+    echo "Using GitHub token with username..."
+    git clone https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/0xMintyn-Organization/0xmintyn-Main.git .
+# Try SSH first (if SSH key is set up)
+elif ssh -T git@github.com 2>&1 | grep -q "successfully authenticated" 2>/dev/null; then
+    echo "Using SSH to clone..."
+    git clone git@github.com:0xMintyn-Organization/0xmintyn-Main.git .
+else
+    # Use HTTPS - will use cached credentials or prompt
+    echo "Using HTTPS to clone (will use cached credentials if available)..."
+    git clone https://github.com/0xMintyn-Organization/0xmintyn-Main.git . 2>&1 || {
+        echo ""
+        echo "⚠️  Clone failed. Please provide GitHub token:"
+        echo "   export GIT_TOKEN='your_token_here'"
+        echo "   Then run this script again"
+        exit 1
+    }
+fi
 
 echo ""
 echo "Step 5: Checking out master branch..."
