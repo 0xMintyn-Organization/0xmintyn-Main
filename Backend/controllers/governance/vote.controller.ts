@@ -4,16 +4,20 @@ import Proposal from '../../models/governance/proposal.model';
 import User from '../../models/user.mode';
 import { CatchAsyncError } from "../../middleware/catchAsyncError";
 import ErrorHandler from "../../utils/errorHandler";
+import logger from '../../utils/logger';
 
 // Cast a vote on a proposal
 export const castVote = CatchAsyncError(async (req: Request, res: Response) => {
   const { proposalId } = req.params;
   const { vote, reason } = req.body;
   
-  console.log('=== VOTE REQUEST DEBUG ===');
-  console.log('Request params:', req.params);
-  console.log('Request body:', req.body);
-  console.log('Proposal ID from params:', proposalId);
+  logger.operation('castVote', {
+    proposalId,
+    vote,
+    hasReason: !!reason,
+    params: req.params,
+    body: req.body
+  });
 
   // Validate vote choice
   if (!['yes', 'no', 'abstain'].includes(vote)) {
@@ -58,15 +62,15 @@ export const castVote = CatchAsyncError(async (req: Request, res: Response) => {
   }
 
   // Check if user has already voted
-  console.log('=== VOTE CHECK DEBUG ===');
-  console.log('Proposal ID:', proposalId);
-  console.log('User ID from request:', req.user?.id);
-  console.log('User _id from request:', req.user?._id);
-  console.log('User ID type:', typeof req.user?.id);
-  console.log('User _id type:', typeof req.user?._id);
-  
-  // Use both id and _id to be safe
-  console.log('Final user ID being used:', userId);
+  logger.operation('castVote', {
+    proposalId,
+    userId,
+    userIdType: typeof userId,
+    userFromRequest: {
+      id: req.user?.id,
+      _id: req.user?._id
+    }
+  });
   
   const existingVote = await Vote.findOne({
     proposalId,
@@ -75,21 +79,27 @@ export const castVote = CatchAsyncError(async (req: Request, res: Response) => {
   
   // Also check all votes for this proposal for debugging
   const allVotesForProposal = await Vote.find({ proposalId });
-  console.log('All votes for this proposal:', allVotesForProposal.length);
-  console.log('All votes details:', allVotesForProposal.map(v => ({ id: v._id, voterId: v.voterId, vote: v.vote })));
-  
-  console.log('Existing vote found:', existingVote);
-  console.log('Existing vote ID:', existingVote?._id);
+  logger.debug('Vote check results', {
+    proposalId,
+    userId,
+    existingVoteFound: !!existingVote,
+    totalVotesForProposal: allVotesForProposal.length,
+    existingVoteId: existingVote?._id
+  });
 
   if (existingVote) {
-    console.log('User has already voted, returning error');
+    logger.warn('Duplicate vote attempt', {
+      proposalId,
+      userId,
+      existingVoteId: existingVote._id
+    });
     return res.status(400).json({
       success: false,
       message: 'You have already voted on this proposal. Use the update vote endpoint to change your vote.'
     });
   }
   
-  console.log('No existing vote found, proceeding with vote creation');
+  logger.debug('No existing vote found, proceeding with vote creation', { proposalId, userId });
 
   // Get user's voting power (for now, we'll use a default value)
   // In a real implementation, this would be based on token holdings
@@ -115,13 +125,20 @@ export const castVote = CatchAsyncError(async (req: Request, res: Response) => {
     reason
   };
 
-  console.log('=== VOTE CREATION DEBUG ===');
-  console.log('Vote data being created:', voteData);
-  console.log('Proposal ID type:', typeof proposalId);
-  console.log('Voter ID type:', typeof userId);
+  logger.debug('Creating vote', {
+    voteData,
+    proposalIdType: typeof proposalId,
+    voterIdType: typeof userId
+  });
 
   try {
     const newVote = await Vote.create(voteData);
+    logger.operation('voteCreated', {
+      voteId: newVote._id,
+      proposalId,
+      voterId: userId,
+      vote
+    });
     console.log('Vote created successfully:', newVote._id);
 
     // Update proposal vote counts
@@ -421,11 +438,17 @@ export const getVotingStats = CatchAsyncError(async (req: Request, res: Response
   let userVote = null;
   const userId = req.user?.id || req.user?._id;
   if (userId) {
-    console.log('=== VOTING STATS DEBUG ===');
-    console.log('Proposal ID:', proposalId);
-    console.log('User ID for stats:', userId);
+    logger.debug('Getting voting stats', {
+      proposalId,
+      userId
+    });
     userVote = await Vote.findOne({ proposalId, voterId: userId });
-    console.log('User vote found in stats:', userVote);
+    logger.debug('User vote lookup for stats', {
+      proposalId,
+      userId,
+      voteFound: !!userVote,
+      voteId: userVote?._id
+    });
   }
 
   res.status(200).json({

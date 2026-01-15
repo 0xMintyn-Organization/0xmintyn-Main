@@ -1,10 +1,8 @@
-name: CI/CD Pipeline
+name: Smart Deploy
 
 on:
   push:
     branches: [ master, mukhtiar, dev ]
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
     inputs:
       branch:
@@ -17,220 +15,173 @@ on:
           - mukhtiar
           - dev
 
-env:
-  NODE_VERSION: '18.x'
-
 jobs:
-  # Build and test job
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          # Cache will be set up separately for each directory
-
-      - name: Cache Backend dependencies
-        uses: actions/cache@v4
-        with:
-          path: Backend/node_modules
-          key: ${{ runner.os }}-backend-${{ hashFiles('Backend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-backend-
-        continue-on-error: true
-
-      - name: Install Backend dependencies
-        working-directory: ./Backend
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
-
-      - name: Build Backend
-        working-directory: ./Backend
-        run: npm run build
-        continue-on-error: true
-
-      - name: Cache Frontend dependencies
-        uses: actions/cache@v4
-        with:
-          path: Frontend/node_modules
-          key: ${{ runner.os }}-frontend-${{ hashFiles('Frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-frontend-
-        continue-on-error: true
-
-      - name: Install Frontend dependencies
-        working-directory: ./Frontend
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
-
-      - name: Build Frontend
-        working-directory: ./Frontend
-        run: npm run build
-        env:
-          NEXT_PUBLIC_SERVER_URI: ${{ secrets.NEXT_PUBLIC_SERVER_URI || 'https://appbackend.0xmintyn.com/api/v1' }}
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            Backend/build/
-            Frontend/.next/
-          retention-days: 1
-
-  # Deploy job (only on push to main branches)
   deploy:
-    needs: build
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (needs.build.result == 'success' || needs.build.result == 'failure')
-    concurrency:
-      group: deploy-${{ github.ref }}
-      cancel-in-progress: false
+    timeout-minutes: 10
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          fetch-depth: 2
 
-      - name: Deploy to Server
+      - name: Detect changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+            echo "frontend=true" >> $GITHUB_OUTPUT
+            echo "needs_install_backend=true" >> $GITHUB_OUTPUT
+            echo "needs_install_frontend=true" >> $GITHUB_OUTPUT
+          else
+            # Handle first commit (no HEAD~1)
+            if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+              BACKEND_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -E "^Backend/" | wc -l)
+              FRONTEND_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -E "^Frontend/" | wc -l)
+              BACKEND_PKG_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -E "Backend/(package\.json|package-lock\.json)" | wc -l)
+              FRONTEND_PKG_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -E "Frontend/(package\.json|package-lock\.json)" | wc -l)
+              ROOT_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -E "^(ecosystem\.config\.js|scripts/)" | wc -l)
+            else
+              # First commit - deploy everything
+              BACKEND_CHANGED=1
+              FRONTEND_CHANGED=1
+              BACKEND_PKG_CHANGED=1
+              FRONTEND_PKG_CHANGED=1
+              ROOT_CHANGED=0
+            fi
+            
+            [ "$BACKEND_CHANGED" -gt 0 ] || [ "$ROOT_CHANGED" -gt 0 ] && echo "backend=true" >> $GITHUB_OUTPUT || true
+            [ "$FRONTEND_CHANGED" -gt 0 ] || [ "$ROOT_CHANGED" -gt 0 ] && echo "frontend=true" >> $GITHUB_OUTPUT || true
+            [ "$BACKEND_PKG_CHANGED" -gt 0 ] && echo "needs_install_backend=true" >> $GITHUB_OUTPUT || true
+            [ "$FRONTEND_PKG_CHANGED" -gt 0 ] && echo "needs_install_frontend=true" >> $GITHUB_OUTPUT || true
+          fi
+          
+          echo ""
+          echo "📋 Change Detection Summary:"
+          echo "  Backend changed: $([ -n "${{ steps.changes.outputs.backend }}" ] && echo "yes" || echo "no")"
+          echo "  Frontend changed: $([ -n "${{ steps.changes.outputs.frontend }}" ] && echo "yes" || echo "no")"
+          echo "  Install Backend: $([ -n "${{ steps.changes.outputs.needs_install_backend }}" ] && echo "yes" || echo "no")"
+          echo "  Install Frontend: $([ -n "${{ steps.changes.outputs.needs_install_frontend }}" ] && echo "yes" || echo "no")"
+
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
             set -e
             
-            # Configuration
             PROJECT_DIR="/var/www/0xmintyn-Main"
             BRANCH="${{ github.ref_name }}"
+            NODE_PATH="/root/.nvm/versions/node/v24.12.0/bin"
+            PM2_CMD="$NODE_PATH/pm2"
             
-            echo "🚀 Starting deployment for branch: $BRANCH"
-            echo "📁 Project directory: $PROJECT_DIR"
-            
-            # Navigate to project directory
-            cd $PROJECT_DIR || { echo "❌ Project directory not found!"; exit 1; }
-            
-            # Configure git safe directory
-            git config --global --add safe.directory $PROJECT_DIR
-            
-            # Stash any local changes
-            echo "📦 Stashing local changes..."
-            git stash || true
+            echo "🚀 Smart Deployment - Branch: $BRANCH"
+            cd $PROJECT_DIR
+            git config --global --add safe.directory $PROJECT_DIR || true
             
             # Pull latest code
-            echo "⬇️  Pulling latest code from $BRANCH..."
+            echo "⬇️  Pulling latest code..."
             git fetch origin
-            git checkout $BRANCH || git checkout -b $BRANCH origin/$BRANCH
-            git pull origin $BRANCH || { echo "⚠️  Git pull failed, continuing with existing code..."; }
+            git checkout $BRANCH 2>/dev/null || git checkout -b $BRANCH origin/$BRANCH
+            git pull origin $BRANCH || echo "⚠️  Pull had conflicts, continuing..."
             
-            # Backend Deployment
-            echo "🔧 Building Backend..."
-            cd $PROJECT_DIR/Backend
+            # Get change flags
+            BACKEND_UPDATE="${{ steps.changes.outputs.backend }}"
+            FRONTEND_UPDATE="${{ steps.changes.outputs.frontend }}"
+            INSTALL_BACKEND="${{ steps.changes.outputs.needs_install_backend }}"
+            INSTALL_FRONTEND="${{ steps.changes.outputs.needs_install_frontend }}"
             
-            # Install dependencies
-            echo "📥 Installing Backend dependencies..."
-            npm ci --production=false || npm install
-            
-            # Build TypeScript
-            echo "🔨 Building Backend TypeScript..."
-            npm run build || echo "⚠️  Backend build failed, but continuing..."
-            
-            # Frontend Deployment
-            echo "🎨 Building Frontend..."
-            cd $PROJECT_DIR/Frontend
-            
-            # Install dependencies
-            echo "📥 Installing Frontend dependencies..."
-            npm ci --production=false || npm install
-            
-            # Build Next.js
-            echo "🔨 Building Frontend..."
-            NODE_ENV=production npm run build || { echo "❌ Frontend build failed!"; exit 1; }
-            
-            # Restart services with PM2
-            echo "🔄 Restarting services..."
-            
-            # Check if PM2 is installed
-            if ! command -v pm2 &> /dev/null; then
-              echo "⚠️  PM2 not found, installing..."
-              npm install -g pm2 || echo "⚠️  PM2 installation failed"
+            # Check if ecosystem.config.js changed (handle first commit)
+            if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+              ECOSYSTEM_CHANGED=$(git diff HEAD~1 HEAD --name-only 2>/dev/null | grep -q "ecosystem.config.js" && echo "true" || echo "false")
+            else
+              ECOSYSTEM_CHANGED="false"
             fi
             
-            # Restart Backend
-            if pm2 list | grep -q "backend"; then
-              echo "🔄 Restarting Backend PM2 process..."
-              pm2 restart backend || pm2 start Backend/build/server.js --name backend || echo "⚠️  Backend restart failed"
-            else
-              echo "🆕 Starting Backend PM2 process..."
+            # Backend deployment
+            if [ "$BACKEND_UPDATE" = "true" ] || [ "$ECOSYSTEM_CHANGED" = "true" ]; then
+              echo "🔧 Updating Backend..."
               cd $PROJECT_DIR/Backend
-              pm2 start build/server.js --name backend || echo "⚠️  Backend start failed"
+              
+              if [ "$INSTALL_BACKEND" = "true" ]; then
+                echo "📥 Installing Backend dependencies..."
+                $NODE_PATH/npm install --production=false --prefer-offline --no-audit --silent
+              fi
+              
+              echo "🔄 Restarting Backend..."
+              if $PM2_CMD list | grep -q "backend.*online"; then
+                $PM2_CMD restart backend
+              else
+                echo "Backend not running, starting from ecosystem.config.js..."
+                cd $PROJECT_DIR
+                $PM2_CMD start ecosystem.config.js --only backend
+              fi
+            else
+              echo "⏭️  Backend unchanged, skipping"
             fi
             
-            # Restart Frontend
-            if pm2 list | grep -q "frontend"; then
-              echo "🔄 Restarting Frontend PM2 process..."
-              pm2 restart frontend || pm2 start Frontend/server.js --name frontend || echo "⚠️  Frontend restart failed"
-            else
-              echo "🆕 Starting Frontend PM2 process..."
+            # Frontend deployment
+            if [ "$FRONTEND_UPDATE" = "true" ] || [ "$ECOSYSTEM_CHANGED" = "true" ]; then
+              echo "🎨 Updating Frontend..."
               cd $PROJECT_DIR/Frontend
-              pm2 start npm --name frontend -- start || echo "⚠️  Frontend start failed"
-            fi
-            
-            # Save PM2 configuration
-            pm2 save || true
-            
-            # Show PM2 status
-            echo "📊 PM2 Status:"
-            pm2 list
-            
-            # Health check
-            echo "🏥 Running health checks..."
-            sleep 5
-            
-            # Check if services are running
-            if pm2 list | grep -q "backend.*online"; then
-              echo "✅ Backend is running"
+              
+              if [ "$INSTALL_FRONTEND" = "true" ]; then
+                echo "📥 Installing Frontend dependencies..."
+                $NODE_PATH/npm install --production=false --prefer-offline --no-audit --silent
+              fi
+              
+              echo "🔄 Restarting Frontend..."
+              if $PM2_CMD list | grep -q "frontend.*online"; then
+                $PM2_CMD restart frontend
+              else
+                echo "Frontend not running, starting from ecosystem.config.js..."
+                cd $PROJECT_DIR
+                $PM2_CMD start ecosystem.config.js --only frontend
+              fi
             else
-              echo "❌ Backend is not running!"
-              pm2 logs backend --lines 20
+              echo "⏭️  Frontend unchanged, skipping"
             fi
             
-            if pm2 list | grep -q "frontend.*online"; then
-              echo "✅ Frontend is running"
-            else
-              echo "❌ Frontend is not running!"
-              pm2 logs frontend --lines 20
+            # Reload ecosystem.config.js if changed
+            if [ "$ECOSYSTEM_CHANGED" = "true" ]; then
+              echo "⚙️  ecosystem.config.js changed, reloading PM2..."
+              $PM2_CMD delete all 2>/dev/null || true
+              sleep 2
+              cd $PROJECT_DIR
+              $PM2_CMD start ecosystem.config.js
             fi
             
-            echo "✅ Deployment complete for branch: $BRANCH"
-            echo "🌐 Services should be available at:"
-            echo "   - Frontend: https://app.0xmintyn.com"
-            echo "   - Backend: https://appbackend.0xmintyn.com"
-
-      - name: Deployment Summary
-        if: always()
-        run: |
-          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Author**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+            # Save PM2 state
+            $PM2_CMD save || true
+            
+            # Wait for services to stabilize
+            sleep 3
+            
+            # Status check with health verification
+            echo ""
+            echo "📊 Final Status:"
+            $PM2_CMD list
+            
+            # Verify services are online
+            BACKEND_STATUS=$($PM2_CMD list | grep "backend" | grep -q "online" && echo "✅" || echo "❌")
+            FRONTEND_STATUS=$($PM2_CMD list | grep "frontend" | grep -q "online" && echo "✅" || echo "❌")
+            
+            echo ""
+            echo "Health Check:"
+            echo "  Backend: $BACKEND_STATUS"
+            echo "  Frontend: $FRONTEND_STATUS"
+            
+            if [ "$BACKEND_STATUS" = "❌" ] || [ "$FRONTEND_STATUS" = "❌" ]; then
+              echo ""
+              echo "⚠️  Some services failed to start. Check logs:"
+              [ "$BACKEND_STATUS" = "❌" ] && $PM2_CMD logs backend --lines 10 --nostream || true
+              [ "$FRONTEND_STATUS" = "❌" ] && $PM2_CMD logs frontend --lines 10 --nostream || true
+              exit 1
+            fi
+            
+            echo ""
+            echo "✅ Deployment complete and verified!"

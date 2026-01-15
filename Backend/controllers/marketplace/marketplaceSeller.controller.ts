@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
 import UserModel from "../../models/user.mode";
 import { CatchAsyncError } from "../../middleware/catchAsyncError";
+import logger from "../../utils/logger";
 
 // Create marketplace seller profile
 export const createMarketplaceSeller = async (req: Request, res: Response) => {
@@ -77,7 +78,11 @@ export const createMarketplaceSeller = async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    console.error("Error creating seller profile:", error);
+    logger.error("Error creating seller profile", {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?._id
+    });
     res.status(500).json({
       success: false,
       message: error.message || "Failed to create seller profile"
@@ -90,8 +95,7 @@ export const getMarketplaceSeller = async (req: Request, res: Response) => {
   try {
     const userId = req.user?._id;
     
-    console.log('Getting seller profile for user ID:', userId);
-    console.log('User object:', req.user);
+    logger.operation('getMarketplaceSeller', { userId });
     
     if (!userId) {
       return res.status(401).json({
@@ -103,17 +107,18 @@ export const getMarketplaceSeller = async (req: Request, res: Response) => {
     const seller = await MarketplaceSellerModel.findOne({ userId })
       .populate('userId', 'name email avatar');
     
-    console.log('Found seller:', seller ? 'Yes' : 'No');
+    logger.debug('Seller profile lookup', { userId, found: !!seller });
 
     if (!seller) {
-      console.log('No seller profile found for user ID:', userId);
+      logger.debug('No seller profile found', { userId });
       return res.status(404).json({
         success: false,
         message: "Seller profile not found"
       });
     }
 
-    console.log('Seller profile data:', {
+    logger.debug('Seller profile retrieved', {
+      sellerId: seller._id,
       rating: seller.rating,
       reviewCount: seller.reviewCount,
       totalEarnings: seller.totalEarnings,
@@ -126,7 +131,11 @@ export const getMarketplaceSeller = async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    console.error("Error fetching seller profile:", error);
+    logger.error("Error fetching seller profile", {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?._id
+    });
     res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch seller profile"

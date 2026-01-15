@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
-import MuxPlayer from "@mux/mux-player-react";
+import YouTubePlayer from "@/components/YouTubePlayer";
+import { isValidYouTubeUrl } from "@/lib/youtubeUtils";
 import CourseAccessGuard from "@/components/CourseAccessGuard";
 
 import {
@@ -354,9 +355,9 @@ export default function CoursePlayerPage() {
 
   return (
     <CourseAccessGuard requiredAccess={['student', 'instructor', 'admin']}>
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex">
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex overflow-hidden">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? "w-96" : "w-0"} transition-all duration-300 bg-white dark:bg-zinc-800 border-r border-gray-200 dark:border-zinc-700 overflow-hidden`}>
+      <div className={`${sidebarOpen ? "w-96" : "w-0"} transition-all duration-300 bg-white dark:bg-zinc-800 border-r border-gray-200 dark:border-zinc-700 overflow-hidden flex-shrink-0`}>
         <div className="h-full flex flex-col">
           <div className="p-4 border-b border-gray-200 dark:border-zinc-700">
             <div className="flex items-center justify-between mb-4">
@@ -461,19 +462,19 @@ export default function CoursePlayerPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 p-4">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 p-4 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <div className="flex items-center gap-4 min-w-0">
+              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="flex-shrink-0">
                 <Menu className="w-5 h-5" />
               </Button>
-              <div>
-                <h1 className="text-xl font-semibold">{currentLecture?.title}</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{courseName}</p>
+              <div className="min-w-0">
+                <h1 className="text-xl font-semibold truncate">{currentLecture?.title || "Loading..."}</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{courseName}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button variant="ghost" size="icon" onClick={() => setIsBookmarked(!isBookmarked)}>
                 <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
               </Button>
@@ -484,27 +485,34 @@ export default function CoursePlayerPage() {
         </div>
 
         {/* Video */}
-        <div className="flex-1 overflow-y-auto p-6 max-w-6xl mx-auto">
-          {currentLecture?.type === "video" && currentLecture.videoUrl && (
-            <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6">
-              <MuxPlayer
-                src={currentLecture.videoUrl}
-                streamType="on-demand"
-                metadata={{
-                  video_title: currentLecture.title,
-                  viewer_user_id: "user-123"
-                }}
-                autoPlay={false}
-                onEnded={() => {
-                  console.log("Video ended for:", currentLecture?.title);
-                  if (currentLecture && !currentLecture.isCompleted) {
-                    console.log("Auto-marking lecture as complete:", currentLecture.id);
-                    markLectureAsComplete(currentLecture.id);
-                  } else {
-                    console.log("Lecture already completed or no current lecture");
-                  }
-                }}
-              />
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-6xl mx-auto w-full">
+          {currentLecture?.type === "video" && currentLecture.videoUrl ? (
+            <div className="mb-6">
+              {isValidYouTubeUrl(currentLecture.videoUrl) ? (
+                <div className="w-full rounded-lg overflow-hidden shadow-lg">
+                  <YouTubePlayer
+                    url={currentLecture.videoUrl}
+                    title={currentLecture.title}
+                    className="w-full"
+                    onEnded={() => {
+                      console.log("Video ended for:", currentLecture?.title);
+                      if (currentLecture && !currentLecture.isCompleted) {
+                        console.log("Auto-marking lecture as complete:", currentLecture.id);
+                        markLectureAsComplete(currentLecture.id);
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="aspect-video bg-black rounded-lg flex items-center justify-center text-white">
+                  <p className="text-center p-4">Invalid YouTube URL: {currentLecture.videoUrl}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mb-6 aspect-video bg-gray-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-400">Select a lecture to start watching</p>
             </div>
           )}
 
@@ -578,7 +586,11 @@ export default function CoursePlayerPage() {
               <Card>
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold mb-4">About this lecture</h3>
-                  <p className="text-zinc-700 dark:text-gray-300">{currentLecture?.description}</p>
+                  {currentLecture?.description ? (
+                    <p className="text-zinc-700 dark:text-gray-300 whitespace-pre-wrap">{currentLecture.description}</p>
+                  ) : (
+                    <p className="text-zinc-500 dark:text-gray-500 italic">No description available for this lecture.</p>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -620,6 +632,7 @@ export default function CoursePlayerPage() {
               </CardContent>
             </Card>
           )}
+          </div>
         </div>
       </div>
     </div>

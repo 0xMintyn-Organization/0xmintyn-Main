@@ -23,16 +23,18 @@ import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
 import { useRegisterMutation } from "@/redux/features/auth/authApi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { SocialLoginButton } from "@/components/MyProfile/SocialLoginButton";
 import { FcGoogle } from "react-icons/fc";
-import { Github, Twitter, Linkedin, Eye, EyeOff } from "lucide-react";
+import { Github, Twitter, Linkedin, Eye, EyeOff, Loader2, Wallet } from "lucide-react";
 import { FaDiscord } from "react-icons/fa";
 import useAuth from "@/hooks/userAuth";
 import Spinner from "@/components/Spinner";
 import CustomCaptcha from "@/components/CustomCaptcha";
+import { WalletConnectionStep } from "@/components/Registration/WalletConnectionStep";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 
 
@@ -52,6 +54,11 @@ function UserRegistartionForm() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [honeypot, setHoneypot] = useState("");
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [walletProvider, setWalletProvider] = useState<string | null>(null);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [pendingRegistrationData, setPendingRegistrationData] = useState<z.infer<typeof userSchema> | null>(null);
 
   // 🧠 Redirect if already logged in (but only if actually authenticated with real user data)
   useEffect(() => {
@@ -270,8 +277,8 @@ function UserRegistartionForm() {
   const nationality = form.watch("nationality");
   const dateOfBirth = form.watch("dateOfBirth");
 
-  // Calculate age from DOB
-  const calculateAge = (dob: string): number | null => {
+  // Calculate age from DOB - moved outside to avoid recreation
+  const calculateAge = useCallback((dob: string): number | null => {
     if (!dob) return null;
     const date = new Date(dob);
     if (isNaN(date.getTime())) return null;
@@ -280,7 +287,7 @@ function UserRegistartionForm() {
     const monthDiff = today.getMonth() - date.getMonth();
     const dayDiff = today.getDate() - date.getDate();
     return monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-  };
+  }, []);
 
   const calculatedAge = calculateAge(dateOfBirth);
 
@@ -307,21 +314,59 @@ function UserRegistartionForm() {
       return;
     }
 
+    // Store form data and show wallet connection modal
+    setPendingRegistrationData(values);
+    setShowWalletModal(true);
+  }
+
+  // Handle wallet connection completion and proceed with registration
+  const handleWalletConnectedAndRegister = useCallback(async (address: string, provider: string) => {
+    if (!pendingRegistrationData) {
+      toast({
+        title: "Error",
+        description: "Registration data is missing. Please try again.",
+        variant: "destructive",
+      });
+      setShowWalletModal(false);
+      return;
+    }
+
     setIsSubmitting(true);
     setEmailError(null);
     setUsernameError(null);
+    setWalletError(null);
+    setWalletAddress(address);
+    setWalletProvider(provider);
+    setShowWalletModal(false);
+
     try {
       // Calculate age from DOB for backend compatibility
-      const age = calculatedAge || 0;
+      const dob = pendingRegistrationData.dateOfBirth;
+      const age = dob ? calculateAge(dob) : 0;
+      
       const registrationData = {
-        ...values,
-        age, // Include calculated age for backend
+        ...pendingRegistrationData,
+        age: age || 0, // Include calculated age for backend
         captchaToken, // Include CAPTCHA token
+        walletAddress: address, // Include wallet address
+        walletProvider: provider, // Include wallet provider
       };
       await register(registrationData).unwrap();
     } catch (err) {
       // Error handling is done in useEffect
+      setIsSubmitting(false);
+    } finally {
+      setPendingRegistrationData(null);
     }
+  }, [pendingRegistrationData, captchaToken, register, toast, calculateAge]);
+
+  const handleWalletError = (error: string) => {
+    setWalletError(error);
+    toast({
+      title: "Connection Error",
+      description: error,
+      variant: "destructive",
+    });
   }
 
   // Clear errors when user starts typing
@@ -770,6 +815,58 @@ function UserRegistartionForm() {
           </span>
         </div>
       </Form>
+
+      {/* Wallet Connection Modal - Shows after clicking Register */}
+      <Dialog 
+        open={showWalletModal} 
+        onOpenChange={(open) => {
+          // Prevent closing during registration
+          if (!open && !isSubmitting) {
+            setShowWalletModal(false);
+            setPendingRegistrationData(null);
+            setWalletError(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]" onInteractOutside={(e) => {
+          // Prevent closing by clicking outside during registration
+          if (isSubmitting) {
+            e.preventDefault();
+          }
+        }}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-green-600" />
+              Connect Your Wallet
+            </DialogTitle>
+            <DialogDescription>
+              To complete your registration, please connect your Phantom wallet. This is required for UBI platform access.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            <WalletConnectionStep
+              onWalletConnected={handleWalletConnectedAndRegister}
+              onError={handleWalletError}
+            />
+          </div>
+
+          {walletError && (
+            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{walletError}</p>
+            </div>
+          )}
+
+          {isSubmitting && (
+            <div className="mt-4 flex items-center justify-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <Loader2 className="w-5 h-5 animate-spin text-green-600 mr-2" />
+              <span className="text-sm text-green-700 dark:text-green-300 font-medium">
+                Completing registration...
+              </span>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

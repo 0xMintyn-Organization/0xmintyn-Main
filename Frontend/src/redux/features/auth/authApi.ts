@@ -12,7 +12,7 @@ export const authApi = apiSlice.injectEndpoints({
         //    all endpoints here 
         register: builder.mutation<RegistrationResponse, RegistrationData>({
             query: (data) => ({
-                url: "user/register",
+                url: "register",
                 method: "POST",
                 body: data,
                 credentials: "include" as const,
@@ -42,7 +42,7 @@ export const authApi = apiSlice.injectEndpoints({
             // Supports both code-based and link-based activation.
             // If activation_code is null/undefined, backend will use token-only flow.
             query: ({ activation_token, activation_code }) => ({
-                url: activation_code != null ? `user/activate-user` : `user/activate-link`,
+                url: activation_code != null ? `activate-user` : `activate-link`,
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -57,7 +57,7 @@ export const authApi = apiSlice.injectEndpoints({
         }),
         login: builder.mutation({
             query: ({ email, password }) => ({
-                url: "user/login",
+                url: "login",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -93,7 +93,7 @@ export const authApi = apiSlice.injectEndpoints({
         }),
         socialAuth: builder.mutation({
             query: ({ email, avatar }) => ({
-                url: "user/social-auth",
+                url: "social-auth",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -130,7 +130,7 @@ export const authApi = apiSlice.injectEndpoints({
         
         logOut: builder.query({
             query: () => ({
-                url: "user/logout",
+                url: "logout",
                 method: "GET",
                 credentials: "include" as const,
             }),
@@ -150,9 +150,22 @@ export const authApi = apiSlice.injectEndpoints({
                     }
                     
                     // Wait for backend logout to complete
-                    await queryFulfilled;
-                } catch (error) {
-                    console.log(error);
+                    // Suppress 400 errors when user is not logged in (expected behavior)
+                    try {
+                        await queryFulfilled;
+                    } catch (error: any) {
+                        // 400 error is expected when user is not logged in - silently handle it
+                        if (error?.status === 400 || error?.error?.status === 400) {
+                            // User was already logged out, this is fine
+                            return;
+                        }
+                        throw error; // Re-throw other errors
+                    }
+                } catch (error: any) {
+                    // Only log non-400 errors (400 means user wasn't logged in, which is fine)
+                    if (error?.status !== 400 && error?.error?.status !== 400) {
+                        console.log('Logout error:', error);
+                    }
                     // Even on error, clear local state
                     dispatch(userLoggedOut());
                     if (typeof window !== 'undefined') {
@@ -165,7 +178,7 @@ export const authApi = apiSlice.injectEndpoints({
 
         forgotPassword: builder.mutation({
             query: ({ email }) => ({
-                url: "user/forgot-password",
+                url: "forgot-password",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -177,7 +190,7 @@ export const authApi = apiSlice.injectEndpoints({
 
         resetPassword: builder.mutation({
             query: ({ token, newPassword }) => ({
-                url: "user/reset-password",
+                url: "reset-password",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

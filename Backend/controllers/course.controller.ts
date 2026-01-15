@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { CourseModel } from "../models/course.model";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/errorHandler";
+import { isValidYouTubeUrl, validateCourseData } from "../utils/youtubeValidator";
+import { uploadCourseThumbnail, extractPublicIdFromUrl, deleteFromCloudinary } from "../utils/cloudinary";
+import logger from "../utils/logger";
 
 // Create a new course (Instructor)
 export const createCourse = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
@@ -31,14 +34,27 @@ export const createCourse = CatchAsyncError(async (req: Request, res: Response, 
     return next(new ErrorHandler("Please upload a course thumbnail image", 400));
   }
 
-  const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
-  const thumbnail = `${serverUrl}/uploads/files/${req.file.filename}`;
+  // Upload thumbnail to Cloudinary
+  const thumbnail = await uploadCourseThumbnail(req.file.buffer, createdBy?.toString());
 
   // Parse JSON body fields for arrays
   const parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
   const parsedBenefits = typeof benefits === "string" ? JSON.parse(benefits) : benefits;
   const parsedPrerequisites = typeof prerequisites === "string" ? JSON.parse(prerequisites) : prerequisites;
   const parsedCourseData = typeof courseData === "string" ? JSON.parse(courseData) : courseData;
+
+  // Validate demoUrl is a valid YouTube URL
+  if (demoUrl && typeof demoUrl === "string" && !isValidYouTubeUrl(demoUrl)) {
+    logger.warn("Invalid YouTube URL for demoUrl", { demoUrl, userId: createdBy });
+    return next(new ErrorHandler("Please provide a valid YouTube URL for the demo video", 400));
+  }
+
+  // Validate courseData structure and YouTube URLs
+  const courseDataValidation = validateCourseData(parsedCourseData);
+  if (!courseDataValidation.valid) {
+    logger.warn("Invalid course data structure", { errors: courseDataValidation.errors, userId: createdBy });
+    return next(new ErrorHandler(`Invalid course data: ${courseDataValidation.errors.join(", ")}`, 400));
+  }
 
   const course = await CourseModel.create({
     name,
@@ -192,6 +208,21 @@ export const updateCourse = CatchAsyncError(
     const parsedPrerequisites = typeof prerequisites === "string" ? JSON.parse(prerequisites) : prerequisites;
     const parsedCourseData = typeof courseData === "string" ? JSON.parse(courseData) : courseData;
 
+    // Validate demoUrl if provided
+    if (demoUrl && typeof demoUrl === "string" && !isValidYouTubeUrl(demoUrl)) {
+      logger.warn("Invalid YouTube URL for demoUrl in update", { demoUrl, courseId, userId: req.user?._id });
+      return next(new ErrorHandler("Please provide a valid YouTube URL for the demo video", 400));
+    }
+
+    // Validate courseData structure and YouTube URLs if provided
+    if (parsedCourseData) {
+      const courseDataValidation = validateCourseData(parsedCourseData);
+      if (!courseDataValidation.valid) {
+        logger.warn("Invalid course data structure in update", { errors: courseDataValidation.errors, courseId, userId: req.user?._id });
+        return next(new ErrorHandler(`Invalid course data: ${courseDataValidation.errors.join(", ")}`, 400));
+      }
+    }
+
     // Update fields
     if (name) course.name = name;
     if (description) course.description = description;
@@ -206,8 +237,23 @@ export const updateCourse = CatchAsyncError(
 
     // Handle thumbnail update if provided
     if (req.file) {
-      const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
-      course.thumbnail = `${serverUrl}/uploads/files/${req.file.filename}`;
+      // Delete old thumbnail from Cloudinary if exists
+      if (course.thumbnail) {
+        const oldPublicId = extractPublicIdFromUrl(course.thumbnail);
+        if (oldPublicId) {
+          try {
+            await deleteFromCloudinary(oldPublicId, 'image');
+          } catch (error) {
+            logger.warn('Failed to delete old course thumbnail', { 
+              publicId: oldPublicId, 
+              error: (error as Error).message 
+            });
+          }
+        }
+      }
+      
+      // Upload new thumbnail to Cloudinary
+      course.thumbnail = await uploadCourseThumbnail(req.file.buffer, courseId);
     }
 
     await course.save();
@@ -233,6 +279,21 @@ export const deleteCourse = CatchAsyncError(
     // Check if user owns the course
     if (course.createdBy.toString() !== req.user?._id.toString()) {
       return next(new ErrorHandler("You are not authorized to delete this course", 403));
+    }
+
+    // Delete thumbnail from Cloudinary
+    if (course.thumbnail) {
+      const publicId = extractPublicIdFromUrl(course.thumbnail);
+      if (publicId) {
+        try {
+          await deleteFromCloudinary(publicId, 'image');
+        } catch (error) {
+          logger.warn('Failed to delete course thumbnail on course deletion', { 
+            publicId, 
+            error: (error as Error).message 
+          });
+        }
+      }
     }
 
     await course.deleteOne();

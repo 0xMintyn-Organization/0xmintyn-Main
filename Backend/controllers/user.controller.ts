@@ -9,6 +9,7 @@ import { getUserById } from '../services/user.services';
 import ErrorHandler from '../utils/errorHandler';
 import { accessTokenOptions, refreshTokenOptions, sendToken } from '../utils/jwt';
 import sendEmail from '../utils/sendMail';
+import logger from '../utils/logger';
 
     // Register a user
     interface IRegistrationBody {
@@ -21,15 +22,38 @@ import sendEmail from '../utils/sendMail';
         username: string;
         contactNumber: string;
         password: string;
+        walletAddress?: string;
+        walletProvider?: string;
     }
+
+    // Validate Solana wallet address
+    const isValidSolanaAddress = (address: string): boolean => {
+        // Solana addresses are base58 encoded and 32-44 characters
+        const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+        return base58Regex.test(address);
+    };
 
     export const registrationUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { firstName, lastName, dateOfBirth, nationality, age, email, username, contactNumber, password }: IRegistrationBody = req.body;
+            const { firstName, lastName, dateOfBirth, nationality, age, email, username, contactNumber, password, walletAddress, walletProvider }: IRegistrationBody = req.body;
             
             // Validate required fields
             if (!email || !username || !password) {
                 return next(new ErrorHandler('Email, username, and password are required', 400));
+            }
+
+            // Validate wallet address if provided (REQUIRED for UBI platform)
+            if (walletAddress) {
+                if (!isValidSolanaAddress(walletAddress)) {
+                    return next(new ErrorHandler('Invalid Solana wallet address format', 400));
+                }
+                if (!walletProvider) {
+                    return next(new ErrorHandler('Wallet provider is required when wallet address is provided', 400));
+                }
+            } else {
+                // For UBI platform, wallet is required but we'll allow registration and prompt later
+                // You can make it required by uncommenting the line below:
+                // return next(new ErrorHandler('Wallet address is required for UBI platform registration', 400));
             }
 
             // Check if email already exists BEFORE sending OTP
@@ -44,6 +68,14 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler('This username is already taken. Please choose a different username.', 400));
             }
 
+            // Check if wallet address is already registered (prevent duplicate wallets)
+            if (walletAddress) {
+                const existingWallet = await UserModel.findOne({ walletAddress });
+                if (existingWallet) {
+                    return next(new ErrorHandler('This wallet address is already registered to another account', 400));
+                }
+            }
+
             const user: IRegistrationBody = {
                 firstName,
                 lastName,
@@ -53,13 +85,15 @@ import sendEmail from '../utils/sendMail';
                 email,
                 username,
                 contactNumber,
-                password
+                password,
+                walletAddress,
+                walletProvider
             };
 
             // @ts-ignore
             const activationToken = createActivationToken(user); 
             const activationCode = activationToken.activationCode;
-            console.log(activationCode);
+            logger.debug('Activation code generated', { email: user.email });
 
             // Build activation link for token-based email verification
             const clientUrl =
@@ -240,7 +274,12 @@ import sendEmail from '../utils/sendMail';
 
             // Create user with error handling for duplicate key errors
             try {
-                await UserModel.create(newUser.user);
+                const userData = { ...newUser.user };
+                // If wallet address exists, set walletConnectedAt
+                if (userData.walletAddress) {
+                    userData.walletConnectedAt = new Date();
+                }
+                await UserModel.create(userData);
             } catch (createError: any) {
                 // Handle MongoDB duplicate key error
                 if (createError.code === 11000) {
@@ -249,6 +288,8 @@ import sendEmail from '../utils/sendMail';
                         return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
                     } else if (duplicateField === 'username') {
                         return next(new ErrorHandler('This username is already taken. Please register with a different username.', 400));
+                    } else if (duplicateField === 'walletAddress') {
+                        return next(new ErrorHandler('This wallet address is already registered to another account.', 400));
                     }
                     return next(new ErrorHandler('This account already exists. Please log in instead.', 400));
                 }
@@ -268,6 +309,8 @@ import sendEmail from '../utils/sendMail';
                     return next(new ErrorHandler('This email is already registered. Please log in instead.', 400));
                 } else if (duplicateField === 'username') {
                     return next(new ErrorHandler('This username is already taken. Please register with a different username.', 400));
+                } else if (duplicateField === 'walletAddress') {
+                    return next(new ErrorHandler('This wallet address is already registered to another account.', 400));
                 }
                 return next(new ErrorHandler('This account already exists. Please log in instead.', 400));
             }
@@ -513,9 +556,8 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com"; 
-            // @ts-ignore
-            const avatarUrl = `${serverUrl}/uploads/files/${req.file.filename}`;
+            // Upload avatar to Cloudinary
+            const avatarUrl = await uploadUserAvatar(req.file.buffer, user._id.toString());
 
             user.avatar = avatarUrl; 
             await user.save();
@@ -546,9 +588,8 @@ import sendEmail from '../utils/sendMail';
                 return next(new ErrorHandler("Please upload an image", 400));
             }
 
-            const serverUrl = process.env.SERVER_URL || "https://appbackend.0xmintyn.com";
-            // @ts-ignore
-            const bannerUrl = `${serverUrl}/uploads/files/${req.file.filename}`;
+            // Upload banner to Cloudinary
+            const bannerUrl = await uploadUserBanner(req.file.buffer, user._id.toString());
 
             user.banner = bannerUrl;
             await user.save();
@@ -701,7 +742,7 @@ import sendEmail from '../utils/sendMail';
                     message: 'If an account exists with this email, you will receive password reset instructions.',
                 });
             } catch (error: any) {
-                console.error('Error sending reset email:', error);
+                logger.error('Error sending reset email:', { error: error.message, email });
                 return next(new ErrorHandler('Failed to send reset email. Please try again later.', 500));
             }
         } catch (error: any) {

@@ -4,6 +4,9 @@ import { MarketplaceServiceModel } from "../../models/marketplace/MarketplaceSer
 import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
 import ErrorHandler from "../../utils/errorHandler";
 import UserModel from "../../models/user.mode";
+import { uploadServiceImage, extractPublicIdFromUrl, deleteMultipleFromCloudinary } from "../../utils/cloudinary";
+import logger from "../../utils/logger";
+import { getSellerProfile, autoCreateSellerProfile } from "../../utils/sellerProfileHelper";
 
 // Create Marketplace Service
 export const createMarketplaceService = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
@@ -21,10 +24,58 @@ export const createMarketplaceService = CatchAsyncError(async (req: Request, res
             return next(new ErrorHandler("Only sellers and admins can create services", 403));
         }
 
-        // Get or verify seller profile
-        const seller = await MarketplaceSellerModel.findOne({ userId });
+        // Get or verify seller profile using helper function
+        let seller = await getSellerProfile(userId);
+        
+        // Log for debugging
+        logger.debug('Seller profile check for service creation', {
+            userId,
+            userIdType: typeof userId,
+            hasSellerProfile: !!seller,
+            userIsSeller: user.isSeller,
+            userRole: user.role,
+            sellerId: seller?._id
+        });
+        
+        // If user has isSeller flag but no profile, auto-create a minimal profile
+        // This MUST happen before service creation as service requires sellerId
+        if (!seller && user.isSeller && user.role !== 'admin') {
+            logger.info('Auto-creating seller profile for service creation', { userId });
+            seller = await autoCreateSellerProfile(userId, user);
+            
+            if (!seller) {
+                logger.error('Failed to auto-create seller profile - retrying with force', { userId });
+                // Retry once more with detailed error logging
+                try {
+                    seller = await autoCreateSellerProfile(userId, user);
+                } catch (retryError: any) {
+                    logger.error('Retry also failed', {
+                        error: retryError.message,
+                        stack: retryError.stack,
+                        userId
+                    });
+                }
+            }
+        }
+        
+        // If still no seller profile and not admin, block creation
+        // Service requires sellerId, so we can't proceed without it
         if (!seller && user.role !== 'admin') {
-            return next(new ErrorHandler("Please complete your seller profile first", 400));
+            logger.error('No seller profile found and auto-create failed', {
+                userId,
+                userIsSeller: user.isSeller,
+                userRole: user.role
+            });
+            return next(new ErrorHandler(
+                "Seller profile is required. Please complete your seller profile first or contact support if you have isSeller: true.",
+                400
+            ));
+        }
+        
+        // Ensure we have a seller profile at this point
+        if (!seller) {
+            logger.error('Seller profile is null after all checks', { userId });
+            return next(new ErrorHandler("Seller profile error. Please contact support.", 500));
         }
 
         // Validate packages
@@ -48,11 +99,19 @@ export const createMarketplaceService = CatchAsyncError(async (req: Request, res
             return field;
         };
 
-        // Handle uploaded images
+        // Handle uploaded images - upload to Cloudinary
         const uploadedImages = req.files as Express.Multer.File[];
-        console.log('Uploaded images:', uploadedImages?.map(img => ({ filename: img.filename, originalname: img.originalname })));
-        const imageUrls = uploadedImages?.map(file => `/uploads/images/${file.filename}`) || [];
-        console.log('Image URLs:', imageUrls);
+        logger.debug('Processing uploaded service images', {
+            imageCount: uploadedImages?.length || 0
+        });
+        
+        // Upload all images to Cloudinary
+        const imageUploadPromises = uploadedImages.map(file => 
+            uploadServiceImage(file.buffer, undefined)
+        );
+        const imageUrls = await Promise.all(imageUploadPromises);
+        
+        logger.debug('Generated Cloudinary service image URLs', { imageUrls, count: imageUrls.length });
         
         // Ensure we have at least one image for thumbnail
         if (imageUrls.length === 0) {
@@ -356,6 +415,39 @@ export const deleteMarketplaceService = CatchAsyncError(async (req: Request, res
             const seller = await MarketplaceSellerModel.findOne({ userId });
             if (!seller || service.sellerId.toString() !== seller._id.toString()) {
                 return next(new ErrorHandler("You don't have permission to delete this service", 403));
+            }
+        }
+
+        // Delete files from Cloudinary
+        const publicIdsToDelete: string[] = [];
+        
+        // Delete service images
+        if (service.images && service.images.length > 0) {
+            service.images.forEach((imageUrl: string) => {
+                const publicId = extractPublicIdFromUrl(imageUrl);
+                if (publicId) publicIdsToDelete.push(publicId);
+            });
+        }
+        
+        // Delete thumbnail
+        if (service.thumbnailImage) {
+            const publicId = extractPublicIdFromUrl(service.thumbnailImage);
+            if (publicId) publicIdsToDelete.push(publicId);
+        }
+        
+        // Bulk delete from Cloudinary
+        if (publicIdsToDelete.length > 0) {
+            try {
+                await deleteMultipleFromCloudinary(publicIdsToDelete, 'image');
+                logger.info('Deleted service files from Cloudinary', { 
+                    serviceId, 
+                    count: publicIdsToDelete.length 
+                });
+            } catch (error) {
+                logger.warn('Failed to delete some service files from Cloudinary', { 
+                    serviceId, 
+                    error: (error as Error).message 
+                });
             }
         }
 

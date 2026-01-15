@@ -16,21 +16,19 @@ export default function Home() {
   const [hasCachedAuth, setHasCachedAuth] = useState(false);
   
   useEffect(() => {
-    // Check localStorage for cached auth data immediately
+    // Check localStorage for cached auth data
     if (typeof window !== 'undefined') {
       const cachedUser = localStorage.getItem('user');
       const cachedToken = localStorage.getItem('accessToken');
       setHasCachedAuth(!!(cachedUser && cachedToken));
     }
     // Give store initialization time to complete
-    setTimeout(() => setIsInitializing(false), 50);
+    setTimeout(() => setIsInitializing(false), 100);
   }, []);
   
-  // Load user data on component mount - but don't block on it
+  // Load user data on component mount
   const { isLoading: userLoading, isError, data, isSuccess } = useLoadUserQuery(undefined, {
-    skip: false,
-    // Use cached data first, then refetch in background
-    refetchOnMountOrArgChange: false,
+    skip: false, // Always try to load user data
   });
 
   // Wait for initialization and user loading to complete before making redirect decisions

@@ -188,24 +188,42 @@ export default function CreateProduct() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file type - accept all compressed/archive formats
+      const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+      const allowedExtensions = [
+        '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz',
+        '.zipx', '.ace', '.cab', '.deb', '.rpm', '.dmg', '.pkg',
+        '.sit', '.sitx', '.lz', '.lzh', '.arj', '.z', '.lzma'
+      ];
+      
+      if (!allowedExtensions.includes(fileExtension)) {
+        setErrors(prev => ({
+          ...prev,
+          fileUrl: 'Product files must be compressed/archive files (ZIP, RAR, 7Z, TAR, GZ, etc.). Please upload a supported archive format.'
+        }));
+        // Reset file input
+        e.target.value = '';
+        return;
+      }
+      
       try {
         setLoading(true);
         setUploadProgress(0);
         
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('type', 'product'); // Mark as product file
         
-        console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
-        console.log('Upload URL:', `${process.env.NEXT_PUBLIC_SERVER_URI}upload/file`);
+        console.log('Uploading archive file:', file.name, 'Size:', file.size, 'Type:', file.type);
         
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}upload/file`, {
+        // Upload with type=product query parameter
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}upload/file?type=product`, {
           method: 'POST',
           body: formData,
           credentials: 'include'
         });
         
         console.log('Upload response status:', response.status);
-        console.log('Upload response headers:', response.headers);
         
         if (response.ok) {
           const data = await response.json();
@@ -214,10 +232,23 @@ export default function CreateProduct() {
             ...prev,
             fileUrl: data.url
           }));
+          // Clear any previous errors
+          setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors.fileUrl;
+            return newErrors;
+          });
         } else {
-          const errorData = await response.text();
+          let errorData: any;
+          try {
+            errorData = await response.json();
+          } catch {
+            const errorText = await response.text();
+            errorData = { error: errorText };
+          }
           console.error('Upload failed:', response.status, errorData);
-          throw new Error(`Upload failed: ${response.status} - ${errorData}`);
+          const errorMessage = errorData.error || errorData.message || `Upload failed: ${response.status}`;
+          throw new Error(errorMessage);
         }
       } catch (error) {
         console.error('File upload error:', error);
@@ -1057,12 +1088,12 @@ export default function CreateProduct() {
                         <input
                           id="file-upload"
                           type="file"
-                          accept=".zip,.pdf,.figma,.sketch,.psd,.ai,.html,.css,.js,.ts,.jsx,.tsx,.mp4,.mp3,.ttf,.otf"
+                          accept=".zip,.rar,.7z,.tar,.gz,.bz2,.xz,.zipx,.ace,.cab,.deb,.rpm,.dmg,.pkg,.sit,.sitx,.lz,.lzh,.arj,.z,.lzma"
                           onChange={handleFileUpload}
                           className="hidden"
                         />
                         <p className="text-xs text-muted-foreground mt-2">
-                          ZIP, PDF, Figma, Sketch, PSD, AI, HTML, CSS, JS, TS, MP4, MP3, TTF, OTF up to 100MB
+                          Compressed files (ZIP, RAR, 7Z, TAR, GZ, etc.) up to 100MB
                         </p>
                       </div>
                       {errors.fileUrl && (

@@ -10,7 +10,8 @@ import { useRole } from "@/hooks/useRole";
 import ReviewSection from "@/components/ReviewSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import MuxPlayer  from '@mux/mux-player-react';
+import YouTubePlayer from "@/components/YouTubePlayer";
+import { isValidYouTubeUrl } from "@/lib/youtubeUtils";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -300,16 +301,17 @@ export default function CoursePreviewPage() {
             {/* Pricing + Preview */}
             <div>
               <Card className="sticky top-4 bg-white dark:bg-zinc-800">
-               <MuxPlayer
-  src={course?.demoUrl}
-  streamType="on-demand"
-  metadata={{
-    video_id: courseId,
-    video_title: course?.name,
-  }}
-  autoPlay={false}
-  className="w-full aspect-video rounded-lg"
-/>
+                {course?.demoUrl && isValidYouTubeUrl(course.demoUrl) ? (
+                  <YouTubePlayer
+                    url={course.demoUrl}
+                    title={course.name}
+                    className="w-full"
+                  />
+                ) : (
+                  <div className="aspect-video bg-black rounded-lg flex items-center justify-center text-white">
+                    <p>No valid demo video available</p>
+                  </div>
+                )}
 
                 <CardContent className="p-6 space-y-4">
                   {/* Price */}

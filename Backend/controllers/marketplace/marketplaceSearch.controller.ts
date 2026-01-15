@@ -111,13 +111,15 @@ export const searchMarketplace = async (req: Request, res: Response) => {
     console.log('Pagination:', { page: pageNum, limit: limitNum, skip });
 
     // Execute query with pagination
+    // Note: .select('-fileUrl -previewUrl') excludes only those fields, all other fields including thumbnailImage and images are included by default
     const [itemsResult, totalItemsResult] = await Promise.all([
       Model.find(query)
-        .select('-fileUrl -previewUrl') // Exclude sensitive fields for products
+        .select('-fileUrl -previewUrl') // Exclude sensitive fields for products, but include thumbnailImage and images
         .populate('sellerId', 'sellerName storeName storeLogo rating reviewCount')
         .sort(sortOptions)
         .skip(skip)
-        .limit(limitNum),
+        .limit(limitNum)
+        .lean(), // Use lean() for better performance
       Model.countDocuments(query)
     ]);
 

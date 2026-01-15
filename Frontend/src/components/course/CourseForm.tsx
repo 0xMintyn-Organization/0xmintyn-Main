@@ -104,8 +104,8 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
               thumbnailPreview: course.thumbnail,
               tags: course.tags || [],
               level: course.level,
-              demoUrl: null, // Keep as null for existing files
-              demoUrlPreview: course.demoUrl,
+              demoUrl: course.demoUrl || null, // YouTube URL string
+              demoUrlPreview: course.demoUrl || "",
               benefits: course.benefits && course.benefits.length > 0 ? course.benefits : [""],
               prerequisites: course.prerequisites && course.prerequisites.length > 0 ? course.prerequisites : [""],
               courseData: course.courseData && course.courseData.length > 0 ? course.courseData.map((section: any) => ({
@@ -219,7 +219,7 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
               newErrors[`section_${sectionIndex}_video_${videoIndex}_title`] = "Video title is required.";
             }
             if (!video.videoUrl) {
-              newErrors[`section_${sectionIndex}_video_${videoIndex}_file`] = "Video upload is required.";
+              newErrors[`section_${sectionIndex}_video_${videoIndex}_url`] = "YouTube video URL is required.";
             }
           });
         });

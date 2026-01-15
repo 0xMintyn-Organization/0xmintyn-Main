@@ -2,6 +2,8 @@
  * Simplified ownership detection utilities
  */
 
+import React from "react";
+
 interface User {
   _id: string;
   isSeller?: boolean;

@@ -84,14 +84,23 @@ export default function Auth0SuccessPage() {
                   localStorage.setItem('user', JSON.stringify(userData.user));
                   localStorage.setItem('accessToken', userData.accessToken);
                   localStorage.setItem('loginTimestamp', Date.now().toString());
+                  
+                  // Check if user has wallet, if not redirect to connect-wallet page
+                  if (!userData.user.walletAddress) {
+                    router.push("/connect-wallet");
+                    return;
+                  }
                 }
               }
+              // Default redirect to dashboard
+              router.push("/dashboard");
             } catch (error) {
               console.error("Error fetching user:", error);
+              router.push("/dashboard"); // Fallback redirect
             }
+          } else {
+            router.push("/dashboard"); // Fallback if no token
           }
-          
-          router.push("/dashboard");
         }
       } catch (error) {
         console.error("Auth0 success handling error:", error);

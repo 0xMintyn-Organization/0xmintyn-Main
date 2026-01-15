@@ -17,7 +17,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
         const refreshResult = await fetchBaseQuery({
             baseUrl: process.env.NEXT_PUBLIC_SERVER_URI,
             credentials: 'include',
-        })({ url: 'user/refreshtoken', method: 'GET' }, api, extraOptions);
+        })({ url: 'refreshtoken', method: 'GET' }, api, extraOptions);
 
         if (refreshResult.data) {
             console.log('Token refreshed successfully');
@@ -49,14 +49,14 @@ export const apiSlice = createApi({
     endpoints: (builder) => ({
         refreshToken: builder.query({
             query: () => ({
-                url: 'user/refreshtoken',
+                url: 'refreshtoken',
                 method: 'GET',
                 credentials: 'include' ,
             }),
         }),
         loadUser: builder.query({
             query: () => ({
-                url: 'user/me',
+                url: 'me',
                 method: 'GET',
                 credentials: 'include',
             }),

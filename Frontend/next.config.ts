@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Enable standalone output for Docker
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -39,6 +41,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'github.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
     ],
     // Keep domains for backward compatibility (Next.js 12 style)
     domains: [
@@ -50,7 +57,8 @@ const nextConfig: NextConfig = {
       'images.unsplash.com',
       'via.placeholder.com',
       'github.com',
-      '209.74.89.249'
+      '209.74.89.249',
+      'res.cloudinary.com'
     ],
   },
    eslint: {
@@ -61,25 +69,6 @@ const nextConfig: NextConfig = {
   typescript: {
     // ⚠️  Builds will succeed even if there are TypeScript errors
     ignoreBuildErrors: true,
-  },
-  // Performance optimizations
-  // Note: swcMinify is enabled by default in Next.js 15, no need to specify
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn'],
-    } : false,
-  },
-  // Optimize bundle size
-  experimental: {
-    optimizePackageImports: [
-      '@radix-ui/react-avatar',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-select',
-      '@radix-ui/react-tabs',
-      'lucide-react',
-      'recharts',
-    ],
   },
 };
 

@@ -331,13 +331,27 @@ export default function EditProductPage() {
   };
 
   const handleFileUpload = async (file: File) => {
+    // Validate file type - accept all compressed/archive formats
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    const allowedExtensions = [
+      '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz',
+      '.zipx', '.ace', '.cab', '.deb', '.rpm', '.dmg', '.pkg',
+      '.sit', '.sitx', '.lz', '.lzh', '.arj', '.z', '.lzma'
+    ];
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+      toast.error('Product files must be compressed/archive files (ZIP, RAR, 7Z, TAR, GZ, etc.). Please upload a supported archive format.');
+      return;
+    }
+    
     try {
       setUploadingFile(true);
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('type', 'product'); // Mark as product file
 
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}upload/file`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}upload/file?type=product`,
         formData,
         {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -346,17 +360,21 @@ export default function EditProductPage() {
       );
 
       if (response.data.success) {
+        // Extract file extension from filename
+        const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.')).replace('.', '');
+        
         setFormData(prev => ({
           ...prev,
-          fileUrl: response.data.fileUrl,
-          fileFormat: response.data.fileFormat,
-          fileSize: response.data.fileSize
+          fileUrl: response.data.url || response.data.fileUrl,
+          fileFormat: response.data.format || fileExtension || 'zip', // Use actual file extension
+          fileSize: response.data.size || response.data.fileSize
         }));
-        toast.success('File uploaded successfully');
+        toast.success('Archive file uploaded successfully');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading file:', error);
-      toast.error('Failed to upload file');
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to upload file';
+      toast.error(errorMessage);
     } finally {
       setUploadingFile(false);
     }

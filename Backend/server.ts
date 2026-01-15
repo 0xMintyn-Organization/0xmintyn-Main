@@ -1,89 +1,124 @@
 import { app } from "./app";
 import { connectDB } from "./utils/db";
-require ('dotenv').config();
+import { initSocketServer } from "./socketServer";
+import logger from "./utils/logger";
+require('dotenv').config();
 import http from 'http';
+
+// Create HTTP server
 const server = http.createServer(app);
 
-// Global error handlers for unhandled rejections and exceptions
-process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
-  console.error('❌ Unhandled Rejection at:', promise);
-  console.error('Reason:', reason);
-  // Log to error tracking service in production
-  // Don't exit in production, let PM2 handle restarts
-  if (process.env.NODE_ENV === 'development') {
-    process.exit(1);
-  }
-});
+// Increase timeout for large file uploads (5 minutes)
+server.timeout = 5 * 60 * 1000; // 5 minutes
+server.keepAliveTimeout = 65000; // 65 seconds
+server.headersTimeout = 66000; // 66 seconds
 
+// Initialize Socket.IO
+initSocketServer(server);
+
+// Get port from environment or use default
+const PORT = process.env.PORT || 8000;
+
+// Handle uncaught exceptions with detailed crash report
 process.on('uncaughtException', (error: Error) => {
-  console.error('❌ Uncaught Exception:', error);
-  console.error('Stack:', error.stack);
-  // Graceful shutdown
-  server.close(() => {
-    console.log('Server closed due to uncaught exception');
-    process.exit(1);
-  });
-});
-
-// Graceful shutdown handlers
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
-    process.exit(0);
-  });
-});
-
-// Memory monitoring (log every 5 minutes)
-if (process.env.NODE_ENV === 'production') {
-  setInterval(() => {
-    const usage = process.memoryUsage();
-    const formatMB = (bytes: number) => Math.round(bytes / 1024 / 1024);
-    console.log('📊 Memory Usage:', {
-      rss: `${formatMB(usage.rss)}MB`,
-      heapTotal: `${formatMB(usage.heapTotal)}MB`,
-      heapUsed: `${formatMB(usage.heapUsed)}MB`,
-      external: `${formatMB(usage.external)}MB`,
+    logger.crash(error, {
+        type: 'uncaughtException',
+        memory: process.memoryUsage(),
+        uptime: process.uptime(),
+        pid: process.pid,
+        nodeVersion: process.version,
+        timestamp: new Date().toISOString()
     });
     
-    // Warn if memory usage is high
-    if (usage.heapUsed > 500 * 1024 * 1024) { // 500MB
-      console.warn('⚠️ High heap memory usage detected!');
-    }
-  }, 5 * 60 * 1000); // Every 5 minutes
-}
+    // Give time for logs to be written
+    setTimeout(() => {
+        process.exit(1);
+    }, 1000);
+});
 
-// create server
-const PORT = process.env.PORT || 8000;
-server.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
-  connectDB();
+// Handle unhandled promise rejections with detailed crash report
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+    const error = reason instanceof Error ? reason : new Error(String(reason));
+    
+    logger.crash(error, {
+        type: 'unhandledRejection',
+        reason: reason,
+        promise: promise.toString(),
+        memory: process.memoryUsage(),
+        uptime: process.uptime(),
+        pid: process.pid,
+        nodeVersion: process.version,
+        timestamp: new Date().toISOString()
+    });
+    
+    // Close server gracefully
+    server.close(() => {
+        setTimeout(() => {
+            process.exit(1);
+        }, 1000);
+    });
+});
+
+// Handle SIGTERM (Docker/Kubernetes termination signal)
+process.on('SIGTERM', () => {
+    logger.info('SIGTERM received. Shutting down gracefully...');
+    server.close(() => {
+        logger.info('Process terminated!');
+        process.exit(0);
+    });
+});
+
+// Start server
+server.listen(PORT, async () => {
+    logger.info(`🚀 Server is running on port ${PORT}`);
+    logger.info(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Connect to database
+    try {
+        await connectDB();
+        logger.info('✅ Database connection established');
+    } catch (error: any) {
+        logger.error('❌ Failed to connect to database:', error);
+        // Don't exit - let the retry logic handle it
+    }
 });
 
 // Handle server errors
 server.on('error', (error: NodeJS.ErrnoException) => {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-  
-  switch (error.code) {
-    case 'EACCES':
-      console.error(`❌ Port ${PORT} requires elevated privileges`);
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(`❌ Port ${PORT} is already in use`);
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
+
+    const bind = typeof PORT === 'string' ? 'Pipe ' + PORT : 'Port ' + PORT;
+
+    switch (error.code) {
+        case 'EACCES':
+            logger.error(`${bind} requires elevated privileges`);
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            logger.error(`${bind} is already in use`);
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
 });
+
+// Graceful shutdown
+const gracefulShutdown = () => {
+    logger.info('Shutting down server gracefully...');
+    server.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(0);
+    });
+
+    // Force close after 10 seconds
+    setTimeout(() => {
+        logger.error('Forced shutdown after timeout');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);

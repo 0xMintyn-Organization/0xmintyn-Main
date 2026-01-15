@@ -1,27 +1,54 @@
+"use client";
+
+import SocialAuthProvider from "@/components/SocialAuth/SocialAuth";
+import { Toaster } from "@/components/ui/toaster";
+import ThemeProviderWrapper from "@/contexts/ThemeProviderWrapper";
+import { FontSizeProvider } from "@/contexts/FontSizeContext";
+import { TextToSpeechProvider } from "@/contexts/TextToSpeechContext";
+import { GlobalTextSelection } from "@/components/TextToSpeech/GlobalTextSelection";
+import { SessionProvider } from "next-auth/react";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import ClientProviders from "./ClientProviders";
+import { Providers } from "./Provider";
+import { logEnvironmentInfo } from "@/utils/envCheck";
+import { useEffect } from "react";
 
 const inter = Inter({ 
   subsets: ['latin'], 
-  variable: '--font-inter',
-  display: 'swap', // Optimize font loading
-  preload: true,
+  variable: '--font-inter' 
 });
+
+
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  useEffect(() => {
+    logEnvironmentInfo();
+  }, []);
+
   return (
     <html lang="en">
       <body
         className={`${inter.className} antialiased bg-background text-foreground`}
       >
-        <ClientProviders>
-          {children}
-        </ClientProviders>
+        <ThemeProviderWrapper>
+          <FontSizeProvider>
+            <TextToSpeechProvider>
+                <Providers>
+                  <SessionProvider >
+                    <SocialAuthProvider>
+                      {children}
+                      <Toaster />
+                      <GlobalTextSelection />
+                    </SocialAuthProvider>
+                  </SessionProvider>
+                </Providers>
+            </TextToSpeechProvider>
+          </FontSizeProvider>
+        </ThemeProviderWrapper>
       </body>
     </html>
   );

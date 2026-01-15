@@ -3,6 +3,10 @@ node_modules
 *.local
 .vercel
 
+package-lock.json
+
 uploads
 
-
+# Logs
+logs/
+*.log

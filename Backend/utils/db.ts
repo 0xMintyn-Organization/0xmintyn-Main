@@ -1,81 +1,60 @@
-import mongoose, { set } from 'mongoose';
+import mongoose from 'mongoose';
+import logger from './logger';
 require('dotenv').config();
 
 const dbURL: string = process.env.DB_URI || '';
 
-let reconnectTimer: NodeJS.Timeout | null = null;
-let isConnecting = false;
+let retryCount = 0;
+const MAX_RETRIES = 10;
+const RETRY_DELAY = 5000; // 5 seconds
 
-const connectDB = async () => {
-    // Prevent multiple simultaneous connection attempts
-    if (isConnecting) {
-        console.log('⏳ Database connection already in progress, skipping...');
+const connectDB = async (): Promise<void> => {
+    if (!dbURL) {
+        logger.error('❌ Database URL is not defined. Please set DB_URI in environment variables.');
         return;
     }
 
     try {
-        isConnecting = true;
+        const connection = await mongoose.connect(dbURL);
+        logger.info(`✅ MongoDB connected successfully to ${connection.connection.host}`);
+        logger.info(`📊 Database: ${connection.connection.name}`);
         
-        // Clear any existing reconnect timer
-        if (reconnectTimer) {
-            clearTimeout(reconnectTimer);
-            reconnectTimer = null;
+        // Reset retry count on successful connection
+        retryCount = 0;
+
+        // Handle connection events
+        mongoose.connection.on('error', (err) => {
+            logger.error('MongoDB connection error:', err);
+        });
+
+        mongoose.connection.on('disconnected', () => {
+            logger.warn('⚠️ MongoDB disconnected. Attempting to reconnect...');
+            retryCount = 0;
+            setTimeout(connectDB, RETRY_DELAY);
+        });
+
+        mongoose.connection.on('reconnected', () => {
+            logger.info('✅ MongoDB reconnected successfully');
+            retryCount = 0;
+        });
+
+    } catch (err: any) {
+        retryCount++;
+        
+        if (retryCount >= MAX_RETRIES) {
+            logger.error(`❌ Failed to connect to MongoDB after ${MAX_RETRIES} attempts. Stopping retries.`);
+            logger.error('Error details:', err);
+            // Don't exit - let the application continue and retry later
+            return;
         }
 
-        await mongoose.connect(dbURL).then((data: any) => {
-            console.log(`✅ MongoDB connected with ${data.connection.host}`);
-            isConnecting = false;
-        });
-    } catch (err: any) {
-        isConnecting = false;
-        console.error(`❌ MongoDB connection error: ${err.message}`);
+        logger.warn(`⚠️ MongoDB connection attempt ${retryCount}/${MAX_RETRIES} failed. Retrying in ${RETRY_DELAY / 1000} seconds...`);
+        logger.error('Connection error:', err.message);
         
-        // Only set reconnect timer if not already set
-        if (!reconnectTimer) {
-            console.log('🔄 Attempting to reconnect in 5 seconds...');
-            reconnectTimer = setTimeout(() => {
-                reconnectTimer = null;
-                connectDB();
-            }, 5000);
-        }
+        setTimeout(() => {
+            connectDB();
+        }, RETRY_DELAY);
     }
 };
-
-// Handle connection events
-mongoose.connection.on('connected', () => {
-    console.log('✅ Mongoose connected to MongoDB');
-});
-
-mongoose.connection.on('error', (err) => {
-    console.error('❌ Mongoose connection error:', err);
-});
-
-mongoose.connection.on('disconnected', () => {
-    console.warn('⚠️ Mongoose disconnected from MongoDB');
-    // Attempt to reconnect
-    if (!reconnectTimer) {
-        reconnectTimer = setTimeout(() => {
-            reconnectTimer = null;
-            connectDB();
-        }, 5000);
-    }
-});
-
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-    if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-    }
-    await mongoose.connection.close();
-    console.log('MongoDB connection closed through app termination');
-});
-
-process.on('SIGINT', async () => {
-    if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-    }
-    await mongoose.connection.close();
-    console.log('MongoDB connection closed through app termination');
-});
 
 export { connectDB };

@@ -34,10 +34,12 @@ import {
   PenTool,
   Smartphone,
   User,
+  Gift,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
+import { ClaimUBIButton } from "@/components/UBI/ClaimUBIButton";
 
 // Icon mapping for activity types
 const activityIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -137,6 +139,12 @@ export default function EnhancedDashboard() {
   const router = useRouter();
   const { user } = useSelector((state: DashboardState) => state.auth);
   const [activeTab, setActiveTab] = useState("overview");
+  
+  // Debug: Log user data to help troubleshoot
+  useEffect(() => {
+    console.log("Dashboard - User data:", user);
+    console.log("Dashboard - Wallet address:", user?.walletAddress);
+  }, [user]);
   const [loading, setLoading] = useState(true);
   const [platformStats, setPlatformStats] = useState([
     { icon: GraduationCap, label: "Instructors", value: "0", change: "+0%", color: "text-slate-400" },
@@ -474,6 +482,41 @@ export default function EnhancedDashboard() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-8">
+            {/* UBI Claim Card - Always show, button handles states */}
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                      🎁 Claim Your UBI Tokens
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">
+                      New users receive 20 Mintyn (0XM) tokens automatically when they register!
+                    </p>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <ClaimUBIButton
+                        userWalletAddress={user?.walletAddress}
+                        onSuccess={(signature) => {
+                          console.log("UBI claimed! Transaction:", signature);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      />
+                      {!user?.walletAddress && (
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          Connect your Phantom wallet in Profile to claim
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="hidden md:block ml-4">
+                    <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                      <Gift className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Top Instructors Preview */}
               <Card>

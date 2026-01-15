@@ -5,47 +5,65 @@ import { MarketplaceOrderModel } from "../../models/marketplace/MarketplaceOrder
 import { CatchAsyncError } from "../../middleware/catchAsyncError";
 import ErrorHandler from "../../utils/errorHandler";
 import UserModel from "../../models/user.mode";
+import { uploadProductImage, uploadProductFile, extractPublicIdFromUrl, deleteFromCloudinary, deleteMultipleFromCloudinary } from "../../utils/cloudinary";
+import logger from "../../utils/logger";
+import { getSellerProfile, autoCreateSellerProfile } from "../../utils/sellerProfileHelper";
 
 // Create Marketplace Product
 export const createMarketplaceProduct = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        console.log('Creating marketplace product...');
-        console.log('Request body keys:', Object.keys(req.body));
-        console.log('Request body sample:', {
-            title: req.body.title,
-            price: req.body.price,
-            category: req.body.category,
-            fileUrl: req.body.fileUrl
+        logger.operation('createMarketplaceProduct', {
+            userId: req.user?._id,
+            bodyKeys: Object.keys(req.body),
+            hasFiles: !!req.files,
+            filesCount: Array.isArray(req.files) ? req.files.length : (req.files ? 1 : 0)
         });
-        console.log('Request files:', req.files);
-        console.log('User ID:', req.user?._id);
         
         const userId = req.user?._id;
         
         // Check if user exists and is a seller
         const user = await UserModel.findById(userId);
         if (!user) {
-            console.log('User not found:', userId);
+            logger.warn('User not found for product creation', { userId });
             return next(new ErrorHandler("User not found", 404));
         }
 
-        console.log('User found:', { id: user._id, isSeller: user.isSeller, role: user.role });
+        logger.debug('User found for product creation', { 
+            userId: user._id, 
+            isSeller: user.isSeller, 
+            role: user.role 
+        });
 
         // Check if user is seller or admin
         if (!user.isSeller && user.role !== 'admin') {
-            console.log('User is not a seller or admin');
+            logger.warn('Unauthorized product creation attempt', { 
+                userId: user._id, 
+                isSeller: user.isSeller, 
+                role: user.role 
+            });
             return next(new ErrorHandler("Only sellers and admins can create products", 403));
         }
 
-        // Get or verify seller profile
-        const seller = await MarketplaceSellerModel.findOne({ userId });
-        console.log('Seller profile:', seller ? 'Found' : 'Not found');
+        // Get or verify seller profile using helper function
+        let seller = await getSellerProfile(userId);
         
-        // For testing purposes, allow product creation even without seller profile
-        // In production, you might want to enforce seller profile creation
-        if (!seller && user.role !== 'admin') {
-            console.log('No seller profile found for non-admin user - allowing for testing');
-            // return next(new ErrorHandler("Please complete your seller profile first", 400));
+        logger.debug('Seller profile check for product creation', { 
+            userId, 
+            sellerFound: !!seller,
+            userIsSeller: user.isSeller,
+            userRole: user.role,
+            sellerId: seller?._id 
+        });
+        
+        // If user has isSeller flag but no profile, auto-create a minimal profile
+        if (!seller && user.isSeller && user.role !== 'admin') {
+            seller = await autoCreateSellerProfile(userId, user);
+            
+            if (!seller) {
+                logger.warn('Failed to auto-create seller profile for product creation', { userId });
+                // Allow product creation to continue (for backward compatibility)
+                // But log the issue
+            }
         }
 
         // Calculate discount if originalPrice is provided
@@ -66,11 +84,20 @@ export const createMarketplaceProduct = CatchAsyncError(async (req: Request, res
             return field;
         };
 
-        // Handle uploaded images
+        // Handle uploaded images - upload to Cloudinary
         const uploadedImages = req.files as Express.Multer.File[];
-        console.log('Uploaded images:', uploadedImages?.map(img => ({ filename: img.filename, originalname: img.originalname })));
-        const imageUrls = uploadedImages?.map(file => `/uploads/images/${file.filename}`) || [];
-        console.log('Image URLs:', imageUrls);
+        logger.debug('Processing uploaded images', {
+            imageCount: uploadedImages?.length || 0,
+            imageFiles: uploadedImages?.map(img => ({ originalname: img.originalname, size: img.size }))
+        });
+        
+        // Upload all images to Cloudinary
+        const imageUploadPromises = uploadedImages.map(file => 
+            uploadProductImage(file.buffer, undefined)
+        );
+        const imageUrls = await Promise.all(imageUploadPromises);
+        
+        logger.debug('Generated Cloudinary image URLs', { imageUrls, count: imageUrls.length });
         
         // Prepare product data
         const productData = {
@@ -84,9 +111,9 @@ export const createMarketplaceProduct = CatchAsyncError(async (req: Request, res
             digitalDelivery: parseJsonField(req.body.digitalDelivery),
             updates: parseJsonField(req.body.updates),
             support: parseJsonField(req.body.support),
-            // Image handling
-            images: imageUrls.length > 0 ? imageUrls : ['https://via.placeholder.com/400x300'],
-            thumbnailImage: imageUrls[0] || req.body.thumbnailImage || 'https://via.placeholder.com/400x300',
+            // Image handling - use Cloudinary URLs
+            images: imageUrls.length > 0 ? imageUrls : [],
+            thumbnailImage: imageUrls[0] || req.body.thumbnailImage || '',
             // Other fields
             sellerId: seller?._id || userId,
             discount,
@@ -95,18 +122,22 @@ export const createMarketplaceProduct = CatchAsyncError(async (req: Request, res
             isActive: true
         };
 
-        console.log('Product data to create:', {
+        logger.debug('Creating product with data', {
             title: productData.title,
             price: productData.price,
             category: productData.category,
-            thumbnailImage: productData.thumbnailImage,
-            images: productData.images,
-            sellerId: productData.sellerId
+            sellerId: productData.sellerId,
+            imageCount: productData.images.length
         });
 
         const product = await MarketplaceProductModel.create(productData);
 
-        console.log('Product created successfully:', product._id);
+        logger.operation('productCreated', {
+            productId: product._id,
+            title: product.title,
+            sellerId: product.sellerId,
+            price: product.price
+        });
 
         res.status(201).json({
             success: true,
@@ -405,6 +436,51 @@ export const deleteMarketplaceProduct = CatchAsyncError(async (req: Request, res
             const seller = await MarketplaceSellerModel.findOne({ userId });
             if (!seller || product.sellerId.toString() !== seller._id.toString()) {
                 return next(new ErrorHandler("You don't have permission to delete this product", 403));
+            }
+        }
+
+        // Delete files from Cloudinary
+        const publicIdsToDelete: string[] = [];
+        
+        // Delete product images
+        if (product.images && product.images.length > 0) {
+            product.images.forEach((imageUrl: string) => {
+                const publicId = extractPublicIdFromUrl(imageUrl);
+                if (publicId) publicIdsToDelete.push(publicId);
+            });
+        }
+        
+        // Delete thumbnail
+        if (product.thumbnailImage) {
+            const publicId = extractPublicIdFromUrl(product.thumbnailImage);
+            if (publicId) publicIdsToDelete.push(publicId);
+        }
+        
+        // Delete product file
+        if (product.fileUrl) {
+            const publicId = extractPublicIdFromUrl(product.fileUrl);
+            if (publicId) publicIdsToDelete.push(publicId);
+        }
+        
+        // Delete preview file
+        if (product.previewUrl) {
+            const publicId = extractPublicIdFromUrl(product.previewUrl);
+            if (publicId) publicIdsToDelete.push(publicId);
+        }
+        
+        // Bulk delete from Cloudinary
+        if (publicIdsToDelete.length > 0) {
+            try {
+                await deleteMultipleFromCloudinary(publicIdsToDelete, 'image');
+                logger.info('Deleted product files from Cloudinary', { 
+                    productId, 
+                    count: publicIdsToDelete.length 
+                });
+            } catch (error) {
+                logger.warn('Failed to delete some product files from Cloudinary', { 
+                    productId, 
+                    error: (error as Error).message 
+                });
             }
         }
 

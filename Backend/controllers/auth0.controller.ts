@@ -138,6 +138,7 @@ export const handleAuth0Callback = CatchAsyncError(async (req: Request, res: Res
         const redirectUrl = `${frontendUrl}/auth0-success?token=${accessToken}&userId=${user._id}`;
         
         // Redirect to Auth0 success page (handles popup closing)
+        // Frontend will check wallet and redirect to /connect-wallet if needed
         res.redirect(redirectUrl);
 
     } catch (error: any) {

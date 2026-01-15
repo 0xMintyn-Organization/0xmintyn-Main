@@ -145,21 +145,26 @@ export default function FeaturedSection({ activeTab, featuredItems }: FeaturedSe
             <Card key={item._id || item.id || `featured-${index}`} className="group hover:shadow-lg transition-all duration-200 hover:scale-105 border-zinc-200 dark:border-zinc-700">
               <div className="relative">
                 <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                  {item.thumbnailImage || item.image ? (
-                    <Image
-                      src={getFullImageUrl(item.thumbnailImage || item.image)}
-                      alt={item.title}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder-product.jpg';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
-                      <FileText className="w-12 h-12 text-gray-400" />
-                    </div>
-                  )}
+                  {(() => {
+                    const imageUrl = item.thumbnailImage || item.image;
+                    if (!imageUrl) {
+                      return (
+                        <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
+                          <FileText className="w-12 h-12 text-gray-400" />
+                        </div>
+                      );
+                    }
+                    const fullUrl = getFullImageUrl(imageUrl);
+                    return (
+                      <Image
+                        src={fullUrl}
+                        alt={item.title}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-300"
+                        unoptimized={fullUrl.includes('cloudinary.com')}
+                      />
+                    );
+                  })()}
                   <Badge className="absolute top-2 left-2 bg-red-500 text-white">
                     {item.badge}
                   </Badge>
@@ -218,21 +223,26 @@ export default function FeaturedSection({ activeTab, featuredItems }: FeaturedSe
               <div key={`new-${item.id || index}`} className="bg-background rounded-lg p-6 shadow-sm border border-zinc-200 dark:border-zinc-700">
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="relative w-16 h-16 flex-shrink-0">
-                    {item.image ? (
-                      <Image
-                        src={item.image}
-                        alt={item.title}
-                        fill
-                        className="object-cover rounded-lg"
-                        onError={(e) => {
-                          e.currentTarget.src = '/placeholder-product.jpg';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                        <FileText className="w-8 h-8 text-gray-400" />
-                      </div>
-                    )}
+                    {(() => {
+                      const imageUrl = item.thumbnailImage || item.image;
+                      if (!imageUrl) {
+                        return (
+                          <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                            <FileText className="w-8 h-8 text-gray-400" />
+                          </div>
+                        );
+                      }
+                      const fullUrl = getFullImageUrl(imageUrl);
+                      return (
+                        <Image
+                          src={fullUrl}
+                          alt={item.title}
+                          fill
+                          className="object-cover rounded-lg"
+                          unoptimized={fullUrl.includes('cloudinary.com')}
+                        />
+                      );
+                    })()}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white mb-1 line-clamp-1">

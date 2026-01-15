@@ -79,7 +79,13 @@ export default function LoginPage() {
       });
       // Small delay to ensure state is updated
       setTimeout(() => {
-        router.push("/dashboard");
+        // Check if user has wallet address, redirect to connect-wallet if not
+        const userData = data?.user;
+        if (userData && !userData.walletAddress) {
+          router.push("/connect-wallet");
+        } else {
+          router.push("/dashboard");
+        }
       }, 100);
     }
 

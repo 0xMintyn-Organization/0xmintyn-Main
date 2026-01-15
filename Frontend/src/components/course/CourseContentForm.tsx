@@ -7,6 +7,7 @@ import {
   FileVideo,
   Link,
   Clock,
+  Youtube,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { CourseData, CourseSection, CourseVideo } from "./types";
@@ -15,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { uploadFileToBackend } from "@/lib/uploadFileToBackend";
+import { isValidYouTubeUrl, getYouTubeEmbedUrl, extractYouTubeVideoId } from "@/lib/youtubeUtils";
+import YouTubePlayer from "@/components/YouTubePlayer";
 
 interface Props {
   courseData: CourseData;
@@ -30,7 +32,7 @@ export default function CourseContentForm({
   errors,
   setErrors,
 }: Props) {
-  const [uploadProgressMap, setUploadProgressMap] = useState<Record<string, number>>({});
+  const [youtubeUrlInputs, setYoutubeUrlInputs] = useState<Record<string, string>>({});
 
   const updateCourseSection = (sectionIndex: number, field: keyof CourseSection, value: any) => {
     setCourseData((prev) => ({
@@ -69,59 +71,63 @@ export default function CourseContentForm({
     }
   };
 
-  const handleVideoUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
+  const handleYouTubeUrlChange = (
+    sectionIndex: number,
+    videoIndex: number,
+    url: string
+  ) => {
+    const key = `section_${sectionIndex}_video_${videoIndex}`;
+    setYoutubeUrlInputs((prev) => ({ ...prev, [key]: url }));
+
+    // Clear error when user starts typing
+    setErrors((prev) => ({
+      ...prev,
+      [`${key}_url`]: "",
+    }));
+  };
+
+  const handleYouTubeUrlSubmit = (
     sectionIndex: number,
     videoIndex: number
   ) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith("video/")) return;
+    const key = `section_${sectionIndex}_video_${videoIndex}`;
+    const url = youtubeUrlInputs[key]?.trim() || "";
 
-    const tempKey = `section_${sectionIndex}_video_${videoIndex}`;
-    const objectUrl = URL.createObjectURL(file);
-
-    try {
-      const videoElem = document.createElement("video");
-      videoElem.src = objectUrl;
-
-      videoElem.onloadedmetadata = async () => {
-        const duration = Math.round(videoElem.duration / 60);
-
-        setUploadProgressMap((prev) => ({ ...prev, [tempKey]: 0 }));
-
-        const { url } = await uploadFileToBackend(file, (progress) => {
-          setUploadProgressMap((prev) => ({ ...prev, [tempKey]: progress }));
-        });
-
-        updateCourseVideo(sectionIndex, videoIndex, {
-          videoUrl: url,
-          videoLength: duration,
-          videoPlayer: "custom",
-          description: "Uploaded to server",
-        });
-
-        setUploadProgressMap((prev) => {
-          const { [tempKey]: _, ...rest } = prev;
-          return rest;
-        });
-
-        setErrors((prev) => ({
-          ...prev,
-          [`section_${sectionIndex}_video_${videoIndex}_file`]: "",
-        }));
-
-        URL.revokeObjectURL(objectUrl);
-      };
-    } catch (error) {
-      console.error(error);
+    if (!url) {
       setErrors((prev) => ({
         ...prev,
-        [`section_${sectionIndex}_video_${videoIndex}_file`]: "Upload failed!",
+        [`${key}_url`]: "Please enter a YouTube URL",
       }));
-      setUploadProgressMap((prev) => {
-        const { [tempKey]: _, ...rest } = prev;
+      return;
+    }
+
+    if (!isValidYouTubeUrl(url)) {
+      setErrors((prev) => ({
+        ...prev,
+        [`${key}_url`]: "Please enter a valid YouTube URL",
+      }));
+      return;
+    }
+
+    // Extract video ID and set the URL
+    const videoId = extractYouTubeVideoId(url);
+    if (videoId) {
+      updateCourseVideo(sectionIndex, videoIndex, {
+        videoUrl: url, // Store the original URL
+        videoPlayer: "youtube",
+        description: "YouTube video",
+      });
+
+      // Clear the input
+      setYoutubeUrlInputs((prev) => {
+        const { [key]: _, ...rest } = prev;
         return rest;
       });
+
+      setErrors((prev) => ({
+        ...prev,
+        [`${key}_url`]: "",
+      }));
     }
   };
 
@@ -129,7 +135,7 @@ export default function CourseContentForm({
     const current = courseData.courseData.at(-1);
 
     const isIncomplete =
-      !current?.title || current.videos.some((v) => !v.title || !v.videoUrl);
+      !current?.title || current.videos.some((v) => !v.title || !v.videoUrl || typeof v.videoUrl !== 'string');
 
     if (isIncomplete) {
       setErrors((prev) => ({
@@ -176,7 +182,7 @@ export default function CourseContentForm({
   const addVideoToSection = (sectionIndex: number) => {
     const lastVideo = courseData.courseData[sectionIndex].videos.at(-1);
 
-    if (!lastVideo?.title || !lastVideo?.videoUrl) {
+    if (!lastVideo?.title || !lastVideo?.videoUrl || typeof lastVideo.videoUrl !== 'string') {
       setErrors((prev) => ({
         ...prev,
         video_incomplete: "Please complete the current video before adding another.",
@@ -359,69 +365,83 @@ export default function CourseContentForm({
                   />
                 </div>
 
-                {/* Upload Area */}
-                <div
-                  className={`border-2 border-dashed rounded-md p-6 text-center ${
-                    errors[`${key}_file`] ? "border-red-500" : "border-gray-300"
-                  }`}
-                >
+                {/* YouTube URL Input */}
+                <div className="space-y-2">
+                  <Label>YouTube Video URL *</Label>
                   {video.videoUrl ? (
-                    <div>
-                      <video
-                        src={video.videoUrl}
-                        controls
-                        className="w-full h-48 rounded-md mx-auto mb-2"
-                      />
-                      <Button
-                        variant="link"
-                        onClick={() =>
-                          updateCourseVideo(sectionIndex, videoIndex, {
-                            videoUrl: null,
-                            videoLength: 0,
-                          })
-                        }
-                        className="text-red-500 text-sm"
-                      >
-                        Remove Video
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="border rounded-md overflow-hidden">
+                        <YouTubePlayer
+                          url={video.videoUrl}
+                          title={video.title}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={video.videoUrl}
+                          readOnly
+                          className="flex-1 bg-gray-50"
+                          placeholder="YouTube URL"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() =>
+                            updateCourseVideo(sectionIndex, videoIndex, {
+                              videoUrl: null,
+                              videoLength: 0,
+                            })
+                          }
+                          className="text-red-500"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
                     </div>
                   ) : (
-                    <>
-                      <label className="cursor-pointer flex flex-col items-center justify-center">
-                        <Video className="w-8 h-8 text-gray-400" />
-                        <span className="text-sm">Upload Video</span>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="video/*"
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          value={youtubeUrlInputs[key] || ""}
                           onChange={(e) =>
-                            handleVideoUpload(e, sectionIndex, videoIndex)
+                            handleYouTubeUrlChange(
+                              sectionIndex,
+                              videoIndex,
+                              e.target.value
+                            )
+                          }
+                          onKeyPress={(e) => {
+                            if (e.key === "Enter") {
+                              handleYouTubeUrlSubmit(sectionIndex, videoIndex);
+                            }
+                          }}
+                          placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                          className={
+                            errors[`${key}_url`] ? "border-red-500" : ""
                           }
                         />
-                      </label>
-
-                      {uploadProgressMap[key] !== undefined && (
-                        <div className="mt-2">
-                          <div className="h-2 w-full bg-gray-200 rounded">
-                            <div
-                              className="bg-green-500 h-2 rounded"
-                              style={{ width: `${uploadProgressMap[key]}%` }}
-                            ></div>
-                          </div>
-                          <p className="text-xs mt-1 text-gray-500">
-                            Uploading: {uploadProgressMap[key]}%
-                          </p>
-                        </div>
-                      )}
-                    </>
+                        <Button
+                          onClick={() =>
+                            handleYouTubeUrlSubmit(sectionIndex, videoIndex)
+                          }
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          <Youtube className="w-4 h-4 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Enter a YouTube video URL (watch, youtu.be, or embed format)
+                      </p>
+                    </div>
+                  )}
+                  {errors[`${key}_url`] && (
+                    <p className="text-red-500 text-sm">
+                      {errors[`${key}_url`]}
+                    </p>
                   )}
                 </div>
-
-                {errors[`${key}_file`] && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors[`${key}_file`]}
-                  </p>
-                )}
 
                 {/* Description + Links */}
                 <div className="mt-4 space-y-2">

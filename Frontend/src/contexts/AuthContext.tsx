@@ -277,7 +277,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Call backend logout to clear httpOnly cookies
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}user/logout`, {
+      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}logout`, {
         method: 'GET',
         credentials: 'include',
       });
