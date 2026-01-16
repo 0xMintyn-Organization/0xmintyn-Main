@@ -4,11 +4,6 @@ const nextConfig: NextConfig = {
   /* config options here */
   // Enable standalone output for Docker
   output: 'standalone',
-  // Disable Next.js dev indicator
-  devIndicators: {
-    buildActivity: false,
-    buildActivityPosition: 'bottom-right',
-  },
   images: {
     remotePatterns: [
       {
