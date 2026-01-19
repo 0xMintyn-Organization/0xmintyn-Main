@@ -1,3 +1,4 @@
+"use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Wallet utilities for future crypto functionality
 // This file provides a foundation for implementing various crypto features
@@ -36,15 +37,20 @@ export class PhantomProvider implements WalletProvider {
   private provider: any;
 
   constructor() {
-    this.provider = (window as any).solana;
+    // Check if window is available (client-side only)
+    if (typeof window !== 'undefined') {
+      this.provider = (window as any).solana;
+    }
   }
 
   get isInstalled(): boolean {
+    // Only check if window is available
+    if (typeof window === 'undefined') return false;
     return this.provider?.isPhantom || false;
   }
 
   async connect() {
-    if (!this.isInstalled) {
+    if (!this.isInstalled || !this.provider) {
       throw new Error('Phantom wallet not installed');
     }
 
@@ -56,12 +62,12 @@ export class PhantomProvider implements WalletProvider {
   }
 
   async disconnect() {
-    if (!this.isInstalled) return;
+    if (!this.isInstalled || !this.provider) return;
     await this.provider.disconnect();
   }
 
   async signMessage(message: string) {
-    if (!this.isInstalled) {
+    if (!this.isInstalled || !this.provider) {
       throw new Error('Phantom wallet not installed');
     }
 
@@ -70,7 +76,7 @@ export class PhantomProvider implements WalletProvider {
   }
 
   async getBalance(address: string): Promise<number> {
-    if (!this.isInstalled) {
+    if (!this.isInstalled || !this.provider) {
       throw new Error('Phantom wallet not installed');
     }
 
@@ -89,7 +95,7 @@ export class PhantomProvider implements WalletProvider {
   }
 
   async sendTransaction(transaction: any): Promise<string> {
-    if (!this.isInstalled) {
+    if (!this.isInstalled || !this.provider) {
       throw new Error('Phantom wallet not installed');
     }
 
@@ -104,7 +110,7 @@ export class PhantomProvider implements WalletProvider {
 
   // Additional Phantom-specific methods
   async getTokenAccounts() {
-    if (!this.isInstalled) return [];
+    if (!this.isInstalled || !this.provider) return [];
 
     try {
       const response = await this.provider.request({
@@ -140,20 +146,31 @@ export class PhantomProvider implements WalletProvider {
 export class WalletManager {
   private providers: Map<string, WalletProvider> = new Map();
   private currentProvider: WalletProvider | null = null;
+  private initialized: boolean = false;
 
   constructor() {
-    this.initializeProviders();
+    // Don't initialize providers during SSR
+    // They will be initialized lazily on first access
   }
 
   private initializeProviders() {
+    // Only initialize on client-side
+    if (typeof window === 'undefined' || this.initialized) {
+      return;
+    }
+
     // Initialize Phantom provider
     const phantomProvider = new PhantomProvider();
     if (phantomProvider.isInstalled) {
       this.providers.set('phantom', phantomProvider);
     }
+
+    this.initialized = true;
   }
 
   getAvailableProviders(): string[] {
+    // Lazy initialize providers on first access (client-side only)
+    this.initializeProviders();
     return Array.from(this.providers.keys());
   }
 
@@ -336,7 +353,7 @@ export class TransactionUtils {
   }
 }
 
-// Export singleton instances
+// Export singleton instance (lazy initialization prevents SSR issues)
 export const walletManager = new WalletManager();
 export const cryptoUtils = CryptoUtils;
 export const tokenUtils = TokenUtils;
