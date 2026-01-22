@@ -38,7 +38,7 @@ A comprehensive Universal Basic Income (UBI) platform built with Next.js, React,
    ```
 
 5. **Open your browser**
-   Navigate to [https://app.0xmintyn.com](https://app.0xmintyn.com)
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 📋 Available Scripts
 
@@ -105,7 +105,7 @@ Create a `.env.local` file with the following variables:
 # Backend API
 NEXT_PUBLIC_API_URL=http://localhost:5000
 # or
-NEXT_PUBLIC_API_URL=https://appbackend.0xmintyn.com
+NEXT_PUBLIC_API_URL=http://localhost:8000
 
 # Solana Configuration
 NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
@@ -113,7 +113,7 @@ NEXT_PUBLIC_UBI_PROGRAM_ID=8zQxTardZ5YbTwxJJf3hkV4jzRa8EGfwBCrMd9tEajJy
 NEXT_PUBLIC_MINTYN_MINT=4iZQd3BBciErC9PGxxkTDtraZujEHjRCmRexRm9AwipL
 
 # NextAuth
-NEXTAUTH_URL=https://app.0xmintyn.com
+NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-secret-key-here
 ```
 
@@ -134,7 +134,7 @@ NEXTAUTH_SECRET=your-secret-key-here
 npm run dev
 ```
 
-The app will be available at `https://app.0xmintyn.com`
+The app will be available at `http://localhost:3000`
 
 ### Building for Production
 
