@@ -5,8 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
-import { initializeUbiProgram, isUbiProgramInitialized, RPC_URL } from "@/utils/ubiContract";
-import { Connection } from "@solana/web3.js";
+import { initializeUbiProgram, isUbiProgramInitialized } from "@/utils/ubiContract";
 
 interface InitializeUBIProgramProps {
   authorityAddress: string | null | undefined;
@@ -21,8 +20,8 @@ export function InitializeUBIProgram({ authorityAddress }: InitializeUBIProgramP
   // Check initialization status
   const checkInitialization = async () => {
     try {
-      const connection = new Connection(RPC_URL, "confirmed");
-      const initialized = await isUbiProgramInitialized(connection);
+      // ubiContract is stubbed; call safely without a real connection
+      const initialized = await isUbiProgramInitialized(null as any);
       setIsInitialized(initialized);
     } catch (error) {
       console.error("Error checking initialization:", error);
@@ -47,71 +46,12 @@ export function InitializeUBIProgram({ authorityAddress }: InitializeUBIProgramP
       return;
     }
 
-    // Check if Phantom is installed
-    if (typeof window === "undefined" || !(window as any).solana?.isPhantom) {
-      toast({
-        title: "Phantom Wallet Required",
-        description: "Please install Phantom wallet to initialize the program.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const phantomProvider = (window as any).solana;
-
-    // Check if wallet is connected
-    if (!phantomProvider.isConnected) {
-      try {
-        await phantomProvider.connect();
-      } catch (error: any) {
-        toast({
-          title: "Connection Failed",
-          description: error.message || "Please connect your Phantom wallet.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Verify connected wallet matches authority
-    const connectedAddress = phantomProvider.publicKey?.toString();
-    if (connectedAddress !== authorityAddress) {
-      toast({
-        title: "Wallet Mismatch",
-        description: "Please connect the authority wallet.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const signature = await initializeUbiProgram(authorityAddress, phantomProvider);
-
-      toast({
-        title: "Success! 🎉",
-        description: "UBI program initialized successfully!",
-      });
-
-      // Refresh initialization status
-      await checkInitialization();
-    } catch (error: any) {
-      console.error("Error initializing program:", error);
-
-      let errorMessage = "Failed to initialize UBI program. Please try again.";
-      if (error.message) {
-        errorMessage = error.message;
-      }
-
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Wallet-based initialization removed. Use backend/admin scripts instead.
+    toast({
+      title: "Action Disabled",
+      description: "On-chain initialization via Phantom has been removed. Use server admin scripts instead.",
+      variant: "destructive",
+    });
   };
 
   if (checking) {

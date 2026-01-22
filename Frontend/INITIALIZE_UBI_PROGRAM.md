@@ -8,10 +8,10 @@ Your program was tested on **localnet**, but your frontend connects to **devnet*
 ### Method 1: Use the Test Page (EASIEST - 2 minutes)
 
 1. **Open your browser** and go to: `http://localhost:3000/test-ubi` (or your dev URL)
-2. **Connect your Phantom wallet** (must be the authority/deployer wallet)
+2. **Connect the authority/deployer wallet** (Phantom-specific instructions removed)
 3. **Click "Check Status"** - should show "Not Initialized"
 4. **Click "Initialize UBI Program"**
-5. **Approve the transaction** in Phantom
+5. **Approve the transaction** using your chosen wallet
 6. **Wait for confirmation** (10-30 seconds)
 7. **Click "Check Status" again** - should show "✅ Initialized"
 8. **Done!** Users can now claim UBI tokens

@@ -108,7 +108,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 NEXT_PUBLIC_API_URL=http://localhost:8000
 
 # Solana Configuration
-NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
 NEXT_PUBLIC_UBI_PROGRAM_ID=8zQxTardZ5YbTwxJJf3hkV4jzRa8EGfwBCrMd9tEajJy
 NEXT_PUBLIC_MINTYN_MINT=4iZQd3BBciErC9PGxxkTDtraZujEHjRCmRexRm9AwipL
 

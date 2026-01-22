@@ -14,7 +14,7 @@ import {
   getTreasuryBalance,
   getSupportedUsers,
 } from "@/utils/treasuryManager";
-import { PublicKey } from "@solana/web3.js";
+// Phantom/solana integration removed — this component uses no blockchain types
 
 interface AutoFundTreasuryProps {
   authorityAddress: string | null | undefined;
@@ -54,51 +54,11 @@ export function AutoFundTreasury({ authorityAddress }: AutoFundTreasuryProps) {
       });
       return;
     }
-
-    if (typeof window === "undefined" || !(window as any).solana?.isPhantom) {
-      toast({
-        title: "Phantom Required",
-        description: "Please install Phantom wallet",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const phantom = (window as any).solana;
-    if (!phantom.isConnected) {
-      await phantom.connect();
-    }
-
-    const amountNum = parseFloat(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const authorityPublicKey = new PublicKey(authorityAddress);
-      const signature = await fundTreasury(authorityPublicKey, amountNum, phantom);
-      
-      toast({
-        title: "Success! 🎉",
-        description: `Transferred ${amountNum.toLocaleString()} tokens to treasury`,
-      });
-      
-      await checkStatus();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Wallet-based manual funding removed
+    toast({
+      title: "Disabled",
+      description: "Manual treasury funding via browser wallet has been removed. Use server-side admin scripts.",
+    });
   };
 
   const handleAutoFund = async () => {
@@ -110,58 +70,11 @@ export function AutoFundTreasury({ authorityAddress }: AutoFundTreasuryProps) {
       });
       return;
     }
-
-    if (typeof window === "undefined" || !(window as any).solana?.isPhantom) {
-      toast({
-        title: "Phantom Required",
-        description: "Please install Phantom wallet",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const phantom = (window as any).solana;
-    if (!phantom.isConnected) {
-      await phantom.connect();
-    }
-
-    const targetNum = parseFloat(targetBalance);
-    if (isNaN(targetNum) || targetNum <= 0) {
-      toast({
-        title: "Invalid Target",
-        description: "Please enter a valid target balance",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const authorityPublicKey = new PublicKey(authorityAddress);
-      const signature = await autoFundTreasury(authorityPublicKey, targetNum, phantom);
-      
-      if (signature) {
-        toast({
-          title: "Success! 🎉",
-          description: `Treasury auto-funded to ${targetNum.toLocaleString()} tokens`,
-        });
-      } else {
-        toast({
-          title: "No Funding Needed",
-          description: "Treasury already has sufficient balance",
-        });
-      }
-      
-      await checkStatus();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Wallet-based auto-funding removed
+    toast({
+      title: "Disabled",
+      description: "Automatic treasury funding via browser wallet has been removed. Use server-side admin scripts.",
+    });
   };
 
   if (checking) {

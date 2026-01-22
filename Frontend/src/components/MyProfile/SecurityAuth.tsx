@@ -15,7 +15,6 @@ import {
 import { FcGoogle } from "react-icons/fc";
 import { FaDiscord } from "react-icons/fa6";
 import { SocialLoginButton } from "./SocialLoginButton";
-import { PhantomWalletButton } from "./PhantomWalletButton";
 import { useSelector } from "react-redux";
 import { useToast } from "@/hooks/use-toast";
 
@@ -101,23 +100,8 @@ function SecurityAuth() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Phantom Wallet Connection */}
-          <PhantomWalletButton 
-            onConnect={() => {
-              toast({
-                title: "Wallet Connected!",
-                description: "Phantom wallet connected successfully",
-              });
-              // No page refresh needed - state updates automatically
-            }}
-            onDisconnect={() => {
-              toast({
-                title: "Wallet Disconnected",
-                description: "Phantom wallet disconnected",
-              });
-              // No page refresh needed - state updates automatically
-            }}
-          />
+          {/* Wallet connection handled via backend; UI wallet prompts removed */}
+          <div className="mb-2 text-sm text-slate-600 dark:text-slate-400">Wallet connection UI removed. Connect wallets via platform integrations.</div>
           
           {/* Multi-Sig Wallet Button (Placeholder for future implementation) */}
           <Button 

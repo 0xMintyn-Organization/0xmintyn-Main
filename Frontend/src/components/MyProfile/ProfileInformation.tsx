@@ -502,25 +502,7 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
               )}
             </div>
 
-            {/* Wallet Address */}
-            {walletAddress && (
-              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                <Wallet className="w-4 h-4" />
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-500">
-                  {user?.walletProvider?.toUpperCase() || 'WALLET'}:
-                </span>
-                <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-xs">
-                  {walletAddress?.length > 10
-                      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-                    : walletAddress}
-                </code>
-                {user?.walletConnectedAt && (
-                  <span className="text-xs text-slate-500 dark:text-slate-500">
-                    Connected {formatDate(user.walletConnectedAt)}
-                  </span>
-                )}
-              </div>
-            )}
+            {/* Wallet information removed from profile */}
           </div>
 
           {/* Edit Button */}

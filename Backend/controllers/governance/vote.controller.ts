@@ -119,7 +119,7 @@ export const castVote = CatchAsyncError(async (req: Request, res: Response) => {
     proposalId,
     voterId: userId,
     voterName: user.username || `${user.firstName} ${user.lastName}`,
-    voterWallet: (user as any).walletAddress || 'N/A',
+    voterWallet: 'N/A',
     vote,
     votingPower,
     reason

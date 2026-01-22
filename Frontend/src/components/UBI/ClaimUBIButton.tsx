@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Connection, PublicKey } from "@solana/web3.js";
-import {
-  registerUserForUBI,
-  isUserRegistered,
-  RPC_URL,
-  NETWORK,
-} from "@/utils/ubiContract";
+import { registerUserForUBI, isUserRegistered, RPC_URL } from "@/utils/ubiContract";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, Gift } from "lucide-react";
 
@@ -34,45 +28,11 @@ export function ClaimUBIButton({
   const [checking, setChecking] = useState(true);
   const [phantomAddress, setPhantomAddress] = useState<string | null>(null);
   const { toast } = useToast();
-  
-  // Check Phantom wallet connection directly
-  useEffect(() => {
-    const checkPhantomConnection = async () => {
-      if (typeof window !== "undefined" && (window as any).solana?.isPhantom) {
-        try {
-          const provider = (window as any).solana;
-          if (provider.isConnected) {
-            const address = provider.publicKey?.toString();
-            setPhantomAddress(address || null);
-          } else {
-            setPhantomAddress(null);
-          }
-          
-          // Listen for connection changes
-          provider.on("connect", () => {
-            const addr = provider.publicKey?.toString();
-            setPhantomAddress(addr || null);
-          });
-          
-          provider.on("disconnect", () => {
-            setPhantomAddress(null);
-          });
-        } catch (error) {
-          console.error("Error checking Phantom connection:", error);
-          setPhantomAddress(null);
-        }
-      } else {
-        setPhantomAddress(null);
-      }
-    };
-    
-    checkPhantomConnection();
-  }, []);
 
   // Check if user is already registered on mount and when wallet address changes
   useEffect(() => {
-    // Use Phantom address if available, otherwise use userWalletAddress from props
-    const effectiveAddress = phantomAddress || userWalletAddress;
+    // Use userWalletAddress from props (browser-wallet connection removed)
+    const effectiveAddress = userWalletAddress || null;
     if (effectiveAddress) {
       checkRegistrationStatus(effectiveAddress);
     } else {
@@ -93,7 +53,7 @@ export function ClaimUBIButton({
 
   const checkRegistrationStatus = async (walletAddress?: string) => {
     const addressToCheck = walletAddress || phantomAddress || userWalletAddress;
-    
+
     if (!addressToCheck) {
       setChecking(false);
       setIsRegistered(null);
@@ -101,19 +61,11 @@ export function ClaimUBIButton({
     }
 
     try {
-      const connection = new Connection(RPC_URL, "confirmed");
-      const userPublicKey = new PublicKey(addressToCheck);
-
-      // No wallet needed for checking registration status
-      const registered = await isUserRegistered(
-        connection,
-        null, // Wallet not needed for manual account fetching
-        userPublicKey
-      );
+      // Our ubiContract functions are now stubbed; call safely without requiring Connection/PublicKey
+      const registered = await isUserRegistered(null as any, null as any, addressToCheck as any);
       setIsRegistered(registered);
     } catch (error) {
       console.error("Error checking registration:", error);
-      // On error, assume not registered so user can try to claim
       setIsRegistered(false);
     } finally {
       setChecking(false);
@@ -121,105 +73,12 @@ export function ClaimUBIButton({
   };
 
   const handleClaimUBI = async () => {
-    // Use Phantom address if available, otherwise use userWalletAddress from props
-    const effectiveAddress = phantomAddress || userWalletAddress;
-    
-    if (!effectiveAddress) {
-      toast({
-        title: "Error",
-        description: "Wallet address not found. Please connect your wallet.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if Phantom is installed
-    if (typeof window === "undefined" || !(window as any).solana?.isPhantom) {
-      toast({
-        title: "Phantom Wallet Required",
-        description: "Please install Phantom wallet to claim UBI tokens.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const phantomProvider = (window as any).solana;
-
-    // Check if wallet is connected
-    if (!phantomProvider.isConnected) {
-      try {
-        await phantomProvider.connect();
-        // Update phantom address after connection
-        const addr = phantomProvider.publicKey?.toString();
-        setPhantomAddress(addr || null);
-      } catch (error: any) {
-        toast({
-          title: "Connection Failed",
-          description: error.message || "Please connect your Phantom wallet.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Get the currently connected address
-    const connectedAddress = phantomProvider.publicKey?.toString();
-    
-    // Verify connected wallet matches (either from props or Phantom)
-    if (connectedAddress !== effectiveAddress) {
-      toast({
-        title: "Wallet Mismatch",
-        description: userWalletAddress 
-          ? "Please connect the wallet linked to your account."
-          : "Connected wallet doesn't match. Please reconnect.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const signature = await registerUserForUBI(
-        connectedAddress, // Use the actually connected address
-        phantomProvider
-      );
-
-      toast({
-        title: "Success! 🎉",
-        description: "You've received 20 Mintyn tokens!",
-      });
-
-      if (onSuccess) {
-        onSuccess(signature);
-      }
-
-      // Refresh registration status
-      await checkRegistrationStatus(connectedAddress);
-    } catch (error: any) {
-      console.error("Error claiming UBI:", error);
-
-      let errorMessage = "Failed to claim UBI tokens. Please try again.";
-
-      if (error.message?.includes("already received") || error.message?.includes("already registered")) {
-        errorMessage = "You have already received your UBI tokens!";
-        setIsRegistered(true);
-      } else if (error.message?.includes("insufficient")) {
-        errorMessage = "Treasury has insufficient balance. Please contact support.";
-      } else if (error.message?.includes("cancelled") || error.message?.includes("rejected")) {
-        errorMessage = "Transaction was cancelled.";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Wallet-based claiming removed from UI. Direct claiming via browser wallet has been disabled.
+    toast({
+      title: "Action Disabled",
+      description: "Wallet-based claiming via browser wallets was removed. Please use backend or admin flow to claim UBI.",
+      variant: "destructive",
+    });
   };
 
   if (checking) {

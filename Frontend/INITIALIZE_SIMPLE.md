@@ -7,7 +7,7 @@ The dynamic import fails because TypeScript files aren't directly accessible in 
 
 ### Method 1: Use the Test Page (EASIEST)
 1. Go to: `http://localhost:3000/test-ubi`
-2. Connect your Phantom wallet
+2. (Removed) Phantom wallet connection step
 3. Click "Initialize UBI Program" button
 4. Approve the transaction
 5. Done! ✅
@@ -41,7 +41,7 @@ The dynamic import fails because TypeScript files aren't directly accessible in 
     const { Connection, PublicKey, Transaction, SystemProgram, TransactionInstruction } = await import('@solana/web3.js');
     const { TOKEN_PROGRAM_ID, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, getAccount } = await import('@solana/spl-token');
     
-    const RPC_URL = "https://api.devnet.solana.com";
+    const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
     const UBI_PROGRAM_ID = new PublicKey("8zQxTardZ5YbTwxJJf3hkV4jzRa8EGfwBCrMd9tEajJy");
     const MINTYN_MINT = new PublicKey("4iZQd3BBciErC9PGxxkTDtraZujEHjRCmRexRm9AwipL");
     const UBI_PROGRAM_SEED = Buffer.from("ubi_program");

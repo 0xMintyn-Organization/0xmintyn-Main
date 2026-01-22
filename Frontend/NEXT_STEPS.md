@@ -15,13 +15,13 @@ Your UBI program is now initialized on devnet. Here's what to do next:
 ```javascript
 (async () => {
   try {
-    if (!window.solana?.isPhantom) { alert("Install Phantom!"); return; }
     if (!window.solana.isConnected) await window.solana.connect();
     
     const { Connection, PublicKey, Transaction } = await import('@solana/web3.js');
     const { TOKEN_PROGRAM_ID, getAssociatedTokenAddress, getAccount, createTransferInstruction, getMint } = await import('@solana/spl-token');
     
-    const RPC_URL = "https://api.devnet.solana.com";
+    // Phantom wallet checks removed; use backend-registered wallet addresses instead.
+    const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
     const UBI_PROGRAM_ID = new PublicKey("8zQxTardZ5YbTwxJJf3hkV4jzRa8EGfwBCrMd9tEajJy");
     const MINTYN_MINT = new PublicKey("4iZQd3BBciErC9PGxxkTDtraZujEHjRCmRexRm9AwipL");
     const UBI_PROGRAM_SEED = Buffer.from("ubi_program");

@@ -22,7 +22,7 @@ This guide is for **administrators only**. These functions require special permi
    - Solana CLI (optional, for advanced operations)
 
 3. **Network Configuration**
-   - Default: **Devnet** (`https://api.devnet.solana.com`)
+   - Default RPC endpoint: set `NEXT_PUBLIC_SOLANA_RPC_URL` environment variable
    - For Mainnet, update RPC URLs in scripts
 
 ## 📊 Treasury Management

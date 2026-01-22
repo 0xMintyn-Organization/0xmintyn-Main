@@ -12,11 +12,8 @@ interface Props {
 
 export const Providers = ({ children }: Props) => {
     useEffect(() => {
-        if (window.solana && window.solana.isPhantom) {
-            console.log("Phantom wallet detected!");
-        } else {
-            console.log("Phantom wallet not found. Please install it.");
-        }
+        // Phantom integration removed; no wallet detection performed
+        console.log("Wallet integration disabled in this build");
     }, []);
 
     return (

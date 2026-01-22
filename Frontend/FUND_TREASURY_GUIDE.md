@@ -64,11 +64,11 @@ If you want to use the UI instead, first transfer tokens from mint authority to 
 ### In WSL:
 ```bash
 # Set Solana CLI to use mint authority wallet
-solana config set --url https://api.devnet.solana.com
+solana config set --url https://api.mainnet-beta.solana.com
 solana config set --keypair ~/.config/solana/my-mintyn-wallet.json
 
-# Get your Phantom wallet address (from the UI)
-PHANTOM_ADDRESS="YOUR_PHANTOM_WALLET_ADDRESS_HERE"
+# Get your wallet address
+WALLET_ADDRESS="YOUR_WALLET_ADDRESS_HERE"
 
 # Transfer 1M tokens to Phantom
 spl-token transfer 4iZQd3BBciErC9PGxxkTDtraZujEHjRCmRexRm9AwipL 1000000 $PHANTOM_ADDRESS

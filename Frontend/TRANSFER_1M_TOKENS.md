@@ -29,7 +29,7 @@ You can get it from the test page or calculate it.
 
 ```bash
 # Make sure you're on devnet
-solana config set --url https://api.devnet.solana.com
+solana config set --url https://api.mainnet-beta.solana.com
 
 # Set your keypair (mint authority)
 solana config set --keypair ~/.config/solana/id.json
@@ -50,7 +50,7 @@ If you prefer browser console:
   const { Connection, PublicKey, Transaction } = await import('@solana/web3.js');
   const { TOKEN_PROGRAM_ID, getAssociatedTokenAddress, getAccount, createTransferInstruction, getMint } = await import('@solana/spl-token');
   
-  const RPC_URL = "https://api.devnet.solana.com";
+  const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
   const UBI_PROGRAM_ID = new PublicKey("8zQxTardZ5YbTwxJJf3hkV4jzRa8EGfwBCrMd9tEajJy");
   const MINTYN_MINT = new PublicKey("4iZQd3BBciErC9PGxxkTDtraZujEHjRCmRexRm9AwipL");
   const UBI_PROGRAM_SEED = Buffer.from("ubi_program");

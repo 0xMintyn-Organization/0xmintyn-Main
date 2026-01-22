@@ -97,7 +97,7 @@ export const createProposal = CatchAsyncError(async (req: Request, res: Response
     title,
     category,
     proposerName: user.username || `${user.firstName} ${user.lastName}`,
-    proposerWallet: (user as any).walletAddress || 'N/A',
+    proposerWallet: 'N/A',
     proposerId: userId,
     summary,
     detailedDescription,
