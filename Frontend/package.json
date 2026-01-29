@@ -4,9 +4,9 @@
   "description": "UBI Platform - Universal Basic Income Platform with Solana Integration",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --host 127.0.0.1",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --host 127.0.0.1",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "admin:check-treasury": "node scripts/check-treasury.js",

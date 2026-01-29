@@ -16,8 +16,9 @@ server.headersTimeout = 66000; // 66 seconds
 // Initialize Socket.IO
 initSocketServer(server);
 
-// Get port from environment or use default
+// Get port and host from environment or use defaults
 const PORT = process.env.PORT || 8000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Handle uncaught exceptions with detailed crash report
 process.on('uncaughtException', (error: Error) => {
@@ -69,8 +70,8 @@ process.on('SIGTERM', () => {
 });
 
 // Start server
-server.listen(PORT, async () => {
-    logger.info(`🚀 Server is running on port ${PORT}`);
+server.listen(PORT, HOST, async () => {
+    logger.info(`🚀 Server is running on http://${HOST}:${PORT}`);
     logger.info(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
     
     // Connect to database
