@@ -99,6 +99,78 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
         }
     });
 
+    /**
+     * Secret direct-registration API (no OTP/email).
+     * Protected by Basic Auth via middleware.
+     * POST body: same as register (firstName, lastName, dateOfBirth, nationality, age, email, username, contactNumber, password).
+     * Optional: role (user|instructor|admin|influencer). User is created with isVerified: true.
+     */
+    export const directRegisterUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const {
+                firstName,
+                lastName,
+                dateOfBirth,
+                nationality,
+                age,
+                email,
+                username,
+                contactNumber,
+                password,
+                role: roleOverride,
+            } = req.body as IRegistrationBody & { role?: string };
+
+            if (!firstName || !lastName || !email || !username || !password || !contactNumber || !nationality) {
+                return next(new ErrorHandler('firstName, lastName, email, username, password, contactNumber, and nationality are required', 400));
+            }
+
+            const isEmailExist = await UserModel.findOne({ email });
+            if (isEmailExist) {
+                return next(new ErrorHandler('This email is already registered.', 400));
+            }
+            const isUsernameExist = await UserModel.findOne({ username });
+            if (isUsernameExist) {
+                return next(new ErrorHandler('This username is already taken.', 400));
+            }
+
+            const parsedDob = dateOfBirth ? new Date(dateOfBirth) : new Date();
+            const computedAge = age != null && !isNaN(Number(age)) ? Number(age) : Math.max(0, new Date().getFullYear() - parsedDob.getFullYear());
+            const validRoles = ['user', 'instructor', 'admin', 'influencer'];
+            const role = roleOverride && validRoles.includes(roleOverride) ? roleOverride : 'user';
+
+            const userPayload = {
+                firstName,
+                lastName,
+                dateOfBirth: parsedDob,
+                nationality,
+                age: computedAge,
+                email,
+                username,
+                contactNumber,
+                password,
+                role,
+                isVerified: true,
+            };
+
+            const user = await UserModel.create(userPayload);
+
+            res.status(201).json({
+                success: true,
+                message: 'User created successfully',
+                userId: user._id,
+                email: user.email,
+                username: user.username,
+            });
+        } catch (error: any) {
+            if (error.code === 11000) {
+                const key = Object.keys(error.keyValue || {})[0];
+                if (key === 'email') return next(new ErrorHandler('This email is already registered.', 400));
+                if (key === 'username') return next(new ErrorHandler('This username is already taken.', 400));
+            }
+            return next(new ErrorHandler(error.message || 'Failed to create user', 400));
+        }
+    });
+
     // Create activation token
     export const createActivationToken = (user: IUser) => {
         const activationCode = Math.floor(1000 + Math.random() * 9000).toString();

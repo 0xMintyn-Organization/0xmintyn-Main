@@ -1,12 +1,16 @@
 import express from 'express';
-import { activateUserAccount, activateUserAccountByLink, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus, updateSocialAccount, removeSocialAccount, forgotPassword, resetPassword } from '../controllers/user.controller';
+import { activateUserAccount, activateUserAccountByLink, directRegisterUser, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus, updateSocialAccount, removeSocialAccount, forgotPassword, resetPassword } from '../controllers/user.controller';
 import { getInstructorStats } from '../controllers/instructor.controller';
 import { isAthenticated as isAuthenticated } from '../utils/auth';
 import upload from '../middleware/multerConfig';
+import { basicAuthDirectRegister } from '../middleware/basicAuth';
 
 const userRouter = express.Router();
 
 userRouter.post('/register', registrationUser);
+
+// Secret direct-registration API (no OTP). Protected by Basic Auth. Use for bulk/loop user creation.
+userRouter.post('/register-direct', basicAuthDirectRegister, directRegisterUser);
 
 userRouter.post('/activate-user', activateUserAccount);
 userRouter.post('/activate-link', activateUserAccountByLink);
