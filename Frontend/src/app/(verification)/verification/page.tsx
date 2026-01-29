@@ -188,17 +188,28 @@ export default function OTPVerification() {
     };
 
     return (
-        <div className="w-full max-w-md mx-auto p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md my-16">
-            <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">
-                Verify Your Account
-            </h2>
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full mx-auto p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md">
+            {/* Logo Section - same as login/register */}
+            <div className="flex flex-col items-center mb-6">
+                <div className="w-20 h-20 flex items-center justify-center mb-3">
+                    <img src="/logo.png" alt="Equalmint Logo" className="w-full h-full object-contain" />
+                </div>
+                <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+                    Equalmint
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Community Hub</p>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 text-center">
+                Verify your email
+            </h3>
             <div className="w-full flex items-center justify-center mt-2">
-                <div className="w-[80px] h-[80px] rounded-full bg-green-600 dark:bg-green-700 flex items-center justify-center">
-                    <VscWorkspaceTrusted size={40} className="text-white" />
+                <div className="w-[64px] h-[64px] rounded-full bg-green-600 dark:bg-green-700 flex items-center justify-center">
+                    <VscWorkspaceTrusted size={32} className="text-white" />
                 </div>
             </div>
             <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4 mb-6">
-                Enter the 4-digit code sent to your email
+                Enter the 4-digit OTP code sent to your email to activate your account
             </p>
             <div className="m-auto flex items-center justify-around mt-4 gap-2">
                 {/* OTP Inputs */}
@@ -251,16 +262,17 @@ export default function OTPVerification() {
                     )}
                 </Button>
             </div>
-            <div className="text-center pt-4 text-sm text-gray-600 dark:text-gray-400">
-                Go back to Sign in?{" "}
-                <button
-                    type="button"
-                    onClick={() => router.push("/login")}
-                    className="text-green-600 dark:text-green-400 hover:underline font-medium"
+            <div className="text-center pt-4 text-sm text-gray-500 dark:text-gray-400">
+                Already have an account?{" "}
+                <a
+                    href="/login"
+                    className="text-[#2190ff] hover:underline focus:outline-none focus:ring-2 focus:ring-[#2190ff] focus:ring-offset-2 rounded px-1"
+                    aria-label="Go to login page"
                 >
-                    Sign In
-                </button>
+                    Sign in
+                </a>
             </div>
         </div>
+        </main>
     );
 }

@@ -20,7 +20,9 @@ const userSchema = z.object({
   email: z.string().email("Invalid email"),
   username: z.string().min(5, "Username must be at least 5 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  dateOfBirth: z.string().optional(),
+  contactNumber: z.string().min(1, "Please enter your contact number"),
+  nationality: z.string().min(1, "Please enter your nationality"),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
 });
 
 export default function RegistrationPage() {
@@ -40,6 +42,8 @@ export default function RegistrationPage() {
       email: "",
       username: "",
       password: "",
+      contactNumber: "",
+      nationality: "",
       dateOfBirth: "",
     },
   });
@@ -66,8 +70,20 @@ export default function RegistrationPage() {
       setIsSubmitting(true);
       setRegisterError(null);
       try {
-        const age = values.dateOfBirth ? Math.max(0, new Date().getFullYear() - new Date(values.dateOfBirth).getFullYear()) : 0;
-        await registerUser({ ...values, age }).unwrap();
+        const age = values.dateOfBirth
+          ? Math.max(0, new Date().getFullYear() - new Date(values.dateOfBirth).getFullYear())
+          : 0;
+        await registerUser({
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          username: values.username,
+          password: values.password,
+          contactNumber: values.contactNumber,
+          nationality: values.nationality,
+          dateOfBirth: values.dateOfBirth,
+          age,
+        }).unwrap();
       } catch {
         setIsSubmitting(false);
       }
@@ -178,6 +194,48 @@ export default function RegistrationPage() {
 
             <FormField
               control={form.control}
+              name="contactNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. +1 234 567 8900" {...field} autoComplete="tel" className={form.formState.errors.contactNumber ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""} />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="nationality"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nationality</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. United States" {...field} autoComplete="country-name" className={form.formState.errors.nationality ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""} />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dateOfBirth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date of birth</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} max={new Date().toISOString().split("T")[0]} className={`text-gray-700 dark:text-gray-300 ${form.formState.errors.dateOfBirth ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`} />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
@@ -200,20 +258,6 @@ export default function RegistrationPage() {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                  </FormControl>
-                  <FormMessage className="text-red-500 text-sm" />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="dateOfBirth"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-600 dark:text-gray-400">Date of birth (optional)</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} className="text-gray-700 dark:text-gray-300" />
                   </FormControl>
                   <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
