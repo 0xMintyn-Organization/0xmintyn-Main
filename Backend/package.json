@@ -9,7 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "cross-env NODE_ENV=development ts-node-dev --respawn --transpile-only server.ts",
-    "start": "node build/server.js",
+    "start": "cross-env NODE_ENV=production ts-node --transpile-only server.ts",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false"
   },
   "author": "raja naveed",
@@ -58,6 +58,7 @@
     "@types/node": "^20.14.10",
     "@vercel/node": "^5.1.14",
     "cross-env": "^10.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   }
 }
