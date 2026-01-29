@@ -38,7 +38,7 @@ A comprehensive Universal Basic Income (UBI) platform built with Next.js, React,
    ```
 
 5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+   Navigate to [app.equalmint.com](app.equalmint.com)
 
 ## 📋 Available Scripts
 
@@ -105,7 +105,7 @@ Create a `.env.local` file with the following variables:
 # Backend API
 NEXT_PUBLIC_API_URL=http://localhost:5000
 # or
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=api.equalmint.com
 
 # Solana Configuration
 NEXT_PUBLIC_SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
@@ -113,7 +113,7 @@ NEXT_PUBLIC_UBI_PROGRAM_ID=8zQxTardZ5YbTwxJJf3hkV4jzRa8EGfwBCrMd9tEajJy
 NEXT_PUBLIC_MINTYN_MINT=4iZQd3BBciErC9PGxxkTDtraZujEHjRCmRexRm9AwipL
 
 # NextAuth
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=app.equalmint.com
 NEXTAUTH_SECRET=your-secret-key-here
 ```
 
@@ -134,7 +134,7 @@ NEXTAUTH_SECRET=your-secret-key-here
 npm run dev
 ```
 
-The app will be available at `http://localhost:3000`
+The app will be available at `app.equalmint.com`
 
 ### Building for Production
 

@@ -8,7 +8,7 @@ export default function Dropdown2() {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="usd">USD</SelectItem>
-          <SelectItem value="oxm">OXM</SelectItem>
+          <SelectItem value="eqm">EQM</SelectItem>
           <SelectItem value="eth">ETH</SelectItem>
           <SelectItem value="btc">BTC</SelectItem>
         </SelectContent>

@@ -79,13 +79,7 @@ export default function LoginPage() {
       });
       // Small delay to ensure state is updated
       setTimeout(() => {
-        // Check if user has wallet address, redirect to connect-wallet if not
-        const userData = data?.user;
-        if (userData && !userData.walletAddress) {
-          router.push("/connect-wallet");
-        } else {
-          router.push("/dashboard");
-        }
+        router.push("/dashboard");
       }, 100);
     }
 
@@ -140,15 +134,15 @@ export default function LoginPage() {
       <div className="max-w-md w-full mx-auto p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md">
         {/* Logo Section */}
         <div className="flex flex-col items-center mb-6">
-        <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden mb-3">
+        <div className="w-20 h-20 flex items-center justify-center mb-3">
           <img 
             src="/logo.png" 
-            alt="0xMintyn Logo" 
+            alt="Equalmint Logo" 
             className="w-full h-full object-contain"
           />
         </div>
         <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-          0xMintyn
+          Equalmint
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">Community Hub</p>
       </div>

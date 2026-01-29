@@ -220,23 +220,9 @@ export function useOwnershipDetection(user: User | null) {
   }, [detector]);
 
   const loadSellerProfile = React.useCallback(async () => {
-    if (!user?.isSeller) return;
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}marketplace/seller/profile/me`, {
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setSellerProfile(data.seller);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading seller profile:', error);
-    }
-  }, [user?.isSeller]);
+    // Marketplace removed - seller profile loading disabled
+    return;
+  }, []);
 
   React.useEffect(() => {
     loadSellerProfile();

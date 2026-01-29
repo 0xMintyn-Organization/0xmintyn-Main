@@ -1,4 +1,4 @@
-# 0xMintyn Marketplace - UI/UX Improvements Summary
+# Equalmint Marketplace - UI/UX Improvements Summary
 **Date:** December 2024  
 **Project:** Complete UI/UX Overhaul and Bug Fixes  
 **Status:** ✅ Completed Successfully
@@ -7,7 +7,7 @@
 
 ## 🎯 **Executive Summary**
 
-We conducted a comprehensive review and improvement of the entire 0xMintyn Marketplace codebase, identifying and resolving multiple UI/UX issues that were degrading user experience. The project resulted in significant improvements in performance, accessibility, and overall user satisfaction.
+We conducted a comprehensive review and improvement of the entire Equalmint Marketplace codebase, identifying and resolving multiple UI/UX issues that were degrading user experience. The project resulted in significant improvements in performance, accessibility, and overall user satisfaction.
 
 ---
 
@@ -196,7 +196,7 @@ We conducted a comprehensive review and improvement of the entire 0xMintyn Marke
 
 ## 💡 **Conclusion**
 
-The UI/UX overhaul has transformed the 0xMintyn Marketplace from a problematic user experience to a professional, accessible, and performant platform. All identified issues have been resolved with modern web development best practices, resulting in:
+The UI/UX overhaul has transformed the Equalmint Marketplace from a problematic user experience to a professional, accessible, and performant platform. All identified issues have been resolved with modern web development best practices, resulting in:
 
 - **50% performance improvement**
 - **100% accessibility compliance**

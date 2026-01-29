@@ -40,16 +40,16 @@ function Header() {
             <div className="flex items-center gap-4">
                 <MobileSidebar />
                 <Link href="/dashboard" className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+                    <div className="w-10 h-10 flex items-center justify-center">
                         <img 
                             src="/logo.png" 
-                            alt="0xMintyn Logo" 
+                            alt="Equalmint Logo" 
                             className="w-full h-full object-contain"
                         />
                     </div>
                     <div className="font-bold text-xl">
-                        <span className="hidden lg:inline">0xMintyn Community Hub</span>
-                        <span className="lg:hidden">OXM Community Hub</span>
+                        <span className="hidden lg:inline">Equalmint Community Hub</span>
+                        <span className="lg:hidden">EQM Community Hub</span>
                     </div>
                 </Link>
             </div>
@@ -67,7 +67,7 @@ function Header() {
                     className="hidden lg:block bg-green-900 text-white hover:bg-green-700 font-semibold rounded-3xl px-3 text-xs"
                     aria-label="Earning Balance"
                 >
-                    100 0XM
+                    100 EQM
                 </Button>
 
                 <Button

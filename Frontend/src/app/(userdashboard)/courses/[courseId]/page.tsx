@@ -132,7 +132,7 @@ export default function CoursePlayerPage() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `0xMintyn-Certificate-${courseName.replace(/[^a-zA-Z0-9]/g, '-')}.png`);
+      link.setAttribute('download', `Equalmint-Certificate-${courseName.replace(/[^a-zA-Z0-9]/g, '-')}.png`);
       document.body.appendChild(link);
       link.click();
       link.remove();

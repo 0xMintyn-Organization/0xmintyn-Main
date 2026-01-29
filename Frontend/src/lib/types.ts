@@ -72,7 +72,7 @@ export interface ProposalCardType {
 
 export interface OrderBookType {
   priceUSD: number;
-  amountOXM: number;
+  amountEQM: number;
 }
 
 export interface OpenOrdersType {
@@ -98,7 +98,6 @@ export interface TradeHistoryType {
 export interface User {
   id: string;
   username: string;
-  walletAddress: string;
   profilePicture: string;
   bannerImage: string;
   personalDetails: {

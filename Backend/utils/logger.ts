@@ -68,7 +68,7 @@ const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: logFormat,
     defaultMeta: { 
-        service: '0xmintyn-backend',
+        service: 'equalmint-backend',
         environment: process.env.NODE_ENV || 'development',
         version: process.env.npm_package_version || '1.0.0'
     },

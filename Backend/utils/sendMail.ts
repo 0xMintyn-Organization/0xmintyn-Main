@@ -13,7 +13,7 @@ const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
     // ✅ Setup transport using cPanel SMTP settings
     const transport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,        // e.g. 0xmintyn.com
+      host: process.env.SMTP_HOST,        // e.g. equalmint.com
       port: Number(process.env.SMTP_PORT) || 465, // usually 465 for SSL
       secure: true,                       // SSL = true (465), false for 587 (TLS)
       auth: {

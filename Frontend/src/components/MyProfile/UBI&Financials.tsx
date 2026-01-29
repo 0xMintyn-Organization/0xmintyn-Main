@@ -21,12 +21,9 @@ import {
 } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
-import { ClaimUBIButton } from "@/components/UBI/ClaimUBIButton";
 
 function UBIFinancials() {
-  // Get user wallet address from Redux
   const { user } = useSelector((state: any) => state.auth);
-  const walletAddress = user?.walletAddress;
 
   return (
     <Card>
@@ -34,24 +31,15 @@ function UBIFinancials() {
         <CardTitle>UBI & Financials</CardTitle>
       </CardHeader>
       <CardContent className="px-6">
-          {/* 0XM Balance Section */}
+          {/* EQM Balance Section */}
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             <div className="bg-slate-100 shadow-md rounded-lg p-6 dark:bg-zinc-900">
-              <h2 className="text-heading text-xl font-semibold mb-4">0XM Balance</h2>
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-gray-500">Current Balance</p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(ubiBalance?.currentBalance || 0)}
-                  </p>
-                </div>
-                <ClaimUBIButton
-                  userWalletAddress={walletAddress}
-                  onSuccess={(signature) => {
-                    console.log("UBI claimed successfully! Transaction:", signature);
-                  }}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                />
+              <h2 className="text-heading text-xl font-semibold mb-4">EQM Balance</h2>
+              <div>
+                <p className="text-gray-500">Current Balance</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(ubiBalance?.currentBalance || 0)}
+                </p>
               </div>
               <div className="mt-4">
                 <p className="text-sm text-gray-500">
@@ -143,7 +131,7 @@ function UBIFinancials() {
                 <Button
                   className="w-full mt-4 bg-green-900 text-white px-4 py-2 rounded hover:bg-green-800"
                 >
-                  Stake 0XM
+                  Stake EQM
                 </Button>
               </div>
             </div>

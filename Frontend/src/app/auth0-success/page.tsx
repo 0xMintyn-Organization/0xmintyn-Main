@@ -85,11 +85,6 @@ export default function Auth0SuccessPage() {
                   localStorage.setItem('accessToken', userData.accessToken);
                   localStorage.setItem('loginTimestamp', Date.now().toString());
                   
-                  // Check if user has wallet, if not redirect to connect-wallet page
-                  if (!userData.user.walletAddress) {
-                    router.push("/connect-wallet");
-                    return;
-                  }
                 }
               }
               // Default redirect to dashboard

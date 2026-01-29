@@ -41,6 +41,7 @@ interface DashboardData {
 export default function RoleBasedDashboard() {
   const { user, isAdmin, isInstructor, isUser } = useRole();
   const { toast } = useToast();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData>({});
   
@@ -86,6 +87,18 @@ export default function RoleBasedDashboard() {
   // Only admin gets a different dashboard
   if (isAdmin()) {
     return <AdminDashboard data={dashboardData} />;
+  }
+
+  // Route contributors to their specific dashboard
+  if (user?.role === 'contributor') {
+    router.push('/contributor/dashboard');
+    return null;
+  }
+
+  // Route startups to their specific dashboard
+  if (user?.role === 'startup') {
+    router.push('/startup/dashboard');
+    return null;
   }
 
   // All other roles (user and instructor) get the same unified dashboard

@@ -23,7 +23,7 @@ export const checkEnvironment = () => {
   }
 
   // Check if we have fallback URL
-  const fallbackUrl = 'http://localhost:8000/api/v1/';
+  const fallbackUrl = 'api.equalmint.com/api/v1/';
   console.log('🔄 Fallback URL available:', fallbackUrl);
 
   return {
@@ -41,7 +41,7 @@ export const testAPIConnectivity = async () => {
   try {
     console.log('🧪 Testing API connectivity to:', serverUri);
     
-    const response = await fetch(`${serverUri}marketplace/stats`, {
+    const response = await fetch(`${serverUri}health`, {
       method: 'GET',
       credentials: 'include',
       headers: {

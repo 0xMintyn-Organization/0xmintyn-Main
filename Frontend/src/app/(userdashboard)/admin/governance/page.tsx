@@ -272,7 +272,7 @@ function AdminGovernancePage() {
   return (
     <Protected>
       <RoleProtected allowedRoles={['admin']}>
-        <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className="w-full px-6 py-8 space-y-8">
           {/* Header */}
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-zinc-600 bg-clip-text text-transparent">

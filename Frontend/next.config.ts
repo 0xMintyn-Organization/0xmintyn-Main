@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'appbackend.0xmintyn.com',
+        hostname: 'appbackend.equalmint.com',
         pathname: '/uploads/**',
       },
       {
@@ -50,7 +50,7 @@ const nextConfig: NextConfig = {
     // Keep domains for backward compatibility (Next.js 12 style)
     domains: [
       'localhost', 
-      'appbackend.0xmintyn.com',
+      'appbackend.equalmint.com',
       'yourdomain.com', 
       'static.vecteezy.com', 
       'picsum.photos',

@@ -246,7 +246,7 @@ export default function CoursePreviewPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
       {/* Hero Section */}
       <div className="bg-zinc-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="w-full px-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center gap-2 text-sm text-gray-400">
@@ -413,7 +413,7 @@ export default function CoursePreviewPage() {
       </div>
 
       {/* Tabs Section */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="w-full px-6 py-12">
         <Tabs defaultValue="overview" className="space-y-12">
           <TabsList className="grid grid-cols-4 w-full max-w-2xl">
             <TabsTrigger value="overview">Overview</TabsTrigger>

@@ -41,7 +41,7 @@ function MyProfile() {
         {/* Hero Section */}
         <div className="relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 border-b border-slate-200 dark:border-slate-800">
           <div className="absolute inset-0 bg-grid-slate-200 dark:bg-grid-slate-700 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:[mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.05))]"></div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="relative w-full px-6 sm:px-6 lg:px-8 py-12">
             <div className="text-center">
               <div className="inline-flex items-center space-x-2 px-4 py-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-full mb-6 border border-slate-300 dark:border-slate-700">
                 <Star className="w-4 h-4 text-slate-700 dark:text-slate-300" />
@@ -58,7 +58,7 @@ function MyProfile() {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div className="w-full px-6 sm:px-6 lg:px-8 py-8 md:py-12">
           <div className="space-y-6 md:space-y-8">
             
             {/* Profile Information */}

@@ -2,13 +2,10 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { apiSlice } from './features/api/apiSlice'
 import authSlice, { userLoggedIn } from './features/auth/authSlice'
-import walletSlice from './features/wallet/walletSlice'
-
 export const store = configureStore({
     reducer: {
         [apiSlice.reducerPath]: apiSlice.reducer,
-        auth: authSlice,
-        wallet: walletSlice
+        auth: authSlice
     },
     devTools: false,
     middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(apiSlice.middleware)

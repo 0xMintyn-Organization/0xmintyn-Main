@@ -14,7 +14,7 @@ import {
   getTreasuryBalance,
   getSupportedUsers,
 } from "@/utils/treasuryManager";
-// Phantom/solana integration removed — this component uses no blockchain types
+// On-chain integration removed — use server-side admin scripts
 
 interface AutoFundTreasuryProps {
   authorityAddress: string | null | undefined;
@@ -70,10 +70,9 @@ export function AutoFundTreasury({ authorityAddress }: AutoFundTreasuryProps) {
       });
       return;
     }
-    // Wallet-based auto-funding removed
     toast({
       title: "Disabled",
-      description: "Automatic treasury funding via browser wallet has been removed. Use server-side admin scripts.",
+      description: "Automatic treasury funding is disabled. Use server-side admin scripts.",
     });
   };
 
@@ -223,7 +222,7 @@ export function AutoFundTreasury({ authorityAddress }: AutoFundTreasuryProps) {
 
         {!authorityAddress && (
           <p className="text-sm text-gray-500">
-            Connect your authority wallet to fund the treasury
+            Authority not configured. Use server-side admin scripts to fund the treasury.
           </p>
         )}
       </CardContent>

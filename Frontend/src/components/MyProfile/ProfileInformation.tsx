@@ -28,7 +28,6 @@ import {
   MapPin,
   Calendar,
   User,
-  Wallet,
   Check,
   Upload,
   Image as ImageIcon,
@@ -72,8 +71,6 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
     },
   ] = useEditUsernameMutation();
 
-  // Get wallet address from user data
-  const walletAddress = user?.walletAddress;
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -92,7 +89,7 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
     if (imagePath.startsWith('http')) return imagePath;
     
     // Handle environment variable with trailing slash
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'api.equalmint.com';
     if (baseUrl.endsWith('/')) {
       baseUrl = baseUrl.slice(0, -1);
     }
@@ -502,7 +499,6 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
               )}
             </div>
 
-            {/* Wallet information removed from profile */}
           </div>
 
           {/* Edit Button */}

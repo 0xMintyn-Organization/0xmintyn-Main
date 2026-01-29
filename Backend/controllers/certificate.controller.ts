@@ -70,7 +70,7 @@ export const generateCertificate = CatchAsyncError(
 
       // Set response headers for PDF download
       res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Content-Disposition', `attachment; filename="0xMintyn-Certificate-${course.name.replace(/[^a-zA-Z0-9]/g, '-')}.png"`);
+      res.setHeader('Content-Disposition', `attachment; filename="Equalmint-Certificate-${course.name.replace(/[^a-zA-Z0-9]/g, '-')}.png"`);
       res.setHeader('Content-Length', certificateBuffer.length);
 
       res.send(certificateBuffer);
@@ -249,16 +249,16 @@ async function generateCertificateImage(data: {
     ctx.fill();
   }
 
-  // 0xMintyn Logo with modern typography
+  // Equalmint Logo with modern typography
   ctx.fillStyle = '#3b82f6';
   ctx.font = 'bold 64px "Inter", "Segoe UI", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('0xMintyn', 700, 180);
+  ctx.fillText('Equalmint', 700, 180);
 
   // Add subtle glow effect
   ctx.shadowColor = '#3b82f6';
   ctx.shadowBlur = 20;
-  ctx.fillText('0xMintyn', 700, 180);
+  ctx.fillText('Equalmint', 700, 180);
   ctx.shadowBlur = 0;
 
   // Certificate title with elegant typography
@@ -346,11 +346,11 @@ async function generateCertificateImage(data: {
   ctx.textAlign = 'left';
   ctx.fillText(`Certificate ID: ${data.courseId.slice(-12).toUpperCase()}`, 100, 950);
 
-  // 0xMintyn footer with modern design
+  // Equalmint footer with modern design
   ctx.textAlign = 'right';
   ctx.fillStyle = '#3b82f6';
   ctx.font = 'bold 20px "Inter", "Segoe UI", sans-serif';
-  ctx.fillText('Powered by 0xMintyn', 1300, 950);
+  ctx.fillText('Powered by Equalmint', 1300, 950);
 
   // Add verification badge
   ctx.fillStyle = '#10b981';

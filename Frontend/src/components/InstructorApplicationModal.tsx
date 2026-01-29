@@ -130,7 +130,7 @@ export default function InstructorApplicationModal({
                 Become an Instructor
               </DialogTitle>
               <DialogDescription className="text-gray-600 dark:text-gray-400">
-                Share your knowledge and start teaching on 0xMintyn
+                Share your knowledge and start teaching on Equalmint
               </DialogDescription>
             </div>
           </div>

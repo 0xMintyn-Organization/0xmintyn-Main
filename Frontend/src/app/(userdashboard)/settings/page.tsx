@@ -12,7 +12,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useFontSize } from "@/contexts/FontSizeContext";
 import { useTextToSpeech } from "@/contexts/TextToSpeechContext";
 import { TextToSpeechWrapper } from "@/components/TextToSpeech/TextToSpeechWrapper";
-import { Bell, ChevronRight, Eye, EyeOff, Lock, Settings as SettingsIcon, Wallet, Shield, Code, Download, Trash2, CheckCircle, AlertCircle, Zap, Globe, Smartphone, Mail, CreditCard, DollarSign, Gauge, Moon, Sun } from "lucide-react";
+import { Bell, ChevronRight, Eye, EyeOff, Lock, Settings as SettingsIcon, Shield, Code, Download, Trash2, CheckCircle, AlertCircle, Zap, Globe, Smartphone, Mail, CreditCard, DollarSign, Gauge, Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAutoLogout } from "@/hooks/useAutoLogout";
 
@@ -134,9 +134,9 @@ export default function Settings() {
 
   return (
     <Protected>
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8 w-full">
         {/* Header Section */}
-        <div className="max-w-7xl mx-auto mb-12">
+        <div className="w-full px-6 mb-12">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
               <div>
                 <TextToSpeechWrapper>
@@ -181,7 +181,7 @@ export default function Settings() {
         </div>
 
         {/* Tabs Section */}
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full px-6">
           <Tabs defaultValue="general" className="w-full">
             {/* Tab Navigation - Enhanced */}
             <div className="mb-8 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-2 shadow-sm sticky">
@@ -200,10 +200,6 @@ export default function Settings() {
                 >
                   <Bell className="h-5 w-5" />
                   <span className="hidden sm:inline">Alerts</span>
-                </TabsTrigger>
-                <TabsTrigger value="wallet" className="flex items-center gap-2 py-3 px-4 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-green-700 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300">
-                  <CreditCard className="h-5 w-5" />
-                  <span className="hidden sm:inline">Wallet</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -533,7 +529,7 @@ export default function Settings() {
               {/* DApp & API Permissions */}
               <SettingCard icon={Code} title="Connected Apps & Integrations" description="Manage third-party app permissions">
                 <div className="space-y-3">
-                  <ToggleSetting title="DeFi Aggregator" description="Read-only access to wallet balance" defaultChecked={true} />
+                  <ToggleSetting title="DeFi Aggregator" description="Read-only access to balance" defaultChecked={true} />
 
                   <ToggleSetting title="NFT Marketplace" description="Transaction signing permissions" defaultChecked={true} />
 
@@ -649,124 +645,11 @@ export default function Settings() {
               </SettingCard>
             </TabsContent>
 
-            {/* WALLET & PAYMENT */}
-            <TabsContent value="wallet" className="space-y-6 animate-in fade-in duration-300">
-              {/* Wallet Management */}
-              <SettingCard icon={Wallet} title="Connected Wallets" description="Manage your blockchain wallet connections">
-                <div className="space-y-3">
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-50/50 dark:from-blue-900/20 dark:to-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center justify-between hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-lg bg-blue-600/20">
-                        <Wallet className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-white">MetaMask</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">0x71C...F3E2 (Primary)</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:text-red-700">
-                      Disconnect
-                    </Button>
-                  </div>
-
-                  <div className="bg-gradient-to-r from-purple-50 to-purple-50/50 dark:from-purple-900/20 dark:to-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-center justify-between hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-lg bg-purple-600/20">
-                        <Wallet className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-white">WalletConnect</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">0x89B...42A1</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400">
-                        Set Primary
-                      </Button>
-                      <Button variant="outline" size="sm" className="bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
-                        Disconnect
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Button className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-6 rounded-lg font-semibold">
-                    <span>+ Connect New Wallet</span>
-                  </Button>
-                </div>
-              </SettingCard>
-
-              {/* Gas Fee Preferences */}
-              <SettingCard icon={Gauge} title="Gas Fee Settings" description="Optimize your transaction costs">
-                <div className="space-y-4">
-                  <ToggleSetting title="Auto-Adjust Gas Fees" description="Optimize based on current network conditions" defaultChecked={true} />
-
-                  <div>
-                    <label className="font-semibold text-gray-900 dark:text-white mb-3 block">Gas Price Strategy</label>
-                    <Select defaultValue="balanced">
-                      <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 rounded-lg py-6">
-                        <SelectValue placeholder="Select strategy" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="fast">⚡ Fast (Higher Cost)</SelectItem>
-                        <SelectItem value="balanced">⚖️ Balanced (Recommended)</SelectItem>
-                        <SelectItem value="economic">💰 Economic (Slower)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </SettingCard>
-
-              {/* Fiat On/Off Ramp */}
-              <SettingCard icon={CreditCard} title="Fiat On/Off Ramp Integration" description="Buy and sell crypto with fiat currency">
-                <div className="space-y-3">
-                  <ToggleSetting title="Stripe" description="💳 Credit/debit card payments" defaultChecked={true} />
-
-                  <ToggleSetting title="Ramp" description="🏦 Bank transfers & more payment methods" defaultChecked={false} />
-
-                  <ToggleSetting title="MoonPay" description="🌍 Global payment options (150+ countries)" defaultChecked={false} />
-
-                  <ToggleSetting title="Transak" description="💱 Fast on/off ramps" defaultChecked={false} />
-                </div>
-              </SettingCard>
-
-              {/* Payment Preferences */}
-              <SettingCard icon={DollarSign} title="Payment Preferences" description="Set your default payment methods">
-                <div className="space-y-4">
-                  <div>
-                    <label className="font-semibold text-gray-900 dark:text-white mb-3 block">Preferred Currency</label>
-                    <Select defaultValue="usd">
-                      <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 rounded-lg py-6">
-                        <SelectValue placeholder="Select currency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="usd">💵 USD - US Dollar</SelectItem>
-                        <SelectItem value="eur">💶 EUR - Euro</SelectItem>
-                        <SelectItem value="gbp">💷 GBP - British Pound</SelectItem>
-                        <SelectItem value="btc">₿ BTC - Bitcoin</SelectItem>
-                        <SelectItem value="eth">Ξ ETH - Ethereum</SelectItem>
-                        <SelectItem value="usdt">USDT - Tether</SelectItem>
-                        <SelectItem value="usdc">USDC - USD Coin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <ToggleSetting title="Auto-Conversion" description="Automatically convert to preferred currency" defaultChecked={true} />
-                </div>
-              </SettingCard>
-
-              {/* Transaction History */}
-              <SettingCard icon={Zap} title="Transaction History" description="View and manage your transaction records">
-                <Button variant="outline" className="w-full justify-between py-6 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300">
-                  <span className="flex items-center gap-2">📊 View Detailed Transaction History</span>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </SettingCard>
-            </TabsContent>
           </Tabs>
         </div>
 
         {/* Footer Info */}
-        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
+        <div className="w-full px-6 mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center md:text-left">
             <div>
               <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">🔒 Security</p>
@@ -788,3 +671,4 @@ export default function Settings() {
     </Protected>
   );
 }
+

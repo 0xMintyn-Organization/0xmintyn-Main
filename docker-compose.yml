@@ -5,7 +5,7 @@ services:
     build:
       context: ./Backend
       dockerfile: Dockerfile
-    container_name: 0xmintyn-backend
+    container_name: equalmint-backend
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -13,21 +13,21 @@ services:
       - ./Backend/uploads:/app/uploads
       - ./Backend/mails:/app/mails
     networks:
-      - 0xmintyn-network
+      - equalmint-network
 
   frontend:
     build:
       context: ./Frontend
       dockerfile: Dockerfile
-    container_name: 0xmintyn-frontend
+    container_name: equalmint-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
     depends_on:
       - backend
     networks:
-      - 0xmintyn-network
+      - equalmint-network
 
 networks:
-  0xmintyn-network:
+  equalmint-network:
     driver: bridge

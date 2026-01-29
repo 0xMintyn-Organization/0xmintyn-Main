@@ -34,7 +34,7 @@ export default function MobileSidebar() {
         {/* Hidden header for accessibility */}
         <SheetHeader className="sr-only">
           <SheetTitle>Community Hub Menu</SheetTitle>
-          <SheetDescription>Navigation Menu for 0xMintyn Community Hub</SheetDescription>
+          <SheetDescription>Navigation Menu for Equalmint Community Hub</SheetDescription>
         </SheetHeader>
         
         {/* Gradient overlay at top */}

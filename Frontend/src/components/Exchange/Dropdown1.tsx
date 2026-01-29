@@ -2,12 +2,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export default function Dropdown1() {
   return (
-      <Select defaultValue="oxm">
+      <Select defaultValue="eqm">
         <SelectTrigger className=" h-8 text-xs bg-zinc-300 dark:bg-zinc-800 ">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="oxm">OXM</SelectItem>
+          <SelectItem value="eqm">EQM</SelectItem>
           <SelectItem value="eth">ETH</SelectItem>
           <SelectItem value="btc">BTC</SelectItem>
         </SelectContent>

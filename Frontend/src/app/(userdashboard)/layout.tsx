@@ -6,7 +6,7 @@ import LayoutContent from "./LayoutContent.client";
 import Protected from "@/hooks/useProtected";
 
 export const metadata: Metadata = {
-  title: "0xMintyn",
+  title: "Equalmint",
   description: "Universal Basic Income Platform",
 };
 

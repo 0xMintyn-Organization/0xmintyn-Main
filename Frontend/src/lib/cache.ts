@@ -111,7 +111,6 @@ export const CACHE_KEYS = {
   USER_PROFILE: 'user_profile',
   SELLER_PROFILE: 'seller_profile',
   CATEGORY_STATS: 'category_stats',
-  MARKETPLACE_STATS: 'marketplace_stats',
 } as const;
 
 /**
@@ -181,14 +180,6 @@ export const cacheInvalidation = {
     console.log(`Offers cache invalidated for conversation ${conversationId}`);
   },
 
-  /**
-   * Invalidate all marketplace data
-   */
-  invalidateMarketplace: () => {
-    cache.delete(CACHE_KEYS.CATEGORY_STATS);
-    cache.delete(CACHE_KEYS.MARKETPLACE_STATS);
-    console.log('Marketplace cache invalidated');
-  },
 
   /**
    * Invalidate user-related cache

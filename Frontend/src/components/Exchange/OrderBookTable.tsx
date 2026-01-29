@@ -14,7 +14,7 @@ import { orderBook } from "@/lib/utils"
         <TableHeader>
           <TableRow className="text-green-700">
             <TableHead>Price (USD)</TableHead>
-            <TableHead>Amount (OXM)</TableHead>
+            <TableHead>Amount (EQM)</TableHead>
             <TableHead>Total (USD)</TableHead>
           </TableRow>
         </TableHeader>
@@ -22,8 +22,8 @@ import { orderBook } from "@/lib/utils"
           {orderBook.map((data, idx) => (
             <TableRow key={idx} className={`${idx < 5 ? 'text-red-600' : 'text-green-700'}`}>
               <TableCell>${data.priceUSD.toFixed(2)}</TableCell>
-              <TableCell>{data.amountOXM.toFixed(2)}</TableCell>
-              <TableCell>${(data.priceUSD * data.amountOXM).toFixed(2)}</TableCell>
+              <TableCell>{data.amountEQM.toFixed(2)}</TableCell>
+              <TableCell>${(data.priceUSD * data.amountEQM).toFixed(2)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

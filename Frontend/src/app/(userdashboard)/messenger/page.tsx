@@ -8,8 +8,8 @@ export default function MessengerRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to the marketplace messages page
-    router.replace('/marketplace/messages');
+    // Messenger functionality removed - redirect to dashboard
+    router.replace('/dashboard');
   }, [router]);
 
   return (

@@ -40,16 +40,15 @@ export function InitializeUBIProgram({ authorityAddress }: InitializeUBIProgramP
     if (!authorityAddress) {
       toast({
         title: "Error",
-        description: "Authority address not found. Please connect your wallet.",
+        description: "Authority address not configured.",
         variant: "destructive",
       });
       return;
     }
 
-    // Wallet-based initialization removed. Use backend/admin scripts instead.
     toast({
       title: "Action Disabled",
-      description: "On-chain initialization via Phantom has been removed. Use server admin scripts instead.",
+      description: "Initialization is disabled. Use server admin scripts instead.",
       variant: "destructive",
     });
   };
@@ -149,7 +148,7 @@ export function InitializeUBIProgram({ authorityAddress }: InitializeUBIProgramP
           ) : (
             <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-md">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Please connect the authority wallet to initialize the program.
+                Authority not configured. Use server admin scripts to initialize.
               </p>
             </div>
           )}
@@ -165,7 +164,7 @@ export function InitializeUBIProgram({ authorityAddress }: InitializeUBIProgramP
               <li>Enables user registration</li>
             </ul>
             <p className="text-xs text-blue-700 dark:text-blue-500 mt-3">
-              Note: After initialization, you'll need to fund the treasury with Mintyn tokens
+              Note: After initialization, you'll need to fund the treasury with Equalmint tokens
               for distribution to users.
             </p>
           </div>

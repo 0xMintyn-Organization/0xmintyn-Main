@@ -5,12 +5,11 @@
   small, dependency-free stub that preserves exported names so other
   modules can import them without needing to be refactored.
 
-  All functions return safe default values and do not perform network
-  or wallet operations.
+  All functions return safe default values and do not perform network operations.
 */
 
 export const UBI_PROGRAM_ID = "UBI_PROGRAM_DISABLED";
-export const MINTYN_MINT = "MINTYN_MINT_DISABLED";
+export const EQUALMINT_MINT = "EQUALMINT_MINT_DISABLED";
 export const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "";
 
 export async function initializeUbiProgram(_authorityAddress?: string, _provider?: any): Promise<string> {
@@ -25,7 +24,7 @@ export async function registerUserForUBI(_userAddress?: string, _provider?: any)
   return { success: false, message: "UBI feature removed" };
 }
 
-export async function isUserRegistered(_userWallet?: string | null): Promise<boolean> {
+export async function isUserRegistered(_userAddress?: string | null): Promise<boolean> {
   return false;
 }
 
@@ -47,7 +46,7 @@ export async function getUserRegistrationInfo(): Promise<null> {
 
 export default {
   UBI_PROGRAM_ID,
-  MINTYN_MINT,
+  EQUALMINT_MINT,
   RPC_URL,
   initializeUbiProgram,
   isUbiProgramInitialized,

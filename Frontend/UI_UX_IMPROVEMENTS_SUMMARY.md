@@ -1,7 +1,7 @@
 # UI/UX Improvements Summary
 
 ## Overview
-This document summarizes all the UI/UX improvements implemented to resolve issues and enhance the user experience across the 0xMintyn Marketplace platform.
+This document summarizes all the UI/UX improvements implemented to resolve issues and enhance the user experience across the Equalmint Marketplace platform.
 
 ## Issues Identified and Resolved
 

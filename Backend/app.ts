@@ -20,15 +20,6 @@ import instructorRoutes from './routes/instructor.route';
 import adminRoutes from './routes/admin.route';
 import proposalRoutes from './routes/governance/proposal.route';
 import voteRoutes from './routes/governance/vote.route';
-import marketplaceProductRouter from './routes/marketplace/marketplaceProduct.route';
-import marketplaceServiceRouter from './routes/marketplace/marketplaceService.route';
-import marketplaceSellerRouter from './routes/marketplace/marketplaceSeller.route';
-import marketplaceSearchRouter from './routes/marketplace/marketplaceSearch.route';
-import marketplacePurchaseRouter from './routes/marketplace/marketplacePurchase.route';
-import marketplaceOrderRouter from './routes/marketplace/marketplaceOrder.route';
-import marketplaceMessageRouter from './routes/marketplace/marketplaceMessage.route';
-import marketplaceOfferRouter from './routes/marketplace/marketplaceOffer.route';
-import marketplaceReviewRouter from './routes/marketplace/marketplaceReview.route';
 import dashboardRouter from './routes/dashboard/dashboard.route';
 import auth0Router from './routes/auth0.route';
 import influencerRouter from './routes/influencer.route';
@@ -53,7 +44,7 @@ app.use(cookieParser());
 
 // cors
 app.use(cors({ 
-    origin: ['http://localhost:3000', 'http://209.74.89.249:3000' ], 
+    origin: ['app.equalmint.com', 'http://209.74.89.249:3000' ], 
     credentials: true 
 }));
 
@@ -77,15 +68,6 @@ app.use('/api/v1/review', reviewRoutes);
 app.use('/api/v1/note', noteRoutes);
 app.use('/api/v1', instructorRoutes);
 app.use('/api/v1/admin', adminRoutes);
-app.use('/api/v1/marketplace/products', marketplaceProductRouter);
-app.use('/api/v1/marketplace/services', marketplaceServiceRouter);
-app.use('/api/v1/marketplace/sellers', marketplaceSellerRouter);
-app.use('/api/v1/marketplace', marketplaceSearchRouter);
-app.use('/api/v1/marketplace/purchase', marketplacePurchaseRouter);
-app.use('/api/v1/marketplace/orders', marketplaceOrderRouter);
-app.use('/api/v1/marketplace/messages', marketplaceMessageRouter);
-app.use('/api/v1/marketplace/offers', marketplaceOfferRouter);
-app.use('/api/v1/marketplace/reviews', marketplaceReviewRouter);
 app.use('/api/v1/dashboard', dashboardRouter);
 app.use('/api/v1/influencer', influencerRouter);
 app.use('/api/v1/proposal', proposalRoutes);

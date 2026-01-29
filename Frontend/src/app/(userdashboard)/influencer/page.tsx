@@ -265,7 +265,7 @@ function InfluencerDashboard() {
   return (
     <InfluencerProtected>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 py-8">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="w-full px-6">
           {/* Header */}
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">

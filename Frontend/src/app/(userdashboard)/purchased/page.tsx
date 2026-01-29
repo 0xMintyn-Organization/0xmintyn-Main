@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { MarketplacePagination } from "@/components/Marketplace/MarketplacePagination";
+// Pagination component removed - marketplace deleted
 import PurchasedProductCard from "@/components/Purchased/PurchasedProductCard";
 import Protected from "@/hooks/useProtected";
 import { useGetAllOrdersQuery } from "@/redux/features/order/orderApi";
@@ -71,12 +71,20 @@ function PurchasedCourses() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="mt-12">
-            <MarketplacePagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+          <div className="mt-12 flex justify-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`px-4 py-2 rounded ${
+                  currentPage === page
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-zinc-600'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
           </div>
         )}
       </div>

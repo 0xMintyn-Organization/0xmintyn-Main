@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Centralized API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/';
+const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URI || 'api.equalmint.com/api/v1/';
 
 // Create axios instance with default configuration
 const api = axios.create({
@@ -95,92 +95,7 @@ export const apiCall = async (config: any) => {
   }
 };
 
-// Specific API functions for marketplace
-export const marketplaceAPI = {
-  // Products
-  getProducts: (params?: any) => apiCall({
-    method: 'GET',
-    url: 'marketplace/products',
-    params: { limit: 1000, ...params }
-  }),
-  
-  getProduct: (id: string) => apiCall({
-    method: 'GET',
-    url: `marketplace/products/${id}`
-  }),
-  
-  deleteProduct: (id: string) => apiCall({
-    method: 'DELETE',
-    url: `marketplace/products/${id}`
-  }),
-  
-  // Services
-  getServices: (params?: any) => apiCall({
-    method: 'GET',
-    url: 'marketplace/services',
-    params: { limit: 1000, ...params }
-  }),
-  
-  getService: (id: string) => apiCall({
-    method: 'GET',
-    url: `marketplace/services/${id}`
-  }),
-  
-  deleteService: (id: string) => apiCall({
-    method: 'DELETE',
-    url: `marketplace/services/${id}`
-  }),
-  
-  // Sellers
-  getSellers: (params?: any) => apiCall({
-    method: 'GET',
-    url: 'marketplace/sellers',
-    params
-  }),
-  
-  deleteSeller: (id: string) => apiCall({
-    method: 'DELETE',
-    url: `marketplace/sellers/profile/${id}`
-  }),
-  
-  // Orders
-  getOrders: (params?: any) => apiCall({
-    method: 'GET',
-    url: 'marketplace/orders/buyer',
-    params: { limit: 1000, ...params }
-  }),
-  
-  // Reviews
-  getSellerReviews: (sellerId: string) => apiCall({
-    method: 'GET',
-    url: `marketplace/reviews/seller/${sellerId}`
-  }),
-  
-  deleteReview: (id: string) => apiCall({
-    method: 'DELETE',
-    url: `marketplace/reviews/${id}`
-  }),
-  
-  // Stats
-  getStats: () => apiCall({
-    method: 'GET',
-    url: 'marketplace/stats'
-  }),
-  
-  // Messages
-  getMessages: (params?: any) => apiCall({
-    method: 'GET',
-    url: 'marketplace/messages/inbox',
-    params
-  }),
-  
-  getUnreadCount: () => apiCall({
-    method: 'GET',
-    url: 'marketplace/messages/unread-count'
-  })
-};
-
-// Dashboard API functions following marketplace naming convention
+// Dashboard API functions
 export const dashboardAPI = {
   // Stats
   getTotalUsers: () => apiCall({
@@ -217,24 +132,6 @@ export const dashboardAPI = {
   getTopInstructors: (limit?: number) => apiCall({
     method: 'GET',
     url: 'dashboard/topinstructors',
-    params: limit ? { limit } : {}
-  }),
-
-  getTopProducts: (limit?: number) => apiCall({
-    method: 'GET',
-    url: 'dashboard/topproducts',
-    params: limit ? { limit } : {}
-  }),
-
-  getTopServices: (limit?: number) => apiCall({
-    method: 'GET',
-    url: 'dashboard/topservices',
-    params: limit ? { limit } : {}
-  }),
-
-  getTopSellers: (limit?: number) => apiCall({
-    method: 'GET',
-    url: 'dashboard/topsellers',
     params: limit ? { limit } : {}
   }),
 

@@ -134,11 +134,11 @@ export const handleAuth0Callback = CatchAsyncError(async (req: Request, res: Res
 
         // Also pass accessToken in URL for popup to pass to parent window
         // This ensures immediate access even if cookies aren't immediately available
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = process.env.FRONTEND_URL || 'app.equalmint.com';
         const redirectUrl = `${frontendUrl}/auth0-success?token=${accessToken}&userId=${user._id}`;
         
         // Redirect to Auth0 success page (handles popup closing)
-        // Frontend will check wallet and redirect to /connect-wallet if needed
+        // User data returned to frontend
         res.redirect(redirectUrl);
 
     } catch (error: any) {

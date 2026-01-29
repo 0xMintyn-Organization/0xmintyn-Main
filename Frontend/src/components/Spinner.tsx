@@ -31,7 +31,7 @@ const Spinner: React.FC<SpinnerProps> = ({
 
   return (
     <div className={cn(containerClasses, className)}>
-      {/* Modern Spinner with 0xMintyn branding */}
+      {/* Modern Spinner with Equalmint branding */}
       <div className="relative">
         {/* Outer ring */}
         <div className={cn(
@@ -66,7 +66,7 @@ const Spinner: React.FC<SpinnerProps> = ({
         </div>
       )}
 
-      {/* 0xMintyn branding for full screen */}
+      {/* Equalmint branding for full screen */}
       {fullScreen && (
         <div className="mt-8 text-center">
           <div className="flex items-center justify-center mb-2">
@@ -74,7 +74,7 @@ const Spinner: React.FC<SpinnerProps> = ({
               <span className="text-white font-bold text-sm">0x</span>
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-              Mintyn
+              Equalmint
             </span>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400">

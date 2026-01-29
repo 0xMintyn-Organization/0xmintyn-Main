@@ -7,7 +7,7 @@ Your program was tested on **localnet**, but your frontend connects to **devnet*
 
 ### Method 1: Use the Test Page (EASIEST - 2 minutes)
 
-1. **Open your browser** and go to: `http://localhost:3000/test-ubi` (or your dev URL)
+1. **Open your browser** and go to: `app.equalmint.com/test-ubi` (or your dev URL)
 2. **Connect the authority/deployer wallet** (Phantom-specific instructions removed)
 3. **Click "Check Status"** - should show "Not Initialized"
 4. **Click "Initialize UBI Program"**

@@ -87,10 +87,10 @@ function DesktopSidebar() {
         {/* Collapsed State Icons */}
         {isCollapsed && (
           <div className="absolute inset-0 flex flex-col items-center py-6 space-y-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
+            <div className="w-10 h-10 flex items-center justify-center">
               <img 
                 src="/logo.png" 
-                alt="0xMintyn Logo" 
+                alt="Equalmint Logo" 
                 className="w-full h-full object-contain"
               />
             </div>

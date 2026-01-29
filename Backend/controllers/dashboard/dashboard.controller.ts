@@ -1,10 +1,6 @@
 import { Request, Response } from "express";
 import UserModel from "../../models/user.mode";
 import { CourseModel } from "../../models/course.model";
-import { MarketplaceProductModel } from "../../models/marketplace/MarketplaceProduct.model";
-import { MarketplaceServiceModel } from "../../models/marketplace/MarketplaceService.model";
-import { MarketplaceSellerModel } from "../../models/marketplace/MarketplaceSeller.model";
-import { MarketplaceOrderModel } from "../../models/marketplace/MarketplaceOrder.model";
 import OrderModel from "../../models/order.model";
 import ReviewModel from "../../models/review.model";
 
@@ -115,89 +111,7 @@ export const getTotalCourses = async (req: Request, res: Response) => {
   }
 };
 
-// Get total products count
-export const getTotalProducts = async (req: Request, res: Response) => {
-  try {
-    console.log("Fetching total products...");
-    const totalProducts = await MarketplaceProductModel.countDocuments({ 
-      isApproved: true, 
-      isActive: true 
-    });
-    console.log("Total products found:", totalProducts);
-    
-    // Calculate growth from last month
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    const lastMonthProducts = await MarketplaceProductModel.countDocuments({
-      isApproved: true,
-      isActive: true,
-      createdAt: { $lt: lastMonth }
-    });
-    const growth = lastMonthProducts > 0 
-      ? ((totalProducts - lastMonthProducts) / lastMonthProducts * 100).toFixed(0)
-      : totalProducts > 0 ? "100" : "0";
-
-    res.status(200).json({
-      success: true,
-      data: {
-        totalProducts,
-        growth: `+${growth}%`,
-        change: `+${growth}%`
-      }
-    });
-  } catch (error: any) {
-    console.error("Error fetching total products:", error);
-    console.error("Error stack:", error.stack);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch total products",
-      error: error.toString()
-    });
-  }
-};
-
-// Get total services count
-export const getTotalServices = async (req: Request, res: Response) => {
-  try {
-    console.log("Fetching total services...");
-    const totalServices = await MarketplaceServiceModel.countDocuments({ 
-      isApproved: true, 
-      isActive: true 
-    });
-    console.log("Total services found:", totalServices);
-    
-    // Calculate growth from last month
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    const lastMonthServices = await MarketplaceServiceModel.countDocuments({
-      isApproved: true,
-      isActive: true,
-      createdAt: { $lt: lastMonth }
-    });
-    const growth = lastMonthServices > 0 
-      ? ((totalServices - lastMonthServices) / lastMonthServices * 100).toFixed(0)
-      : totalServices > 0 ? "100" : "0";
-
-    res.status(200).json({
-      success: true,
-      data: {
-        totalServices,
-        growth: `+${growth}%`,
-        change: `+${growth}%`
-      }
-    });
-  } catch (error: any) {
-    console.error("Error fetching total services:", error);
-    console.error("Error stack:", error.stack);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch total services",
-      error: error.toString()
-    });
-  }
-};
-
-// Get average rating across courses, products, and services
+// Get average rating across courses
 export const getAvgRating = async (req: Request, res: Response) => {
   try {
     // Get average ratings
@@ -206,24 +120,8 @@ export const getAvgRating = async (req: Request, res: Response) => {
       { $group: { _id: null, avgRating: { $avg: "$averageRating" } } }
     ]);
 
-    const productRatings = await MarketplaceProductModel.aggregate([
-      { $match: { isApproved: true, isActive: true, rating: { $gt: 0 } } },
-      { $group: { _id: null, avgRating: { $avg: "$rating" } } }
-    ]);
-
-    const serviceRatings = await MarketplaceServiceModel.aggregate([
-      { $match: { isApproved: true, isActive: true, rating: { $gt: 0 } } },
-      { $group: { _id: null, avgRating: { $avg: "$rating" } } }
-    ]);
-
-    const ratings = [
-      courseRatings[0]?.avgRating || 0,
-      productRatings[0]?.avgRating || 0,
-      serviceRatings[0]?.avgRating || 0
-    ].filter(r => r > 0);
-
-    const avgRating = ratings.length > 0
-      ? (ratings.reduce((sum, r) => sum + r, 0) / ratings.length).toFixed(1)
+    const avgRating = courseRatings[0]?.avgRating 
+      ? courseRatings[0].avgRating.toFixed(1)
       : "0.0";
 
     res.status(200).json({
@@ -316,159 +214,6 @@ export const getTopInstructors = async (req: Request, res: Response) => {
   }
 };
 
-// Get top products
-export const getTopProducts = async (req: Request, res: Response) => {
-  try {
-    const limit = parseInt(req.query.limit as string) || 10;
-
-    const topProducts = await MarketplaceProductModel.find({
-      isApproved: true,
-      isActive: true
-    })
-      .select("-fileUrl -previewUrl")
-      .populate("sellerId", "sellerName storeName storeLogo")
-      .sort({ salesCount: -1, rating: -1 })
-      .limit(limit);
-
-    const formattedProducts = topProducts.map((product) => ({
-      id: product._id.toString(),
-      title: product.title,
-      price: product.price,
-      originalPrice: product.originalPrice || product.price,
-      rating: product.rating || 0,
-      reviewCount: product.reviewCount || 0,
-      image: product.images?.[0] || product.thumbnailImage || "https://via.placeholder.com/300x200",
-      badge: product.salesCount >= 1000 ? "Best Seller" : product.salesCount >= 500 ? "Hot" : "New",
-      category: product.category,
-      downloads: product.salesCount || 0,
-      seller: product.sellerId?.sellerName || product.sellerId?.storeName || "Unknown",
-      fileFormat: product.fileFormat || "N/A",
-      license: product.license || "Standard"
-    }));
-
-    res.status(200).json({
-      success: true,
-      data: {
-        products: formattedProducts
-      }
-    });
-  } catch (error: any) {
-    console.error("Error fetching top products:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch top products"
-    });
-  }
-};
-
-// Get top services
-export const getTopServices = async (req: Request, res: Response) => {
-  try {
-    const limit = parseInt(req.query.limit as string) || 10;
-
-    const topServices = await MarketplaceServiceModel.find({
-      isApproved: true,
-      isActive: true
-    })
-      .populate("sellerId", "sellerName storeName storeLogo sellerLevel")
-      .sort({ orderCount: -1, rating: -1 })
-      .limit(limit);
-
-    const formattedServices = topServices.map((service) => {
-      const minPrice = service.packages && service.packages.length > 0
-        ? Math.min(...service.packages.map((p: any) => p.price || 0))
-        : 0;
-
-      return {
-        id: service._id.toString(),
-        title: service.title,
-        price: minPrice,
-        rating: service.rating || 0,
-        reviewCount: service.reviewCount || 0,
-        image: service.images?.[0] || service.thumbnailImage || "https://via.placeholder.com/300x200",
-        seller: service.sellerId?.sellerName || service.sellerId?.storeName || "Unknown",
-        deliveryTime: service.deliveryTime || "N/A",
-        badge: service.orderCount >= 500 ? "Best Seller" : service.orderCount >= 200 ? "Top Rated" : service.orderCount >= 100 ? "Pro" : "Popular",
-        category: service.category,
-        orders: service.orderCount || 0,
-        revisions: service.revisions || "Unlimited",
-        level: service.sellerId?.sellerLevel || "Level 1"
-      };
-    });
-
-    res.status(200).json({
-      success: true,
-      data: {
-        services: formattedServices
-      }
-    });
-  } catch (error: any) {
-    console.error("Error fetching top services:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch top services"
-    });
-  }
-};
-
-// Get top sellers
-export const getTopSellers = async (req: Request, res: Response) => {
-  try {
-    const limit = parseInt(req.query.limit as string) || 10;
-
-    const topSellers = await MarketplaceSellerModel.find({
-      isActive: true
-    })
-      .populate("userId", "firstName lastName username avatar")
-      .sort({ totalEarnings: -1, totalSales: -1 })
-      .limit(limit);
-
-    const formattedSellers = await Promise.all(
-      topSellers.map(async (seller) => {
-        const productCount = await MarketplaceProductModel.countDocuments({
-          sellerId: seller._id,
-          isApproved: true,
-          isActive: true
-        });
-
-        const serviceCount = await MarketplaceServiceModel.countDocuments({
-          sellerId: seller._id,
-          isApproved: true,
-          isActive: true
-        });
-
-        return {
-          id: seller._id.toString(),
-          name: seller.storeName || seller.sellerName || "Unknown Seller",
-          avatar: seller.storeLogo || seller.userId?.avatar || "https://ui-avatars.com/api/?name=" + seller.storeName,
-          rating: seller.rating || 0,
-          totalSales: seller.totalSales || 0,
-          products: productCount,
-          services: serviceCount,
-          earnings: `$${((seller.totalEarnings || 0) / 1000).toFixed(0)}K`,
-          joinDate: seller.joinedDate || seller.createdAt,
-          verified: seller.verified || false,
-          level: seller.sellerLevel || "New Seller",
-          badge: seller.totalSales >= 5000 ? "Top Seller" : seller.totalSales >= 2000 ? "Expert" : seller.totalSales >= 500 ? "Rising Star" : "Seller"
-        };
-      })
-    );
-
-    res.status(200).json({
-      success: true,
-      data: {
-        sellers: formattedSellers
-      }
-    });
-  } catch (error: any) {
-    console.error("Error fetching top sellers:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch top sellers"
-    });
-  }
-};
-
 // Get trending categories
 export const getTrendingCategories = async (req: Request, res: Response) => {
   try {
@@ -480,49 +225,10 @@ export const getTrendingCategories = async (req: Request, res: Response) => {
       { $limit: 10 }
     ]);
 
-    // Get product categories
-    const productCategories = await MarketplaceProductModel.aggregate([
-      { $match: { isApproved: true, isActive: true } },
-      { $group: { _id: "$category", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 }
-    ]);
-
-    // Get service categories
-    const serviceCategories = await MarketplaceServiceModel.aggregate([
-      { $match: { isApproved: true, isActive: true } },
-      { $group: { _id: "$category", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 }
-    ]);
-
-    // Combine and format
-    const categoryMap = new Map();
-    
-    courseCategories.forEach((cat) => {
-      if (cat._id) {
-        const existing = categoryMap.get(cat._id) || 0;
-        categoryMap.set(cat._id, existing + cat.count);
-      }
-    });
-
-    productCategories.forEach((cat) => {
-      if (cat._id) {
-        const existing = categoryMap.get(cat._id) || 0;
-        categoryMap.set(cat._id, existing + cat.count);
-      }
-    });
-
-    serviceCategories.forEach((cat) => {
-      if (cat._id) {
-        const existing = categoryMap.get(cat._id) || 0;
-        categoryMap.set(cat._id, existing + cat.count);
-      }
-    });
-
     // Convert to array and sort
-    const trendingCategories = Array.from(categoryMap.entries())
-      .map(([name, count]) => ({ name, count }))
+    const trendingCategories = courseCategories
+      .filter((cat) => cat._id)
+      .map((cat) => ({ name: cat._id, count: cat.count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
 
@@ -554,24 +260,6 @@ export const getRecentActivity = async (req: Request, res: Response) => {
       .sort({ createdAt: -1 })
       .limit(5);
 
-    // Get recent product purchases
-    const recentProductOrders = await MarketplaceOrderModel.find({
-      paymentStatus: "completed",
-      "items.itemType": "product"
-    })
-      .populate("buyerId", "firstName lastName username")
-      .sort({ createdAt: -1 })
-      .limit(5);
-
-    // Get recent service orders
-    const recentServiceOrders = await MarketplaceOrderModel.find({
-      paymentStatus: "completed",
-      "items.itemType": "service"
-    })
-      .populate("buyerId", "firstName lastName username")
-      .sort({ createdAt: -1 })
-      .limit(5);
-
     // Get recent reviews
     const recentReviews = await ReviewModel.find()
       .populate("userId", "firstName lastName username")
@@ -590,32 +278,6 @@ export const getRecentActivity = async (req: Request, res: Response) => {
         item: order.courseName || "Course",
         time: formatTimeAgo(order.createdAt),
         icon: "CheckCircle",
-        color: "text-slate-400"
-      });
-    });
-
-    recentProductOrders.forEach((order) => {
-      activities.push({
-        id: `product-${order._id}`,
-        type: "product_purchased",
-        user: `${order.buyerId?.firstName || ""} ${order.buyerId?.lastName || ""}`.trim() || order.buyerId?.username || "User",
-        action: "purchased",
-        item: order.items[0]?.itemTitle || "Product",
-        time: formatTimeAgo(order.createdAt),
-        icon: "ShoppingCart",
-        color: "text-slate-400"
-      });
-    });
-
-    recentServiceOrders.forEach((order) => {
-      activities.push({
-        id: `service-${order._id}`,
-        type: "service_ordered",
-        user: `${order.buyerId?.firstName || ""} ${order.buyerId?.lastName || ""}`.trim() || order.buyerId?.username || "User",
-        action: "ordered",
-        item: order.items[0]?.itemTitle || "Service",
-        time: formatTimeAgo(order.createdAt),
-        icon: "Briefcase",
         color: "text-slate-400"
       });
     });

@@ -7,8 +7,8 @@ export default function PlaceOrderDropdown() {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="buy">Buy OXM</SelectItem>
-          <SelectItem value="sell">Sell OXM</SelectItem>
+          <SelectItem value="buy">Buy EQM</SelectItem>
+          <SelectItem value="sell">Sell EQM</SelectItem>
         </SelectContent>
       </Select>
   );

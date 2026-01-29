@@ -8,7 +8,6 @@ import {
   XCircle,
   Clock,
   Monitor,
-  Wallet,
   Github,
   Twitter
 } from "lucide-react";
@@ -86,34 +85,7 @@ function SecurityAuth() {
         </Card>
       </div>
 
-      {/* Web3 & Multi-Sig Login */}
-      <Card className="border-slate-200 dark:border-slate-800">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-              <Wallet className="w-5 h-5 text-slate-700 dark:text-slate-300" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Web3 & Multi-Signature Wallet</CardTitle>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Connect your blockchain wallets</p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Wallet connection handled via backend; UI wallet prompts removed */}
-          <div className="mb-2 text-sm text-slate-600 dark:text-slate-400">Wallet connection UI removed. Connect wallets via platform integrations.</div>
-          
-          {/* Multi-Sig Wallet Button (Placeholder for future implementation) */}
-          <Button 
-            disabled
-            variant="outline" 
-            className="w-full opacity-50 cursor-not-allowed"
-          >
-            <Wallet className="w-4 h-4 mr-2" />
-            Multi-Sig Wallet (Coming Soon)
-          </Button>
-          
-          <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3">
             <SocialLoginButton
               provider="Google"
               icon={FcGoogle}
@@ -171,8 +143,6 @@ function SecurityAuth() {
               }}
             />
           </div>
-          </CardContent>
-        </Card>
 
       {/* Security Recommendations */}
       <Card className="border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">

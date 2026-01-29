@@ -29,7 +29,10 @@ import {
   Star,
   Vote,
   Store,
-  ArrowLeftRight
+  Code,
+  Rocket,
+  Briefcase,
+  Building2
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -43,54 +46,6 @@ const getNavItems = (
   pendingGovernanceCount: number = 0,
   totalCourses: number = 0
 ) => {
-  // Build marketplace submenu dynamically based on user status
-  const marketplaceChildren = [
-    {
-      name: "Marketplace Home",
-      href: "/marketplace",
-      icon: Store,
-      description: "Browse All"
-    },
-    {
-      name: "Products",
-      href: "/marketplace/products",
-      icon: ShoppingCart,
-      description: "Digital Products"
-    },
-    {
-      name: "Services",
-      href: "/marketplace/services",
-      icon: Store,
-      description: "Professional Services"
-    },
-    {
-      name: "Messages",
-      href: "/marketplace/messages",
-      icon: MessageSquare,
-      description: "Chat with Sellers"
-    }
-  ];
-
-  // Add user dashboard if they have purchases
-  if (hasPurchases || isSeller) {
-    marketplaceChildren.push({
-      name: "User Dashboard",
-      href: "/marketplace/user-dashboard",
-      icon: ShoppingCart,
-      description: "My Orders & Purchases"
-    });
-  }
-
-  // Add seller dashboard if user is a seller
-  if (isSeller) {
-    marketplaceChildren.push({
-      name: "Seller Dashboard",
-      href: "/marketplace/seller-dashboard",
-      icon: Store,
-      description: "My Sales & Orders"
-    });
-  }
-
   const publicItems = [
     { 
       name: "Dashboard", 
@@ -130,14 +85,50 @@ const getNavItems = (
       ]
     },
     { 
-      name: "Marketplace", 
+      name: "Startups", 
       href: "#", 
-      icon: Store,
+      icon: Rocket,
       badge: "New",
-      badgeColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      description: "Digital Products & Services",
+      badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+      description: "Discover Innovative Startups",
       hasSubmenu: true,
-      children: marketplaceChildren
+      children: [
+        {
+          name: "Browse Startups",
+          href: "/startups",
+          icon: Building2,
+          description: "View All Startups"
+        },
+        {
+          name: "Startup Directory",
+          href: "/startups",
+          icon: Users,
+          description: "Explore Startup Profiles"
+        }
+      ]
+    },
+    { 
+      name: "Contributors", 
+      href: "#", 
+      icon: Code,
+      badge: "New",
+      badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      description: "Find Talented Contributors",
+      hasSubmenu: true,
+      children: [
+        {
+          name: "Browse Contributors",
+          href: "/contributors",
+          icon: User,
+          description: "View All Contributors"
+        },
+        {
+          name: "Contributor Directory",
+          href: "/contributors",
+          icon: Users,
+          description: "Explore Contributor Profiles"
+        }
+      ]
     },
     { 
       name: "Governance", 
@@ -147,13 +138,6 @@ const getNavItems = (
       badge: pendingGovernanceCount > 0 ? String(pendingGovernanceCount) : null,
       badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
       description: "Community Proposals"
-    },
-    { 
-      name: "Exchange", 
-      href: "/exchange", 
-      icon: ArrowLeftRight,
-      badge: null,
-      description: "Token Exchange"
     },
     { 
       name: "Settings", 
@@ -242,6 +226,100 @@ const getNavItems = (
     }
   ];
 
+  const contributorItems = [
+    { 
+      name: "Contributor Hub", 
+      href: "#", 
+      icon: Code,
+      badge: "New",
+      badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      description: "Talent Network",
+      hasSubmenu: true,
+      children: [
+        {
+          name: "Dashboard",
+          href: "/contributor/dashboard",
+          icon: LayoutDashboard,
+          description: "Overview & Projects"
+        },
+        {
+          name: "My Applications",
+          href: "/contributor/applications",
+          icon: Briefcase,
+          description: "Applications & Invitations"
+        },
+        {
+          name: "Browse Startups",
+          href: "/startups",
+          icon: Rocket,
+          description: "Find Opportunities"
+        },
+        {
+          name: "My Profile",
+          href: "/contributor/profile",
+          icon: User,
+          description: "View & Edit Profile"
+        },
+        {
+          name: "Profile Settings",
+          href: "/contributor/settings",
+          icon: Settings,
+          description: "Edit Profile Settings"
+        }
+      ]
+    }
+  ];
+
+  const startupItems = [
+    { 
+      name: "Startup Hub", 
+      href: "#", 
+      icon: Rocket,
+      badge: "New",
+      badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+      description: "Funding & Team",
+      hasSubmenu: true,
+      children: [
+        {
+          name: "Dashboard",
+          href: "/startup/dashboard",
+          icon: LayoutDashboard,
+          description: "Overview & Stats"
+        },
+        {
+          name: "Hiring Applications",
+          href: "/startup/applications",
+          icon: Users,
+          description: "Review Applications"
+        },
+        {
+          name: "Hire Contributors",
+          href: "/contributors",
+          icon: UserCheck,
+          description: "Browse Talent"
+        },
+        {
+          name: "Apply for Funding",
+          href: "/startup/funding/apply",
+          icon: DollarSign,
+          description: "Request Funding"
+        },
+        {
+          name: "My Profile",
+          href: "/startup/profile",
+          icon: Building2,
+          description: "View & Edit Profile"
+        },
+        {
+          name: "Profile Settings",
+          href: "/startup/settings",
+          icon: Settings,
+          description: "Edit Profile Settings"
+        }
+      ]
+    }
+  ];
+
   const adminItems = [
     { 
       name: "Admin Panel", 
@@ -283,58 +361,6 @@ const getNavItems = (
           href: "/admin/orders",
           icon: ShoppingCart,
           description: "Orders & Transactions"
-        }
-      ]
-    },
-    { 
-      name: "Marketplace Management", 
-      href: "#", 
-      icon: Store,
-      badge: null,
-      description: "Marketplace Admin",
-      hasSubmenu: true,
-      children: [
-        {
-          name: "Dashboard",
-          href: "/admin/marketplace",
-          icon: LayoutDashboard,
-          description: "Marketplace Overview"
-        },
-        {
-          name: "Sellers",
-          href: "/admin/marketplace/sellers",
-          icon: Users,
-          description: "Manage Sellers"
-        },
-        {
-          name: "Products",
-          href: "/admin/marketplace/products",
-          icon: ShoppingCart,
-          description: "Manage Products"
-        },
-        {
-          name: "Services",
-          href: "/admin/marketplace/services",
-          icon: Store,
-          description: "Manage Services"
-        },
-        {
-          name: "Orders",
-          href: "/admin/marketplace/orders",
-          icon: FileText,
-          description: "Marketplace Orders"
-        },
-        {
-          name: "Reviews",
-          href: "/admin/marketplace/reviews",
-          icon: Star,
-          description: "Marketplace Reviews"
-        },
-        {
-          name: "Analytics",
-          href: "/admin/marketplace/analytics",
-          icon: BarChart3,
-          description: "Sales Analytics"
         }
       ]
     },
@@ -403,16 +429,16 @@ export default function Sidebar() {
       {/* Logo Section */}
       <div className="p-6 border-b border-zinc-200 dark:border-zinc-700">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+          <div className="w-12 h-12 flex items-center justify-center">
             <img 
               src="/logo.png" 
-              alt="0xMintyn Logo" 
+              alt="Equalmint Logo" 
               className="w-full h-full object-contain"
             />
           </div>
           <div>
             <h2 className="text-xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-              0xMintyn
+              Equalmint
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">Community Hub</p>
           </div>
@@ -437,14 +463,6 @@ export default function Sidebar() {
             </div>
           </div>
           
-          {/* Wallet Balance */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-600 dark:text-zinc-400">Wallet Balance</span>
-              <span className="font-semibold text-green-600">$200</span>
-            </div>
-            <Progress value={75} className="h-1.5" />
-          </div>
         </div>
       </div>
 

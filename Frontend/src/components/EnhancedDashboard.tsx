@@ -34,12 +34,11 @@ import {
   PenTool,
   Smartphone,
   User,
-  Gift,
+  Rocket,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { ClaimUBIButton } from "@/components/UBI/ClaimUBIButton";
 
 // Icon mapping for activity types
 const activityIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -71,52 +70,6 @@ interface Instructor {
   level: string;
 }
 
-interface Product {
-  id: string;
-  title: string;
-  price: number;
-  originalPrice: number;
-  rating: number;
-  reviewCount: number;
-  image: string;
-  badge: string;
-  category: string;
-  downloads: number;
-  seller: string;
-  fileFormat: string;
-  license: string;
-}
-
-interface Service {
-  id: string;
-  title: string;
-  price: number;
-  rating: number;
-  reviewCount: number;
-  image: string;
-  seller: string;
-  deliveryTime: string;
-  badge: string;
-  category: string;
-  orders: number;
-  revisions: string;
-  level: string;
-}
-
-interface Seller {
-  id: string;
-  name: string;
-  avatar: string;
-  rating: number;
-  totalSales: number;
-  products: number;
-  services: number;
-  earnings: string;
-  verified: boolean;
-  level: string;
-  badge: string;
-}
-
 interface Category {
   name: string;
   count: number;
@@ -143,21 +96,16 @@ export default function EnhancedDashboard() {
   // Debug: Log user data to help troubleshoot
   useEffect(() => {
     console.log("Dashboard - User data:", user);
-    console.log("Dashboard - Wallet address:", user?.walletAddress);
+    console.log("Dashboard - User data:", user);
   }, [user]);
   const [loading, setLoading] = useState(true);
   const [platformStats, setPlatformStats] = useState([
-    { icon: GraduationCap, label: "Instructors", value: "0", change: "+0%", color: "text-slate-400" },
-    { icon: BookOpen, label: "Courses", value: "0", change: "+0%", color: "text-slate-400" },
-    { icon: Package, label: "Products", value: "0", change: "+0%", color: "text-slate-400" },
-    { icon: Briefcase, label: "Services", value: "0", change: "+0%", color: "text-slate-400" },
-    { icon: Star, label: "Avg Rating", value: "0.0", change: "+0.0", color: "text-slate-400" }
+    { icon: GraduationCap, label: "Instructors", value: "0", change: "+0%", color: "text-gray-400" },
+    { icon: BookOpen, label: "Courses", value: "0", change: "+0%", color: "text-gray-400" },
+    { icon: Star, label: "Avg Rating", value: "0.0", change: "+0.0", color: "text-gray-400" }
   ]);
 
   const [topInstructors, setTopInstructors] = useState<Instructor[]>([]);
-  const [topProducts, setTopProducts] = useState<Product[]>([]);
-  const [topServices, setTopServices] = useState<Service[]>([]);
-  const [topSellers, setTopSellers] = useState<Seller[]>([]);
   const [trendingCategories, setTrendingCategories] = useState<Category[]>([]);
   const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
   const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
@@ -180,13 +128,8 @@ export default function EnhancedDashboard() {
         const [
           instructorsData,
           coursesData,
-          productsData,
-          servicesData,
           ratingData,
           instructorsList,
-          productsList,
-          servicesList,
-          sellersList,
           categoriesList,
           activityList,
           enrolledCoursesData
@@ -199,14 +142,6 @@ export default function EnhancedDashboard() {
             console.error("Error fetching courses:", err);
             return { success: false, data: { totalCourses: 0, change: "+0%" } };
           }),
-          dashboardAPI.getTotalProducts().catch((err) => {
-            console.error("Error fetching products:", err);
-            return { success: false, data: { totalProducts: 0, change: "+0%" } };
-          }),
-          dashboardAPI.getTotalServices().catch((err) => {
-            console.error("Error fetching services:", err);
-            return { success: false, data: { totalServices: 0, change: "+0%" } };
-          }),
           dashboardAPI.getAvgRating().catch((err) => {
             console.error("Error fetching rating:", err);
             return { success: false, data: { avgRating: 0, change: "+0.0" } };
@@ -214,18 +149,6 @@ export default function EnhancedDashboard() {
           dashboardAPI.getTopInstructors(12).catch((err) => {
             console.error("Error fetching top instructors:", err);
             return { success: false, data: { instructors: [] } };
-          }),
-          dashboardAPI.getTopProducts(4).catch((err) => {
-            console.error("Error fetching top products:", err);
-            return { success: false, data: { products: [] } };
-          }),
-          dashboardAPI.getTopServices(4).catch((err) => {
-            console.error("Error fetching top services:", err);
-            return { success: false, data: { services: [] } };
-          }),
-          dashboardAPI.getTopSellers(4).catch((err) => {
-            console.error("Error fetching top sellers:", err);
-            return { success: false, data: { sellers: [] } };
           }),
           dashboardAPI.getTrendingCategories().catch((err) => {
             console.error("Error fetching categories:", err);
@@ -246,8 +169,6 @@ export default function EnhancedDashboard() {
         console.log("Dashboard API Responses:", {
           instructors: instructorsData,
           courses: coursesData,
-          products: productsData,
-          services: servicesData,
           rating: ratingData
         });
         
@@ -259,7 +180,7 @@ export default function EnhancedDashboard() {
               ? instructorsData.data.totalInstructors.toLocaleString() 
               : "0",
             change: instructorsData?.data?.change || instructorsData?.data?.growth || "+0%",
-            color: "text-slate-400"
+            color: "text-gray-400"
           },
           {
             icon: BookOpen,
@@ -268,25 +189,7 @@ export default function EnhancedDashboard() {
               ? coursesData.data.totalCourses.toLocaleString() 
               : "0",
             change: coursesData?.data?.change || coursesData?.data?.growth || "+0%",
-            color: "text-slate-400"
-          },
-          {
-            icon: Package,
-            label: "Products",
-            value: (productsData?.success && productsData?.data?.totalProducts) 
-              ? productsData.data.totalProducts.toLocaleString() 
-              : "0",
-            change: productsData?.data?.change || productsData?.data?.growth || "+0%",
-            color: "text-slate-400"
-          },
-          {
-            icon: Briefcase,
-            label: "Services",
-            value: (servicesData?.success && servicesData?.data?.totalServices) 
-              ? servicesData.data.totalServices.toLocaleString() 
-              : "0",
-            change: servicesData?.data?.change || servicesData?.data?.growth || "+0%",
-            color: "text-slate-400"
+            color: "text-gray-400"
           },
           {
             icon: Star,
@@ -295,15 +198,12 @@ export default function EnhancedDashboard() {
               ? ratingData.data.avgRating.toFixed(1) 
               : "0.0",
             change: ratingData?.data?.change || ratingData?.data?.growth || "+0.0",
-            color: "text-slate-400"
+            color: "text-gray-400"
           }
         ]);
 
         // Update lists
         setTopInstructors(instructorsList.data?.instructors || []);
-        setTopProducts(productsList.data?.products || []);
-        setTopServices(servicesList.data?.services || []);
-        setTopSellers(sellersList.data?.sellers || []);
 
         // Map trending categories with icons
         const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -324,7 +224,7 @@ export default function EnhancedDashboard() {
           name: cat.name,
           count: cat.count,
           icon: categoryIcons[cat.name] || Code,
-          color: "bg-slate-600"
+          color: "bg-gray-600"
         }));
         setTrendingCategories(formattedCategories);
 
@@ -376,11 +276,11 @@ export default function EnhancedDashboard() {
         
         // Set default values on error but don't crash
         setPlatformStats([
-          { icon: GraduationCap, label: "Instructors", value: "0", change: "+0%", color: "text-slate-400" },
-          { icon: BookOpen, label: "Courses", value: "0", change: "+0%", color: "text-slate-400" },
-          { icon: Package, label: "Products", value: "0", change: "+0%", color: "text-slate-400" },
-          { icon: Briefcase, label: "Services", value: "0", change: "+0%", color: "text-slate-400" },
-          { icon: Star, label: "Avg Rating", value: "0.0", change: "+0.0", color: "text-slate-400" }
+          { icon: GraduationCap, label: "Instructors", value: "0", change: "+0%", color: "text-gray-400" },
+          { icon: BookOpen, label: "Courses", value: "0", change: "+0%", color: "text-gray-400" },
+          { icon: Package, label: "Products", value: "0", change: "+0%", color: "text-gray-400" },
+          { icon: Briefcase, label: "Services", value: "0", change: "+0%", color: "text-gray-400" },
+          { icon: Star, label: "Avg Rating", value: "0.0", change: "+0.0", color: "text-gray-400" }
         ]);
       } finally {
         setLoading(false);
@@ -392,37 +292,50 @@ export default function EnhancedDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-slate-600 dark:text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400">Loading dashboard...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-gray-600 dark:text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
+        <div className="w-full px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
                 {getGreeting()}, {user?.firstName || "User"}! 👋
               </h1>
-              <p className="text-slate-600 dark:text-slate-400 mt-1">
-                Welcome to 0xMintyn - Your learning and earning platform
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                Welcome to Equalmint - Your learning and earning platform
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => router.push("/marketplace")}
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
-              >
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Explore Marketplace
-              </Button>
+              {user?.role === "user" && (
+                <>
+                  <Button
+                    onClick={() => router.push("/contributor/apply")}
+                    variant="outline"
+                    className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  >
+                    <Code className="w-4 h-4 mr-2" />
+                    Become Contributor
+                  </Button>
+                  <Button
+                    onClick={() => router.push("/startup/apply")}
+                    variant="outline"
+                    className="border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                  >
+                    <Rocket className="w-4 h-4 mr-2" />
+                    Apply as Startup
+                  </Button>
+                </>
+              )}
               <Button
                 variant="outline"
                 onClick={() => router.push("/courses")}
@@ -435,14 +348,14 @@ export default function EnhancedDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-6 py-8">
         {/* Platform Stats */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-4">
             Platform Overview
           </h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Discover top instructors, courses, products, and services
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            Discover top instructors and courses
           </p>
         </div>
 
@@ -452,14 +365,14 @@ export default function EnhancedDashboard() {
               <CardContent className="p-6">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       {stat.label}
                     </p>
-                    <div className="w-4 h-4 bg-slate-100 dark:bg-slate-800 rounded flex items-center justify-center">
-                      <stat.icon className="w-3 h-3 text-slate-400" />
+                    <div className="w-4 h-4 bg-gray-100 dark:bg-zinc-800 rounded flex items-center justify-center">
+                      <stat.icon className="w-3 h-3 text-gray-400" />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  <p className="text-2xl font-bold text-zinc-900 dark:text-white">
                     {stat.value}
                   </p>
                   <p className={`text-xs font-medium ${stat.color}`}>
@@ -473,50 +386,14 @@ export default function EnhancedDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="instructors">Top Instructors</TabsTrigger>
-            <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-8">
-            {/* UBI Claim Card - Always show, button handles states */}
-            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                      🎁 Claim Your UBI Tokens
-                    </h3>
-                    <p className="text-slate-600 dark:text-slate-400 mb-4">
-                      New users receive 20 Mintyn (0XM) tokens automatically when they register!
-                    </p>
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <ClaimUBIButton
-                        userWalletAddress={user?.walletAddress}
-                        onSuccess={(signature) => {
-                          console.log("UBI claimed! Transaction:", signature);
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      />
-                      {!user?.walletAddress && (
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          Connect your Phantom wallet in Profile to claim
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="hidden md:block ml-4">
-                    <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                      <Gift className="w-12 h-12 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Top Instructors Preview */}
               <Card>
@@ -532,14 +409,14 @@ export default function EnhancedDashboard() {
                 <CardContent className="space-y-6">
                   {topInstructors.length > 0 ? (
                     topInstructors.slice(0, 3).map((instructor) => (
-                    <div key={instructor.id} className="flex items-center space-x-4 p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <div key={instructor.id} className="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                       <Avatar className="w-12 h-12">
                         <AvatarImage src={instructor.avatar} alt={instructor.name} />
                         <AvatarFallback>{instructor.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
-                          <h3 className="font-semibold text-slate-900 dark:text-white">
+                          <h3 className="font-semibold text-zinc-900 dark:text-white">
                             {instructor.name}
                           </h3>
                           {instructor.verified && (
@@ -549,7 +426,7 @@ export default function EnhancedDashboard() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           {instructor.students.toLocaleString()} students • {instructor.courses} courses
                         </p>
                         <div className="flex items-center space-x-2 mt-1">
@@ -566,8 +443,8 @@ export default function EnhancedDashboard() {
                     ))
                   ) : (
                     <div className="text-center py-8">
-                      <GraduationCap className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                      <p className="text-sm text-slate-600 dark:text-slate-400">No instructors available</p>
+                      <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600 dark:text-gray-400">No instructors available</p>
                     </div>
                   )}
                   {topInstructors.length > 0 && (
@@ -597,16 +474,16 @@ export default function EnhancedDashboard() {
                 <CardContent className="space-y-4">
                   {trendingCategories.length > 0 ? (
                     trendingCategories.map((category, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                       <div className="flex items-center space-x-3">
-                        <div className="p-2 rounded-lg bg-slate-600">
+                        <div className="p-2 rounded-lg bg-gray-600">
                           <category.icon className="w-4 h-4 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-slate-900 dark:text-white">
+                          <h3 className="font-medium text-zinc-900 dark:text-white">
                             {category.name}
                           </h3>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             {category.count.toLocaleString()} items
                           </p>
                         </div>
@@ -618,8 +495,8 @@ export default function EnhancedDashboard() {
                     ))
                   ) : (
                     <div className="text-center py-8">
-                      <TrendingUp className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                      <p className="text-sm text-slate-600 dark:text-slate-400">No trending categories available</p>
+                      <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600 dark:text-gray-400">No trending categories available</p>
                     </div>
                   )}
                 </CardContent>
@@ -646,16 +523,7 @@ export default function EnhancedDashboard() {
                   >
                     <BookOpen className="w-6 h-6 text-blue-600" />
                     <span className="font-medium">Browse Courses</span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Start Learning</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-auto p-4 flex flex-col items-center space-y-2"
-                    onClick={() => router.push("/marketplace")}
-                  >
-                    <ShoppingCart className="w-6 h-6 text-green-600" />
-                    <span className="font-medium">Marketplace</span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Buy & Sell</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Start Learning</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -664,7 +532,7 @@ export default function EnhancedDashboard() {
                   >
                     <Users className="w-6 h-6 text-purple-600" />
                     <span className="font-medium">Governance</span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Vote & Propose</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Vote & Propose</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -673,7 +541,7 @@ export default function EnhancedDashboard() {
                   >
                     <User className="w-6 h-6 text-orange-600" />
                     <span className="font-medium">My Profile</span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Manage Account</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Manage Account</span>
                   </Button>
                 </div>
               </CardContent>
@@ -696,7 +564,7 @@ export default function EnhancedDashboard() {
                 {topInstructors.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {topInstructors.map((instructor) => (
-                      <div key={instructor.id} className="p-6 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-all duration-200">
+                      <div key={instructor.id} className="p-6 border border-gray-200 dark:border-zinc-700 rounded-lg hover:shadow-lg transition-all duration-200">
                         <div className="flex items-start space-x-4">
                           <Avatar className="w-16 h-16">
                             <AvatarImage src={instructor.avatar} alt={instructor.name} />
@@ -704,27 +572,27 @@ export default function EnhancedDashboard() {
                           </Avatar>
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
-                              <h3 className="font-semibold text-slate-900 dark:text-white">
+                              <h3 className="font-semibold text-zinc-900 dark:text-white">
                                 {instructor.name}
                               </h3>
                               {instructor.verified && (
                                 <CheckCircle className="w-4 h-4 text-green-600" />
                               )}
                             </div>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                               @{instructor.username}
                             </p>
                             <div className="space-y-2">
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Students</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Students</span>
                                 <span className="text-sm font-medium">{instructor.students.toLocaleString()}</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Courses</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Courses</span>
                                 <span className="text-sm font-medium">{instructor.courses}</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Rating</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Rating</span>
                                 <div className="flex items-center">
                                   <Star className="w-4 h-4 text-yellow-500 fill-current mr-1" />
                                   <span className="text-sm font-medium">{instructor.rating}</span>
@@ -741,11 +609,11 @@ export default function EnhancedDashboard() {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <GraduationCap className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                    <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
                       No instructors available
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Check back later for top instructors
                     </p>
                   </div>
@@ -802,28 +670,28 @@ export default function EnhancedDashboard() {
                       const iconColor = isCompleted ? "text-purple-600" : isInProgress ? "text-blue-600" : "text-green-600";
 
                       return (
-                        <div key={enrollment.courseId} className="p-6 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-all duration-200">
+                        <div key={enrollment.courseId} className="p-6 border border-gray-200 dark:border-zinc-700 rounded-lg hover:shadow-lg transition-all duration-200">
                           <div className="flex items-start space-x-4">
                             <div className={`w-16 h-16 ${bgColor} rounded-lg flex items-center justify-center`}>
                               <CategoryIcon className={`w-8 h-8 ${iconColor}`} />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-2">
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white line-clamp-1">
+                                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white line-clamp-1">
                                   {enrollment.courseName || course.name || "Course"}
                                 </h3>
                                 <Badge variant="secondary" className="text-xs">
                                   {isCompleted ? "Completed" : isInProgress ? "In Progress" : "Recently Started"}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
                                 {course.description || "Continue learning"}
                               </p>
-                              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-3">
+                              <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2 mb-3">
                                 <div className={`h-2 ${progressColor} rounded-full transition-all`} style={{ width: `${progress}%` }}></div>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
                                   {isCompleted 
                                     ? "Completed • Certificate earned"
                                     : `${Math.round(progress)}% complete${remainingLectures > 0 ? ` • ${remainingLectures} lessons remaining` : ""}`
@@ -845,215 +713,16 @@ export default function EnhancedDashboard() {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <BookOpen className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                    <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
                       No enrolled courses yet
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                       Start your learning journey by enrolling in a course
                     </p>
                     <Button onClick={() => router.push("/educationhub")}>
                       Browse Courses
                     </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Marketplace Tab */}
-          <TabsContent value="marketplace" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Top Products */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Package className="w-5 h-5 mr-2 text-blue-600" />
-                    Top Products
-                  </CardTitle>
-                  <CardDescription>
-                    Best-selling digital products
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {topProducts.length > 0 ? (
-                    topProducts.map((product) => (
-                    <div key={product.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                      <div className="relative w-16 h-16 flex-shrink-0">
-                        <Image
-                          src={product.image}
-                          alt={product.title}
-                          fill
-                          className="object-cover rounded-lg"
-                        />
-                        <Badge className="absolute -top-1 -right-1 text-xs">
-                          {product.badge}
-                        </Badge>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-slate-900 dark:text-white line-clamp-1">
-                          {product.title}
-                        </h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                          by {product.seller} • {product.downloads.toLocaleString()} downloads
-                        </p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <div className="flex items-center">
-                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                            <span className="text-sm font-medium ml-1">{product.rating}</span>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {product.fileFormat}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {product.license}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-slate-900 dark:text-white">
-                          ${product.price}
-                        </div>
-                        {product.originalPrice > product.price && (
-                          <div className="text-sm text-slate-500 line-through">
-                            ${product.originalPrice}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Package className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                      <p className="text-sm text-slate-600 dark:text-slate-400">No products available</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Top Services */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Briefcase className="w-5 h-5 mr-2 text-purple-600" />
-                    Top Services
-                  </CardTitle>
-                  <CardDescription>
-                    Most popular services
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {topServices.length > 0 ? (
-                    topServices.map((service) => (
-                    <div key={service.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                      <div className="relative w-16 h-16 flex-shrink-0">
-                        <Image
-                          src={service.image}
-                          alt={service.title}
-                          fill
-                          className="object-cover rounded-lg"
-                        />
-                        <Badge className="absolute -top-1 -right-1 text-xs">
-                          {service.badge}
-                        </Badge>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-slate-900 dark:text-white line-clamp-1">
-                          {service.title}
-                        </h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                          by {service.seller} • {service.orders.toLocaleString()} orders
-                        </p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <div className="flex items-center">
-                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                            <span className="text-sm font-medium ml-1">{service.rating}</span>
-                          </div>
-                          <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                            <Clock className="w-4 h-4 mr-1" />
-                            {service.deliveryTime}
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {service.level}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-slate-900 dark:text-white">
-                          ${service.price}
-                        </div>
-                        <div className="text-sm text-slate-600 dark:text-slate-400">
-                          {service.revisions} revisions
-                        </div>
-                      </div>
-                    </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Briefcase className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                      <p className="text-sm text-slate-600 dark:text-slate-400">No services available</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Top Sellers */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Trophy className="w-5 h-5 mr-2 text-yellow-600" />
-                  Top Sellers
-                </CardTitle>
-                <CardDescription>
-                  Our most successful marketplace sellers
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {topSellers.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {topSellers.map((seller) => (
-                    <div key={seller.id} className="text-center p-6 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-all duration-200">
-                      <Avatar className="w-20 h-20 mx-auto mb-4">
-                        <AvatarImage src={seller.avatar} alt={seller.name} />
-                        <AvatarFallback>{seller.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex items-center justify-center space-x-2 mb-2">
-                        <h3 className="font-semibold text-slate-900 dark:text-white">
-                          {seller.name}
-                        </h3>
-                        {seller.verified && (
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                        )}
-                      </div>
-                      <Badge variant="outline" className="mb-3">
-                        {seller.badge}
-                      </Badge>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center justify-center">
-                          <Star className="w-4 h-4 text-yellow-500 fill-current mr-1" />
-                          <span className="font-medium">{seller.rating}</span>
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-400">
-                          {seller.totalSales.toLocaleString()} sales
-                        </p>
-                        <p className="text-slate-600 dark:text-slate-400">
-                          {seller.products} products • {seller.services} services
-                        </p>
-                        <p className="text-green-600 font-medium">
-                          {seller.earnings} earned
-                        </p>
-                      </div>
-                      <Button size="sm" variant="outline" className="mt-4">
-                        View Store
-                      </Button>
-                    </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Trophy className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                    <p className="text-sm text-slate-600 dark:text-slate-400">No sellers available</p>
                   </div>
                 )}
               </CardContent>
@@ -1075,15 +744,15 @@ export default function EnhancedDashboard() {
               <CardContent className="space-y-4">
                 {recentActivity.length > 0 ? (
                   recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-center space-x-4 p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-800">
-                      <activity.icon className="w-5 h-5 text-slate-400" />
+                  <div key={activity.id} className="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                    <div className="p-3 rounded-full bg-gray-100 dark:bg-zinc-800">
+                      <activity.icon className="w-5 h-5 text-gray-400" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">
                         <span className="font-semibold">{activity.user}</span> {activity.action} <span className="font-semibold">{activity.item}</span>
                       </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         {activity.time}
                       </p>
                     </div>
@@ -1091,8 +760,8 @@ export default function EnhancedDashboard() {
                   ))
                 ) : (
                   <div className="text-center py-12">
-                    <Activity className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                    <p className="text-sm text-slate-600 dark:text-slate-400">No recent activity</p>
+                    <Activity className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400">No recent activity</p>
                   </div>
                 )}
               </CardContent>

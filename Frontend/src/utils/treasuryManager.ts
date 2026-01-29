@@ -1,10 +1,10 @@
 /*
   Treasury manager stub
   ---------------------
-  Solana/Phantom integration removed. This file provides safe no-op
+  On-chain integration removed. This file provides safe no-op
   functions so UI components can import the same symbols without
   causing compile-time errors. None of these functions perform
-  network or wallet actions.
+  network actions.
 */
 
 export async function getTreasuryBalance(): Promise<number> {

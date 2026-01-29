@@ -440,7 +440,7 @@ function EducationHub() {
             <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
                 {/* Header Section */}
                 <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
-                    <div className="max-w-7xl mx-auto px-4 py-6 space-y-3">
+                    <div className="w-full px-6 py-6 space-y-3">
                         {/* Breadcrumbs */}
                         <nav className="flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-1" aria-label="Breadcrumb">
                             <button
@@ -517,7 +517,7 @@ function EducationHub() {
                     </div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-4 py-6">
+                <div className="w-full px-6 py-6">
                     {/* Search and Filters Bar */}
                     <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-sm p-4 mb-6">
                         <div className="flex flex-col lg:flex-row gap-4">

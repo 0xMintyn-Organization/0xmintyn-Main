@@ -5,7 +5,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useBookmarkCount } from "@/hooks/useBookmarkCount";
 import { cn } from "@/lib/utils";
 import {
-  ArrowLeftRight,
   BarChart3,
   Bell,
   BookOpen,
@@ -62,12 +61,6 @@ const navigation: NavItem[] = [
     name: "Governance",
     href: "/governance",
     icon: Vote,
-    roles: ["user", "instructor", "admin", "influencer"],
-  },
-  {
-    name: "Exchange",
-    href: "/exchange",
-    icon: ArrowLeftRight,
     roles: ["user", "instructor", "admin", "influencer"],
   },
   {

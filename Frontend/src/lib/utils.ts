@@ -23,15 +23,15 @@ export const popularCategoriesDetails: PopularCategoriesType[] = [
 ]
 
 export const swapRate: SwapRateType[] = [
-  {currency: 'OXM/USD', swapRate: '$1.05', marginPercentage: '+2.94%'},
-  {currency: 'OXM/ETH', swapRate: '0.00042', marginPercentage: '-0.71%'},
-  {currency: 'OXM/BTC', swapRate: '0.000025', marginPercentage: '+1.63%'},
+  {currency: 'EQM/USD', swapRate: '$1.05', marginPercentage: '+2.94%'},
+  {currency: 'EQM/ETH', swapRate: '0.00042', marginPercentage: '-0.71%'},
+  {currency: 'EQM/BTC', swapRate: '0.000025', marginPercentage: '+1.63%'},
 ]
 
 export const commFeedDetail: CommFeedDetailType[] = [
   {proImage: '/assets/images/dashboard/profile_images/user_1.jpg', description: `Alice just listed a new digital artwork: 'Neon Dreams'`},
   {proImage: '/assets/images/dashboard/profile_images/user_2.jpg', description: `Bob completed a new course: 'Blockchain Fundamentals'`},
-  {proImage: '/assets/images/dashboard/profile_images/user_3.jpg', description: `Charlie completed a P2P transaction worth 1000 OXM`},
+  {proImage: '/assets/images/dashboard/profile_images/user_3.jpg', description: `Charlie completed a P2P transaction worth 1000 EQM`},
 ]
 
 // Marketplace page
@@ -177,7 +177,7 @@ export const proposalCard: ProposalCardType[] = [
   {
       title: "Partnership with DeFi Platform", 
       proStatus: "active", 
-      description: "Establish a strategic partnership with a leading DeFi platform to expland 0xMintyn ecosystem.",
+      description: "Establish a strategic partnership with a leading DeFi platform to expland Equalmint ecosystem.",
       yesVal: 4200,
       noVal: 800,
   },
@@ -191,7 +191,7 @@ export const proposalCard: ProposalCardType[] = [
   {
       title: "Launch Community Grant Program", 
       proStatus: "active", 
-      description: "Create a community grant program to fund innovative projects built on the 0xMintyn platform.",
+      description: "Create a community grant program to fund innovative projects built on the Equalmint platform.",
       yesVal: 3800,
       noVal: 1100,
   },
@@ -199,22 +199,22 @@ export const proposalCard: ProposalCardType[] = [
 
 // Exchange Page
 export const orderBook: OrderBookType[] = [
-  {priceUSD: 1.10, amountOXM: 54.80},
-  {priceUSD: 1.09, amountOXM: 119.26,},
-  {priceUSD: 1.08, amountOXM: 74.91,},
-  {priceUSD: 1.07, amountOXM: 127.56,},
-  {priceUSD: 1.06, amountOXM: 61.04,},
-  {priceUSD: 1.06, amountOXM: 67.70, },
-  {priceUSD: 1.04, amountOXM: 114.16, },
-  {priceUSD: 1.03, amountOXM: 67.21, },
-  {priceUSD: 1.02, amountOXM: 63.49, },
-  {priceUSD: 1.01, amountOXM: 116.16, },
+  {priceUSD: 1.10, amountEQM: 54.80},
+  {priceUSD: 1.09, amountEQM: 119.26,},
+  {priceUSD: 1.08, amountEQM: 74.91,},
+  {priceUSD: 1.07, amountEQM: 127.56,},
+  {priceUSD: 1.06, amountEQM: 61.04,},
+  {priceUSD: 1.06, amountEQM: 67.70, },
+  {priceUSD: 1.04, amountEQM: 114.16, },
+  {priceUSD: 1.03, amountEQM: 67.21, },
+  {priceUSD: 1.02, amountEQM: 63.49, },
+  {priceUSD: 1.01, amountEQM: 116.16, },
 ]
 
 export const openOrders: OpenOrdersType[] = [
   {
     date: '7/27/2024 09: 08:08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     type: 'Stop',
     side: 'Sell',
     price: 1.08,
@@ -224,7 +224,7 @@ export const openOrders: OpenOrdersType[] = [
   },
   {
     date: '7/27/2024 09: 08:08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     type: 'Stop',
     side: 'Sell',
     price: 1.00,
@@ -234,7 +234,7 @@ export const openOrders: OpenOrdersType[] = [
   },
   {
     date: '7/27/2024 09: 08:08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     type: 'Limit',
     side: 'Buy',
     price: 1.00,
@@ -244,7 +244,7 @@ export const openOrders: OpenOrdersType[] = [
   },
   {
     date: '7/27/2024 09: 08:08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     type: 'Limit',
     side: 'Sell',
     price: 1.06,
@@ -254,7 +254,7 @@ export const openOrders: OpenOrdersType[] = [
   },
   {
     date: '7/27/2024 09: 08:08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     type: 'Stop',
     side: 'Sell',
     price: 1.01,
@@ -267,70 +267,70 @@ export const openOrders: OpenOrdersType[] = [
 export const tradeHistory: TradeHistoryType[] = [
   {
     date: '7/27/2024, 9:01;08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     side: 'Buy',
     price: 1.00,
     amount: 52.95,
   },
   {
     date: '7/27/2024, 9:01;08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     side: 'Buy',
     price: 1.09,
     amount: 146.38,
   },
   {
     date: '7/27/2024, 9:01;08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     side: 'Buy',
     price: 1.03,
     amount: 100.69,
   },
   {
     date: '7/27/2024, 9:01;08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     side: 'Buy',
     price: 1.03,
     amount: 88.71,
   },
   {
     date: '7/27/2024, 9:01;08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     side: 'Buy',
     price: 1.03,
     amount: 145.77,
   },
   {
     date: '7/27/2024, 9:01;08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     side: 'Sell',
     price: 1.08,
     amount: 63.38,
   },
   {
     date: '7/27/2024, 9:01;08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     side: 'Buy',
     price: 1.05,
     amount: 12.13,
   },
   {
     date: '7/27/2024, 9:01;08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     side: 'Buy',
     price: 1.06,
     amount: 64.27,
   },
   {
     date: '7/27/2024, 9:01;08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     side: 'Buy',
     price: 1.01,
     amount: 18.54,
   },
   {
     date: '7/27/2024, 9:01;08 AM',
-    pair: 'OXM/USD',
+    pair: 'EQM/USD',
     side: 'Sell',
     price: 1.00,
     amount: 145.60,
@@ -341,7 +341,6 @@ export const tradeHistory: TradeHistoryType[] = [
 export const userData: User = {
   id: "121",
   username: "johndoe",
-  walletAddress: "0xb1234acbdj765bb09x",
   profilePicture: "/assets/images/myprofile/profile.jpg",
   bannerImage: "/assets/images/myprofile/banner.jpg",
   personalDetails: {
