@@ -30,7 +30,7 @@ npm run dev
 
 ### Step 4: Open Browser
 
-Navigate to: **app.equalmint.com**
+Navigate to: **https://app.equalmint.com**
 
 That's it! 🎉
 

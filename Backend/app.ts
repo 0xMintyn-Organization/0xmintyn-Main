@@ -44,7 +44,7 @@ app.use(cookieParser());
 
 // cors
 app.use(cors({ 
-    origin: ['app.equalmint.com', 'http://209.74.89.249:3000' ], 
+    origin: ['https://app.equalmint.com', 'http://209.74.89.249:3000' ], 
     credentials: true 
 }));
 

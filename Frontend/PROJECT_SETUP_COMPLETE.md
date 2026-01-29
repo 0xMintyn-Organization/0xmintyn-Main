@@ -67,7 +67,7 @@ Frontend/
 
 ### For Regular Development
 1. Run `npm run dev` to start development
-2. Open app.equalmint.com
+2. Open https://app.equalmint.com
 3. Start building features!
 
 ### For Admin Operations

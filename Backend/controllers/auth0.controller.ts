@@ -134,7 +134,7 @@ export const handleAuth0Callback = CatchAsyncError(async (req: Request, res: Res
 
         // Also pass accessToken in URL for popup to pass to parent window
         // This ensures immediate access even if cookies aren't immediately available
-        const frontendUrl = process.env.FRONTEND_URL || 'app.equalmint.com';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://app.equalmint.com';
         const redirectUrl = `${frontendUrl}/auth0-success?token=${accessToken}&userId=${user._id}`;
         
         // Redirect to Auth0 success page (handles popup closing)

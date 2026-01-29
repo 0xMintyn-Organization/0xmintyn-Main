@@ -6,7 +6,7 @@ Your transaction is reverting because **the UBI program is NOT initialized on de
 ## ✅ SOLUTION - Do This RIGHT NOW (2 minutes)
 
 ### Step 1: Open Browser Console
-1. Open your app: `app.equalmint.com` (or your dev URL)
+1. Open your app: `https://app.equalmint.com` (or your dev URL)
 2. Press **F12** to open Developer Console
 3. Go to **Console** tab
 

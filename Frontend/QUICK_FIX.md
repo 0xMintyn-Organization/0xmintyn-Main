@@ -6,7 +6,7 @@ Your program was tested on **localnet**, but frontend uses **devnet**. Program m
 ## ✅ SOLUTION (Do This Now - 2 Minutes)
 
 ### Step 1: Open Browser Console
-1. Open your app: `app.equalmint.com` (or your URL)
+1. Open your app: `https://app.equalmint.com` (or your URL)
 2. Press **F12** to open Developer Console
 3. Go to **Console** tab
 
