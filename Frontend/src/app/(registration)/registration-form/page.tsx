@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
@@ -10,13 +10,16 @@ import { useRegisterMutation } from "@/redux/features/auth/authApi";
 import Spinner from "@/components/Spinner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, Eye, EyeOff, X } from "lucide-react";
 
 const userSchema = z.object({
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  email: z.string().email(),
-  username: z.string().min(5),
-  password: z.string().min(6),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email"),
+  username: z.string().min(5, "Username must be at least 5 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   dateOfBirth: z.string().optional(),
 });
 
@@ -24,10 +27,13 @@ export default function RegistrationPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [registerUser, { data, error, isSuccess }] = useRegisterMutation();
 
   const form = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema),
+    mode: "onChange",
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -38,15 +44,19 @@ export default function RegistrationPage() {
     },
   });
 
+  const isFormValid = form.formState.isValid;
+
   useEffect(() => {
     if (isSuccess) {
       setIsSubmitting(false);
-      toast({ title: "Success", description: data?.message || "Registered", variant: "default" });
+      setRegisterError(null);
+      toast({ title: "Success", description: data?.message || "Registered successfully", variant: "default" });
       router.push("/verification");
     }
     if (error) {
       setIsSubmitting(false);
-      const msg = (error as any)?.data?.message || "Registration failed";
+      const msg = (error as { data?: { message?: string } })?.data?.message || "Registration failed";
+      setRegisterError(msg);
       toast({ title: "Error", description: msg, variant: "destructive" });
     }
   }, [isSuccess, error, data, router, toast]);
@@ -54,10 +64,11 @@ export default function RegistrationPage() {
   const onSubmit = useCallback(
     async (values: z.infer<typeof userSchema>) => {
       setIsSubmitting(true);
+      setRegisterError(null);
       try {
         const age = values.dateOfBirth ? Math.max(0, new Date().getFullYear() - new Date(values.dateOfBirth).getFullYear()) : 0;
         await registerUser({ ...values, age }).unwrap();
-      } catch (e) {
+      } catch {
         setIsSubmitting(false);
       }
     },
@@ -66,40 +77,170 @@ export default function RegistrationPage() {
 
   if (isSubmitting) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <Spinner />
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md my-16">
-      <h2 className="text-2xl font-bold mb-4">Register</h2>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="block text-sm">First name</label>
-          <Input {...form.register("firstName")} />
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+      <div className="max-w-md w-full mx-auto p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md">
+        {/* Logo Section */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-20 h-20 flex items-center justify-center mb-3">
+            <img src="/logo.png" alt="Equalmint Logo" className="w-full h-full object-contain" />
+          </div>
+          <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+            Equalmint
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Community Hub</p>
         </div>
-        <div>
-          <label className="block text-sm">Last name</label>
-          <Input {...form.register("lastName")} />
+
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Create your account</h3>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" aria-label="Registration form" noValidate>
+            {registerError && (
+              <Alert variant="destructive" className="mb-4" role="alert" aria-live="assertive">
+                <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                <AlertTitle>Registration Failed</AlertTitle>
+                <AlertDescription className="flex items-center justify-between">
+                  <span>{registerError}</span>
+                  <button
+                    type="button"
+                    onClick={() => setRegisterError(null)}
+                    className="ml-2 hover:bg-red-100 dark:hover:bg-red-900 rounded p-1 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    aria-label="Dismiss error"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="First name" {...field} autoComplete="given-name" className={form.formState.errors.firstName ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""} />
+                    </FormControl>
+                    <FormMessage className="text-red-500 text-sm" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Last name" {...field} autoComplete="family-name" className={form.formState.errors.lastName ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""} />
+                    </FormControl>
+                    <FormMessage className="text-red-500 text-sm" />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="Enter your email" {...field} autoComplete="email" className={form.formState.errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""} />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Choose a username (min 5 characters)" {...field} autoComplete="username" className={form.formState.errors.username ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""} />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password (min 6 characters)"
+                        {...field}
+                        autoComplete="new-password"
+                        className={form.formState.errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500 pr-10" : "pr-10"}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 rounded p-1"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dateOfBirth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-600 dark:text-gray-400">Date of birth (optional)</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} className="text-gray-700 dark:text-gray-300" />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="submit"
+              disabled={isSubmitting || !isFormValid}
+              className="w-full bg-green-700 hover:bg-green-800 text-white disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
+            >
+              {isSubmitting ? "Creating account..." : "Register"}
+            </Button>
+          </form>
+        </Form>
+
+        <div className="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
+          Already have an account?{" "}
+          <a
+            href="/login"
+            className="text-[#2190ff] hover:underline focus:outline-none focus:ring-2 focus:ring-[#2190ff] focus:ring-offset-2 rounded px-1"
+            aria-label="Go to login page"
+          >
+            Login
+          </a>
         </div>
-        <div>
-          <label className="block text-sm">Email</label>
-          <Input type="email" {...form.register("email")} />
-        </div>
-        <div>
-          <label className="block text-sm">Username</label>
-          <Input {...form.register("username")} />
-        </div>
-        <div>
-          <label className="block text-sm">Password</label>
-          <Input type="password" {...form.register("password")} />
-        </div>
-        <div className="pt-4">
-          <Button type="submit">Register</Button>
-        </div>
-      </form>
-    </div>
+      </div>
+    </main>
   );
 }
