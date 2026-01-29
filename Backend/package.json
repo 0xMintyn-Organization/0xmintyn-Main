@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "cross-env NODE_ENV=production HOST=127.0.0.1 ts-node-dev --respawn --transpile-only server.ts",
+    "dev": "cross-env  HOST=127.0.0.1 ts-node-dev --respawn --transpile-only server.ts",
     "start": "cross-env NODE_ENV=production HOST=127.0.0.1 ts-node --transpile-only server.ts",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false"
   },
