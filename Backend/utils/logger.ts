@@ -46,17 +46,18 @@ const consoleFormat = winston.format.combine(
         
         let msg = `${timestamp} ${context.join(' ')} [${level}]: ${message}`;
         
-        // Format metadata nicely
-        const metaKeys = Object.keys(meta);
-        if (metaKeys.length > 0) {
+        // Skip JSON block for API / performance logs – message already has the detail
+        const skipMeta = meta.type === 'http' || meta.type === 'performance';
+        if (!skipMeta) {
+            const metaKeys = Object.keys(meta);
             const cleanMeta: any = {};
             metaKeys.forEach(key => {
-                if (!['service', 'timestamp', 'level', 'message'].includes(key)) {
+                if (!['service', 'timestamp', 'level', 'message', 'type', 'context', 'environment', 'version'].includes(key)) {
                     cleanMeta[key] = meta[key];
                 }
             });
             if (Object.keys(cleanMeta).length > 0) {
-                msg += `\n${JSON.stringify(cleanMeta, null, 2)}`;
+                msg += ` ${JSON.stringify(cleanMeta)}`;
             }
         }
         return msg;

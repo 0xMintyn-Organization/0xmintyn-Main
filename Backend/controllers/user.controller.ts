@@ -22,15 +22,26 @@ interface IRegistrationBody {
     username: string;
     contactNumber: string;
     password: string;
+    /** Marketplace identity: 'startup' | 'contributor'. Platform role remains 'user' for both. */
+    marketplace_role?: 'startup' | 'contributor';
+    /** Required when marketplace_role === 'startup'. */
+    startupName?: string;
+    startupDescription?: string;
 }
 
 export const registrationUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { firstName, lastName, dateOfBirth, nationality, age, email, username, contactNumber, password }: IRegistrationBody = req.body;
+            const { firstName, lastName, dateOfBirth, nationality, age, email, username, contactNumber, password, marketplace_role, startupName, startupDescription }: IRegistrationBody = req.body;
             
-            // Validate required fields
+            // Validate required fields (including marketplace selection)
             if (!email || !username || !password) {
                 return next(new ErrorHandler('Email, username, and password are required', 400));
+            }
+            if (marketplace_role !== 'startup' && marketplace_role !== 'contributor') {
+                return next(new ErrorHandler('Please choose how you want to sign up: Startup or Contributor', 400));
+            }
+            if (marketplace_role === 'startup' && (!startupName || typeof startupName !== 'string' || !startupName.trim())) {
+                return next(new ErrorHandler('Startup name is required when signing up as a startup', 400));
             }
 
 
@@ -47,7 +58,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             }
 
 
-            const user: IRegistrationBody = {
+            const user: IRegistrationBody & { marketplace_role: 'startup' | 'contributor'; startupName?: string; startupDescription?: string } = {
                 firstName,
                 lastName,
                 dateOfBirth,
@@ -57,16 +68,26 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 username,
                 contactNumber,
                 password,
+                marketplace_role,
             };
+            if (marketplace_role === 'startup') {
+                user.startupName = startupName?.trim();
+                if (startupDescription && typeof startupDescription === 'string' && startupDescription.trim()) {
+                    user.startupDescription = startupDescription.trim();
+                }
+            }
 
             // @ts-ignore
             const activationToken = createActivationToken(user); 
             const activationCode = activationToken.activationCode;
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('[Registration OTP]', activationCode, '| email:', user.email);
+            }
             logger.debug('Activation code generated', { email: user.email });
 
             // Build activation link for token-based email verification
             const clientUrl =
-                process.env.CLIENT_URL || "https://app.equalmint.com/";
+                process.env.CLIENT_URL || "http://localhost:3000/";
             const normalizedClientUrl = clientUrl.endsWith("/")
                 ? clientUrl.slice(0, -1)
                 : clientUrl;
@@ -118,7 +139,10 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 contactNumber,
                 password,
                 role: roleOverride,
-            } = req.body as IRegistrationBody & { role?: string };
+                marketplace_role: marketplaceRoleOverride,
+                startupName,
+                startupDescription,
+            } = req.body as IRegistrationBody & { role?: string; marketplace_role?: 'startup' | 'contributor'; startupName?: string; startupDescription?: string };
 
             if (!firstName || !lastName || !email || !username || !password || !contactNumber || !nationality) {
                 return next(new ErrorHandler('firstName, lastName, email, username, password, contactNumber, and nationality are required', 400));
@@ -138,7 +162,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             const validRoles = ['user', 'instructor', 'admin', 'influencer'];
             const role = roleOverride && validRoles.includes(roleOverride) ? roleOverride : 'user';
 
-            const userPayload = {
+            const userPayload: Record<string, any> = {
                 firstName,
                 lastName,
                 dateOfBirth: parsedDob,
@@ -151,6 +175,17 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 role,
                 isVerified: true,
             };
+            if (marketplaceRoleOverride === 'startup' || marketplaceRoleOverride === 'contributor') {
+                userPayload.marketplace_role = marketplaceRoleOverride;
+            }
+            if (marketplaceRoleOverride === 'startup') {
+                if (startupName && typeof startupName === 'string' && startupName.trim()) {
+                    userPayload.startupName = startupName.trim();
+                }
+                if (startupDescription && typeof startupDescription === 'string' && startupDescription.trim()) {
+                    userPayload.startupDescription = startupDescription.trim();
+                }
+            }
 
             const user = await UserModel.create(userPayload);
 
@@ -233,9 +268,19 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 }
             }
 
-            // Create user with error handling for duplicate key errors
+            // Create user with role 'user' and optional marketplace_role from registration
+            const userToCreate: Record<string, any> = { ...newUser.user };
+            userToCreate.role = 'user';
+            if (newUser.user.marketplace_role === 'startup' || newUser.user.marketplace_role === 'contributor') {
+                userToCreate.marketplace_role = newUser.user.marketplace_role;
+            }
+            if (newUser.user.marketplace_role === 'startup') {
+                if (newUser.user.startupName) userToCreate.startupName = newUser.user.startupName;
+                if (newUser.user.startupDescription) userToCreate.startupDescription = newUser.user.startupDescription;
+            }
+
             try {
-                await UserModel.create(newUser.user);
+                await UserModel.create(userToCreate);
             } catch (createError: any) {
                 // Handle MongoDB duplicate key error
                 if (createError.code === 11000) {
@@ -313,10 +358,19 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 }
             }
 
-            // Create user with error handling for duplicate key errors
+            // Create user with role 'user', optional marketplace_role, and startup fields (link activation)
+            const userDataLink: Record<string, any> = { ...newUser.user };
+            userDataLink.role = 'user';
+            if (newUser.user.marketplace_role === 'startup' || newUser.user.marketplace_role === 'contributor') {
+                userDataLink.marketplace_role = newUser.user.marketplace_role;
+            }
+            if (newUser.user.marketplace_role === 'startup') {
+                if (newUser.user.startupName) userDataLink.startupName = newUser.user.startupName;
+                if (newUser.user.startupDescription) userDataLink.startupDescription = newUser.user.startupDescription;
+            }
+
             try {
-                const userData = { ...newUser.user };
-                await UserModel.create(userData);
+                await UserModel.create(userDataLink);
             } catch (createError: any) {
                 // Handle MongoDB duplicate key error
                 if (createError.code === 11000) {
@@ -372,6 +426,17 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             const isPasswordMatch = await user.comparePassword(password);
             if (!isPasswordMatch) {
                 return next(new ErrorHandler('Invalid email or password', 401));
+            }
+
+            // Log role and marketplace_role for debugging / verification
+            logger.info('User logged in', {
+                userId: user._id,
+                email: user.email,
+                role: user.role,
+                marketplace_role: user.marketplace_role ?? null,
+            });
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('[Login] role:', user.role, '| marketplace_role:', user.marketplace_role ?? null);
             }
 
             sendToken(user, 200, res);
@@ -753,7 +818,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             );
 
             // Build reset link
-            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://app.equalmint.com";
+            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000";
             const normalizedClientUrl = clientUrl.endsWith("/") ? clientUrl.slice(0, -1) : clientUrl;
             const resetLink = `${normalizedClientUrl}/reset-password?token=${resetToken}`;
 

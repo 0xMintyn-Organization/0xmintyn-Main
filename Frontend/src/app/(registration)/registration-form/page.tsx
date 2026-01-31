@@ -14,16 +14,24 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Eye, EyeOff, X } from "lucide-react";
 
-const userSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email"),
-  username: z.string().min(5, "Username must be at least 5 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  contactNumber: z.string().min(1, "Please enter your contact number"),
-  nationality: z.string().min(1, "Please enter your nationality"),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
-});
+const userSchema = z
+  .object({
+    marketplace_role: z.enum(["startup", "contributor"], { required_error: "Please choose how you want to sign up" }),
+    startupName: z.string().optional(),
+    startupDescription: z.string().optional(),
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    email: z.string().email("Invalid email"),
+    username: z.string().min(5, "Username must be at least 5 characters"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    contactNumber: z.string().min(1, "Please enter your contact number"),
+    nationality: z.string().min(1, "Please enter your nationality"),
+    dateOfBirth: z.string().min(1, "Date of birth is required"),
+  })
+  .refine((data) => data.marketplace_role !== "startup" || (data.startupName && data.startupName.trim().length > 0), {
+    message: "Startup name is required when signing up as a startup",
+    path: ["startupName"],
+  });
 
 export default function RegistrationPage() {
   const router = useRouter();
@@ -37,6 +45,9 @@ export default function RegistrationPage() {
     resolver: zodResolver(userSchema),
     mode: "onChange",
     defaultValues: {
+      marketplace_role: undefined as "startup" | "contributor" | undefined,
+      startupName: "",
+      startupDescription: "",
       firstName: "",
       lastName: "",
       email: "",
@@ -73,7 +84,8 @@ export default function RegistrationPage() {
         const age = values.dateOfBirth
           ? Math.max(0, new Date().getFullYear() - new Date(values.dateOfBirth).getFullYear())
           : 0;
-        await registerUser({
+        const payload: Record<string, unknown> = {
+          marketplace_role: values.marketplace_role,
           firstName: values.firstName,
           lastName: values.lastName,
           email: values.email,
@@ -83,7 +95,12 @@ export default function RegistrationPage() {
           nationality: values.nationality,
           dateOfBirth: values.dateOfBirth,
           age,
-        }).unwrap();
+        };
+        if (values.marketplace_role === "startup") {
+          if (values.startupName?.trim()) payload.startupName = values.startupName.trim();
+          if (values.startupDescription?.trim()) payload.startupDescription = values.startupDescription.trim();
+        }
+        await registerUser(payload).unwrap();
       } catch {
         setIsSubmitting(false);
       }
@@ -117,6 +134,85 @@ export default function RegistrationPage() {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" aria-label="Registration form" noValidate>
+            <FormField
+              control={form.control}
+              name="marketplace_role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base">I want to sign up as</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => field.onChange("startup")}
+                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                          field.value === "startup"
+                            ? "border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+                            : "border-zinc-200 dark:border-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-500"
+                        }`}
+                      >
+                        <span className="font-semibold">Startup</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">I'm building a venture</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => field.onChange("contributor")}
+                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                          field.value === "contributor"
+                            ? "border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+                            : "border-zinc-200 dark:border-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-500"
+                        }`}
+                      >
+                        <span className="font-semibold">Contributor</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">I want to contribute</span>
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            {form.watch("marketplace_role") === "startup" && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="startupName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Startup name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g. Acme Inc."
+                          {...field}
+                          autoComplete="organization"
+                          className={form.formState.errors.startupName ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-500 text-sm" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="startupDescription"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Startup description (optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Brief description of your venture"
+                          {...field}
+                          className={form.formState.errors.startupDescription ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-500 text-sm" />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
+
             {registerError && (
               <Alert variant="destructive" className="mb-4" role="alert" aria-live="assertive">
                 <AlertCircle className="h-4 w-4" aria-hidden="true" />

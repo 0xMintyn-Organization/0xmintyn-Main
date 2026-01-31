@@ -11,6 +11,11 @@ interface User {
   name: string;
   email: string;
   role: string;
+  /** Marketplace identity: 'startup' | 'contributor'. Platform role is always 'user' for both. */
+  marketplace_role?: 'startup' | 'contributor' | null;
+  /** Only when marketplace_role === 'startup'. */
+  startupName?: string | null;
+  startupDescription?: string | null;
   avatar?: string;
   isVerified: boolean;
   isSeller: boolean;

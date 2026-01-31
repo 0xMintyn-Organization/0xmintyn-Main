@@ -28,11 +28,7 @@ import {
   MessageSquare,
   Star,
   Vote,
-  Store,
-  Code,
-  Rocket,
-  Briefcase,
-  Building2
+  Store
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -81,52 +77,6 @@ const getNavItems = (
           href: "/bookmarks",
           icon: Bookmark,
           description: "Saved Courses"
-        }
-      ]
-    },
-    { 
-      name: "Startups", 
-      href: "#", 
-      icon: Rocket,
-      badge: "New",
-      badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-      description: "Discover Innovative Startups",
-      hasSubmenu: true,
-      children: [
-        {
-          name: "Browse Startups",
-          href: "/startups",
-          icon: Building2,
-          description: "View All Startups"
-        },
-        {
-          name: "Startup Directory",
-          href: "/startups",
-          icon: Users,
-          description: "Explore Startup Profiles"
-        }
-      ]
-    },
-    { 
-      name: "Contributors", 
-      href: "#", 
-      icon: Code,
-      badge: "New",
-      badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      description: "Find Talented Contributors",
-      hasSubmenu: true,
-      children: [
-        {
-          name: "Browse Contributors",
-          href: "/contributors",
-          icon: User,
-          description: "View All Contributors"
-        },
-        {
-          name: "Contributor Directory",
-          href: "/contributors",
-          icon: Users,
-          description: "Explore Contributor Profiles"
         }
       ]
     },
@@ -223,100 +173,6 @@ const getNavItems = (
       badge: "View Only",
       badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
       description: "User Statistics & Growth"
-    }
-  ];
-
-  const contributorItems = [
-    { 
-      name: "Contributor Hub", 
-      href: "#", 
-      icon: Code,
-      badge: "New",
-      badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      description: "Talent Network",
-      hasSubmenu: true,
-      children: [
-        {
-          name: "Dashboard",
-          href: "/contributor/dashboard",
-          icon: LayoutDashboard,
-          description: "Overview & Projects"
-        },
-        {
-          name: "My Applications",
-          href: "/contributor/applications",
-          icon: Briefcase,
-          description: "Applications & Invitations"
-        },
-        {
-          name: "Browse Startups",
-          href: "/startups",
-          icon: Rocket,
-          description: "Find Opportunities"
-        },
-        {
-          name: "My Profile",
-          href: "/contributor/profile",
-          icon: User,
-          description: "View & Edit Profile"
-        },
-        {
-          name: "Profile Settings",
-          href: "/contributor/settings",
-          icon: Settings,
-          description: "Edit Profile Settings"
-        }
-      ]
-    }
-  ];
-
-  const startupItems = [
-    { 
-      name: "Startup Hub", 
-      href: "#", 
-      icon: Rocket,
-      badge: "New",
-      badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-      description: "Funding & Team",
-      hasSubmenu: true,
-      children: [
-        {
-          name: "Dashboard",
-          href: "/startup/dashboard",
-          icon: LayoutDashboard,
-          description: "Overview & Stats"
-        },
-        {
-          name: "Hiring Applications",
-          href: "/startup/applications",
-          icon: Users,
-          description: "Review Applications"
-        },
-        {
-          name: "Hire Contributors",
-          href: "/contributors",
-          icon: UserCheck,
-          description: "Browse Talent"
-        },
-        {
-          name: "Apply for Funding",
-          href: "/startup/funding/apply",
-          icon: DollarSign,
-          description: "Request Funding"
-        },
-        {
-          name: "My Profile",
-          href: "/startup/profile",
-          icon: Building2,
-          description: "View & Edit Profile"
-        },
-        {
-          name: "Profile Settings",
-          href: "/startup/settings",
-          icon: Settings,
-          description: "Edit Profile Settings"
-        }
-      ]
     }
   ];
 

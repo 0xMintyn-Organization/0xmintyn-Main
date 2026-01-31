@@ -28,6 +28,11 @@ export interface IUser extends Document {
     contactNumber: string;
     password: string;
     role: string;
+    /** Marketplace identity: 'startup' | 'contributor'. Independent of role; both signups use role 'user'. */
+    marketplace_role?: 'startup' | 'contributor' | null;
+    /** Only for marketplace_role === 'startup'. */
+    startupName?: string;
+    startupDescription?: string;
     avatar: string;
     banner: string;
     bio: string;
@@ -100,6 +105,13 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
         default: 'user',
         required: true,
     },
+    marketplace_role: {
+        type: String,
+        enum: ['startup', 'contributor'],
+        required: false,
+    },
+    startupName: { type: String, required: false, trim: true },
+    startupDescription: { type: String, required: false, trim: true },
     isVerified: {
         type: Boolean,
         default: false,

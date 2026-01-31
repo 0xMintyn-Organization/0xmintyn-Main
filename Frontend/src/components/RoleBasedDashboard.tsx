@@ -89,19 +89,7 @@ export default function RoleBasedDashboard() {
     return <AdminDashboard data={dashboardData} />;
   }
 
-  // Route contributors to their specific dashboard
-  if (user?.role === 'contributor') {
-    router.push('/contributor/dashboard');
-    return null;
-  }
-
-  // Route startups to their specific dashboard
-  if (user?.role === 'startup') {
-    router.push('/startup/dashboard');
-    return null;
-  }
-
-  // All other roles (user and instructor) get the same unified dashboard
+  // All other roles (user, instructor, etc.) get the unified dashboard
   return <EnhancedDashboard />;
 }
 

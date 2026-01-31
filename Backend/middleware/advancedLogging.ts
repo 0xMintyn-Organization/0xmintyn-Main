@@ -58,27 +58,8 @@ export const advancedRequestLogger = (req: Request, res: Response, next: NextFun
     // Increment request count
     systemStats.requestCount++;
     
-    // Log incoming request
-    logger.http('Incoming Request', {
-        method: req.method,
-        url: req.originalUrl,
-        path: req.path,
-        query: req.query,
-        params: req.params,
-        headers: {
-            'user-agent': req.get('user-agent'),
-            'content-type': req.get('content-type'),
-            'content-length': req.get('content-length'),
-            'authorization': req.get('authorization') ? '***' : undefined
-        },
-        ip: req.ip || req.socket.remoteAddress,
-        bodySize: req.get('content-length') || 0,
-        memoryBefore: {
-            heapUsed: Math.round(startMemory.heapUsed / 1024 / 1024),
-            heapTotal: Math.round(startMemory.heapTotal / 1024 / 1024),
-            rss: Math.round(startMemory.rss / 1024 / 1024)
-        }
-    });
+    // Log incoming request (one line only)
+    logger.http(`${req.method} ${req.originalUrl}`);
     
     // Capture response methods - MUST bind to original res object
     const originalSend = res.send.bind(res);
@@ -130,31 +111,26 @@ export const advancedRequestLogger = (req: Request, res: Response, next: NextFun
             }
         };
         
-        // Log based on status code
+        // One-line API summary (no big JSON)
+        const summary = `${req.method} ${req.originalUrl} ${res.statusCode} ${duration.toFixed(0)}ms`;
         if (res.statusCode >= 500) {
             systemStats.errorCount++;
-            logger.error('Request Error Response', logData);
+            logger.error(summary);
         } else if (res.statusCode >= 400) {
-            logger.warn('Request Client Error', logData);
+            logger.warn(summary);
         } else {
-            logger.http('Request Success', logData);
+            logger.http(summary);
         }
         
-        // Performance warning for slow requests
+        // Performance warning for slow requests (one line)
         if (duration > 1000) {
-            logger.performance('Slow Request Detected', {
-                ...logData,
-                threshold: '1000ms'
-            });
+            logger.performance(`Slow: ${summary}`);
         }
         
         // Memory warning
         const heapUsedMB = endMemory.heapUsed / 1024 / 1024;
         if (heapUsedMB > 500) {
-            logger.warn('High Memory Usage', {
-                heapUsedMB: Math.round(heapUsedMB),
-                threshold: '500MB'
-            });
+            logger.warn(`High memory: ${Math.round(heapUsedMB)}MB`);
         }
     };
     
@@ -257,14 +233,8 @@ export const getSystemStats = () => {
     };
 };
 
-// Log system stats periodically
+// Log system stats periodically (one short line)
 setInterval(() => {
     const stats = getSystemStats();
-    logger.performance('System Stats', {
-        memory: stats.current.memory,
-        uptime: stats.current.uptime.formatted,
-        requests: stats.performance.totalRequests,
-        errors: stats.performance.totalErrors,
-        avgResponseTime: stats.performance.averageResponseTime
-    });
+    logger.performance(`Stats: uptime ${stats.current.uptime.formatted} | requests ${stats.performance.totalRequests} | errors ${stats.performance.totalErrors} | avg ${stats.performance.averageResponseTime}`);
 }, 60000); // Every minute

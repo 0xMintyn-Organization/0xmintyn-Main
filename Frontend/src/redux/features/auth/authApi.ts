@@ -85,6 +85,11 @@ export const authApi = apiSlice.injectEndpoints({
                         user: result.data.user
                     }));
 
+                    // Log role and marketplace_role on login (for verification)
+                    if (result.data?.user) {
+                        const u = result.data.user as { role?: string; marketplace_role?: string | null };
+                        console.log('[Login] role:', u.role ?? '—', '| marketplace_role:', u.marketplace_role ?? '—');
+                    }
                 } catch (error) {
                     console.log(error);
 

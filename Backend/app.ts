@@ -44,7 +44,7 @@ app.use(cookieParser());
 
 // cors
 app.use(cors({ 
-    origin: ['https://app.equalmint.com', 'http://209.74.89.249:3000' ], 
+    origin: ['http://localhost:3000', 'http://209.74.89.249:3000' ], 
     credentials: true 
 }));
 
@@ -93,8 +93,7 @@ app.all('*', (req: Request, res: Response, next: NextFunction) => {
     const err = new Error(`Can't find ${req.originalUrl} on this server`) as any
     err.statusCode = 404;
     next(err);
-}
-);
- 
+});
+
 // Error Middleware
 app.use(ErrorMiddleware);

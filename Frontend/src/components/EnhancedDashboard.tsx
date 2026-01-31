@@ -316,26 +316,6 @@ export default function EnhancedDashboard() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              {user?.role === "user" && (
-                <>
-                  <Button
-                    onClick={() => router.push("/contributor/apply")}
-                    variant="outline"
-                    className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                  >
-                    <Code className="w-4 h-4 mr-2" />
-                    Become Contributor
-                  </Button>
-                  <Button
-                    onClick={() => router.push("/startup/apply")}
-                    variant="outline"
-                    className="border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                  >
-                    <Rocket className="w-4 h-4 mr-2" />
-                    Apply as Startup
-                  </Button>
-                </>
-              )}
               <Button
                 variant="outline"
                 onClick={() => router.push("/courses")}
