@@ -33,6 +33,10 @@ export interface IUser extends Document {
     /** Only for marketplace_role === 'startup'. */
     startupName?: string;
     startupDescription?: string;
+    /** Phase 2: true when startup has completed onboarding (e.g. confirmed profile). */
+    startupOnboardingComplete?: boolean;
+    /** Phase 2: true when contributor has completed onboarding. */
+    contributorOnboardingComplete?: boolean;
     avatar: string;
     banner: string;
     bio: string;
@@ -107,11 +111,14 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     },
     marketplace_role: {
         type: String,
+        default: 'contributor',
         enum: ['startup', 'contributor'],
         required: false,
     },
     startupName: { type: String, required: false, trim: true },
     startupDescription: { type: String, required: false, trim: true },
+    startupOnboardingComplete: { type: Boolean, default: false },
+    contributorOnboardingComplete: { type: Boolean, default: false },
     isVerified: {
         type: Boolean,
         default: false,

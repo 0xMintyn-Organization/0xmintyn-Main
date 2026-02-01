@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -11,9 +11,11 @@ import {
   BarChart3,
   Bookmark,
   BookOpen,
+  Building2,
   ChevronRight,
   ChevronDown,
   DollarSign,
+  FileCheck,
   FileText,
   GraduationCap,
   LayoutDashboard,
@@ -40,8 +42,30 @@ const getNavItems = (
   hasPurchases: boolean = false,
   isSeller: boolean = false,
   pendingGovernanceCount: number = 0,
-  totalCourses: number = 0
+  totalCourses: number = 0,
+  marketplaceRole?: string
 ) => {
+  const marketplaceChildren = [
+    {
+      name: "Startups",
+      href: "/marketplace/startups",
+      icon: Building2,
+      description: "Browse Startups"
+    },
+    {
+      name: "Contributors",
+      href: "/marketplace/contributors",
+      icon: Users,
+      description: "Browse Contributors"
+    },
+    ...(marketplaceRole === "contributor"
+      ? [
+          { name: "My applications", href: "/marketplace/my-applications", icon: FileCheck, description: "Applications to startups" },
+          { name: "My contributor profile", href: "/marketplace/contributor-profile", icon: User, description: "View & edit your profile" },
+        ]
+      : []),
+  ];
+
   const publicItems = [
     { 
       name: "Dashboard", 
@@ -88,6 +112,15 @@ const getNavItems = (
       badge: pendingGovernanceCount > 0 ? String(pendingGovernanceCount) : null,
       badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
       description: "Community Proposals"
+    },
+    { 
+      name: "Marketplace", 
+      href: "#", 
+      icon: Store,
+      badge: null,
+      description: "Startups & Contributors",
+      hasSubmenu: true,
+      children: marketplaceChildren,
     },
     { 
       name: "Settings", 
@@ -193,6 +226,20 @@ const getNavItems = (
       description: "Manage Users"
     },
     { 
+      name: "Funding", 
+      href: "/admin/funding", 
+      icon: DollarSign,
+      badge: null,
+      description: "Approve completed milestones"
+    },
+    { 
+      name: "Startup profiles", 
+      href: "/admin/startup-profiles", 
+      icon: Building2,
+      badge: null,
+      description: "Approve startups for marketplace"
+    },
+    { 
       name: "Education Management", 
       href: "#", 
       icon: GraduationCap,
@@ -276,9 +323,19 @@ export default function Sidebar() {
     hasPurchases,
     isSeller,
     pendingGovernanceCount,
-    totalCourses
+    totalCourses,
+    (user as { marketplace_role?: string })?.marketplace_role
   );
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+
+  // Auto-expand Marketplace when on a marketplace route
+  useEffect(() => {
+    if (pathname.startsWith("/marketplace/")) {
+      setExpandedMenus((prev) =>
+        prev.includes("Marketplace") ? prev : [...prev, "Marketplace"]
+      );
+    }
+  }, [pathname]);
 
   return (
     <div className="fixed left-0 w-72 h-screen bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-900 dark:to-zinc-800 border-r border-zinc-200 dark:border-zinc-700 flex flex-col">

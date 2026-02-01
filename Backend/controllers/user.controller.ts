@@ -5,6 +5,8 @@ import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import path from 'path';
 import { CatchAsyncError } from '../middleware/catchAsyncError';
 import UserModel, { IUser } from '../models/user.mode';
+import StartupProfileModel from '../models/startupProfile.model';
+import ContributorProfileModel from '../models/contributorProfile.model';
 import { getUserById } from '../services/user.services';
 import ErrorHandler from '../utils/errorHandler';
 import { accessTokenOptions, refreshTokenOptions, sendToken } from '../utils/jwt';
@@ -594,6 +596,68 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
     }
     );
 
+    /** Phase 2: Mark startup onboarding complete. Optional body: startupName, startupDescription. */
+    export const completeStartupOnboarding = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user?._id;
+            const user = await UserModel.findById(userId);
+            if (!user) return next(new ErrorHandler('User not found', 404));
+            if (user.marketplace_role !== 'startup') {
+                return next(new ErrorHandler('Only startup users can complete startup onboarding', 403));
+            }
+            const { startupName, startupDescription } = req.body as { startupName?: string; startupDescription?: string };
+            if (startupName != null && typeof startupName === 'string' && startupName.trim()) user.startupName = startupName.trim();
+            if (startupDescription != null && typeof startupDescription === 'string') user.startupDescription = startupDescription.trim();
+            user.startupOnboardingComplete = true;
+            await user.save();
+            // Phase 3: create or update StartupProfile when onboarding completes
+            const existingStartupProfile = await StartupProfileModel.findOne({ userId: user._id });
+            if (existingStartupProfile) {
+                existingStartupProfile.companyName = user.startupName || existingStartupProfile.companyName;
+                existingStartupProfile.description = user.startupDescription ?? existingStartupProfile.description;
+                await existingStartupProfile.save();
+            } else {
+                await StartupProfileModel.create({
+                    userId: user._id,
+                    companyName: user.startupName || 'My Startup',
+                    description: user.startupDescription || '',
+                    status: 'pending',
+                });
+            }
+            res.status(200).json({ success: true, user, message: 'Startup onboarding completed' });
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
+
+    /** Phase 2: Mark contributor onboarding complete. Phase 3: create ContributorProfile if not exists. */
+    export const completeContributorOnboarding = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user?._id;
+            const user = await UserModel.findById(userId);
+            if (!user) return next(new ErrorHandler('User not found', 404));
+            if (user.marketplace_role !== 'contributor') {
+                return next(new ErrorHandler('Only contributor users can complete contributor onboarding', 403));
+            }
+            user.contributorOnboardingComplete = true;
+            await user.save();
+            // Phase 3: create ContributorProfile if not exists
+            const existingContributorProfile = await ContributorProfileModel.findOne({ userId: user._id });
+            if (!existingContributorProfile) {
+                await ContributorProfileModel.create({
+                    userId: user._id,
+                    skills: [],
+                    portfolio: '',
+                    paymentInfo: '',
+                    earningsSummary: 0,
+                    availability: '',
+                });
+            }
+            res.status(200).json({ success: true, user, message: 'Contributor onboarding completed' });
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
 
     // update user profile
     interface IUpdateProfileBody {

@@ -24,6 +24,11 @@ import dashboardRouter from './routes/dashboard/dashboard.route';
 import auth0Router from './routes/auth0.route';
 import influencerRouter from './routes/influencer.route';
 import healthRouter from './routes/health.route';
+import startupProfileRouter from './routes/startupProfile.route';
+import contributorProfileRouter from './routes/contributorProfile.route';
+import milestoneRouter from './routes/milestone.route';
+import milestonePaymentRouter from './routes/milestonePayment.route';
+import applicationRouter from './routes/application.route';
 import logger from './utils/logger';
 require('dotenv').config();
 export const app = express();
@@ -73,6 +78,11 @@ app.use('/api/v1/influencer', influencerRouter);
 app.use('/api/v1/proposal', proposalRoutes);
 app.use('/api/v1/vote', voteRoutes);
 app.use('/api/v1', auth0Router);
+app.use('/api/v1/startup-profile', startupProfileRouter);
+app.use('/api/v1/contributor-profile', contributorProfileRouter);
+app.use('/api/v1/milestone', milestoneRouter);
+app.use('/api/v1/milestone-payment', milestonePaymentRouter);
+app.use('/api/v1/application', applicationRouter);
 
 
 

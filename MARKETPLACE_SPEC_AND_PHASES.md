@@ -194,25 +194,24 @@ Use these phases in order so that dependencies are respected and nothing is miss
 
 ---
 
-### Phase 2: Profile Completion & Onboarding Gates
+### Phase 2: Profile Completion & Onboarding Gates — DONE
 
 **Goal:** Enforce “access blocked until completion” for startups and contributors.
 
 **Deliverables:**
 
-- [ ] **Startup onboarding**
-  - Define “startup profile complete” (e.g. StartupProfile exists and required fields filled, or keep only User.startupName for minimal).
-  - Add flag e.g. `startupOnboardingComplete` (or derive from StartupProfile).
-  - Middleware or guard: if `marketplace_role === 'startup'` and not complete → redirect to “Complete startup profile” page.
-- [ ] **Contributor onboarding**
-  - Define “contributor profile complete” (e.g. ContributorProfile exists and required fields).
-  - Add flag e.g. `contributorOnboardingComplete`.
-  - Guard: if `marketplace_role === 'contributor'` and not complete → redirect to “Complete contributor profile” page.
-- [ ] **Routes**
-  - `/onboarding/startup` – startup profile completion form (and API to save).
-  - `/onboarding/contributor` – contributor profile completion form (and API to save).
-- [ ] **Auth/guard**
-  - After login, check marketplace_role and completion; redirect to correct onboarding or to dashboard.
+- [x] **Startup onboarding**
+  - Define “startup profile complete” (minimal: User.startupName + flag `startupOnboardingComplete`).
+  - Flag `startupOnboardingComplete` on User (default false).
+  - Guard in Protected: if `marketplace_role === 'startup'` and not complete → redirect to `/onboarding/startup`.
+- [x] **Contributor onboarding**
+  - “Contributor profile complete” = flag `contributorOnboardingComplete` on User.
+  - Guard: if `marketplace_role === 'contributor'` and not complete → redirect to `/onboarding/contributor`.
+- [x] **Routes**
+  - `/onboarding/startup` – startup profile completion form; PUT `me/onboarding/startup` to save and set flag.
+  - `/onboarding/contributor` – contributor completion page; PUT `me/onboarding/contributor` to set flag.
+- [x] **Auth/guard**
+  - After login (and on home/dashboard), check marketplace_role and completion; redirect to onboarding or dashboard.
 
 **Exit criteria:** Incomplete startup/contributor cannot reach main app; must complete onboarding first.
 
@@ -220,23 +219,23 @@ Use these phases in order so that dependencies are respected and nothing is miss
 
 ---
 
-### Phase 3: Backend – StartupProfile & ContributorProfile
+### Phase 3: Backend – StartupProfile & ContributorProfile — DONE
 
 **Goal:** Separate collections for extended profile data; REST APIs; strict auth.
 
 **Deliverables:**
 
-- [ ] **Models**
-  - **StartupProfile:** `userId` (ref User), company name, description, funding state, contact, status (e.g. pending/approved), timestamps. Optionally link to Milestones.
-  - **ContributorProfile:** `userId` (ref User), skills (array), portfolio (links or text), payment info (e.g. payout method), earnings summary, availability, timestamps.
-- [ ] **APIs**
+- [x] **Models**
+  - **StartupProfile:** `userId` (ref User), companyName, description, fundingState, contact, status (pending/approved/rejected), timestamps.
+  - **ContributorProfile:** `userId` (ref User), skills (array), portfolio, paymentInfo, earningsSummary, availability, timestamps.
+- [x] **APIs**
   - `GET/PUT /api/v1/startup-profile` (own; create if not exists).
-  - `GET /api/v1/startup-profile/:id` (admin or public for contributor “browse startups”).
-  - `GET/PUT /api/v1/contributor-profile` (own).
-- [ ] **Authorization**
-  - Startup profile: only own (or admin). Contributor profile: only own (or admin).
-- [ ] **Hooks**
-  - On “complete” submit, set onboarding complete flag (Phase 2) and optionally create/update StartupProfile or ContributorProfile.
+  - `GET /api/v1/startup-profile/:id` (own or admin: full; others: public fields if status approved).
+  - `GET/PUT /api/v1/contributor-profile` (own; create if not exists).
+- [x] **Authorization**
+  - Startup profile: only own (or admin) for full; any authenticated for GET :id (public fields if approved). Contributor profile: only own.
+- [x] **Hooks**
+  - On startup onboarding complete: create/update StartupProfile. On contributor onboarding complete: create ContributorProfile if not exists.
 
 **Exit criteria:** Startups and contributors have persistent profiles; APIs are secure and used by onboarding flows.
 
@@ -244,23 +243,23 @@ Use these phases in order so that dependencies are respected and nothing is miss
 
 ---
 
-### Phase 4: Milestone & Application Models and APIs
+### Phase 4: Milestone & Application Models and APIs — DONE
 
 **Goal:** Milestone lifecycle and one application per milestone; core CRUD and state transitions.
 
 **Deliverables:**
 
-- [ ] **Milestone model**
-  - `startupId` (ref User or StartupProfile), title, description, amount (funding lock), status (enum: Open, In Progress, Submitted, Startup Verified, Admin Verified, Paid), dates, assignedContributorId (ref User or ContributorProfile).
-- [ ] **Application model**
-  - `milestoneId`, `contributorId`, status (e.g. pending, accepted, rejected), cover message, timestamps. Unique index on `(milestoneId, contributorId)`; business rule: at most one accepted application per milestone.
-- [ ] **APIs**
-  - `GET/POST /api/v1/milestone` (startup: own list + create).
-  - `GET/PATCH /api/v1/milestone/:id` (startup: update status up to “Startup Verified”; admin: “Admin Verified”, “Paid”).
-  - `GET/POST /api/v1/milestone/:id/application` (contributor: apply; startup: list applications, accept one).
-  - `PATCH /api/v1/application/:id` (e.g. accept/reject by startup).
-- [ ] **State machine**
-  - Enforce valid transitions (e.g. Open → In Progress when application accepted; Submitted → Startup Verified by startup; Startup Verified → Admin Verified by admin; Admin Verified → Paid by admin).
+- [x] **Milestone model**
+  - `startupId` (ref User), title, description, amount, status (Open, In Progress, Submitted, Startup Verified, Admin Verified, Paid), assignedContributorId (ref User), submittedAt, timestamps.
+- [x] **Application model**
+  - `milestoneId`, `contributorId`, status (pending, accepted, rejected), coverMessage, timestamps. Unique index on `(milestoneId, contributorId)`; at most one accepted per milestone.
+- [x] **APIs**
+  - `GET/POST /api/v1/milestone` (startup: own list + create; contributor: open + assigned; admin: all).
+  - `GET/PATCH /api/v1/milestone/:id` (get one; PATCH status with state machine: startup/assigned up to Startup Verified; admin: Admin Verified, Paid).
+  - `GET/POST /api/v1/milestone/:id/application` (contributor: apply; startup: list applications).
+  - `GET /api/v1/application` (list own or startup’s applications), `PATCH /api/v1/application/:id` (accept/reject by startup; accept → milestone In Progress, assign contributor).
+- [x] **State machine**
+  - Open → In Progress (when application accepted); In Progress → Submitted (startup or assigned contributor); Submitted → Startup Verified (startup); Startup Verified → Admin Verified (admin); Admin Verified → Paid (admin).
 
 **Exit criteria:** Startups can create milestones; contributors can apply; one contributor per milestone; status flow is clear and enforced.
 

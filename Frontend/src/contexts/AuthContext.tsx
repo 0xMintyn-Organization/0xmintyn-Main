@@ -16,6 +16,8 @@ interface User {
   /** Only when marketplace_role === 'startup'. */
   startupName?: string | null;
   startupDescription?: string | null;
+  startupOnboardingComplete?: boolean;
+  contributorOnboardingComplete?: boolean;
   avatar?: string;
   isVerified: boolean;
   isSeller: boolean;

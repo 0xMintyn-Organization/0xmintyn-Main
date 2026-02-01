@@ -84,17 +84,19 @@ export default function Auth0SuccessPage() {
                   localStorage.setItem('user', JSON.stringify(userData.user));
                   localStorage.setItem('accessToken', userData.accessToken);
                   localStorage.setItem('loginTimestamp', Date.now().toString());
-                  
+                  const { getOnboardingRedirectPath, getPostLoginPath } = await import("@/lib/onboarding");
+                  const onboardingPath = getOnboardingRedirectPath(userData.user);
+                  router.push(onboardingPath || getPostLoginPath(userData.user));
+                  return;
                 }
               }
-              // Default redirect to dashboard
               router.push("/dashboard");
             } catch (error) {
               console.error("Error fetching user:", error);
-              router.push("/dashboard"); // Fallback redirect
+              router.push("/dashboard");
             }
           } else {
-            router.push("/dashboard"); // Fallback if no token
+            router.push("/dashboard");
           }
         }
       } catch (error) {

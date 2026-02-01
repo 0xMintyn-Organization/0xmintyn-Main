@@ -205,8 +205,24 @@ export const authApi = apiSlice.injectEndpoints({
             }),
         }),
 
-
+        completeStartupOnboarding: builder.mutation<{ success: boolean; user: any; message: string }, { startupName?: string; startupDescription?: string } | void>({
+            query: (body = {}) => ({
+                url: "me/onboarding/startup",
+                method: "PUT",
+                body: body || {},
+                credentials: "include" as const,
+            }),
+            invalidatesTags: ['User'],
+        }),
+        completeContributorOnboarding: builder.mutation<{ success: boolean; user: any; message: string }, void>({
+            query: () => ({
+                url: "me/onboarding/contributor",
+                method: "PUT",
+                credentials: "include" as const,
+            }),
+            invalidatesTags: ['User'],
+        }),
     }),
 });
 
-export const { useRegisterMutation, useActivationMutation, useLoginMutation, useSocialAuthMutation, useLogOutQuery, useForgotPasswordMutation, useResetPasswordMutation } = authApi;
+export const { useRegisterMutation, useActivationMutation, useLoginMutation, useSocialAuthMutation, useLogOutQuery, useForgotPasswordMutation, useResetPasswordMutation, useCompleteStartupOnboardingMutation, useCompleteContributorOnboardingMutation } = authApi;

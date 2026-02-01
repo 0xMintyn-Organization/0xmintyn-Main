@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/Spinner";
 import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
+import { getOnboardingRedirectPath, getPostLoginPath } from "@/lib/onboarding";
 
 export default function Home() {
   const { user, isAuthenticated } = useSelector((state: any) => state.auth);
@@ -52,8 +53,9 @@ export default function Home() {
                      (hasCachedAuth && !isError && !isSuccess); // Use cache only if API hasn't responded yet
 
       if (isAuth) {
-        // User is authenticated - redirect to dashboard
-        router.push("/dashboard");
+        const userForRedirect = user || data?.user;
+        const onboardingPath = userForRedirect ? getOnboardingRedirectPath(userForRedirect) : null;
+        router.push(onboardingPath || (userForRedirect ? getPostLoginPath(userForRedirect) : "/dashboard"));
       } else {
         // User is not authenticated - redirect to login page
         router.push("/login");

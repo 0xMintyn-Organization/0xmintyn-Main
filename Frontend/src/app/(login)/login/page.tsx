@@ -15,6 +15,7 @@ import { useLoginMutation } from "@/redux/features/auth/authApi";
 import useAuth from "@/hooks/userAuth";
 import { useRouter } from "next/navigation";
 import { SocialLoginButton } from "@/components/MyProfile/SocialLoginButton";
+import { getOnboardingRedirectPath, getPostLoginPath } from "@/lib/onboarding";
 import { FcGoogle } from "react-icons/fc";
 import { Github, Twitter, Linkedin, AlertCircle, X, Eye, EyeOff } from "lucide-react";
 import { FaDiscord } from "react-icons/fa";
@@ -25,7 +26,7 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,39 +49,30 @@ export default function LoginPage() {
   const password = form.watch("password");
   const isFormValid = form.formState.isValid;
 
-  // 🧠 Redirect if already logged in
+  // 🧠 Redirect if already logged in (onboarding or startup/main dashboard)
   useEffect(() => {
-    // Wait a bit longer after page load to allow Auth0 session to be detected
     const checkAuth = () => {
-      if (!isLoading && isAuthenticated) {
-        console.log("User authenticated, redirecting to dashboard");
-        router.push("/dashboard");
+      if (!isLoading && isAuthenticated && user) {
+        const onboardingPath = getOnboardingRedirectPath(user);
+        router.push(onboardingPath || getPostLoginPath(user));
       }
     };
-
-    // Check immediately
     checkAuth();
-
-    // Also check after a short delay (for Auth0/social login sessions that need time to load)
-    const timeoutId = setTimeout(() => {
-      checkAuth();
-    }, 2000);
-
+    const timeoutId = setTimeout(checkAuth, 2000);
     return () => clearTimeout(timeoutId);
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, user, router]);
 
-  // ✅ Handle login result
+  // ✅ Handle login result (redirect to onboarding or dashboard)
   useEffect(() => {
-    if (isSuccess) {
-      setLoginError(null); // Clear any previous errors
+    if (isSuccess && data?.user) {
+      setLoginError(null);
       toast({
         title: "Success",
         description: data?.message || "Logged in successfully",
       });
-      // Small delay to ensure state is updated
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 100);
+      const onboardingPath = getOnboardingRedirectPath(data.user);
+      const target = onboardingPath || getPostLoginPath(data.user);
+      setTimeout(() => router.replace(target), 100);
     }
 
     if (error && "data" in error) {
