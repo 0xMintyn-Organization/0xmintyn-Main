@@ -1,6 +1,6 @@
 /**
- * Onboarding redirect: only startup users are gated.
- * Contributors go straight to the platform; only startups must complete onboarding first.
+ * Onboarding redirect: not used to gate startup users on login.
+ * Startup users go straight to /startup/dashboard; onboarding/startup is optional (e.g. from profile).
  */
 export type UserWithOnboarding = {
   marketplace_role?: 'startup' | 'contributor' | null;
@@ -9,8 +9,6 @@ export type UserWithOnboarding = {
 };
 
 export function getOnboardingRedirectPath(user: UserWithOnboarding | null): string | null {
-  if (!user?.marketplace_role) return null;
-  if (user.marketplace_role === 'startup' && !user.startupOnboardingComplete) return '/onboarding/startup';
   return null;
 }
 

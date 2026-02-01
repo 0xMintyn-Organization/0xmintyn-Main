@@ -336,14 +336,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = `${base}${sep}logged_out=1`;
   };
 
-  // Don't block UI on loadUser when we already have user (e.g. just logged in as startup).
-  // Otherwise startup users can see continuous loading until /me completes.
+  // Use Redux user immediately when authenticated so redirect to /onboarding/startup
+  // doesn't show loading forever (local state "user" updates in useEffect, one render behind).
+  const effectiveUser = user ?? (reduxUser && reduxIsAuthenticated ? reduxUser : null);
   const isLoadingStrict = isLoading || queryLoading;
-  const isLoadingSafe = user ? false : isLoadingStrict;
+  const isLoadingSafe = effectiveUser ? false : isLoadingStrict;
 
   const value = {
-    user,
-    isAuthenticated: !!user,
+    user: effectiveUser,
+    isAuthenticated: !!effectiveUser,
     isLoading: isLoadingSafe,
     refetchUser,
     logout,
