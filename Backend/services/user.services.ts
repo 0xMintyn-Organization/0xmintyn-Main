@@ -5,16 +5,18 @@ import UserModel from "../models/user.mode"
 
 // get user by id 
 export const getUserById = async (id: string, res: Response) => {
-
     const userJson = await UserModel.findById(id)
-
     const user = userJson ? JSON.parse(JSON.stringify(userJson)) : null
 
-    if (userJson) {
-
+    if (userJson && user) {
         res.status(201).json({
             success: true,
             user
+        })
+    } else {
+        res.status(404).json({
+            success: false,
+            message: 'User not found'
         })
     }
 }

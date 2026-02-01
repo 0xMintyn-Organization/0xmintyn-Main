@@ -336,10 +336,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = `${base}${sep}logged_out=1`;
   };
 
+  // Don't block UI on loadUser when we already have user (e.g. just logged in as startup).
+  // Otherwise startup users can see continuous loading until /me completes.
+  const isLoadingStrict = isLoading || queryLoading;
+  const isLoadingSafe = user ? false : isLoadingStrict;
+
   const value = {
     user,
     isAuthenticated: !!user,
-    isLoading: isLoading || queryLoading,
+    isLoading: isLoadingSafe,
     refetchUser,
     logout,
   };

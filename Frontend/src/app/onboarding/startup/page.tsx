@@ -37,7 +37,7 @@ export default function OnboardingStartupPage() {
       return;
     }
     if (user.startupOnboardingComplete) {
-      router.replace("/dashboard");
+      router.replace("/startup/dashboard");
       return;
     }
     form.reset({
