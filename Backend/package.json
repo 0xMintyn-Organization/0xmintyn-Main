@@ -9,6 +9,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "cross-env  HOST=127.0.0.1 ts-node-dev --respawn --transpile-only server.ts",
+    "dev:https": "cross-env HOST=127.0.0.1 USE_HTTPS=true ts-node-dev --respawn --transpile-only server.ts",
+    "certs": "node scripts/gen-cert.js",
     "start": "cross-env NODE_ENV=production HOST=127.0.0.1 ts-node --transpile-only server.ts",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false"
   },
@@ -58,6 +60,7 @@
     "@types/node": "^20.14.10",
     "@vercel/node": "^5.1.14",
     "cross-env": "^10.0.0",
+    "selfsigned": "^5.5.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   }

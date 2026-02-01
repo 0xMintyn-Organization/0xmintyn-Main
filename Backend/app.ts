@@ -50,10 +50,23 @@ app.use(express.urlencoded({ limit: '100mb', extended: true }));
 // cookie parser
 app.use(cookieParser());
 
-// cors
-app.use(cors({ 
-    origin: ['http://localhost:3000', 'http://209.74.89.249:3000' ], 
-    credentials: true 
+// CORS – allowed client origins (Frontend MVP + EqualMint website).
+// For cross-origin login (e.g. equalmint.com → app.equalmint.com), cookies must use SameSite=None; Secure.
+// That is enabled when NODE_ENV=production, or set COOKIE_SAME_SITE_NONE=true (API must be HTTPS).
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+  : [
+      'https://app.equalmint.com',       // MVP Next.js dev
+      'https://equalmint.com',      // EqualMint Vite dev
+      'http://127.0.0.1:5173',       // EqualMint Vite dev (--host 127.0.0.1)
+      'http://209.74.89.249:3000',
+      'https://app.equalmint.com',   // MVP production
+      'https://equalmint.com',       // EqualMint marketing site
+      'https://www.equalmint.com',
+    ];
+app.use(cors({
+  origin: corsOrigins.length ? corsOrigins : true,
+  credentials: true,
 }));
 
 // Serve static files

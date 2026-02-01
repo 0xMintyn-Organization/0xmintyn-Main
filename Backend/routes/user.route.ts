@@ -1,5 +1,5 @@
 import express from 'express';
-import { activateUserAccount, activateUserAccountByLink, completeContributorOnboarding, completeStartupOnboarding, directRegisterUser, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus, updateSocialAccount, removeSocialAccount, forgotPassword, resetPassword } from '../controllers/user.controller';
+import { activateUserAccount, activateUserAccountByLink, completeContributorOnboarding, completeStartupOnboarding, directRegisterUser, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, sessionFromCode, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus, updateSocialAccount, removeSocialAccount, forgotPassword, resetPassword } from '../controllers/user.controller';
 import { getInstructorStats } from '../controllers/instructor.controller';
 import { isAthenticated as isAuthenticated } from '../utils/auth';
 import upload from '../middleware/multerConfig';
@@ -16,6 +16,8 @@ userRouter.post('/activate-user', activateUserAccount);
 userRouter.post('/activate-link', activateUserAccountByLink);
 
 userRouter.post('/login', loginUser);
+
+userRouter.get('/session-from-code', sessionFromCode);
 
 userRouter.post('/forgot-password', forgotPassword);
 

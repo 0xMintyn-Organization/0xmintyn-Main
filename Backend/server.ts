@@ -4,9 +4,29 @@ import { initSocketServer } from "./socketServer";
 import logger from "./utils/logger";
 require('dotenv').config();
 import http from 'http';
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
 
-// Create HTTP server
-const server = http.createServer(app);
+const USE_HTTPS = process.env.USE_HTTPS === 'true';
+const SSL_KEY_PATH = process.env.SSL_KEY_PATH || path.join(__dirname, 'cert', 'key.pem');
+const SSL_CERT_PATH = process.env.SSL_CERT_PATH || path.join(__dirname, 'cert', 'cert.pem');
+
+function createServer() {
+  if (USE_HTTPS) {
+    try {
+      const key = fs.readFileSync(SSL_KEY_PATH);
+      const cert = fs.readFileSync(SSL_CERT_PATH);
+      return https.createServer({ key, cert }, app);
+    } catch (e: any) {
+      logger.warn('HTTPS requested but cert/key not found. Run: npm run certs');
+      logger.warn('Falling back to HTTP. Cross-origin login will not work until API uses HTTPS.');
+    }
+  }
+  return http.createServer(app);
+}
+
+const server = createServer();
 
 // Increase timeout for large file uploads (5 minutes)
 server.timeout = 5 * 60 * 1000; // 5 minutes
@@ -69,9 +89,10 @@ process.on('SIGTERM', () => {
     });
 });
 
+const protocol = USE_HTTPS && server instanceof https.Server ? 'https' : 'http';
 // Start server
 server.listen(PORT, HOST, async () => {
-    logger.info(`🚀 Server is running on http://${HOST}:${PORT}`);
+    logger.info(`🚀 Server is running on ${protocol}://${HOST}:${PORT}`);
     logger.info(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
     
     // Connect to database

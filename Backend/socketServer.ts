@@ -7,7 +7,7 @@ export const initSocketServer = (server: http.Server) => {
         cors: {
             origin: process.env.CLIENT_URL 
                 ? process.env.CLIENT_URL.split(',')
-                : ['http://localhost:3000', 'http://209.74.89.249:3000'],
+                : ['https://app.equalmint.com', 'http://209.74.89.249:3000'],
             credentials: true,
             methods: ["GET", "POST"]
         },

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useLoadUserQuery } from '@/redux/features/api/apiSlice';
 import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
-import { userLoggedOut } from '@/redux/features/auth/authSlice';
+import { userLoggedIn, userLoggedOut } from '@/redux/features/auth/authSlice';
 
 interface User {
   _id: string;
@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [shouldFetch, setShouldFetch] = useState(true);
+  const [isExchangingCode, setIsExchangingCode] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch();
 
@@ -47,10 +48,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const reduxUser = useSelector((state: { auth?: { user: User | null; isAuthenticated: boolean } }) => state.auth?.user);
   const reduxIsAuthenticated = useSelector((state: { auth?: { user: User | null; isAuthenticated: boolean } }) => state.auth?.isAuthenticated);
 
-  // Only fetch user data when needed
+  // Only fetch user data when needed (skip while exchanging login_code from website redirect)
   const { data, isLoading: queryLoading, refetch } = useLoadUserQuery(undefined, {
-    skip: !shouldFetch,
+    skip: !shouldFetch || isExchangingCode,
   });
+
+  // Exchange one-time login_code from website redirect for session cookies (runs before loadUser)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('login_code')?.trim();
+    if (!code) return;
+    // Remove param immediately so a second mount (e.g. React Strict Mode) doesn't call the API again and get "Invalid or expired code"
+    params.delete('login_code');
+    const qs = params.toString();
+    const clean = window.location.pathname + (qs ? `?${qs}` : '') + (window.location.hash || '');
+    window.history.replaceState({}, '', clean);
+    setIsExchangingCode(true);
+    const base = (process.env.NEXT_PUBLIC_SERVER_URI || '').replace(/\/+$/, '');
+    fetch(`${base}/session-from-code?code=${encodeURIComponent(code)}`, { method: 'GET', credentials: 'include' })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        const userData = data?.user;
+        const accessToken = data?.accessToken;
+        if (userData) {
+          dispatch(userLoggedIn({ accessToken: accessToken ?? '', user: userData }));
+          try {
+            localStorage.setItem('user', JSON.stringify(userData));
+            if (accessToken) localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('loginTimestamp', Date.now().toString());
+          } catch (_) {}
+          setUser(userData);
+        }
+        setShouldFetch(true);
+      })
+      .finally(() => setIsExchangingCode(false));
+  }, [dispatch]);
 
   // On initial mount, always try to fetch user session (for Auth0/social login cookies)
   useEffect(() => {
@@ -287,13 +321,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}logout`, {
         method: 'GET',
         credentials: 'include',
+        cache: 'no-store',
       });
+      // Brief delay so the browser processes Set-Cookie (clear) before we navigate away
+      await new Promise((r) => setTimeout(r, 150));
     } catch (error) {
       console.error("Backend logout error (non-critical):", error);
     }
     
-    // Use replace instead of push to prevent back navigation
-    router.replace('/login');
+    // Redirect to marketing website (equalmint.com) after logout.
+    // Append ?logged_out=1 so the website can show logged-out state immediately.
+    const base = (process.env.NEXT_PUBLIC_MARKETING_URL || 'https://equalmint.com').replace(/\?.*$/, '');
+    const sep = base.includes('?') ? '&' : '?';
+    window.location.href = `${base}${sep}logged_out=1`;
   };
 
   const value = {

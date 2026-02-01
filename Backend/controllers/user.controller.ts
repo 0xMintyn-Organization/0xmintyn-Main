@@ -9,7 +9,8 @@ import StartupProfileModel from '../models/startupProfile.model';
 import ContributorProfileModel from '../models/contributorProfile.model';
 import { getUserById } from '../services/user.services';
 import ErrorHandler from '../utils/errorHandler';
-import { accessTokenOptions, refreshTokenOptions, sendToken } from '../utils/jwt';
+import { accessTokenOptions, refreshTokenOptions, sendToken, clearCookieOptions } from '../utils/jwt';
+import { createLoginCode, consumeLoginCode } from '../utils/loginCodeStore';
 import sendEmail from '../utils/sendMail';
 import logger from '../utils/logger';
 
@@ -89,7 +90,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
 
             // Build activation link for token-based email verification
             const clientUrl =
-                process.env.CLIENT_URL || "http://localhost:3000/";
+                process.env.CLIENT_URL || "https://app.equalmint.com/";
             const normalizedClientUrl = clientUrl.endsWith("/")
                 ? clientUrl.slice(0, -1)
                 : clientUrl;
@@ -441,8 +442,25 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 console.log('[Login] role:', user.role, '| marketplace_role:', user.marketplace_role ?? null);
             }
 
-            sendToken(user, 200, res);
+            // One-time code for website → MVP redirect so MVP can set session via its own request (avoids cross-origin cookie issues)
+            const loginCode = createLoginCode(user._id.toString());
+            sendToken(user, 200, res, { loginCode });
 
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    });
+
+    /** Exchange one-time login code (from website redirect) for session cookies. No auth required. */
+    export const sessionFromCode = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const code = (req.query.code as string)?.trim();
+            if (!code) return next(new ErrorHandler('Missing code', 400));
+            const userId = consumeLoginCode(code);
+            if (!userId) return next(new ErrorHandler('Invalid or expired code', 400));
+            const user = await UserModel.findById(userId).select('-password -createdAt -updatedAt -__v');
+            if (!user) return next(new ErrorHandler('User not found', 404));
+            sendToken(user, 200, res);
         } catch (error: any) {
             return next(new ErrorHandler(error.message, 400));
         }
@@ -451,43 +469,12 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
     // Logout user
     export const logoutUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            // Clear cookies with same options used when setting them
-            const isProduction = process.env.NODE_ENV === 'production';
-            
-            // Clear access_token cookie
-            res.cookie('access_token', "", {
-                maxAge: 0,
-                expires: new Date(0),
-                httpOnly: true,
-                sameSite: isProduction ? 'none' : 'lax',
-                secure: isProduction,
-                path: '/',
-            });
-            
-            // Clear refresh_token cookie
-            res.cookie('refresh_token', "", {
-                maxAge: 0,
-                expires: new Date(0),
-                httpOnly: true,
-                sameSite: isProduction ? 'none' : 'lax',
-                secure: isProduction,
-                path: '/',
-            });
-            
-            // Clear any other potential auth cookies
-            res.clearCookie('access_token', {
-                httpOnly: true,
-                sameSite: isProduction ? 'none' : 'lax',
-                secure: isProduction,
-                path: '/',
-            });
-            
-            res.clearCookie('refresh_token', {
-                httpOnly: true,
-                sameSite: isProduction ? 'none' : 'lax',
-                secure: isProduction,
-                path: '/',
-            });
+            // Clear cookies with same options used when setting them (must match jwt.ts)
+            const opts = { ...clearCookieOptions };
+            res.cookie('access_token', '', { ...opts, maxAge: 0, expires: new Date(0) });
+            res.cookie('refresh_token', '', { ...opts, maxAge: 0, expires: new Date(0) });
+            res.clearCookie('access_token', opts);
+            res.clearCookie('refresh_token', opts);
             
             const UserId = req.user?._id || ''; // @ts-ignore 
             res.status(200).json({
@@ -882,7 +869,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             );
 
             // Build reset link
-            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000";
+            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://app.equalmint.com";
             const normalizedClientUrl = clientUrl.endsWith("/") ? clientUrl.slice(0, -1) : clientUrl;
             const resetLink = `${normalizedClientUrl}/reset-password?token=${resetToken}`;
 
