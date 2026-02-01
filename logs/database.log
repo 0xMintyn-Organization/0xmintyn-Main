@@ -2268,3 +2268,4 @@
 {"context":{"requestId":"system"},"environment":"development","level":"info","message":"✅ MongoDB connected successfully to localhost","requestId":"system","service":"equalmint-backend","timestamp":"2026-02-01 15:59:43.558","version":"1.0.0"}
 {"context":{"requestId":"system"},"environment":"development","level":"info","message":"📊 Database: 0xMintyn","requestId":"system","service":"equalmint-backend","timestamp":"2026-02-01 15:59:43.559","version":"1.0.0"}
 {"context":{"requestId":"system"},"environment":"development","level":"info","message":"✅ Database connection established","requestId":"system","service":"equalmint-backend","timestamp":"2026-02-01 15:59:43.559","version":"1.0.0"}
+{"context":{"requestId":"system"},"environment":"development","level":"info","message":"Stats: uptime 0h 1m 0s | requests 0 | errors 0 | avg 0.00ms","requestId":"system","service":"equalmint-backend","timestamp":"2026-02-01 16:00:42.637","type":"performance","version":"1.0.0"}
