@@ -23,14 +23,15 @@ import {
   Settings,
   Shield,
   ShoppingCart,
+  Star,
+  Store,
+  Target,
   TrendingUp,
   User,
   UserCheck,
   Users,
   MessageSquare,
-  Star,
   Vote,
-  Store
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -60,6 +61,7 @@ const getNavItems = (
     },
     ...(marketplaceRole === "contributor"
       ? [
+          { name: "My work", href: "/marketplace/work", icon: Target, description: "Connected startup, engagement, payouts" },
           { name: "My applications", href: "/marketplace/my-applications", icon: FileCheck, description: "Applications to startups" },
           { name: "My contributor profile", href: "/marketplace/contributor-profile", icon: User, description: "View & edit your profile" },
         ]
@@ -295,6 +297,19 @@ const getNavItems = (
     items = [...publicItems, ...adminItems, ...influencerItems];
   } else if (userRole === 'influencer') {
     items = [...publicItems, ...influencerItems];
+  }
+
+  if (marketplaceRole === 'contributor' || marketplaceRole === 'startup') {
+    const messengerItem = {
+      name: "Messenger",
+      href: "/messenger",
+      icon: MessageSquare,
+      badge: null as string | null,
+      description: "Chat with startups & contributors",
+    };
+    const idx = items.findIndex((i) => i.name === 'Marketplace');
+    if (idx >= 0) items.splice(idx, 0, messengerItem);
+    else items.push(messengerItem);
   }
 
   return items;

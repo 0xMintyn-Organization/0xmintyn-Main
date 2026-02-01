@@ -49,6 +49,14 @@ export const listMilestones = CatchAsyncError(async (req: Request, res: Response
     return res.status(200).json({ success: true, milestones });
   }
 
+  if (marketplaceRole === 'contributor') {
+    const milestones = await MilestoneModel.find({ assignedContributorId: userId })
+      .populate('startupId', 'email startupName firstName lastName')
+      .sort({ createdAt: -1 })
+      .lean();
+    return res.status(200).json({ success: true, milestones });
+  }
+
   return next(new ErrorHandler('Not authorized to list milestones', 403));
 });
 
@@ -70,7 +78,9 @@ export const createMilestone = CatchAsyncError(async (req: Request, res: Respons
     amount: numAmount,
     status: 'Open',
   });
-  const populated = await MilestoneModel.findById(milestone._id).populate('startupId', 'email startupName').lean();
+  const populated = await MilestoneModel.findById(milestone._id)
+    .populate('startupId', 'email startupName')
+    .lean();
   res.status(201).json({ success: true, milestone: populated });
 });
 
@@ -81,7 +91,6 @@ export const getMilestoneById = CatchAsyncError(async (req: Request, res: Respon
 
   const milestone = await MilestoneModel.findById(milestoneId)
     .populate('startupId', 'email startupName firstName lastName')
-    .populate('assignedContributorId', 'email firstName lastName')
     .lean();
   if (!milestone) return next(new ErrorHandler('Milestone not found', 404));
 
@@ -93,13 +102,11 @@ export const getMilestoneById = CatchAsyncError(async (req: Request, res: Respon
   return next(new ErrorHandler('Not authorized to view this milestone', 403));
 });
 
-/** PATCH /milestone/:id – startup: Open→In Progress, In Progress→Completed; admin: Completed→Paid */
+/** PATCH /milestone/:id – startup: status transitions; admin: Completed→Paid */
 export const patchMilestone = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
   const milestoneId = req.params.id;
   const user = req.user as { _id: string; role: string; marketplace_role?: string };
   const { status } = req.body as { status?: string };
-
-  if (!status || !MILESTONE_STATUSES.includes(status as MilestoneStatus)) return next(new ErrorHandler('Valid status required', 400));
 
   const milestone = await MilestoneModel.findById(milestoneId);
   if (!milestone) return next(new ErrorHandler('Milestone not found', 404));
@@ -108,13 +115,16 @@ export const patchMilestone = CatchAsyncError(async (req: Request, res: Response
   const isStartupOwner = startupIdStr === String(user._id);
   const isAdmin = user.role === 'admin';
 
-  if (!canTransition(milestone.status as MilestoneStatus, status as MilestoneStatus, user.role, isStartupOwner)) {
-    return next(new ErrorHandler(`Cannot transition from ${milestone.status} to ${status}`, 400));
+  if (status) {
+    if (!MILESTONE_STATUSES.includes(status as MilestoneStatus)) return next(new ErrorHandler('Valid status required', 400));
+    if (!canTransition(milestone.status as MilestoneStatus, status as MilestoneStatus, user.role, isStartupOwner)) {
+      return next(new ErrorHandler(`Cannot transition from ${milestone.status} to ${status}`, 400));
+    }
+    milestone.status = status as MilestoneStatus;
+    if (status === 'Completed') milestone.completedAt = new Date();
+    if (status === 'Paid') milestone.paidAt = new Date();
   }
 
-  milestone.status = status as MilestoneStatus;
-  if (status === 'Completed') milestone.completedAt = new Date();
-  if (status === 'Paid') milestone.paidAt = new Date();
   await milestone.save();
 
   // Create payment history when admin marks Paid (like course order)
@@ -143,7 +153,6 @@ export const patchMilestone = CatchAsyncError(async (req: Request, res: Response
 
   const populated = await MilestoneModel.findById(milestone._id)
     .populate('startupId', 'email startupName firstName lastName')
-    .populate('assignedContributorId', 'email firstName lastName')
     .lean();
   res.status(200).json({ success: true, milestone: populated });
 });

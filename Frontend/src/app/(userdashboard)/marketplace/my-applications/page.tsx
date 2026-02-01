@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import useAuth from "@/hooks/userAuth";
 import { marketplaceApi } from "@/lib/marketplaceApi";
 import { AllRolesProtected } from "@/components/RoleProtected";
-import { Card, CardContent } from "@/components/ui/card";
 import { Store, FileCheck } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -53,21 +52,21 @@ export default function MarketplaceMyApplicationsPage() {
   if (marketplaceRole !== "contributor") {
     return (
       <AllRolesProtected>
-        <div className="space-y-6">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Store className="w-7 h-7 text-green-600" />
+        <div className="w-full px-6 py-6 space-y-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3 tracking-tight">
+            <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-green-500/15 text-green-600 dark:text-green-400">
+              <FileCheck className="w-6 h-6" />
+            </span>
             My applications
           </h1>
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
+          <div className="rounded-lg border border-border bg-card dark:bg-zinc-800 p-8 text-center text-muted-foreground shadow-sm">
               Only contributors have applications. Register or switch to a contributor account to see your applications to startups here.
               <div className="mt-4">
                 <Link href="/marketplace/startups" className="text-sm text-green-600 dark:text-green-400 hover:underline">
                   Browse Startups →
                 </Link>
               </div>
-            </CardContent>
-          </Card>
+          </div>
         </div>
       </AllRolesProtected>
     );
@@ -76,7 +75,9 @@ export default function MarketplaceMyApplicationsPage() {
   if (loading) {
     return (
       <AllRolesProtected>
-        <p className="text-muted-foreground">Loading applications…</p>
+        <div className="w-full px-6 py-6 flex items-center justify-center min-h-[200px]">
+          <p className="text-muted-foreground">Loading applications…</p>
+        </div>
       </AllRolesProtected>
     );
   }
@@ -87,39 +88,44 @@ export default function MarketplaceMyApplicationsPage() {
 
   return (
     <AllRolesProtected>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FileCheck className="w-7 h-7 text-green-600" />
-            My applications
-          </h1>
-          <p className="text-muted-foreground mt-1">
+      <div className="w-full px-6 py-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3 tracking-tight">
+              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-green-500/15 text-green-600 dark:text-green-400">
+                <FileCheck className="w-6 h-6" />
+              </span>
+              My applications
+            </h1>
+            <p className="text-muted-foreground mt-2">
             Applications you’ve sent to startups. Pending, accepted, and rejected are listed below.
           </p>
+          </div>
+          <Link href="/marketplace/startups" className="text-sm font-medium text-green-600 dark:text-green-400 hover:underline shrink-0">
+            Browse Startups →
+          </Link>
         </div>
 
         {applications.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
+          <div className="rounded-lg border border-border bg-card dark:bg-zinc-800 p-8 text-center text-muted-foreground shadow-sm">
               You haven’t applied to any startups yet. Browse startups and click “Apply to this startup” on a startup’s profile.
-              <div className="mt-4">
-                <Link href="/marketplace/startups" className="text-sm text-green-600 dark:text-green-400 hover:underline">
-                  Browse Startups →
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="mt-4">
+              <Link href="/marketplace/startups" className="text-sm font-medium text-green-600 dark:text-green-400 hover:underline">
+                Browse Startups →
+              </Link>
+            </div>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {pending.length > 0 && (
               <section>
-                <h2 className="font-semibold text-foreground mb-2">Pending ({pending.length})</h2>
-                <ul className="space-y-2">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Pending ({pending.length})</h2>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {pending.map((a) => (
-                    <li key={a._id} className="rounded-lg border border-border bg-card p-4">
-                      <p className="font-medium text-foreground">{getStartupName(a.startupId)}</p>
+                    <li key={a._id} className="rounded-lg border border-border bg-card dark:bg-zinc-800 p-6 shadow-sm space-y-2">
+                      <p className="font-semibold text-foreground">{getStartupName(a.startupId)}</p>
                       <p className="text-sm text-muted-foreground">Status: {a.status}</p>
-                      {a.coverMessage && <p className="text-sm mt-2">{a.coverMessage}</p>}
+                      {a.coverMessage && <p className="text-sm text-foreground/90 mt-2">{a.coverMessage}</p>}
                     </li>
                   ))}
                 </ul>
@@ -127,13 +133,13 @@ export default function MarketplaceMyApplicationsPage() {
             )}
             {accepted.length > 0 && (
               <section>
-                <h2 className="font-semibold text-foreground mb-2">Accepted ({accepted.length})</h2>
-                <ul className="space-y-2">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Accepted ({accepted.length})</h2>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {accepted.map((a) => (
-                    <li key={a._id} className="rounded-lg border border-border bg-card p-4">
-                      <p className="font-medium text-foreground">{getStartupName(a.startupId)}</p>
+                    <li key={a._id} className="rounded-lg border border-border bg-card dark:bg-zinc-800 p-6 shadow-sm space-y-2">
+                      <p className="font-semibold text-foreground">{getStartupName(a.startupId)}</p>
                       <p className="text-sm text-muted-foreground">Status: {a.status}</p>
-                      {a.coverMessage && <p className="text-sm mt-2">{a.coverMessage}</p>}
+                      {a.coverMessage && <p className="text-sm text-foreground/90 mt-2">{a.coverMessage}</p>}
                     </li>
                   ))}
                 </ul>
@@ -141,13 +147,13 @@ export default function MarketplaceMyApplicationsPage() {
             )}
             {rejected.length > 0 && (
               <section>
-                <h2 className="font-semibold text-foreground mb-2">Rejected ({rejected.length})</h2>
-                <ul className="space-y-2">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Rejected ({rejected.length})</h2>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {rejected.map((a) => (
-                    <li key={a._id} className="rounded-lg border border-border bg-card p-4 opacity-80">
-                      <p className="font-medium text-foreground">{getStartupName(a.startupId)}</p>
+                    <li key={a._id} className="rounded-lg border border-border bg-card dark:bg-zinc-800 p-6 shadow-sm space-y-2 opacity-80">
+                      <p className="font-semibold text-foreground">{getStartupName(a.startupId)}</p>
                       <p className="text-sm text-muted-foreground">Status: {a.status}</p>
-                      {a.coverMessage && <p className="text-sm mt-2">{a.coverMessage}</p>}
+                      {a.coverMessage && <p className="text-sm text-foreground/90 mt-2">{a.coverMessage}</p>}
                     </li>
                   ))}
                 </ul>

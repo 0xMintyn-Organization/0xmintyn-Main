@@ -5,6 +5,7 @@ import Link from "next/link";
 import { marketplaceApi } from "@/lib/marketplaceApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 type Milestone = {
@@ -13,7 +14,6 @@ type Milestone = {
   description?: string;
   amount: number;
   status: string;
-  assignedContributorId?: unknown;
   createdAt: string;
 };
 
@@ -62,7 +62,11 @@ export default function StartupMilestonesPage() {
     }
     setCreating(true);
     try {
-      await marketplaceApi.milestones.create({ title: title.trim(), description: description.trim() || undefined, amount: amt });
+      await marketplaceApi.milestones.create({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        amount: amt,
+      });
       toast({ title: "Created", description: "Milestone created." });
       setTitle("");
       setDescription("");
@@ -81,7 +85,7 @@ export default function StartupMilestonesPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-foreground">Milestones</h1>
         <Button onClick={() => setShowForm(!showForm)} variant={showForm ? "outline" : "default"}>
@@ -90,10 +94,19 @@ export default function StartupMilestonesPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="rounded-lg border border-border bg-card p-4 mb-6 space-y-3">
-          <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-          <Input placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <Input type="number" min={0} step={0.01} placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+        <form onSubmit={handleCreate} className="rounded-lg border border-border bg-card p-4 mb-6 space-y-4">
+          <div className="space-y-2">
+            <Label>Title</Label>
+            <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+            <Label>Description (optional)</Label>
+            <Input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Amount</Label>
+            <Input type="number" min={0} step={0.01} placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          </div>
           <div className="flex gap-2">
             <Button type="submit" disabled={creating}>{creating ? "Creating…" : "Create"}</Button>
             <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
@@ -102,11 +115,11 @@ export default function StartupMilestonesPage() {
       )}
 
       {milestones.length === 0 ? (
-        <p className="text-muted-foreground">No milestones yet. Create one to get started.</p>
+        <p className="text-muted-foreground rounded-xl border border-dashed border-border bg-card p-8 text-center">No milestones yet. Create one to get started.</p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {milestones.map((m) => (
-            <li key={m._id} className="rounded-lg border border-border bg-card p-4 flex flex-wrap items-center justify-between gap-2">
+            <li key={m._id} className="rounded-xl border border-border bg-card p-4 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="font-semibold text-foreground">{m.title}</h2>
                 {m.description && <p className="text-sm text-muted-foreground">{m.description}</p>}

@@ -13,7 +13,6 @@ type Milestone = {
   description?: string;
   amount: number;
   status: string;
-  assignedContributorId?: unknown;
   startupId?: unknown;
   completedAt?: string;
   paidAt?: string;
@@ -79,7 +78,7 @@ export default function MilestoneDetailPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <div className="mb-4">
         <Link href="/startup/milestones" className="text-sm text-green-600 dark:text-green-400 hover:underline">
           ← Back to Milestones

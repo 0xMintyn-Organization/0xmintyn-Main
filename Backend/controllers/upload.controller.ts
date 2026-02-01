@@ -160,13 +160,21 @@ export const uploadFile = CatchAsyncError(async (req: Request, res: Response, ne
             filename: req.file.originalname,
             isProductFile
         });
+
+        // Preserve file extension in public_id so the URL and download keep the same extension (e.g. .pdf)
+        const rawExt = req.file.originalname ? req.file.originalname.toLowerCase().slice(req.file.originalname.lastIndexOf('.')) : '';
+        const allowedRawExtensions = ['.pdf', '.zip', '.rar', '.7z', '.doc', '.docx', '.tar', '.gz'];
+        const safeExt = rawExt && allowedRawExtensions.includes(rawExt) ? rawExt : (req.file.mimetype === 'application/pdf' ? '.pdf' : '');
+        const uniqueId = `file_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+        const publicIdWithExt = safeExt ? `${uniqueId}${safeExt}` : uniqueId;
         
-        // Upload to Cloudinary with correct resource type
+        // Upload to Cloudinary with correct resource type and public_id including extension
         // IMPORTANT: Set access_mode to 'public' for direct downloads
         const result = await uploadToCloudinary(req.file.buffer, {
             folder: isProductFile ? FileCategory.PRODUCT_FILES : FileCategory.GENERAL,
             resourceType: resourceType,
-            access_mode: 'public' // Explicitly public for direct access
+            access_mode: 'public', // Explicitly public for direct access
+            publicId: publicIdWithExt
         });
         
         logger.info('File uploaded to Cloudinary successfully', {

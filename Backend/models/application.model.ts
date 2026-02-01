@@ -10,6 +10,10 @@ export interface IApplication extends Document {
   contributorId: mongoose.Types.ObjectId;
   status: ApplicationStatus;
   coverMessage?: string;
+  /** CV/resume file URL (e.g. Cloudinary) */
+  cvUrl?: string;
+  /** Expected monthly salary (contributor-provided) */
+  monthlySalary?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,11 +40,20 @@ const applicationSchema = new Schema<IApplication>(
       trim: true,
       default: '',
     },
+    cvUrl: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    monthlySalary: {
+      type: Number,
+      default: null,
+    },
   },
   { timestamps: true }
 );
 
-applicationSchema.index({ startupId: 1, contributorId: 1 }, { unique: true });
+applicationSchema.index({ startupId: 1, contributorId: 1 });
 applicationSchema.index({ contributorId: 1 });
 applicationSchema.index({ startupId: 1, status: 1 });
 

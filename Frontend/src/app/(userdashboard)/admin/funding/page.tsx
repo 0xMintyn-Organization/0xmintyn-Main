@@ -5,7 +5,7 @@ import { marketplaceApi } from "@/lib/marketplaceApi";
 import { AdminProtected } from "@/components/RoleProtected";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, CheckCircle, History } from "lucide-react";
+import { DollarSign, CheckCircle, History, Clock, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Milestone = {
@@ -94,97 +94,189 @@ export default function AdminFundingPage() {
 
   const completed = milestones.filter((m) => m.status === "Completed");
   const paid = milestones.filter((m) => m.status === "Paid");
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
   return (
     <AdminProtected>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <DollarSign className="w-7 h-7 text-green-600" />
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Page header */}
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3 tracking-tight">
+            <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-green-500/15 text-green-600 dark:text-green-400">
+              <DollarSign className="w-6 h-6" />
+            </span>
             Funding
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Completed milestones appear below. Click &quot;Paid & proceed&quot; to mark as paid and create a payment record in history (like course purchase). Stripe can be added later.
+          <p className="text-muted-foreground pl-[52px]">
+            Completed milestones appear below. Click &quot;Paid & proceed&quot; to mark as paid and create a payment record. Stripe can be added later.
           </p>
         </div>
 
         {loading ? (
-          <p className="text-muted-foreground">Loading…</p>
+          <Card className="rounded-xl">
+            <CardContent className="py-8 text-center text-muted-foreground">
+              Loading milestones…
+            </CardContent>
+          </Card>
         ) : (
           <>
-            {completed.length > 0 && (
-              <section>
-                <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  Awaiting payment ({completed.length})
-                </h2>
-                <ul className="space-y-3">
+            {/* Summary stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card className="rounded-xl">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                    <Clock className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{completed.length}</p>
+                    <p className="text-sm text-muted-foreground">Awaiting payment</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-500/15 text-green-600 dark:text-green-400">
+                    <CheckCircle className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{paid.length}</p>
+                    <p className="text-sm text-muted-foreground">Paid milestones</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-500/20 text-green-600 dark:text-green-400">
+                    <Banknote className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{totalPaid.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Total paid</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Awaiting payment */}
+            <section className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                Awaiting payment ({completed.length})
+              </h2>
+              {completed.length > 0 ? (
+                <ul className="space-y-4">
                   {completed.map((m) => (
-                    <li key={m._id} className="rounded-lg border border-border bg-card p-4 flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <h3 className="font-medium text-foreground">{m.title}</h3>
-                        {m.description && <p className="text-sm text-muted-foreground">{m.description}</p>}
-                        <p className="text-sm mt-1">
-                          Amount: {Number(m.amount).toLocaleString()} · Startup: {getStartupName(m)}
-                          {m.completedAt && ` · Completed: ${new Date(m.completedAt).toLocaleDateString()}`}
+                    <li key={m._id} className="rounded-xl border border-border bg-card p-5 flex flex-wrap items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-foreground">{m.title}</h3>
+                        {m.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{m.description}</p>}
+                        <p className="text-sm text-muted-foreground mt-2">
+                          <span className="font-medium text-foreground">{Number(m.amount).toLocaleString()}</span>
+                          <span className="mx-1.5">·</span>
+                          {getStartupName(m)}
+                          {m.completedAt && (
+                            <>
+                              <span className="mx-1.5">·</span>
+                              Completed {new Date(m.completedAt).toLocaleDateString()}
+                            </>
+                          )}
                         </p>
                       </div>
                       <Button
                         onClick={() => handlePayAndProceed(m._id)}
                         disabled={updating === m._id}
+                        className="shrink-0"
                       >
                         {updating === m._id ? "…" : "Paid & proceed"}
                       </Button>
                     </li>
                   ))}
                 </ul>
-              </section>
-            )}
+              ) : (
+                <Card className="rounded-xl border-dashed">
+                  <CardContent className="py-6 px-4 text-center text-muted-foreground text-sm">
+                    No milestones awaiting payment. Startups mark milestones complete from their Milestones page; they will appear here.
+                  </CardContent>
+                </Card>
+              )}
+            </section>
+
+            {/* Paid milestones */}
             {paid.length > 0 && (
-              <section>
-                <h2 className="font-semibold text-foreground mb-2">Paid ({paid.length})</h2>
-                <ul className="space-y-2">
+              <section className="space-y-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  Paid ({paid.length})
+                </h2>
+                <ul className="space-y-4">
                   {paid.map((m) => (
-                    <li key={m._id} className="rounded-lg border border-border bg-card p-3 flex items-center justify-between opacity-90">
-                      <span className="font-medium">{m.title}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {Number(m.amount).toLocaleString()} · {getStartupName(m)}
-                        {m.paidAt && ` · Paid ${new Date(m.paidAt).toLocaleDateString()}`}
-                      </span>
+                    <li key={m._id} className="rounded-xl border border-border bg-card p-5 flex flex-wrap items-center justify-between gap-4 opacity-95">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-foreground">{m.title}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          <span className="font-medium text-foreground">{Number(m.amount).toLocaleString()}</span>
+                          <span className="mx-1.5">·</span>
+                          {getStartupName(m)}
+                          {m.paidAt && (
+                            <>
+                              <span className="mx-1.5">·</span>
+                              Paid {new Date(m.paidAt).toLocaleDateString()}
+                            </>
+                          )}
+                        </p>
+                      </div>
                     </li>
                   ))}
                 </ul>
               </section>
             )}
+
+            {/* No milestones at all */}
             {milestones.length === 0 && (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  No completed milestones yet. Startups mark milestones complete from their Milestones page; then they appear here for payment.
+              <Card className="rounded-xl border-dashed">
+                <CardContent className="py-12 px-6 text-center">
+                  <DollarSign className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground font-medium">No completed milestones yet</p>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                    Startups mark milestones complete from their Milestones page; then they appear here for payment.
+                  </p>
                 </CardContent>
               </Card>
             )}
           </>
         )}
 
-        <section>
-          <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-            <History className="w-4 h-4" />
+        {/* Payment history */}
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <History className="w-5 h-5 text-muted-foreground" />
             Payment history
           </h2>
           {paymentsLoading ? (
-            <p className="text-sm text-muted-foreground">Loading payment history…</p>
+            <Card className="rounded-xl">
+              <CardContent className="py-6 text-center text-muted-foreground text-sm">
+                Loading payment history…
+              </CardContent>
+            </Card>
           ) : payments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No payments recorded yet. Use &quot;Paid & proceed&quot; above to record a payment.</p>
+            <Card className="rounded-xl border-dashed">
+              <CardContent className="py-6 px-4 text-center text-muted-foreground text-sm">
+                No payments recorded yet. Use &quot;Paid & proceed&quot; on a completed milestone to record a payment.
+              </CardContent>
+            </Card>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {payments.map((p) => (
-                <li key={p._id} className="rounded-lg border border-border bg-card p-3 flex items-center justify-between text-sm">
-                  <span className="font-medium">{p.milestoneTitle}</span>
-                  <span className="text-muted-foreground">
-                    {Number(p.amount).toLocaleString()} · {p.startupName || "—"}
-                    {p.paidAt && ` · ${new Date(p.paidAt).toLocaleDateString()}`}
-                    {p.payment_info?.paymentMethod && ` · ${p.payment_info.paymentMethod}`}
-                  </span>
+                <li key={p._id} className="rounded-xl border border-border bg-card p-4 flex flex-wrap items-center justify-between gap-3">
+                  <span className="font-medium text-foreground">{p.milestoneTitle}</span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{Number(p.amount).toLocaleString()}</span>
+                    <span>{p.startupName || "—"}</span>
+                    {p.paidAt && <span>{new Date(p.paidAt).toLocaleDateString()}</span>}
+                    {p.payment_info?.paymentMethod && (
+                      <span className="rounded bg-muted px-2 py-0.5 text-xs">{p.payment_info.paymentMethod}</span>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>

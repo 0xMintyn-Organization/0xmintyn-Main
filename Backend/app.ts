@@ -29,6 +29,9 @@ import contributorProfileRouter from './routes/contributorProfile.route';
 import milestoneRouter from './routes/milestone.route';
 import milestonePaymentRouter from './routes/milestonePayment.route';
 import applicationRouter from './routes/application.route';
+import contributorPayoutRouter from './routes/contributorPayout.route';
+import engagementRouter from './routes/engagement.route';
+import messengerRouter from './routes/messenger.route';
 import logger from './utils/logger';
 require('dotenv').config();
 export const app = express();
@@ -83,8 +86,9 @@ app.use('/api/v1/contributor-profile', contributorProfileRouter);
 app.use('/api/v1/milestone', milestoneRouter);
 app.use('/api/v1/milestone-payment', milestonePaymentRouter);
 app.use('/api/v1/application', applicationRouter);
-
-
+app.use('/api/v1/contributor-payout', contributorPayoutRouter);
+app.use('/api/v1/engagement', engagementRouter);
+app.use('/api/v1/messenger', messengerRouter);
 
 
 // testing api

@@ -7,6 +7,7 @@ import {
   listApprovedStartupProfiles,
   listAllStartupProfilesForAdmin,
   patchStartupProfileStatus,
+  getStartupProfileMilestones,
 } from '../controllers/startupProfile.controller';
 import { isAthenticated as isAuthenticated } from '../utils/auth';
 
@@ -16,6 +17,7 @@ router.get('/', updateAccessTokenMiddleware, isAuthenticated, getOwnStartupProfi
 router.put('/', updateAccessTokenMiddleware, isAuthenticated, putStartupProfile);
 router.get('/list', updateAccessTokenMiddleware, isAuthenticated, listApprovedStartupProfiles);
 router.get('/list/admin', updateAccessTokenMiddleware, isAuthenticated, listAllStartupProfilesForAdmin);
+router.get('/:id/milestones', updateAccessTokenMiddleware, isAuthenticated, getStartupProfileMilestones);
 router.get('/:id', updateAccessTokenMiddleware, isAuthenticated, getStartupProfileById);
 router.patch('/:id', updateAccessTokenMiddleware, isAuthenticated, patchStartupProfileStatus);
 

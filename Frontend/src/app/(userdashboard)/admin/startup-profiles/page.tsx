@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { marketplaceApi } from "@/lib/marketplaceApi";
 import { AdminProtected } from "@/components/RoleProtected";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Building2, CheckCircle, XCircle, Clock, ExternalLink, Mail, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type StartupProfile = {
@@ -31,6 +32,79 @@ const STATUS_BADGES: Record<string, { label: string; className: string }> = {
   approved: { label: "Approved", className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
   rejected: { label: "Rejected", className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
 };
+
+function StartupRow({
+  p,
+  updating,
+  onStatus,
+  showActions,
+}: {
+  p: StartupProfile;
+  updating: string | null;
+  onStatus: (id: string, status: "approved" | "rejected") => void;
+  showActions: "approve-reject" | "view-reject" | "view-approve";
+}) {
+  const badge = STATUS_BADGES[p.status] ?? { label: p.status, className: "bg-muted" };
+  return (
+    <li className="rounded-xl border border-border bg-card p-5 flex flex-wrap items-start justify-between gap-4 hover:bg-muted/30 transition-colors">
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="font-semibold text-foreground">{getStartupName(p)}</h3>
+          <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${badge.className}`}>
+            {badge.label}
+          </span>
+        </div>
+        {p.companyName && (
+          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+            <Briefcase className="w-3.5 h-3.5 shrink-0" />
+            {p.companyName}
+          </p>
+        )}
+        {p.contact && (
+          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+            <Mail className="w-3.5 h-3.5 shrink-0" />
+            {p.contact}
+          </p>
+        )}
+        {p.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{p.description}</p>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <Button size="sm" variant="ghost" asChild>
+          <Link href={`/marketplace/startups/${p._id}`} className="inline-flex items-center gap-1.5">
+            <ExternalLink className="w-4 h-4" />
+            View
+          </Link>
+        </Button>
+        {showActions === "approve-reject" && (
+          <>
+            <Button size="sm" onClick={() => onStatus(p._id, "approved")} disabled={updating === p._id}>
+              <CheckCircle className="w-4 h-4 mr-1.5" />
+              {updating === p._id ? "…" : "Approve"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onStatus(p._id, "rejected")} disabled={updating === p._id}>
+              <XCircle className="w-4 h-4 mr-1.5" />
+              Reject
+            </Button>
+          </>
+        )}
+        {showActions === "view-reject" && (
+          <Button size="sm" variant="outline" onClick={() => onStatus(p._id, "rejected")} disabled={updating === p._id}>
+            <XCircle className="w-4 h-4 mr-1.5" />
+            {updating === p._id ? "…" : "Reject"}
+          </Button>
+        )}
+        {showActions === "view-approve" && (
+          <Button size="sm" variant="outline" onClick={() => onStatus(p._id, "approved")} disabled={updating === p._id}>
+            <CheckCircle className="w-4 h-4 mr-1.5" />
+            {updating === p._id ? "…" : "Approve"}
+          </Button>
+        )}
+      </div>
+    </li>
+  );
+}
 
 export default function AdminStartupProfilesPage() {
   const [startups, setStartups] = useState<StartupProfile[]>([]);
@@ -72,89 +146,117 @@ export default function AdminStartupProfilesPage() {
 
   return (
     <AdminProtected>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Building2 className="w-7 h-7 text-green-600" />
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Page header */}
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3 tracking-tight">
+            <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-green-500/15 text-green-600 dark:text-green-400">
+              <Building2 className="w-6 h-6" />
+            </span>
             Startup profiles
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground pl-[52px]">
             Approve or reject startup profiles. Only approved startups appear in the marketplace Startups list.
           </p>
         </div>
 
         {loading ? (
-          <p className="text-muted-foreground">Loading…</p>
+          <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+            Loading startup profiles…
+          </div>
         ) : (
           <>
+            {/* Summary stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card className="rounded-xl">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                    <Clock className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{pending.length}</p>
+                    <p className="text-sm text-muted-foreground">Pending</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-500/15 text-green-600 dark:text-green-400">
+                    <CheckCircle className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{approved.length}</p>
+                    <p className="text-sm text-muted-foreground">Approved</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-500/15 text-red-600 dark:text-red-400">
+                    <XCircle className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{rejected.length}</p>
+                    <p className="text-sm text-muted-foreground">Rejected</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Pending */}
             {pending.length > 0 && (
-              <section>
-                <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
+              <section className="space-y-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   Pending ({pending.length})
                 </h2>
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   {pending.map((p) => (
-                    <li key={p._id} className="rounded-lg border border-border bg-card p-4 flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <h3 className="font-medium text-foreground">{getStartupName(p)}</h3>
-                        <p className="text-sm text-muted-foreground">{p.companyName}</p>
-                        {p.description && <p className="text-sm mt-1 line-clamp-2">{p.description}</p>}
-                        <span className={`text-xs px-2 py-0.5 rounded-full mt-2 inline-block ${STATUS_BADGES[p.status]?.className ?? "bg-muted"}`}>
-                          {STATUS_BADGES[p.status]?.label ?? p.status}
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleStatus(p._id, "approved")} disabled={updating === p._id}>
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          {updating === p._id ? "…" : "Approve"}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleStatus(p._id, "rejected")} disabled={updating === p._id}>
-                          <XCircle className="w-4 h-4 mr-1" />
-                          Reject
-                        </Button>
-                      </div>
-                    </li>
+                    <StartupRow key={p._id} p={p} updating={updating} onStatus={handleStatus} showActions="approve-reject" />
                   ))}
                 </ul>
               </section>
             )}
+
+            {/* Approved */}
             {approved.length > 0 && (
-              <section>
-                <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+              <section className="space-y-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                   Approved ({approved.length})
                 </h2>
-                <ul className="space-y-2">
+                <ul className="space-y-4">
                   {approved.map((p) => (
-                    <li key={p._id} className="rounded-lg border border-border bg-card p-3 flex items-center justify-between">
-                      <span className="font-medium">{getStartupName(p)}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_BADGES.approved.className}`}>Approved</span>
-                    </li>
+                    <StartupRow key={p._id} p={p} updating={updating} onStatus={handleStatus} showActions="view-reject" />
                   ))}
                 </ul>
               </section>
             )}
+
+            {/* Rejected */}
             {rejected.length > 0 && (
-              <section>
-                <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <XCircle className="w-4 h-4 text-red-600" />
+              <section className="space-y-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
                   Rejected ({rejected.length})
                 </h2>
-                <ul className="space-y-2">
+                <ul className="space-y-4">
                   {rejected.map((p) => (
-                    <li key={p._id} className="rounded-lg border border-border bg-card p-3 flex items-center justify-between opacity-80">
-                      <span className="font-medium">{getStartupName(p)}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_BADGES.rejected.className}`}>Rejected</span>
-                    </li>
+                    <StartupRow key={p._id} p={p} updating={updating} onStatus={handleStatus} showActions="view-approve" />
                   ))}
                 </ul>
               </section>
             )}
+
+            {/* Empty state */}
             {startups.length === 0 && (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  No startup profiles yet. Startups create profiles from their Startup Hub; they appear here for approval.
+              <Card className="rounded-xl border-dashed">
+                <CardContent className="py-12 px-6 text-center">
+                  <Building2 className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground font-medium">No startup profiles yet</p>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                    Startups create profiles from their Startup Hub; they will appear here for approval.
+                  </p>
                 </CardContent>
               </Card>
             )}

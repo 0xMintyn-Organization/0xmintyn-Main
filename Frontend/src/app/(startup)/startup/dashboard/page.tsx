@@ -17,12 +17,12 @@ export default function StartupDashboardPage() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <h1 className="text-2xl font-bold text-foreground mb-2">Startup Dashboard</h1>
       <p className="text-muted-foreground mb-6">
         Welcome, {startupName}. Manage your milestones and hiring from here.
       </p>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {links.map(({ name, href, icon: Icon, description }) => (
           <Link key={href} href={href}>
             <div className="rounded-lg border border-border bg-card p-4 hover:bg-muted/50 transition-colors h-full">

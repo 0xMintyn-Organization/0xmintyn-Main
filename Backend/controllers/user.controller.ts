@@ -621,7 +621,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                     userId: user._id,
                     companyName: user.startupName || 'My Startup',
                     description: user.startupDescription || '',
-                    status: 'pending',
+                    status: 'approved',
                 });
             }
             res.status(200).json({ success: true, user, message: 'Startup onboarding completed' });
@@ -648,7 +648,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                     userId: user._id,
                     skills: [],
                     portfolio: '',
-                    paymentInfo: '',
+                    paymentMethod: { methodType: '' },
                     earningsSummary: 0,
                     availability: '',
                 });

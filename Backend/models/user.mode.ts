@@ -33,6 +33,8 @@ export interface IUser extends Document {
     /** Only for marketplace_role === 'startup'. */
     startupName?: string;
     startupDescription?: string;
+    /** Startup logo/image URL (Cloudinary) – synced from startup profile. */
+    startupImageUrl?: string;
     /** Phase 2: true when startup has completed onboarding (e.g. confirmed profile). */
     startupOnboardingComplete?: boolean;
     /** Phase 2: true when contributor has completed onboarding. */
@@ -117,6 +119,8 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     },
     startupName: { type: String, required: false, trim: true },
     startupDescription: { type: String, required: false, trim: true },
+    /** Startup logo/image URL (Cloudinary) – synced from startup profile */
+    startupImageUrl: { type: String, required: false, trim: true },
     startupOnboardingComplete: { type: Boolean, default: false },
     contributorOnboardingComplete: { type: Boolean, default: false },
     isVerified: {

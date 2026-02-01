@@ -18,14 +18,16 @@ import {
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth as useAuthContext } from "@/contexts/AuthContext";
 import { useLogOutQuery } from "@/redux/features/auth/authApi";
-import { LayoutDashboard, User, LogOut, Menu, Moon, Sun, Target, Users, DollarSign } from "lucide-react";
+import { LayoutDashboard, User, LogOut, Menu, Moon, Sun, Target, Users, DollarSign, MessageSquare } from "lucide-react";
 
 const startupNav = [
   { name: "Dashboard", href: "/startup/dashboard", icon: LayoutDashboard },
   { name: "Profile", href: "/startup/profile", icon: User },
   { name: "Milestones", href: "/startup/milestones", icon: Target },
   { name: "Hiring", href: "/startup/hiring", icon: Users },
-  { name: "Funding received", href: "/startup/funding", icon: DollarSign },
+  { name: "Team", href: "/startup/team", icon: Users },
+  { name: "Funding & money", href: "/startup/funding", icon: DollarSign },
+  { name: "Messenger", href: "/startup/messenger", icon: MessageSquare },
 ];
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
@@ -113,7 +115,7 @@ function StartupLayoutContent({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         </header>
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 w-full max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto">{children}</main>
       </div>
     </div>
   );

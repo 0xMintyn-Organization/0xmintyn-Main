@@ -11,7 +11,7 @@ export default function StartupVerificationPage() {
   }, [router]);
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <p className="text-muted-foreground">Redirecting to Milestones…</p>
     </div>
   );
