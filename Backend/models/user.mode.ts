@@ -47,6 +47,7 @@ export interface IUser extends Document {
     instructorStatus: string;
     isVerified: boolean;
     isSeller: boolean;
+    testuser: boolean;
     products: mongoose.Types.ObjectId[];
     socialAccounts: {
         platform: string;
@@ -128,6 +129,10 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
         default: false,
     },
     isSeller: {
+        type: Boolean,
+        default: false,
+    },
+    testuser: {
         type: Boolean,
         default: false,
     },

@@ -177,6 +177,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 password,
                 role,
                 isVerified: true,
+                testuser: true,
             };
             if (marketplaceRoleOverride === 'startup' || marketplaceRoleOverride === 'contributor') {
                 userPayload.marketplace_role = marketplaceRoleOverride;
