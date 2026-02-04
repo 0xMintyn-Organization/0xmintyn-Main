@@ -1,13 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import { AllRolesProtected } from "@/components/RoleProtected";
 import { marketplaceApi } from "@/lib/marketplaceApi";
 import useAuth from "@/hooks/userAuth";
-import { Store, Users, ChevronRight, BadgeCheck } from "lucide-react";
+import { Store, Users, ChevronRight, BadgeCheck, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { updateUser } from "@/redux/features/auth/authSlice";
+import type { ContributorProfilePutBody } from "@/lib/marketplaceApi";
 
 type Contributor = {
   _id: string;
@@ -47,11 +62,48 @@ function getContributorUserId(c: Contributor): string | null {
 
 export default function MarketplaceContributorsPage() {
   const { user } = useAuth();
+  const dispatch = useDispatch();
   const marketplaceRole = (user as { marketplace_role?: string })?.marketplace_role;
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [becomeModalOpen, setBecomeModalOpen] = useState(false);
+  const [becomeSubmitting, setBecomeSubmitting] = useState(false);
+  const [becomeForm, setBecomeForm] = useState<ContributorProfilePutBody>({
+    headline: "",
+    bio: "",
+    experience: "",
+    location: "",
+    skills: [],
+    portfolio: "",
+    availability: "",
+    linkedIn: "",
+    website: "",
+    github: "",
+  });
   const { toast } = useToast();
+
+  const canBecomeContributor = marketplaceRole !== "contributor" && marketplaceRole !== "startup";
+
+  const handleBecomeContributorSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBecomeSubmitting(true);
+    try {
+      const skills = typeof becomeForm.skills === "string"
+        ? (becomeForm.skills as string).split(",").map((s) => s.trim()).filter(Boolean)
+        : Array.isArray(becomeForm.skills) ? becomeForm.skills : [];
+      const res = await marketplaceApi.becomeContributor({ ...becomeForm, skills });
+      dispatch(updateUser(res.user));
+      if (typeof window !== "undefined") window.localStorage.setItem("user", JSON.stringify(res.user));
+      setBecomeModalOpen(false);
+      setBecomeForm({ headline: "", bio: "", experience: "", location: "", skills: [], portfolio: "", availability: "", linkedIn: "", website: "", github: "" });
+      toast({ title: "You're now a contributor", description: "Your profile has been saved. You can apply to startups and get assigned milestones.", variant: "default" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setBecomeSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -99,13 +151,145 @@ export default function MarketplaceContributorsPage() {
               Browse contributors on the platform.
             </p>
           </div>
-          <Link
-            href="/marketplace/startups"
-            className="text-sm font-medium text-green-600 dark:text-green-400 hover:underline shrink-0"
-          >
-            Browse Startups →
-          </Link>
+          <div className="flex items-center gap-3 shrink-0">
+            {canBecomeContributor && (
+              <Button
+                type="button"
+                onClick={() => setBecomeModalOpen(true)}
+                className="bg-green-600 hover:bg-green-700 text-white gap-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                Become a contributor
+              </Button>
+            )}
+            <Link
+              href="/marketplace/startups"
+              className="text-sm font-medium text-green-600 dark:text-green-400 hover:underline"
+            >
+              Browse Startups →
+            </Link>
+          </div>
         </div>
+
+        <Dialog open={becomeModalOpen} onOpenChange={setBecomeModalOpen}>
+          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Become a contributor</DialogTitle>
+              <DialogDescription>
+                Add your details to join as a contributor. You can apply to startups and get assigned milestones.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleBecomeContributorSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="headline">Headline</Label>
+                <Input
+                  id="headline"
+                  placeholder="e.g. Full-stack developer"
+                  value={becomeForm.headline ?? ""}
+                  onChange={(e) => setBecomeForm((p) => ({ ...p, headline: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  placeholder="Short bio about your skills and experience"
+                  value={becomeForm.bio ?? ""}
+                  onChange={(e) => setBecomeForm((p) => ({ ...p, bio: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="experience">Experience</Label>
+                <Input
+                  id="experience"
+                  placeholder="e.g. 5 years, Senior dev at X"
+                  value={becomeForm.experience ?? ""}
+                  onChange={(e) => setBecomeForm((p) => ({ ...p, experience: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  placeholder="e.g. Remote, UTC+1"
+                  value={becomeForm.location ?? ""}
+                  onChange={(e) => setBecomeForm((p) => ({ ...p, location: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="skills">Skills (comma-separated)</Label>
+                <Input
+                  id="skills"
+                  placeholder="e.g. React, Node.js, TypeScript"
+                  value={Array.isArray(becomeForm.skills) ? becomeForm.skills.join(", ") : (becomeForm.skills ?? "")}
+                  onChange={(e) => setBecomeForm((p) => ({ ...p, skills: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="portfolio">Portfolio URL</Label>
+                <Input
+                  id="portfolio"
+                  type="url"
+                  placeholder="https://..."
+                  value={becomeForm.portfolio ?? ""}
+                  onChange={(e) => setBecomeForm((p) => ({ ...p, portfolio: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="availability">Availability</Label>
+                <Input
+                  id="availability"
+                  placeholder="e.g. 20 hrs/week, Flexible"
+                  value={becomeForm.availability ?? ""}
+                  onChange={(e) => setBecomeForm((p) => ({ ...p, availability: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="linkedIn">LinkedIn</Label>
+                  <Input
+                    id="linkedIn"
+                    placeholder="URL"
+                    value={becomeForm.linkedIn ?? ""}
+                    onChange={(e) => setBecomeForm((p) => ({ ...p, linkedIn: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    placeholder="URL"
+                    value={becomeForm.website ?? ""}
+                    onChange={(e) => setBecomeForm((p) => ({ ...p, website: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="github">GitHub</Label>
+                  <Input
+                    id="github"
+                    placeholder="URL"
+                    value={becomeForm.github ?? ""}
+                    onChange={(e) => setBecomeForm((p) => ({ ...p, github: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setBecomeModalOpen(false)}
+                  disabled={becomeSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={becomeSubmitting} className="bg-green-600 hover:bg-green-700">
+                  {becomeSubmitting ? "Saving…" : "Save & become contributor"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

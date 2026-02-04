@@ -141,4 +141,22 @@ export const marketplaceApi = {
     list: () => fetchApi<{ success: boolean; contributors: unknown[] }>("contributor-profile/list"),
     getById: (id: string) => fetchApi<{ success: boolean; profile: unknown }>(`contributor-profile/${id}`),
   },
+  /** Become a contributor: set marketplace_role to contributor and save profile. Only for users with marketplace_role 'user'. Returns { user, profile }. */
+  becomeContributor: (body: ContributorProfilePutBody) =>
+    fetchApi<{ success: boolean; user: Record<string, unknown>; profile: unknown }>("me/become-contributor", {
+      method: "PUT",
+      body,
+    }),
+  /** Complete profile after Auth0/social login: choose Startup/Contributor/Student/Instructor and optional details. Only when roleProfileCompleted is false. */
+  completeProfile: (body: {
+    signup_type: "startup" | "contributor" | "student" | "instructor";
+    startupName?: string;
+    startupDescription?: string;
+    instructorHeadline?: string;
+    instructorBio?: string;
+  }) =>
+    fetchApi<{ success: boolean; user: Record<string, unknown> }>("me/complete-profile", {
+      method: "PUT",
+      body,
+    }),
 };

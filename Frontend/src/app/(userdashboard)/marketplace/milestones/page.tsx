@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AllRolesProtected } from "@/components/RoleProtected";
 import { Button } from "@/components/ui/button";
 import { Store, Target, CheckCircle, ArrowRight, Building2 } from "lucide-react";
@@ -35,11 +36,18 @@ const statusStyles: Record<string, string> = {
 
 export default function MarketplaceMilestonesPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const { toast } = useToast();
   const isContributor = (user as { marketplace_role?: string })?.marketplace_role === "contributor";
+
+  useEffect(() => {
+    if (user != null && !isContributor) {
+      router.replace("/marketplace/startups");
+    }
+  }, [user, isContributor, router]);
 
   useEffect(() => {
     if (!isContributor) {
@@ -67,6 +75,9 @@ export default function MarketplaceMilestonesPage() {
     }
   };
 
+  if (user != null && !isContributor) {
+    return null;
+  }
   if (!isContributor) {
     return (
       <AllRolesProtected>

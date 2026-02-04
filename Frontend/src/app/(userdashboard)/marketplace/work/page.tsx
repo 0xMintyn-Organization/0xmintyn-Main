@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import useAuth from "@/hooks/userAuth";
 import { marketplaceApi } from "@/lib/marketplaceApi";
 import { AllRolesProtected } from "@/components/RoleProtected";
@@ -39,11 +40,18 @@ function getStartupId(s: Application["startupId"]): string {
 
 export default function MarketplaceWorkPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const marketplaceRole = (user as { marketplace_role?: string })?.marketplace_role;
   const [applications, setApplications] = useState<Application[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (user != null && marketplaceRole !== "contributor") {
+      router.replace("/marketplace/startups");
+    }
+  }, [user, marketplaceRole, router]);
 
   const load = async () => {
     if (marketplaceRole !== "contributor") {
@@ -68,6 +76,9 @@ export default function MarketplaceWorkPage() {
     load();
   }, [marketplaceRole]);
 
+  if (user != null && marketplaceRole !== "contributor") {
+    return null;
+  }
   if (marketplaceRole !== "contributor") {
     return (
       <AllRolesProtected>
@@ -77,7 +88,7 @@ export default function MarketplaceWorkPage() {
             My work
           </h1>
           <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-            Only contributors have a work dashboard. Switch to a contributor account to see your connected startup and earnings.
+            Only contributors have a work dashboard. Register as a contributor to see your connected startup and earnings.
             <div className="mt-4">
               <Link href="/marketplace/startups" className="text-sm text-green-600 dark:text-green-400 hover:underline">
                 Browse Startups →

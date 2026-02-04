@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import useAuth from "@/hooks/userAuth";
 import { marketplaceApi } from "@/lib/marketplaceApi";
 import { AllRolesProtected } from "@/components/RoleProtected";
@@ -25,10 +26,17 @@ function getStartupName(s: Application["startupId"]): string {
 
 export default function MarketplaceMyApplicationsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const marketplaceRole = (user as { marketplace_role?: string })?.marketplace_role;
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (user != null && marketplaceRole !== "contributor") {
+      router.replace("/marketplace/startups");
+    }
+  }, [user, marketplaceRole, router]);
 
   const load = async () => {
     if (marketplaceRole !== "contributor") {
@@ -49,6 +57,9 @@ export default function MarketplaceMyApplicationsPage() {
     load();
   }, [marketplaceRole]);
 
+  if (user != null && marketplaceRole !== "contributor") {
+    return null;
+  }
   if (marketplaceRole !== "contributor") {
     return (
       <AllRolesProtected>
@@ -60,7 +71,7 @@ export default function MarketplaceMyApplicationsPage() {
             My applications
           </h1>
           <div className="rounded-lg border border-border bg-card dark:bg-zinc-800 p-8 text-center text-muted-foreground shadow-sm">
-              Only contributors have applications. Register or switch to a contributor account to see your applications to startups here.
+              Only contributors have applications. Register as a contributor to see your applications to startups here.
               <div className="mt-4">
                 <Link href="/marketplace/startups" className="text-sm text-green-600 dark:text-green-400 hover:underline">
                   Browse Startups →

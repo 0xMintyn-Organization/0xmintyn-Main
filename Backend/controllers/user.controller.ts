@@ -25,28 +25,38 @@ interface IRegistrationBody {
     username: string;
     contactNumber: string;
     password: string;
-    /** Marketplace identity: 'startup' | 'contributor'. Platform role remains 'user' for both. */
-    marketplace_role?: 'startup' | 'contributor';
+    /** Platform role from registration: 'user' (default) or 'instructor'. */
+    role?: 'user' | 'instructor';
+    /** Marketplace identity: 'startup' | 'contributor' | 'user'. Student/instructor use 'user'. */
+    marketplace_role?: 'startup' | 'contributor' | 'user';
     /** Required when marketplace_role === 'startup'. */
     startupName?: string;
     startupDescription?: string;
+    /** Optional when role === 'instructor'. */
+    instructorHeadline?: string;
+    instructorBio?: string;
 }
 
 export const registrationUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { firstName, lastName, dateOfBirth, nationality, age, email, username, contactNumber, password, marketplace_role, startupName, startupDescription }: IRegistrationBody = req.body;
+            const { firstName, lastName, dateOfBirth, nationality, age, email, username, contactNumber, password, role: roleBody, marketplace_role, startupName, startupDescription, instructorHeadline, instructorBio }: IRegistrationBody = req.body;
             
             // Validate required fields (including marketplace selection)
             if (!email || !username || !password) {
                 return next(new ErrorHandler('Email, username, and password are required', 400));
             }
-            if (marketplace_role !== 'startup' && marketplace_role !== 'contributor') {
-                return next(new ErrorHandler('Please choose how you want to sign up: Startup or Contributor', 400));
+            if (marketplace_role !== 'startup' && marketplace_role !== 'contributor' && marketplace_role !== 'user') {
+                return next(new ErrorHandler('Please choose how you want to sign up: Startup, Contributor, Student, or Instructor', 400));
             }
             if (marketplace_role === 'startup' && (!startupName || typeof startupName !== 'string' || !startupName.trim())) {
                 return next(new ErrorHandler('Startup name is required when signing up as a startup', 400));
             }
-
+            // Only 'user' or 'instructor' allowed from registration
+            const role = roleBody === 'instructor' ? 'instructor' : 'user';
+            // Instructor and student (marketplace_role 'user') do not get contributor/startup marketplace access
+            if (role === 'instructor' && marketplace_role !== 'user') {
+                return next(new ErrorHandler('Instructors use marketplace role user (no contributor/startup access)', 400));
+            }
 
             // Check if email already exists BEFORE sending OTP
             const isEmailExist = await UserModel.findOne({ email });
@@ -61,7 +71,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             }
 
 
-            const user: IRegistrationBody & { marketplace_role: 'startup' | 'contributor'; startupName?: string; startupDescription?: string } = {
+            const user: IRegistrationBody & { role: 'user' | 'instructor'; marketplace_role: 'startup' | 'contributor' | 'user'; startupName?: string; startupDescription?: string; instructorHeadline?: string; instructorBio?: string } = {
                 firstName,
                 lastName,
                 dateOfBirth,
@@ -71,6 +81,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 username,
                 contactNumber,
                 password,
+                role,
                 marketplace_role,
             };
             if (marketplace_role === 'startup') {
@@ -78,6 +89,10 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 if (startupDescription && typeof startupDescription === 'string' && startupDescription.trim()) {
                     user.startupDescription = startupDescription.trim();
                 }
+            }
+            if (role === 'instructor') {
+                if (typeof instructorHeadline === 'string' && instructorHeadline.trim()) user.instructorHeadline = instructorHeadline.trim();
+                if (typeof instructorBio === 'string' && instructorBio.trim()) user.instructorBio = instructorBio.trim();
             }
 
             // @ts-ignore
@@ -272,16 +287,21 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 }
             }
 
-            // Create user with role 'user' and optional marketplace_role from registration
+            // Create user with role and marketplace_role from registration (role: 'user' | 'instructor' only)
             const userToCreate: Record<string, any> = { ...newUser.user };
-            userToCreate.role = 'user';
-            if (newUser.user.marketplace_role === 'startup' || newUser.user.marketplace_role === 'contributor') {
+            const regRole = (newUser.user as { role?: string }).role;
+            userToCreate.role = regRole === 'instructor' ? 'instructor' : 'user';
+            if (newUser.user.marketplace_role === 'startup' || newUser.user.marketplace_role === 'contributor' || newUser.user.marketplace_role === 'user') {
                 userToCreate.marketplace_role = newUser.user.marketplace_role;
             }
             if (newUser.user.marketplace_role === 'startup') {
                 if (newUser.user.startupName) userToCreate.startupName = newUser.user.startupName;
                 if (newUser.user.startupDescription) userToCreate.startupDescription = newUser.user.startupDescription;
             }
+            const u = newUser.user as { instructorHeadline?: string; instructorBio?: string };
+            if (u.instructorHeadline) userToCreate.instructorHeadline = u.instructorHeadline;
+            if (u.instructorBio) userToCreate.instructorBio = u.instructorBio;
+            userToCreate.roleProfileCompleted = true;
 
             try {
                 await UserModel.create(userToCreate);
@@ -362,16 +382,21 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 }
             }
 
-            // Create user with role 'user', optional marketplace_role, and startup fields (link activation)
+            // Create user with role and marketplace_role from registration (link activation)
             const userDataLink: Record<string, any> = { ...newUser.user };
-            userDataLink.role = 'user';
-            if (newUser.user.marketplace_role === 'startup' || newUser.user.marketplace_role === 'contributor') {
+            const regRoleLink = (newUser.user as { role?: string }).role;
+            userDataLink.role = regRoleLink === 'instructor' ? 'instructor' : 'user';
+            if (newUser.user.marketplace_role === 'startup' || newUser.user.marketplace_role === 'contributor' || newUser.user.marketplace_role === 'user') {
                 userDataLink.marketplace_role = newUser.user.marketplace_role;
             }
             if (newUser.user.marketplace_role === 'startup') {
                 if (newUser.user.startupName) userDataLink.startupName = newUser.user.startupName;
                 if (newUser.user.startupDescription) userDataLink.startupDescription = newUser.user.startupDescription;
             }
+            const uLink = newUser.user as { instructorHeadline?: string; instructorBio?: string };
+            if (uLink.instructorHeadline) userDataLink.instructorHeadline = uLink.instructorHeadline;
+            if (uLink.instructorBio) userDataLink.instructorBio = uLink.instructorBio;
+            userDataLink.roleProfileCompleted = true;
 
             try {
                 await UserModel.create(userDataLink);
@@ -645,6 +670,122 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
         } catch (error: any) {
             return next(new ErrorHandler(error.message, 400));
         }
+    });
+
+    /** PUT /me/become-contributor – set marketplace_role to 'contributor' and create/update contributor profile. Only allowed when current marketplace_role is 'user' or not set. */
+    export const becomeContributor = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        const userId = req.user?._id;
+        const user = await UserModel.findById(userId);
+        if (!user) return next(new ErrorHandler('User not found', 404));
+        if (user.marketplace_role === 'contributor') {
+            return next(new ErrorHandler('You are already a contributor', 400));
+        }
+        if (user.marketplace_role === 'startup') {
+            return next(new ErrorHandler('Startup accounts cannot become a contributor; use a different account', 400));
+        }
+        user.marketplace_role = 'contributor';
+        await user.save();
+
+        const {
+            image,
+            headline,
+            bio,
+            experience,
+            location,
+            skills: skillsBody,
+            portfolio,
+            availability,
+            linkedIn,
+            website,
+            github,
+        } = req.body as Record<string, unknown>;
+        const update: Record<string, unknown> = {};
+        if (image != null && typeof image === 'string') update.image = image.trim();
+        if (headline != null && typeof headline === 'string') update.headline = headline.trim();
+        if (bio != null && typeof bio === 'string') update.bio = bio.trim();
+        if (experience != null && typeof experience === 'string') update.experience = experience.trim();
+        if (location != null && typeof location === 'string') update.location = location.trim();
+        if (Array.isArray(skillsBody)) {
+            update.skills = skillsBody.filter((s: unknown) => typeof s === 'string');
+        } else if (typeof skillsBody === 'string' && skillsBody.trim()) {
+            update.skills = skillsBody.split(',').map((s) => s.trim()).filter(Boolean);
+        }
+        if (portfolio != null && typeof portfolio === 'string') update.portfolio = portfolio.trim();
+        if (availability != null && typeof availability === 'string') update.availability = availability.trim();
+        if (linkedIn != null && typeof linkedIn === 'string') update.linkedIn = linkedIn.trim();
+        if (website != null && typeof website === 'string') update.website = website.trim();
+        if (github != null && typeof github === 'string') update.github = github.trim();
+
+        let profile = await ContributorProfileModel.findOne({ userId: user._id });
+        if (!profile) {
+            profile = await ContributorProfileModel.create({
+                userId: user._id,
+                skills: (update.skills as string[]) || [],
+                portfolio: (update.portfolio as string) || '',
+                paymentMethod: { methodType: '' },
+                earningsSummary: 0,
+                availability: (update.availability as string) || '',
+                ...update,
+            });
+        } else {
+            Object.assign(profile, update);
+            await profile.save();
+        }
+        const userDoc = await UserModel.findById(user._id).select('-password').lean();
+        res.status(200).json({ success: true, user: userDoc, profile });
+    });
+
+    /** PUT /me/complete-profile – for Auth0 (or social) users who have not chosen role yet. Same choices as registration: Startup, Contributor, Student, Instructor. */
+    export const completeProfileAfterAuth0 = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+        const userId = req.user?._id;
+        const user = await UserModel.findById(userId);
+        if (!user) return next(new ErrorHandler('User not found', 404));
+        if (user.roleProfileCompleted === true) {
+            return next(new ErrorHandler('Profile already completed', 400));
+        }
+        const { signup_type, startupName, startupDescription, instructorHeadline, instructorBio } = req.body as {
+            signup_type?: string;
+            startupName?: string;
+            startupDescription?: string;
+            instructorHeadline?: string;
+            instructorBio?: string;
+        };
+        if (!signup_type || !['startup', 'contributor', 'student', 'instructor'].includes(signup_type)) {
+            return next(new ErrorHandler('signup_type must be startup, contributor, student, or instructor', 400));
+        }
+        if (signup_type === 'startup' && (!startupName || typeof startupName !== 'string' || !startupName.trim())) {
+            return next(new ErrorHandler('Startup name is required when choosing Startup', 400));
+        }
+        const role = signup_type === 'instructor' ? 'instructor' : 'user';
+        const marketplace_role = signup_type === 'startup' ? 'startup' : signup_type === 'contributor' ? 'contributor' : 'user';
+        user.role = role;
+        user.marketplace_role = marketplace_role;
+        user.roleProfileCompleted = true;
+        if (signup_type === 'startup') {
+            user.startupName = startupName?.trim();
+            if (typeof startupDescription === 'string' && startupDescription.trim()) user.startupDescription = startupDescription.trim();
+        }
+        if (signup_type === 'instructor') {
+            if (typeof instructorHeadline === 'string' && instructorHeadline.trim()) user.instructorHeadline = instructorHeadline.trim();
+            if (typeof instructorBio === 'string' && instructorBio.trim()) user.instructorBio = instructorBio.trim();
+        }
+        await user.save();
+
+        if (marketplace_role === 'contributor') {
+            const existing = await ContributorProfileModel.findOne({ userId: user._id });
+            if (!existing) {
+                await ContributorProfileModel.create({
+                    userId: user._id,
+                    skills: [],
+                    portfolio: '',
+                    paymentMethod: { methodType: '' },
+                    earningsSummary: 0,
+                    availability: '',
+                });
+            }
+        }
+        const userDoc = await UserModel.findById(user._id).select('-password').lean();
+        res.status(200).json({ success: true, user: userDoc });
     });
 
     // update user profile

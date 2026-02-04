@@ -11,13 +11,15 @@ interface User {
   name: string;
   email: string;
   role: string;
-  /** Marketplace identity: 'startup' | 'contributor'. Platform role is always 'user' for both. */
-  marketplace_role?: 'startup' | 'contributor' | null;
+  /** Marketplace identity: 'startup' | 'contributor' | 'user'. 'user' = student/instructor, no contributor/startup access. */
+  marketplace_role?: 'startup' | 'contributor' | 'user' | null;
   /** Only when marketplace_role === 'startup'. */
   startupName?: string | null;
   startupDescription?: string | null;
   startupOnboardingComplete?: boolean;
   contributorOnboardingComplete?: boolean;
+  /** False when user signed up via Auth0 and has not yet chosen role (Startup/Contributor/Student/Instructor). */
+  roleProfileCompleted?: boolean;
   avatar?: string;
   isVerified: boolean;
   isSeller: boolean;

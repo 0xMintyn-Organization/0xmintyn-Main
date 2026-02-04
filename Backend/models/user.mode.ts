@@ -28,8 +28,8 @@ export interface IUser extends Document {
     contactNumber: string;
     password: string;
     role: string;
-    /** Marketplace identity: 'startup' | 'contributor'. Independent of role; both signups use role 'user'. */
-    marketplace_role?: 'startup' | 'contributor' | null;
+    /** Marketplace identity: 'startup' | 'contributor' | 'user'. 'user' = no marketplace participation (student/instructor). */
+    marketplace_role?: 'startup' | 'contributor' | 'user' | null;
     /** Only for marketplace_role === 'startup'. */
     startupName?: string;
     startupDescription?: string;
@@ -39,6 +39,8 @@ export interface IUser extends Document {
     startupOnboardingComplete?: boolean;
     /** Phase 2: true when contributor has completed onboarding. */
     contributorOnboardingComplete?: boolean;
+    /** False when user was created via Auth0 and has not yet chosen role/marketplace (Startup/Contributor/Student/Instructor). Default true for backward compatibility. */
+    roleProfileCompleted?: boolean;
     avatar: string;
     banner: string;
     bio: string;
@@ -114,8 +116,8 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     },
     marketplace_role: {
         type: String,
-        default: 'contributor',
-        enum: ['startup', 'contributor'],
+        default: 'user',
+        enum: ['startup', 'contributor', 'user'],
         required: false,
     },
     startupName: { type: String, required: false, trim: true },
@@ -124,6 +126,7 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     startupImageUrl: { type: String, required: false, trim: true },
     startupOnboardingComplete: { type: Boolean, default: false },
     contributorOnboardingComplete: { type: Boolean, default: false },
+    roleProfileCompleted: { type: Boolean, default: true },
     isVerified: {
         type: Boolean,
         default: false,

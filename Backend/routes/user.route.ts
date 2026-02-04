@@ -1,5 +1,5 @@
 import express from 'express';
-import { activateUserAccount, activateUserAccountByLink, completeContributorOnboarding, completeStartupOnboarding, directRegisterUser, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, sessionFromCode, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus, updateSocialAccount, removeSocialAccount, forgotPassword, resetPassword } from '../controllers/user.controller';
+import { activateUserAccount, activateUserAccountByLink, becomeContributor, completeContributorOnboarding, completeProfileAfterAuth0, completeStartupOnboarding, directRegisterUser, getAllUsers, getUserInfo, loginUser, logoutUser, registrationUser, sessionFromCode, socialAuth, updateAccessToken, updateAccessTokenMiddleware, updateBannerPicture, updatePassword, updateProfile, updateProfilePicture, updateUserName, applyForInstructor, toggleSellerStatus, updateSocialAccount, removeSocialAccount, forgotPassword, resetPassword } from '../controllers/user.controller';
 import { getInstructorStats } from '../controllers/instructor.controller';
 import { isAthenticated as isAuthenticated } from '../utils/auth';
 import upload from '../middleware/multerConfig';
@@ -33,6 +33,8 @@ userRouter.get('/me', updateAccessTokenMiddleware,  isAuthenticated, getUserInfo
 
 userRouter.put('/me/onboarding/startup', updateAccessTokenMiddleware, isAuthenticated, completeStartupOnboarding);
 userRouter.put('/me/onboarding/contributor', updateAccessTokenMiddleware, isAuthenticated, completeContributorOnboarding);
+userRouter.put('/me/become-contributor', updateAccessTokenMiddleware, isAuthenticated, becomeContributor);
+userRouter.put('/me/complete-profile', updateAccessTokenMiddleware, isAuthenticated, completeProfileAfterAuth0);
 
 userRouter.get('/instructor-stats/:instructorId', getInstructorStats);
 

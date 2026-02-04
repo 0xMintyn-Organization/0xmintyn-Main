@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import useAuth from "@/hooks/userAuth";
 import { marketplaceApi } from "@/lib/marketplaceApi";
 import { uploadFileToBackend } from "@/lib/uploadFileToBackend";
@@ -33,6 +34,7 @@ type Profile = {
 
 export default function ContributorProfilePage() {
   const { user } = useAuth();
+  const router = useRouter();
   const marketplaceRole = (user as { marketplace_role?: string })?.marketplace_role;
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,12 @@ export default function ContributorProfilePage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (user != null && marketplaceRole !== "contributor") {
+      router.replace("/marketplace/startups");
+    }
+  }, [user, marketplaceRole, router]);
 
   useEffect(() => {
     if (marketplaceRole !== "contributor") {
@@ -138,6 +146,9 @@ export default function ContributorProfilePage() {
     }
   };
 
+  if (user != null && marketplaceRole !== "contributor") {
+    return null;
+  }
   if (marketplaceRole !== "contributor") {
     return (
       <AllRolesProtected>
@@ -149,7 +160,7 @@ export default function ContributorProfilePage() {
             Contributor profile
           </h1>
           <div className="rounded-lg border border-border bg-card dark:bg-zinc-800 p-8 text-center text-muted-foreground shadow-sm">
-            Only contributors have a contributor profile. Register or switch to a contributor account to edit your profile here.
+            Only contributors have a contributor profile. Register as a contributor to edit your profile here.
             <div className="mt-4">
               <Link href="/marketplace/startups" className="text-sm text-green-600 dark:text-green-400 hover:underline">
                 Browse Startups →

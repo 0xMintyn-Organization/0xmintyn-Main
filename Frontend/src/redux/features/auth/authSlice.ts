@@ -25,11 +25,13 @@ const authSlice = createSlice({
             state.user = null;
             state.isAuthenticated = false;
         },
-
-
+        /** Update only the user object (e.g. after become-contributor). Keeps token and isAuthenticated. */
+        updateUser: (state, action) => {
+            state.user = action.payload;
+        },
     },
 });
 
-export const { userRegistration, userLoggedIn, userLoggedOut } = authSlice.actions;
+export const { userRegistration, userLoggedIn, userLoggedOut, updateUser } = authSlice.actions;
 
 export default authSlice.reducer;

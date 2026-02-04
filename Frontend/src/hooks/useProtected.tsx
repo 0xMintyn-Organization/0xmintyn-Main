@@ -32,6 +32,11 @@ export default function Protected({ children }: ProtectedProps) {
                 router.replace(onboardingPath);
                 return;
             }
+            // Auth0/social: must complete role profile before using the app
+            if ((user as { roleProfileCompleted?: boolean }).roleProfileCompleted === false && !pathname?.startsWith("/complete-profile")) {
+                router.replace("/complete-profile");
+                return;
+            }
             // Startup users: redirect to startup hub only when view mode is "startup"
             if (isStartupUser(user) && getStartupViewMode() === "startup" && !pathname?.startsWith("/startup")) {
                 router.replace("/startup/dashboard");
@@ -44,6 +49,9 @@ export default function Protected({ children }: ProtectedProps) {
 
     const onboardingPath = getOnboardingRedirectPath(user);
     if (onboardingPath && !pathname?.startsWith("/onboarding")) return <Spinner />;
+
+    const needsRoleProfile = (user as { roleProfileCompleted?: boolean }).roleProfileCompleted === false;
+    if (needsRoleProfile && !pathname?.startsWith("/complete-profile")) return <Spinner />;
 
     const viewingAsNormal = isStartupUser(user) && startupViewMode === "normal";
     if (isStartupUser(user) && !pathname?.startsWith("/startup") && !viewingAsNormal) return <Spinner />;

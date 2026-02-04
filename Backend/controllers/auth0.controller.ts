@@ -91,6 +91,8 @@ export const handleAuth0Callback = CatchAsyncError(async (req: Request, res: Res
                 avatar: auth0User.picture || '',
                 isVerified: auth0User.email_verified || false,
                 role: 'user',
+                marketplace_role: 'user',
+                roleProfileCompleted: false,
             });
             
             console.log(`✅ New user created via Auth0: ${user.email}`);
