@@ -1,10 +1,11 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Spinner from "@/components/Spinner";
 import useAuth from "./userAuth";
 import { getOnboardingRedirectPath, isStartupUser } from "@/lib/onboarding";
+import { getStartupViewMode } from "@/lib/startupViewMode";
 
 interface ProtectedProps {
     children: React.ReactNode;
@@ -14,6 +15,11 @@ export default function Protected({ children }: ProtectedProps) {
     const { isLoading, isAuthenticated, user } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const [startupViewMode, setStartupViewMode] = useState<"startup" | "normal">(() => getStartupViewMode());
+
+    useEffect(() => {
+        setStartupViewMode(getStartupViewMode());
+    }, [pathname]);
 
     useEffect(() => {
         if (!isLoading && (!isAuthenticated || !user)) {
@@ -26,8 +32,8 @@ export default function Protected({ children }: ProtectedProps) {
                 router.replace(onboardingPath);
                 return;
             }
-            // Startup users see only startup UI: redirect from main platform to /startup/dashboard
-            if (isStartupUser(user) && !pathname?.startsWith("/startup")) {
+            // Startup users: redirect to startup hub only when view mode is "startup"
+            if (isStartupUser(user) && getStartupViewMode() === "startup" && !pathname?.startsWith("/startup")) {
                 router.replace("/startup/dashboard");
             }
         }
@@ -39,7 +45,8 @@ export default function Protected({ children }: ProtectedProps) {
     const onboardingPath = getOnboardingRedirectPath(user);
     if (onboardingPath && !pathname?.startsWith("/onboarding")) return <Spinner />;
 
-    if (isStartupUser(user) && !pathname?.startsWith("/startup")) return <Spinner />;
+    const viewingAsNormal = isStartupUser(user) && startupViewMode === "normal";
+    if (isStartupUser(user) && !pathname?.startsWith("/startup") && !viewingAsNormal) return <Spinner />;
 
     return <>{children}</>;
 }

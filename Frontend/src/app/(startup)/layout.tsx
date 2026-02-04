@@ -18,7 +18,8 @@ import {
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth as useAuthContext } from "@/contexts/AuthContext";
 import { useLogOutQuery } from "@/redux/features/auth/authApi";
-import { LayoutDashboard, User, LogOut, Menu, Moon, Sun, Target, Users, DollarSign, MessageSquare } from "lucide-react";
+import { LayoutDashboard, User, LogOut, Menu, Moon, Sun, Target, Users, DollarSign, MessageSquare, UserCircle } from "lucide-react";
+import { setStartupViewMode } from "@/lib/startupViewMode";
 
 const startupNav = [
   { name: "Dashboard", href: "/startup/dashboard", icon: LayoutDashboard },
@@ -57,6 +58,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
 
 function StartupLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { logout: authLogout } = useAuthContext();
   const [logoutRequested, setLogoutRequested] = useState(false);
@@ -66,6 +68,11 @@ function StartupLayoutContent({ children }: { children: React.ReactNode }) {
   const handleLogout = () => {
     setLogoutRequested(true);
     setTimeout(() => authLogout(), 150);
+  };
+
+  const handleViewAsMember = () => {
+    setStartupViewMode("normal");
+    router.push("/dashboard");
   };
 
   return (
@@ -107,6 +114,15 @@ function StartupLayoutContent({ children }: { children: React.ReactNode }) {
             <span className="text-sm text-muted-foreground hidden sm:inline">Startup dashboard</span>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleViewAsMember}
+              className="hidden sm:inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+            >
+              <UserCircle className="w-4 h-4" />
+              View as member
+            </Button>
             <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={theme}>
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>

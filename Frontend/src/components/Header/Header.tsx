@@ -1,17 +1,28 @@
 "use client";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "../ui/button";
-import { Moon, Sun, LogOut } from "lucide-react";
+import { Moon, Sun, LogOut, LayoutDashboard } from "lucide-react";
 import MobileSidebar from "../Sidebar/MobileSidebar";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLogOutQuery } from "@/redux/features/auth/authApi";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { isStartupUser } from "@/lib/onboarding";
+import { getStartupViewMode, setStartupViewMode } from "@/lib/startupViewMode";
 
 function Header() {
     const { theme, toggleTheme } = useTheme();
-    const { logout: authLogout } = useAuth();
+    const { user, logout: authLogout } = useAuth();
+    const router = useRouter();
     const [logoutRequested, setLogoutRequested] = useState(false);
+    const isStartup = user ? isStartupUser(user) : false;
+    const viewingAsNormal = isStartup && getStartupViewMode() === "normal";
+
+    const handleStartupMode = () => {
+        setStartupViewMode("startup");
+        router.push("/startup/dashboard");
+    };
 
     // Call backend logout endpoint when logoutRequested is true
     useLogOutQuery(undefined, {
@@ -55,6 +66,15 @@ function Header() {
             </div>
 
             <div className="flex items-center gap-4">
+                {viewingAsNormal && (
+                    <Button
+                        onClick={handleStartupMode}
+                        className="hidden sm:inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg px-3 py-2 text-sm"
+                    >
+                        <LayoutDashboard size={18} />
+                        Startup mode
+                    </Button>
+                )}
                 <Button
                     aria-label={theme}
                     onClick={toggleTheme}
