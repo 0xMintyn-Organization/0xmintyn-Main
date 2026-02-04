@@ -78,11 +78,11 @@ export default function AdminFundingPage() {
     loadPayments();
   }, []);
 
-  const handlePayAndProceed = async (milestoneId: string) => {
+  const handleApprove = async (milestoneId: string) => {
     setUpdating(milestoneId);
     try {
       await marketplaceApi.milestones.patch(milestoneId, { status: "Paid" });
-      toast({ title: "Paid", description: "Payment recorded; startup has received the fund." });
+      toast({ title: "Approved", description: "Payment recorded; startup has received the fund." });
       loadMilestones();
       loadPayments();
     } catch (e: unknown) {
@@ -92,7 +92,20 @@ export default function AdminFundingPage() {
     }
   };
 
-  const completed = milestones.filter((m) => m.status === "Completed");
+  const handleReject = async (milestoneId: string) => {
+    setUpdating(milestoneId);
+    try {
+      await marketplaceApi.milestones.patch(milestoneId, { status: "Rejected" });
+      toast({ title: "Rejected", description: "Milestone funding rejected." });
+      loadMilestones();
+    } catch (e: unknown) {
+      toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const submitted = milestones.filter((m) => m.status === "Submitted");
   const paid = milestones.filter((m) => m.status === "Paid");
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
@@ -108,7 +121,7 @@ export default function AdminFundingPage() {
             Funding
           </h1>
           <p className="text-muted-foreground pl-[52px]">
-            Completed milestones appear below. Click &quot;Paid & proceed&quot; to mark as paid and create a payment record. Stripe can be added later.
+            Startups submit completed milestones for funding. Approve to release payment or Reject.
           </p>
         </div>
 
@@ -128,8 +141,8 @@ export default function AdminFundingPage() {
                     <Clock className="w-5 h-5" />
                   </span>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{completed.length}</p>
-                    <p className="text-sm text-muted-foreground">Awaiting payment</p>
+                    <p className="text-2xl font-bold text-foreground">{submitted.length}</p>
+                    <p className="text-sm text-muted-foreground">Submitted (awaiting decision)</p>
                   </div>
                 </CardContent>
               </Card>
@@ -157,15 +170,15 @@ export default function AdminFundingPage() {
               </Card>
             </div>
 
-            {/* Awaiting payment */}
+            {/* Submitted — Approve or Reject */}
             <section className="space-y-4">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                 <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                Awaiting payment ({completed.length})
+                Submitted for funding ({submitted.length})
               </h2>
-              {completed.length > 0 ? (
+              {submitted.length > 0 ? (
                 <ul className="space-y-4">
-                  {completed.map((m) => (
+                  {submitted.map((m) => (
                     <li key={m._id} className="rounded-xl border border-border bg-card p-5 flex flex-wrap items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-foreground">{m.title}</h3>
@@ -174,28 +187,36 @@ export default function AdminFundingPage() {
                           <span className="font-medium text-foreground">{Number(m.amount).toLocaleString()}</span>
                           <span className="mx-1.5">·</span>
                           {getStartupName(m)}
-                          {m.completedAt && (
+                          {(m as Milestone & { submittedAt?: string }).submittedAt && (
                             <>
                               <span className="mx-1.5">·</span>
-                              Completed {new Date(m.completedAt).toLocaleDateString()}
+                              Submitted {new Date((m as Milestone & { submittedAt?: string }).submittedAt).toLocaleDateString()}
                             </>
                           )}
                         </p>
                       </div>
-                      <Button
-                        onClick={() => handlePayAndProceed(m._id)}
-                        disabled={updating === m._id}
-                        className="shrink-0"
-                      >
-                        {updating === m._id ? "…" : "Paid & proceed"}
-                      </Button>
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleReject(m._id)}
+                          disabled={updating === m._id}
+                        >
+                          {updating === m._id ? "…" : "Reject"}
+                        </Button>
+                        <Button
+                          onClick={() => handleApprove(m._id)}
+                          disabled={updating === m._id}
+                        >
+                          {updating === m._id ? "…" : "Approve & pay"}
+                        </Button>
+                      </div>
                     </li>
                   ))}
                 </ul>
               ) : (
                 <Card className="rounded-xl border-dashed">
                   <CardContent className="py-6 px-4 text-center text-muted-foreground text-sm">
-                    No milestones awaiting payment. Startups mark milestones complete from their Milestones page; they will appear here.
+                    No milestones submitted yet. Startups complete milestones, then submit for funding; they will appear here.
                   </CardContent>
                 </Card>
               )}
@@ -238,7 +259,7 @@ export default function AdminFundingPage() {
                   <DollarSign className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
                   <p className="text-muted-foreground font-medium">No completed milestones yet</p>
                   <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-                    Startups mark milestones complete from their Milestones page; then they appear here for payment.
+                    Startups assign milestones to contributors, contributors mark complete, then startups submit for funding. Submitted milestones appear here.
                   </p>
                 </CardContent>
               </Card>
@@ -261,7 +282,7 @@ export default function AdminFundingPage() {
           ) : payments.length === 0 ? (
             <Card className="rounded-xl border-dashed">
               <CardContent className="py-6 px-4 text-center text-muted-foreground text-sm">
-                No payments recorded yet. Use &quot;Paid & proceed&quot; on a completed milestone to record a payment.
+                No payments recorded yet. Use &quot;Approve & pay&quot; on a submitted milestone to record a payment.
               </CardContent>
             </Card>
           ) : (

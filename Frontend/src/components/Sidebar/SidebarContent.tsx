@@ -62,6 +62,7 @@ const getNavItems = (
     ...(marketplaceRole === "contributor"
       ? [
           { name: "My work", href: "/marketplace/work", icon: Target, description: "Connected startup, engagement, payouts" },
+          { name: "My milestones", href: "/marketplace/milestones", icon: FileText, description: "Assigned milestones — mark complete when done" },
           { name: "My applications", href: "/marketplace/my-applications", icon: FileCheck, description: "Applications to startups" },
           { name: "My contributor profile", href: "/marketplace/contributor-profile", icon: User, description: "View & edit your profile" },
         ]

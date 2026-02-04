@@ -47,7 +47,7 @@ export type ContributorProfilePutBody = {
   paymentMethod?: PaymentMethodBody;
 };
 
-const getBase = () => (process.env.NEXT_PUBLIC_SERVER_URI || "").replace(/\/+$/, "") || "https://api.equalmint.com/api/v1";
+const getBase = () => (process.env.NEXT_PUBLIC_SERVER_URI || "").replace(/\/+$/, "") || "https://localhost:8000/api/v1";
 
 async function fetchApi<T>(
   path: string,
@@ -73,7 +73,7 @@ export const marketplaceApi = {
     create: (body: { title: string; description?: string; amount: number }) =>
       fetchApi<{ success: boolean; milestone: unknown }>("milestone", { method: "POST", body }),
     get: (id: string) => fetchApi<{ success: boolean; milestone: unknown }>(`milestone/${id}`),
-    patch: (id: string, body: { status?: string }) =>
+    patch: (id: string, body: { status?: string; assignedContributorId?: string }) =>
       fetchApi<{ success: boolean; milestone: unknown }>(`milestone/${id}`, { method: "PATCH", body }),
   },
   contributorPayout: {

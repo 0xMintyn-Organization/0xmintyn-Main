@@ -141,11 +141,10 @@ export const getEngagementAnalytics = CatchAsyncError(async (req: Request, res: 
 
   if (user.marketplace_role === 'contributor') {
     const payouts = await ContributorPayoutModel.find({ contributorId: userId }).lean();
-    const milestones = await MilestoneModel.find({ assignedContributorId: userId, status: { $in: ['Completed', 'Paid'] } }).lean();
+    const milestones = await MilestoneModel.find({ assignedContributorId: userId, status: { $in: ['Completed', 'Submitted', 'Paid'] } }).lean();
     const totalReceived = payouts.reduce((s, p) => s + Number(p.amount), 0);
     const totalEarned = milestones.reduce((s, m) => s + Number(m.amount), 0);
     const pending = totalEarned - totalReceived;
-    // By month (from payouts paidAt)
     const byMonth: Record<string, number> = {};
     for (const p of payouts) {
       const d = p.paidAt || p.createdAt;
@@ -161,7 +160,7 @@ export const getEngagementAnalytics = CatchAsyncError(async (req: Request, res: 
         totalReceived,
         pending,
         payoutsCount: payouts.length,
-        completedMilestonesCount: milestones.length,
+        completedMilestonesCount: milestones.filter((m) => m.status === 'Paid' || m.status === 'Completed').length,
         byMonth: Object.entries(byMonth).map(([month, amount]) => ({ month, amount })).sort((a, b) => a.month.localeCompare(b.month)),
       },
     });

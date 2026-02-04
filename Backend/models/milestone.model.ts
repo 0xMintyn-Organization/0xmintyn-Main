@@ -1,8 +1,8 @@
 require('dotenv').config();
 import mongoose, { Model, Document, Schema } from 'mongoose';
 
-/** Startup defines milestones; marks complete when done. Only completed milestones are visible to admin for funding approval. */
-export const MILESTONE_STATUSES = ['Open', 'In Progress', 'Completed', 'Paid'] as const;
+/** Startup creates → assigns to hired → contributor marks complete → startup submits → admin approve/reject. */
+export const MILESTONE_STATUSES = ['Open', 'In Progress', 'Completed', 'Submitted', 'Paid', 'Rejected'] as const;
 export type MilestoneStatus = (typeof MILESTONE_STATUSES)[number];
 
 export interface IMilestone extends Document {
@@ -13,7 +13,9 @@ export interface IMilestone extends Document {
   status: MilestoneStatus;
   assignedContributorId?: mongoose.Types.ObjectId;
   completedAt?: Date;
+  submittedAt?: Date;
   paidAt?: Date;
+  rejectedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,7 +56,15 @@ const milestoneSchema = new Schema<IMilestone>(
       type: Date,
       default: null,
     },
+    submittedAt: {
+      type: Date,
+      default: null,
+    },
     paidAt: {
+      type: Date,
+      default: null,
+    },
+    rejectedAt: {
       type: Date,
       default: null,
     },
@@ -64,6 +74,7 @@ const milestoneSchema = new Schema<IMilestone>(
 
 milestoneSchema.index({ startupId: 1, status: 1 });
 milestoneSchema.index({ status: 1 });
+milestoneSchema.index({ assignedContributorId: 1, status: 1 });
 
 const MilestoneModel: Model<IMilestone> = mongoose.model('Milestone', milestoneSchema);
 export default MilestoneModel;
