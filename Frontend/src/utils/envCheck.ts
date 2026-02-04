@@ -23,7 +23,7 @@ export const checkEnvironment = () => {
   }
 
   // Check if we have fallback URL
-  const fallbackUrl = 'https://localhost:8000/api/v1/';
+  const fallbackUrl = 'https://api.equalmint.com/api/v1/';
   console.log('🔄 Fallback URL available:', fallbackUrl);
 
   return {

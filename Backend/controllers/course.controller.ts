@@ -383,8 +383,8 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
         "Willingness to learn and practice regularly",
         "Access to a computer with internet connection"
       ],
-      thumbnail: "https://localhost:8000/uploads/thumbnail-1757601951839.png",
-      demoUrl: "https://localhost:8000/uploads/videos/video-1757601919817-772207092.mp4",
+      thumbnail: "https://api.equalmint.com/uploads/thumbnail-1757601951839.png",
+      demoUrl: "https://api.equalmint.com/uploads/videos/video-1757601919817-772207092.mp4",
       courseData: [
         {
           title: "Introduction to Data Science",
@@ -393,7 +393,7 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           videos: [
             {
               title: "What is Data Science?",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 15,
               description: "Introduction to data science concepts and applications",
               links: [
@@ -409,7 +409,7 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
             },
             {
               title: "The Data Science Process",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 20,
               description: "Understanding the CRISP-DM methodology and data science workflow",
               links: []
@@ -423,7 +423,7 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           videos: [
             {
               title: "Python Basics for Data Science",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 25,
               description: "Essential Python concepts for data manipulation and analysis",
               links: [
@@ -435,7 +435,7 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
             },
             {
               title: "NumPy and Pandas",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 30,
               description: "Master the essential libraries for data manipulation",
               links: []
@@ -449,14 +449,14 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           videos: [
             {
               title: "Descriptive Statistics",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 22,
               description: "Understanding mean, median, mode, and distribution analysis",
               links: []
             },
             {
               title: "Inferential Statistics",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 28,
               description: "Hypothesis testing and confidence intervals",
               links: []
@@ -470,21 +470,21 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           videos: [
             {
               title: "Introduction to Machine Learning",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 18,
               description: "Types of machine learning and when to use each approach",
               links: []
             },
             {
               title: "Linear Regression",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 35,
               description: "Building and evaluating linear regression models",
               links: []
             },
             {
               title: "Classification Algorithms",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 40,
               description: "Logistic regression, decision trees, and ensemble methods",
               links: []
@@ -498,14 +498,14 @@ Perfect for aspiring data scientists, business analysts, and anyone looking to l
           videos: [
             {
               title: "Matplotlib and Seaborn",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 32,
               description: "Creating static and interactive visualizations",
               links: []
             },
             {
               title: "Advanced Visualization Techniques",
-              videoUrl: "https://localhost:8000/uploads/videos/video-1757601947128-920790859.mp4",
+              videoUrl: "https://api.equalmint.com/uploads/videos/video-1757601947128-920790859.mp4",
               videoLength: 28,
               description: "Dashboard creation and storytelling with data",
               links: []

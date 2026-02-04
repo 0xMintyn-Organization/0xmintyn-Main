@@ -23,7 +23,7 @@ So: Auth0 is only for **social login**; after the callback your app uses **your 
 AUTH0_DOMAIN=dev-xxxxx.us.auth0.com
 AUTH0_CLIENT_ID=your_client_id
 AUTH0_CLIENT_SECRET=your_client_secret
-AUTH0_CALLBACK_URL=https://localhost:8000/api/v1/auth/callback
+AUTH0_CALLBACK_URL=https://api.equalmint.com/api/v1/auth/callback
 AUTH0_AUDIENCE=https://your-domain.us.auth0.com/api/v2/
 ```
 
@@ -65,10 +65,10 @@ For **production**, set:
 2. **Settings**:
    - **Allowed Callback URLs**  
      Add the **exact** callback your backend uses, e.g.:
-     - Local: `https://localhost:8000/api/v1/auth/callback` (if backend is HTTPS on 8000) or `http://localhost:8000/api/v1/auth/callback` (if HTTP).
+     - Local: `https://api.equalmint.com/api/v1/auth/callback` (if backend is HTTPS on 8000) or `http://localhost:8000/api/v1/auth/callback` (if HTTP).
      - Production: `https://api.yourdomain.com/api/v1/auth/callback`.
    - **Allowed Logout URLs** – Optional; add frontend URL if you use Auth0 logout.
-   - **Allowed Web Origins** – Add your frontend origin(s), e.g. `http://localhost:3000`, `https://app.yourdomain.com` (needed if frontend talks to Auth0 from the browser; your flow is mostly backend-driven, but good to have).
+   - **Allowed Web Origins** – Add your frontend origin(s), e.g. `https://app.equalmint.com`, `https://app.yourdomain.com` (needed if frontend talks to Auth0 from the browser; your flow is mostly backend-driven, but good to have).
 
 ### 3.2 Social connections
 
@@ -89,7 +89,7 @@ For **production**, set:
 2. Frontend calls **GET** `/api/v1/auth0/login?provider=google` and gets `authUrl`.
 3. Frontend opens `authUrl` in a **popup**.
 4. User signs in on Auth0; Auth0 redirects to **GET** `/api/v1/auth/callback?code=...&state=...`.
-5. Backend exchanges `code`, gets user from Auth0, finds/creates user in DB, sets **cookies** and redirects to **`FRONTEND_URL/auth0-success?token=...&userId=...`** (e.g. `http://localhost:3000/auth0-success?token=...&userId=...`).
+5. Backend exchanges `code`, gets user from Auth0, finds/creates user in DB, sets **cookies** and redirects to **`FRONTEND_URL/auth0-success?token=...&userId=...`** (e.g. `https://app.equalmint.com/auth0-success?token=...&userId=...`).
 6. **`/auth0-success`** page (in the popup):
    - If it’s in a popup: sends `postMessage` to opener with `{ type: 'AUTH0_SUCCESS', token, userId }`, then parent sends `CLOSE_POPUP` and closes the popup.
    - Parent window receives the message, stores token/user (e.g. Redux + localStorage) and treats the user as logged in.

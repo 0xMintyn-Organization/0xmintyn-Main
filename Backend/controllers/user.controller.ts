@@ -105,7 +105,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
 
             // Build activation link for token-based email verification
             const clientUrl =
-                process.env.CLIENT_URL || "http://localhost:3000/";
+                process.env.CLIENT_URL || "https://app.equalmint.com/";
             const normalizedClientUrl = clientUrl.endsWith("/")
                 ? clientUrl.slice(0, -1)
                 : clientUrl;
@@ -1011,7 +1011,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             );
 
             // Build reset link
-            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000";
+            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://app.equalmint.com";
             const normalizedClientUrl = clientUrl.endsWith("/") ? clientUrl.slice(0, -1) : clientUrl;
             const resetLink = `${normalizedClientUrl}/reset-password?token=${resetToken}`;
 

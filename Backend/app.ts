@@ -56,12 +56,12 @@ app.use(cookieParser());
 const corsOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
   : [
-      'http://localhost:3000',       // MVP Next.js dev
-      'http://localhost:5173',      // EqualMint Vite dev
+      'https://app.equalmint.com',       // MVP Next.js dev
+      'https://equalmint.com',      // EqualMint Vite dev
       'http://127.0.0.1:5173',       // EqualMint Vite dev (--host 127.0.0.1)
       'http://209.74.89.249:3000',
-      'http://localhost:3000',   // MVP production
-      'http://localhost:5173',       // EqualMint marketing site
+      'https://app.equalmint.com',   // MVP production
+      'https://equalmint.com',       // EqualMint marketing site
       'https://www.equalmint.com',
     ];
 app.use(cors({

@@ -17,7 +17,7 @@ For **login on EqualMint (website) then open MVP and stay logged in**, the API m
 1. **CORS** – set both origins (MVP + website):
 
    ```env
-   CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+   CORS_ORIGINS=https://app.equalmint.com,https://equalmint.com
    ```
 
    With 2+ origins, the backend automatically uses cross-origin cookie options.
@@ -41,29 +41,29 @@ For **login on EqualMint (website) then open MVP and stay logged in**, the API m
    npm run dev:https
    ```
 
-   API base: **https://localhost:8000**.
+   API base: **https://api.equalmint.com**.
 
 3. **Trust the self-signed cert** (fixes `ERR_CERT_AUTHORITY_INVALID` on login):
 
-   - Open **https://localhost:8000** in the same browser (e.g. in a new tab).
+   - Open **https://api.equalmint.com** in the same browser (e.g. in a new tab).
    - You’ll see “Your connection is not private” (or similar). Click **Advanced** → **Proceed to localhost (unsafe)**.
    - After that, the MVP (localhost:3000) can call the API without certificate errors. You only need to do this once per browser.
 
 4. **Frontend (MVP)** – point to the API over HTTPS:
 
    ```env
-   NEXT_PUBLIC_SERVER_URI=https://localhost:8000/api/v1/
-   NEXT_PUBLIC_MARKETING_URL=http://localhost:5173
+   NEXT_PUBLIC_SERVER_URI=https://api.equalmint.com/api/v1/
+   NEXT_PUBLIC_MARKETING_URL=https://equalmint.com
    ```
 
 5. **EqualMint (website)** – point to the same API and MVP:
 
    ```env
-   VITE_APP_API_URL=https://localhost:8000/api/v1
-   VITE_APP_DASHBOARD_URL=http://localhost:3000
+   VITE_APP_API_URL=https://api.equalmint.com/api/v1
+   VITE_APP_DASHBOARD_URL=https://app.equalmint.com
    ```
 
-Then: open the website at `http://localhost:5173`, log in → redirect to MVP at `http://localhost:3000` → you stay logged in.
+Then: open the website at `https://equalmint.com`, log in → redirect to MVP at `https://app.equalmint.com` → you stay logged in.
 
 ---
 
@@ -79,12 +79,12 @@ Example:
 
 ```env
 # Backend – single origin or default
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS=https://app.equalmint.com
 ```
 
 ```env
 # Frontend
-NEXT_PUBLIC_SERVER_URI=https://localhost:8000/api/v1/
+NEXT_PUBLIC_SERVER_URI=https://api.equalmint.com/api/v1/
 ```
 
 ---
@@ -93,13 +93,13 @@ NEXT_PUBLIC_SERVER_URI=https://localhost:8000/api/v1/
 
 - **Backend**: `NODE_ENV=production` (or set `COOKIE_SAME_SITE_NONE=true`). API over **HTTPS**.
 - **CORS**: your live origins, e.g.  
-  `CORS_ORIGINS=http://localhost:3000,http://localhost:5173,https://www.equalmint.com`
+  `CORS_ORIGINS=https://app.equalmint.com,https://equalmint.com,https://www.equalmint.com`
 - **Frontend (MVP)**:  
-  `NEXT_PUBLIC_SERVER_URI=http://localhost:3000/api/v1/`  
-  `NEXT_PUBLIC_MARKETING_URL=http://localhost:5173`
+  `NEXT_PUBLIC_SERVER_URI=https://app.equalmint.com/api/v1/`  
+  `NEXT_PUBLIC_MARKETING_URL=https://equalmint.com`
 - **EqualMint (website)**:  
-  `VITE_APP_API_URL=http://localhost:3000/api/v1`  
-  `VITE_APP_DASHBOARD_URL=http://localhost:3000`
+  `VITE_APP_API_URL=https://app.equalmint.com/api/v1`  
+  `VITE_APP_DASHBOARD_URL=https://app.equalmint.com`
 
 No `USE_HTTPS` or local certs needed; your host already serves HTTPS.
 

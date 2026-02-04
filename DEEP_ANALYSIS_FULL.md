@@ -182,7 +182,7 @@ layout.tsx (root)
 
 1. **Page file:** Create `Frontend/src/app/(userdashboard)/my-certificates/page.tsx`. Use `'use client'` if you use hooks. Wrap in `<Protected>` if the whole page is protected (or rely on layout). Fetch with RTK or axios: e.g. `useGetMyCertificatesQuery()` or `certificateService.getMyList()` with credentials.
 2. **Sidebar link:** In `Frontend/src/components/Sidebar/SidebarContent.tsx`, in `getNavItems`, add an item e.g. `{ name: 'My Certificates', href: '/my-certificates', icon: Award }` to the right array (publicItems or role-specific).
-3. **Env:** Ensure `NEXT_PUBLIC_SERVER_URI` points to backend (e.g. `https://localhost:8000/api/v1` or your backend base).
+3. **Env:** Ensure `NEXT_PUBLIC_SERVER_URI` points to backend (e.g. `https://api.equalmint.com/api/v1` or your backend base).
 
 ### 4.3 Add a New RTK Query Endpoint
 
@@ -210,14 +210,14 @@ layout.tsx (root)
 
 ### 5.1 Fixes Applied in This Pass
 
-- **roleService URLs:** All calls now use `${API_BASE_URL}/role/...` (leading slash before "role") so that with baseUrl like `https://localhost:8000/api/v1`, the path is `/role/dashboard` not `role/dashboard`. This prevents 404 when baseUrl has no trailing slash.
+- **roleService URLs:** All calls now use `${API_BASE_URL}/role/...` (leading slash before "role") so that with baseUrl like `https://api.equalmint.com/api/v1`, the path is `/role/dashboard` not `role/dashboard`. This prevents 404 when baseUrl has no trailing slash.
 
 ### 5.2 Things to Watch
 
-- **Auth cookie vs cross-origin:** If frontend is on different origin (e.g. localhost:3000 vs localhost:8000), CORS must allow that origin with credentials. Backend already has credentials: true. Add `http://localhost:3000` to origin list for local dev (already present in app.ts).
+- **Auth cookie vs cross-origin:** If frontend is on different origin (e.g. localhost:3000 vs localhost:8000), CORS must allow that origin with credentials. Backend already has credentials: true. Add `https://app.equalmint.com` to origin list for local dev (already present in app.ts).
 - **Video route:** `video.route.ts` is not mounted. If you need signed video URLs or course-scoped video API, mount it in app.ts.
 - **updateAccessTokenMiddleware vs isAthenticated:** Both run on protected routes. If access_token is expired, refresh middleware can set new cookies and req.user, but isAthenticated still reads the old cookie in the same request and may return 401. If you see “logged out” right after refresh, consider letting isAthenticated skip check when req.user is already set by previous middleware.
-- **NEXT_PUBLIC_SERVER_URI:** Should be backend base including /api/v1, e.g. `https://localhost:8000/api/v1` (no trailing slash is safer when concatenating paths).
+- **NEXT_PUBLIC_SERVER_URI:** Should be backend base including /api/v1, e.g. `https://api.equalmint.com/api/v1` (no trailing slash is safer when concatenating paths).
 
 ---
 

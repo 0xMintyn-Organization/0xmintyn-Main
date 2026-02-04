@@ -81,7 +81,7 @@ Frontend/
 └── package.json
 ```
 
-**Important:** All API calls use `process.env.NEXT_PUBLIC_SERVER_URI` (e.g. `https://localhost:8000/api/v1/`). No trailing slash issues if you use it as base and append paths like `me`, `login`, etc.
+**Important:** All API calls use `process.env.NEXT_PUBLIC_SERVER_URI` (e.g. `https://api.equalmint.com/api/v1/`). No trailing slash issues if you use it as base and append paths like `me`, `login`, etc.
 
 ### 2.2 Backend (`Backend/`)
 
@@ -228,7 +228,7 @@ Backend/
 
 ### 6.4 Backend
 
-- **CORS:** `app.ts` has a fixed list of origins. For local dev, add `http://localhost:3000` (or your frontend URL) if needed.  
+- **CORS:** `app.ts` has a fixed list of origins. For local dev, add `https://app.equalmint.com` (or your frontend URL) if needed.  
 - **Health vs 404:** Health is at `/api/v1/health`. The catch‑all `app.all('*', ...)` is after all routes, so it only hits when no route matches. Correct.
 
 ### 6.5 Security / Ops
@@ -255,7 +255,7 @@ Backend/
 
 ### Frontend (.env / .env.local)
 
-- `NEXT_PUBLIC_SERVER_URI` — backend base (e.g. `https://localhost:8000/api/v1`); prefer no trailing slash when concatenating paths.
+- `NEXT_PUBLIC_SERVER_URI` — backend base (e.g. `https://api.equalmint.com/api/v1`); prefer no trailing slash when concatenating paths.
 
 ---
 
@@ -336,7 +336,7 @@ All logged-in routes live under `(userdashboard)` and are wrapped by `Protected`
 | **Exchange page** | Route `/exchange` and page component exist; sidebar link was removed. Page is a "Coming soon" placeholder. | Optional: remove `(userdashboard)/exchange/page.tsx` and any links to `/exchange` if you want no exchange route at all. |
 | **Governance wallet fields** | Backend models `Proposal` and `Vote` have required `proposerWallet` and `voterWallet` (string). Naming is wallet-like; they can store user id or other identifier. | Optional: rename to e.g. `proposerIdRef` / `voterIdRef` and migrate DB if you want to drop "wallet" wording everywhere. |
 | **User model filename** | `user.mode.ts` (typo). | Optional: rename to `user.model.ts` and update all imports. |
-| **CORS** | `app.ts` uses fixed origins (e.g. production URLs). | For local dev, add `http://localhost:3000` (or your frontend URL) to `origin` array. |
+| **CORS** | `app.ts` uses fixed origins (e.g. production URLs). | For local dev, add `https://app.equalmint.com` (or your frontend URL) to `origin` array. |
 | **API base URL trailing slash** | Frontend uses `NEXT_PUBLIC_SERVER_URI`; some code appends paths without a slash. | Prefer one convention: base **without** trailing slash, then `${base}/refreshtoken`, `${base}/me`, etc. |
 | **Duplicate refresh logic** | Both RTK `apiSlice` baseQuery and `axiosInstance` (if used) can do 401 → refresh. | If all API calls go through RTK, you can rely on apiSlice only and remove refresh from axios to avoid duplication. |
 

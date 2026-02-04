@@ -69,7 +69,7 @@ export default function OptimizedImage({
     if (!imagePath) return fallbackSrc;
     if (imagePath.startsWith('http')) return imagePath;
     
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://localhost:8000';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://api.equalmint.com';
     if (baseUrl.endsWith('/')) {
       baseUrl = baseUrl.slice(0, -1);
     }
