@@ -6,6 +6,12 @@ import MilestonePaymentModel from '../models/milestonePayment.model';
 import EngagementModel from '../models/engagement.model';
 import UserModel from '../models/user.mode';
 import ErrorHandler from '../utils/errorHandler';
+import {
+  fetchMilestoneState,
+  createMilestoneOnChain,
+  approveMilestoneOnChain,
+  isSolanaConfigured,
+} from '../services/solanaMilestone.service';
 
 /** Flow: Open → In Progress (startup assigns) → Completed (contributor) → Submitted (startup) → Paid | Rejected (admin). */
 const VALID_TRANSITIONS: Record<MilestoneStatus, MilestoneStatus[]> = {
@@ -120,6 +126,23 @@ export const getMilestoneById = CatchAsyncError(async (req: Request, res: Respon
   return next(new ErrorHandler('Not authorized to view this milestone', 403));
 });
 
+/** GET /milestone/solana/state?creator=<base58> – fetch on-chain milestone state. */
+export const getSolanaMilestoneState = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  const creator = (req.query.creator as string)?.trim();
+  if (!creator) return next(new ErrorHandler('Query param creator (Solana pubkey) is required', 400));
+  const state = await fetchMilestoneState(creator);
+  if (!state) return res.status(200).json({ success: true, onChain: false, message: 'No milestone account found' });
+  res.status(200).json({ success: true, onChain: true, ...state });
+});
+
+/** POST /milestone/solana/init – create on-chain milestone (server wallet as creator). Admin or startup. */
+export const initSolanaMilestone = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  if (!isSolanaConfigured()) return next(new ErrorHandler('Solana wallet not configured', 503));
+  const result = await createMilestoneOnChain();
+  if ('error' in result) return next(new ErrorHandler(result.error, 400));
+  res.status(201).json({ success: true, pda: result.pda, tx: result.tx });
+});
+
 /** PATCH /milestone/:id – startup: assign + In Progress, Submitted; contributor: Completed; admin: Paid, Rejected. */
 export const patchMilestone = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
   const milestoneId = req.params.id;
@@ -168,7 +191,7 @@ export const patchMilestone = CatchAsyncError(async (req: Request, res: Response
   if (status === 'Paid' && isAdmin) {
     const existingPayment = await MilestonePaymentModel.findOne({ milestoneId: milestone._id });
     if (!existingPayment) {
-      const startupUser = await UserModel.findById(milestone.startupId).select('startupName').lean();
+      const startupUser = await UserModel.findById(milestone.startupId).select('startupName solanaWallet').lean();
       const startupName = (startupUser as { startupName?: string })?.startupName || '';
       await MilestonePaymentModel.create({
         milestoneId: milestone._id,
@@ -185,6 +208,14 @@ export const patchMilestone = CatchAsyncError(async (req: Request, res: Response
         },
         paidAt: milestone.paidAt || new Date(),
       });
+      // On-chain approve when startup has linked Solana wallet
+      const solanaWallet = (startupUser as { solanaWallet?: string })?.solanaWallet;
+      if (solanaWallet?.trim()) {
+        const result = await approveMilestoneOnChain(solanaWallet.trim());
+        if ('error' in result) {
+          console.warn('Solana approve failed:', result.error);
+        }
+      }
     }
   }
 

@@ -28,6 +28,9 @@ import startupProfileRouter from './routes/startupProfile.route';
 import contributorProfileRouter from './routes/contributorProfile.route';
 import milestoneRouter from './routes/milestone.route';
 import milestonePaymentRouter from './routes/milestonePayment.route';
+import { updateAccessTokenMiddleware } from './controllers/user.controller';
+import { getSolanaMilestoneState, initSolanaMilestone } from './controllers/milestone.controller';
+import { isAthenticated as isAuthenticated } from './utils/auth';
 import applicationRouter from './routes/application.route';
 import contributorPayoutRouter from './routes/contributorPayout.route';
 import engagementRouter from './routes/engagement.route';
@@ -56,11 +59,11 @@ app.use(cookieParser());
 const corsOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
   : [
-      'https://app.equalmint.com',       // MVP Next.js dev
+      'http://localhost:3000',       // MVP Next.js dev
       'https://equalmint.com',      // EqualMint Vite dev
       'http://127.0.0.1:5173',       // EqualMint Vite dev (--host 127.0.0.1)
       'http://209.74.89.249:3000',
-      'https://app.equalmint.com',   // MVP production
+      'http://localhost:3000',   // MVP production
       'https://equalmint.com',       // EqualMint marketing site
       'https://www.equalmint.com',
     ];
@@ -74,6 +77,15 @@ app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
 
 // Health check routes (before other routes)
 app.use('/api/v1/health', healthRouter);
+
+// Debug: verify backend is reachable (no auth)
+app.get('/api/v1/ping', (_req: Request, res: Response) => res.json({ pong: true, backend: true }));
+
+// Solana milestone (explicit routes - before generic /api/v1)
+app.get('/api/v1/milestone/solana/state', updateAccessTokenMiddleware, isAuthenticated, getSolanaMilestoneState);
+app.post('/api/v1/milestone/solana/init', updateAccessTokenMiddleware, isAuthenticated, initSolanaMilestone);
+// Alternate path (use this if above returns 404)
+app.get('/api/v1/solana-milestone/state', updateAccessTokenMiddleware, isAuthenticated, getSolanaMilestoneState);
 
 // routes
 app.use('/api/v1', userRouter);

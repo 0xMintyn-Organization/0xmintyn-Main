@@ -25,10 +25,10 @@ const corsOriginsRaw = process.env.CORS_ORIGINS;
 const corsOrigins = corsOriginsRaw
   ? corsOriginsRaw.split(',').map((o) => o.trim()).filter(Boolean)
   : [
-      'https://app.equalmint.com',
+      'http://localhost:3000',
       'https://equalmint.com',
       'http://127.0.0.1:5173',
-      'https://app.equalmint.com',
+      'http://localhost:3000',
       'https://equalmint.com',
       'https://www.equalmint.com',
     ];

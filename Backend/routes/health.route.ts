@@ -2,8 +2,14 @@ import express, { Request, Response } from 'express';
 import { getSystemStats } from '../middleware/advancedLogging';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
+import { getSolanaMilestoneState } from '../controllers/milestone.controller';
+import { updateAccessTokenMiddleware } from '../controllers/user.controller';
+import { isAthenticated as isAuthenticated } from '../utils/auth';
 
 const healthRouter = express.Router();
+
+// Solana milestone state (under health to avoid route conflicts)
+healthRouter.get('/solana-milestone/state', updateAccessTokenMiddleware, isAuthenticated, getSolanaMilestoneState);
 
 // Basic health check
 healthRouter.get('/health', async (req: Request, res: Response) => {

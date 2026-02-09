@@ -13,3 +13,6 @@ cert/
 # Logs
 logs/
 *.log
+
+# Solana wallet (contains private key - never commit)
+config/solana-wallet.json

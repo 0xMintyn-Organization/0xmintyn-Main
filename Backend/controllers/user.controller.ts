@@ -105,7 +105,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
 
             // Build activation link for token-based email verification
             const clientUrl =
-                process.env.CLIENT_URL || "https://app.equalmint.com/";
+                process.env.CLIENT_URL || "http://localhost:3000/";
             const normalizedClientUrl = clientUrl.endsWith("/")
                 ? clientUrl.slice(0, -1)
                 : clientUrl;
@@ -797,11 +797,12 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
         age: number;
         contactNumber: string;
         bio: string;
+        solanaWallet: string;
     }
 
     export const updateProfile = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { firstName, lastName, dateOfBirth, nationality, age, contactNumber , bio }: Partial<IUpdateProfileBody> = req.body;
+            const { firstName, lastName, dateOfBirth, nationality, age, contactNumber , bio, solanaWallet }: Partial<IUpdateProfileBody> = req.body;
             const userId = req.user?._id;
 
             const user = await UserModel.findById(userId);
@@ -818,6 +819,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             if (age) user.age = age;
             if (contactNumber) user.contactNumber = contactNumber;
             if (bio) user.bio = bio;
+            if (solanaWallet !== undefined) user.solanaWallet = typeof solanaWallet === 'string' ? solanaWallet.trim() : '';
 
             await user.save();
 
@@ -1011,7 +1013,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             );
 
             // Build reset link
-            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://app.equalmint.com";
+            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000";
             const normalizedClientUrl = clientUrl.endsWith("/") ? clientUrl.slice(0, -1) : clientUrl;
             const resetLink = `${normalizedClientUrl}/reset-password?token=${resetToken}`;
 

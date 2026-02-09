@@ -39,6 +39,8 @@ export interface IUser extends Document {
     startupOnboardingComplete?: boolean;
     /** Phase 2: true when contributor has completed onboarding. */
     contributorOnboardingComplete?: boolean;
+    /** Solana wallet public key (base58) for on-chain milestone integration. */
+    solanaWallet?: string;
     /** False when user was created via Auth0 and has not yet chosen role/marketplace (Startup/Contributor/Student/Instructor). Default true for backward compatibility. */
     roleProfileCompleted?: boolean;
     avatar: string;
@@ -126,6 +128,7 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     startupImageUrl: { type: String, required: false, trim: true },
     startupOnboardingComplete: { type: Boolean, default: false },
     contributorOnboardingComplete: { type: Boolean, default: false },
+    solanaWallet: { type: String, required: false, trim: true },
     roleProfileCompleted: { type: Boolean, default: true },
     isVerified: {
         type: Boolean,
