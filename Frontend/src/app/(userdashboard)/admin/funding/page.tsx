@@ -5,7 +5,8 @@ import { marketplaceApi } from "@/lib/marketplaceApi";
 import { AdminProtected } from "@/components/RoleProtected";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, CheckCircle, History, Clock, Banknote } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { DollarSign, CheckCircle, History, Clock, Banknote, Wallet, ArrowRightLeft, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Milestone = {
@@ -16,7 +17,15 @@ type Milestone = {
   status: string;
   completedAt?: string;
   paidAt?: string;
-  startupId?: { _id?: string; startupName?: string; email?: string; firstName?: string; lastName?: string };
+  startupId?: {
+    _id?: string;
+    startupName?: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    stripeConnectAccountId?: string;
+    stripeConnectStatus?: string;
+  };
 };
 
 type MilestonePayment = {
@@ -40,11 +49,20 @@ function getStartupName(m: Milestone): string {
   return (s.email as string) || "—";
 }
 
+type StripeOverview = {
+  balance: { available: number; pending: number; currency: string } | null;
+  balanceError: string | null;
+  transfers: { id: string; amount: number; destination: string; created: number }[];
+  failedWithdrawals: { _id: string; amount: number; stripePayoutId: string; createdAt: string; userId?: { firstName?: string; lastName?: string; email?: string } }[];
+};
+
 export default function AdminFundingPage() {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [payments, setPayments] = useState<MilestonePayment[]>([]);
+  const [stripeOverview, setStripeOverview] = useState<StripeOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentsLoading, setPaymentsLoading] = useState(true);
+  const [stripeLoading, setStripeLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -70,12 +88,29 @@ export default function AdminFundingPage() {
     }
   };
 
+  const loadStripeOverview = async () => {
+    setStripeLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URI}admin/stripe-overview`, { credentials: "include" });
+      const data = await res.json();
+      if (data.success) setStripeOverview(data);
+    } catch {
+      setStripeOverview(null);
+    } finally {
+      setStripeLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadMilestones();
   }, []);
 
   useEffect(() => {
     loadPayments();
+  }, []);
+
+  useEffect(() => {
+    loadStripeOverview();
   }, []);
 
   const handleApprove = async (milestoneId: string) => {
@@ -85,6 +120,7 @@ export default function AdminFundingPage() {
       toast({ title: "Approved", description: "Payment recorded; startup has received the fund." });
       loadMilestones();
       loadPayments();
+      loadStripeOverview();
     } catch (e: unknown) {
       toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
     } finally {
@@ -124,6 +160,63 @@ export default function AdminFundingPage() {
             Startups submit completed milestones for funding. Approve to release payment or Reject.
           </p>
         </div>
+
+        {/* Stripe overview (Phase 8) */}
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-muted-foreground" />
+            Platform balance & Stripe
+          </h2>
+          {stripeLoading ? (
+            <Card className="rounded-xl">
+              <CardContent className="py-6 text-center text-muted-foreground text-sm">
+                Loading Stripe overview…
+              </CardContent>
+            </Card>
+          ) : stripeOverview ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="rounded-xl">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Available balance</p>
+                  {stripeOverview.balanceError ? (
+                    <p className="text-sm text-amber-600 mt-1">{stripeOverview.balanceError}</p>
+                  ) : stripeOverview.balance ? (
+                    <p className="text-2xl font-bold text-foreground mt-1">
+                      ${((stripeOverview.balance.available || 0) / 100).toFixed(2)}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground mt-1">—</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">For milestone transfers</p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <ArrowRightLeft className="w-4 h-4" />
+                    Recent transfers ({stripeOverview.transfers?.length || 0})
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stripeOverview.transfers?.length ? "Last: " + (stripeOverview.transfers[0] ? `$${((stripeOverview.transfers[0] as { amount: number }).amount / 100).toFixed(2)}` : "—") : "None yet"}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    Failed withdrawals ({stripeOverview.failedWithdrawals?.length || 0})
+                  </p>
+                  {stripeOverview.failedWithdrawals?.length ? (
+                    <p className="text-xs text-amber-600 mt-1">Review in Payment history below</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">None</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          ) : null}
+        </section>
 
         {loading ? (
           <Card className="rounded-xl">
@@ -183,10 +276,19 @@ export default function AdminFundingPage() {
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-foreground">{m.title}</h3>
                         {m.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{m.description}</p>}
-                        <p className="text-sm text-muted-foreground mt-2">
+                        <p className="text-sm text-muted-foreground mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1">
                           <span className="font-medium text-foreground">{Number(m.amount).toLocaleString()}</span>
-                          <span className="mx-1.5">·</span>
+                          <span>·</span>
                           {getStartupName(m)}
+                          {m.startupId?.stripeConnectAccountId ? (
+                            <Badge variant="outline" className="text-xs border-green-500/50 text-green-600 dark:text-green-400">
+                              Stripe connected
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">
+                              Not connected
+                            </Badge>
+                          )}
                           {(m as Milestone & { submittedAt?: string }).submittedAt && (
                             <>
                               <span className="mx-1.5">·</span>
@@ -279,7 +381,7 @@ export default function AdminFundingPage() {
                 Loading payment history…
               </CardContent>
             </Card>
-          ) : payments.length === 0 ? (
+          ) : payments.length === 0 && !(stripeOverview?.failedWithdrawals?.length) ? (
             <Card className="rounded-xl border-dashed">
               <CardContent className="py-6 px-4 text-center text-muted-foreground text-sm">
                 No payments recorded yet. Use &quot;Approve & pay&quot; on a submitted milestone to record a payment.
@@ -287,6 +389,17 @@ export default function AdminFundingPage() {
             </Card>
           ) : (
             <ul className="space-y-3">
+              {stripeOverview?.failedWithdrawals?.map((fw) => (
+                <li key={fw._id} className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex flex-wrap items-center justify-between gap-3">
+                  <span className="font-medium text-foreground">Withdrawal failed</span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">${Number(fw.amount).toFixed(2)}</span>
+                    <span>{(fw.userId as { firstName?: string; lastName?: string; email?: string })?.firstName} {(fw.userId as { lastName?: string })?.lastName}</span>
+                    {fw.createdAt && <span>{new Date(fw.createdAt).toLocaleDateString()}</span>}
+                    <span className="rounded bg-amber-500/20 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400">failed</span>
+                  </div>
+                </li>
+              ))}
               {payments.map((p) => (
                 <li key={p._id} className="rounded-xl border border-border bg-card p-4 flex flex-wrap items-center justify-between gap-3">
                   <span className="font-medium text-foreground">{p.milestoneTitle}</span>

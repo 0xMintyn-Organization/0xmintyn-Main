@@ -12,6 +12,8 @@ import {
   approveMilestoneOnChain,
   isSolanaConfigured,
 } from '../services/solanaMilestone.service';
+import { createPlatformTransfer } from '../services/stripePayment.service';
+import { getAccountStatus } from '../services/stripeConnect.service';
 
 /** Flow: Open → In Progress (startup assigns) → Completed (contributor) → Submitted (startup) → Paid | Rejected (admin). */
 const VALID_TRANSITIONS: Record<MilestoneStatus, MilestoneStatus[]> = {
@@ -50,7 +52,7 @@ export const listMilestones = CatchAsyncError(async (req: Request, res: Response
   if (role === 'admin') {
     const milestones = await MilestoneModel.find({ status: { $in: ['Submitted', 'Paid'] } })
       .sort({ submittedAt: -1, completedAt: -1, createdAt: -1 })
-      .populate('startupId', 'email startupName firstName lastName')
+      .populate('startupId', 'email startupName firstName lastName stripeConnectAccountId stripeConnectStatus')
       .populate('assignedContributorId', 'email firstName lastName')
       .lean();
     return res.status(200).json({ success: true, milestones });
@@ -179,6 +181,36 @@ export const patchMilestone = CatchAsyncError(async (req: Request, res: Response
     ) {
       return next(new ErrorHandler(`Cannot transition from ${milestone.status} to ${status}`, 400));
     }
+
+    // Phase 4: When admin marks Paid, create Stripe transfer BEFORE saving (so we can fail without partial state)
+    let stripeTransferId: string | undefined;
+    if (status === 'Paid' && isAdmin) {
+      const existingPayment = await MilestonePaymentModel.findOne({ milestoneId: milestone._id });
+      if (!existingPayment) {
+        const startupUser = await UserModel.findById(milestone.startupId).select('startupName solanaWallet stripeConnectAccountId').lean();
+        const connectAccountId = (startupUser as { stripeConnectAccountId?: string })?.stripeConnectAccountId;
+        if (!connectAccountId?.trim()) {
+          return next(new ErrorHandler('Startup must connect bank account first to receive milestone funding. Ask the startup to complete Stripe Connect onboarding.', 400));
+        }
+        const accountStatus = await getAccountStatus(connectAccountId.trim());
+        if ('error' in accountStatus) {
+          return next(new ErrorHandler('Startup payment account error: ' + accountStatus.error, 400));
+        }
+        if (!accountStatus.payoutsEnabled) {
+          return next(new ErrorHandler('Startup payment account is not yet ready to receive transfers. They may need to complete Stripe verification.', 400));
+        }
+        const amountCents = Math.round(milestone.amount * 100);
+        const transferResult = await createPlatformTransfer(amountCents, connectAccountId.trim(), {
+          milestoneId: String(milestone._id),
+          startupId: String(milestone.startupId),
+        });
+        if ('error' in transferResult) {
+          return next(new ErrorHandler('Transfer failed: ' + transferResult.error, 400));
+        }
+        stripeTransferId = transferResult.transferId;
+      }
+    }
+
     milestone.status = status as MilestoneStatus;
     if (status === 'Completed') milestone.completedAt = new Date();
     if (status === 'Submitted') milestone.submittedAt = new Date();
@@ -200,11 +232,13 @@ export const patchMilestone = CatchAsyncError(async (req: Request, res: Response
         milestoneTitle: milestone.title,
         startupName,
         status: 'paid',
+        stripeTransferId,
         payment_info: {
-          paymentMethod: 'manual',
+          paymentMethod: stripeTransferId ? 'stripe' : 'manual',
           paymentStatus: 'completed',
           amount: milestone.amount,
           currency: 'USD',
+          transactionId: stripeTransferId,
         },
         paidAt: milestone.paidAt || new Date(),
       });

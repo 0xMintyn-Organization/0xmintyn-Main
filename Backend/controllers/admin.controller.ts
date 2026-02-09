@@ -3,7 +3,9 @@ import { CatchAsyncError } from "../middleware/catchAsyncError";
 import { CourseModel } from "../models/course.model";
 import OrderModel from "../models/order.model";
 import UserModel from "../models/user.mode";
+import WithdrawalModel from "../models/withdrawal.model";
 import ErrorHandler from "../utils/errorHandler";
+import { getPlatformBalance, listRecentTransfers } from "../services/stripePayment.service";
 
 // Chart colors
 const COLORS = [
@@ -383,6 +385,71 @@ export const getAdminOrders = CatchAsyncError(
         } catch (error: any) {
             console.error("Get Admin Orders Error:", error);
             return next(new ErrorHandler(error.message || "Failed to fetch orders data", 500));
+        }
+    }
+);
+
+/** Phase 8: Stripe overview – platform balance, recent transfers, failed withdrawals. */
+export const getStripeOverview = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const [balanceResult, transfersResult, withdrawals] = await Promise.all([
+                getPlatformBalance(),
+                listRecentTransfers(15),
+                WithdrawalModel.find({ status: 'failed' })
+                    .populate('userId', 'firstName lastName email')
+                    .sort({ createdAt: -1 })
+                    .limit(20)
+                    .lean(),
+            ]);
+
+            const balance = 'error' in balanceResult ? null : balanceResult;
+            const balanceError = 'error' in balanceResult ? (balanceResult as { error: string }).error : null;
+            const transfers = 'error' in transfersResult ? [] : transfersResult.transfers;
+
+            res.status(200).json({
+                success: true,
+                balance: balance ? { available: balance.available, pending: balance.pending, currency: balance.currency } : null,
+                balanceError,
+                transfers,
+                failedWithdrawals: withdrawals.map((w: any) => ({
+                    _id: w._id,
+                    userId: w.userId,
+                    amount: w.amount,
+                    stripePayoutId: w.stripePayoutId,
+                    createdAt: w.createdAt,
+                })),
+            });
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message || "Failed to fetch Stripe overview", 500));
+        }
+    }
+);
+
+/** Phase 7: Get failed withdrawals for admin review. */
+export const getFailedWithdrawals = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const withdrawals = await WithdrawalModel.find({ status: 'failed' })
+                .populate('userId', 'firstName lastName email')
+                .sort({ createdAt: -1 })
+                .limit(100)
+                .lean();
+
+            res.status(200).json({
+                success: true,
+                withdrawals: withdrawals.map((w: any) => ({
+                    _id: w._id,
+                    userId: w.userId,
+                    amount: w.amount,
+                    currency: w.currency,
+                    stripePayoutId: w.stripePayoutId,
+                    status: w.status,
+                    createdAt: w.createdAt,
+                })),
+            });
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message || "Failed to fetch failed withdrawals", 500));
         }
     }
 );

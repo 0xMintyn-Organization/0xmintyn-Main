@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { AllRolesProtected } from "@/components/RoleProtected";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import Spinner from "@/components/Spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CoursePaymentCheckout } from "@/components/course/CoursePaymentCheckout";
+import enrollmentService from "@/services/enrollmentService";
 
 export default function CoursePreviewPage() {
   const [loading, setLoading] = useState(true);
@@ -36,11 +38,30 @@ export default function CoursePreviewPage() {
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [instructorData, setInstructorData] = useState<any>(null);
   const [instructorLoading, setInstructorLoading] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user, isInstructor, isAdmin } = useRole();
   const courseId = params ? params["courseId"] : undefined;
+
+  useEffect(() => {
+    const paymentIntent = searchParams.get("payment_intent");
+    if (paymentIntent && courseId) {
+      enrollmentService
+        .confirmEnroll(courseId, paymentIntent)
+        .then((res) => {
+          if (res.success) {
+            toast({ title: "Success!", description: "You have been enrolled in this course!" });
+            setIsEnrolled(true);
+            window.history.replaceState({}, "", window.location.pathname);
+            router.push(`/courses/${courseId}`);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [courseId, searchParams, router, toast]);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -342,6 +363,29 @@ export default function CoursePreviewPage() {
                         <Play className="w-4 h-4 mr-2" />
                         Enter Course
                       </Button>
+                    ) : (course?.price ?? 0) > 0 ? (
+                      <>
+                        <Button 
+                          size="lg" 
+                          className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => setPaymentOpen(true)}
+                          disabled={!enrollmentChecked}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Buy Now – ${course?.price}
+                        </Button>
+                        <CoursePaymentCheckout
+                          courseId={courseId}
+                          courseName={course?.name}
+                          amount={course?.price}
+                          open={paymentOpen}
+                          onOpenChange={setPaymentOpen}
+                          onSuccess={() => {
+                            setIsEnrolled(true);
+                            router.push(`/courses/${courseId}`);
+                          }}
+                        />
+                      </>
                     ) : (
                       <Button 
                         size="lg" 

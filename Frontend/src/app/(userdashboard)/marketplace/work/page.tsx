@@ -8,6 +8,7 @@ import { AllRolesProtected } from "@/components/RoleProtected";
 import Link from "next/link";
 import { Building2, DollarSign, Briefcase, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { WithdrawSection } from "@/components/marketplace/WithdrawSection";
 
 type Application = {
   _id: string;
@@ -162,6 +163,11 @@ export default function MarketplaceWorkPage() {
               </Link>
             </div>
           )}
+        </section>
+
+        {/* Withdraw to bank */}
+        <section>
+          <WithdrawSection />
         </section>
 
         {/* My earnings */}

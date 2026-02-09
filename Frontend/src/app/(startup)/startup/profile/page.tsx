@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { PaymentMethodSection } from "@/components/marketplace/PaymentMethodSection";
-import type { PaymentMethodStored } from "@/lib/marketplaceApi";
+import { StripeConnectOnboarding } from "@/components/marketplace/StripeConnectOnboarding";
 import { ImagePlus, Building2, Target, Users, Mail, Edit3, X, Check } from "lucide-react";
 
 type Profile = {
@@ -21,7 +20,6 @@ type Profile = {
   aim?: string;
   positionsHiring?: string;
   personsNeeded?: number;
-  paymentMethod?: PaymentMethodStored;
   status?: string;
 };
 
@@ -51,7 +49,6 @@ export default function StartupProfilePage() {
   const [aim, setAim] = useState("");
   const [positionsHiring, setPositionsHiring] = useState("");
   const [personsNeeded, setPersonsNeeded] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodStored | undefined>(undefined);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -70,7 +67,6 @@ export default function StartupProfilePage() {
         setAim(p.aim ?? "");
         setPositionsHiring(p.positionsHiring ?? "");
         setPersonsNeeded(typeof p.personsNeeded === "number" ? p.personsNeeded : 0);
-        setPaymentMethod(p.paymentMethod ?? undefined);
       } catch {
         setCompanyName(u?.startupName ?? "");
         setDescription(u?.startupDescription ?? "");
@@ -116,14 +112,12 @@ export default function StartupProfilePage() {
         aim: aim.trim(),
         positionsHiring: positionsHiring.trim(),
         personsNeeded: personsNeeded >= 0 ? personsNeeded : 0,
-        paymentMethod: paymentMethod?.methodType ? paymentMethod : undefined,
       });
       toast({ title: "Saved", description: "Profile updated." });
       setEditing(false);
       const res = await marketplaceApi.startupProfile.get();
       const next = (res.profile as Profile) || null;
       setProfile(next);
-      if (next?.paymentMethod) setPaymentMethod(next.paymentMethod);
     } catch (e: unknown) {
       toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
     }
@@ -265,12 +259,7 @@ export default function StartupProfilePage() {
           </Field>
 
           <div className="space-y-1.5">
-            <PaymentMethodSection
-              value={paymentMethod ?? profile?.paymentMethod}
-              editing={editing}
-              onChange={(next) => setPaymentMethod(next as PaymentMethodStored)}
-              label="Payment method (receive & send)"
-            />
+            <StripeConnectOnboarding label="Receive milestone funding" />
           </div>
 
           {/* Actions at bottom when editing */}

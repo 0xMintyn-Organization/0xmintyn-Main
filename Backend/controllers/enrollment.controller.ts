@@ -4,8 +4,10 @@ import UserModel from "../models/user.mode";
 import OrderModel from "../models/order.model";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/errorHandler";
+import { createCoursePaymentIntent, getPaymentIntent } from "../services/stripePayment.service";
+import { getAccountStatus } from "../services/stripeConnect.service";
 
-// Enroll in a course
+// Enroll in a course (free only – paid courses use createPaymentIntent + confirmEnroll)
 export const enrollInCourse = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -36,6 +38,11 @@ export const enrollInCourse = CatchAsyncError(
       // Check if user is trying to enroll in their own course
       if (course.createdBy._id.toString() === userId.toString()) {
         return next(new ErrorHandler("You cannot enroll in your own course", 400));
+      }
+
+      // Paid courses must use payment flow (createPaymentIntent → confirmEnroll)
+      if (course.price > 0) {
+        return next(new ErrorHandler("This is a paid course. Please use the payment flow.", 400));
       }
 
       // Create order for enrollment
@@ -76,6 +83,164 @@ export const enrollInCourse = CatchAsyncError(
       console.error("Enrollment Error:", error);
       return next(new ErrorHandler("Failed to enroll in course", 500));
     }
+  }
+);
+
+/** POST /enrollment/create-payment-intent/:courseId – Create PaymentIntent for paid course. */
+export const createPaymentIntent = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { courseId } = req.params;
+    const userId = req.user?._id;
+
+    if (!userId) return next(new ErrorHandler("User not authenticated", 401));
+
+    const course = await CourseModel.findById(courseId).populate("createdBy", "firstName lastName stripeConnectAccountId");
+    if (!course) return next(new ErrorHandler("Course not found", 404));
+
+    if (course.price <= 0) {
+      return next(new ErrorHandler("Use free enrollment for free courses", 400));
+    }
+
+    const instructor = course.createdBy as { _id: any; stripeConnectAccountId?: string };
+    if (!instructor.stripeConnectAccountId) {
+      return next(new ErrorHandler("Instructor has not set up payments yet. Please try again later.", 400));
+    }
+
+    const status = await getAccountStatus(instructor.stripeConnectAccountId);
+    if ("error" in status) {
+      return next(new ErrorHandler("Instructor payment account error", 400));
+    }
+    if (!status.chargesEnabled) {
+      return next(new ErrorHandler("Instructor payment account is not yet ready to receive payments.", 400));
+    }
+
+    const existingOrder = await OrderModel.findOne({
+      courseId,
+      userId,
+      status: { $in: ["pending", "completed"] },
+    });
+    if (existingOrder) {
+      return next(new ErrorHandler("You are already enrolled in this course", 400));
+    }
+
+    if (course.createdBy._id.toString() === userId.toString()) {
+      return next(new ErrorHandler("You cannot purchase your own course", 400));
+    }
+
+    const amountCents = Math.round(course.price * 100);
+    const result = await createCoursePaymentIntent(
+      amountCents,
+      instructor.stripeConnectAccountId,
+      {
+        courseId,
+        userId: userId.toString(),
+        courseName: course.name,
+      }
+    );
+
+    if ("error" in result) {
+      return next(new ErrorHandler(result.error, 400));
+    }
+
+    res.status(200).json({
+      success: true,
+      clientSecret: result.clientSecret,
+      paymentIntentId: result.paymentIntentId,
+    });
+  }
+);
+
+/** POST /enrollment/confirm-enroll/:courseId – Verify payment and complete enrollment. */
+export const confirmEnroll = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { courseId } = req.params;
+    const { paymentIntentId } = req.body;
+    const userId = req.user?._id;
+
+    if (!userId) return next(new ErrorHandler("User not authenticated", 401));
+    if (!paymentIntentId) return next(new ErrorHandler("paymentIntentId is required", 400));
+
+    const course = await CourseModel.findById(courseId).populate("createdBy", "firstName lastName");
+    if (!course) return next(new ErrorHandler("Course not found", 404));
+
+    const pi = await getPaymentIntent(paymentIntentId);
+    if ("error" in pi) {
+      return next(new ErrorHandler(pi.error || "Invalid payment", 400));
+    }
+    if (pi.status !== "succeeded") {
+      return next(new ErrorHandler("Payment not completed", 400));
+    }
+
+    const metadata = await (async () => {
+      try {
+        const Stripe = (await import("stripe")).default;
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+        const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        return intent.metadata;
+      } catch {
+        return {};
+      }
+    })();
+
+    if (metadata.courseId !== courseId || metadata.userId !== userId.toString()) {
+      return next(new ErrorHandler("Payment does not match this course or user", 400));
+    }
+
+    const existingOrder = await OrderModel.findOne({
+      courseId,
+      userId,
+      status: { $in: ["pending", "completed"] },
+    });
+    if (existingOrder) {
+      return res.status(200).json({
+        success: true,
+        message: "Already enrolled",
+        order: {
+          _id: existingOrder._id,
+          courseId: existingOrder.courseId,
+          courseName: existingOrder.courseName,
+          coursePrice: existingOrder.coursePrice,
+          status: existingOrder.status,
+          enrolledAt: existingOrder.enrolledAt,
+        },
+      });
+    }
+
+    const orderData = {
+      courseId,
+      userId,
+      courseName: course.name,
+      coursePrice: course.price,
+      courseThumbnail: course.thumbnail,
+      instructorId: course.createdBy._id.toString(),
+      instructorName: `${(course.createdBy as any).firstName} ${(course.createdBy as any).lastName}`,
+      status: "completed" as const,
+      payment_info: {
+        paymentMethod: "stripe",
+        paymentStatus: "completed",
+        transactionId: paymentIntentId,
+        amount: course.price,
+        currency: "USD",
+      },
+      stripePaymentIntentId: paymentIntentId,
+      enrolledAt: new Date(),
+      completedAt: new Date(),
+    };
+
+    const order = await OrderModel.create(orderData);
+
+    res.status(201).json({
+      success: true,
+      message: "Successfully enrolled in course!",
+      order: {
+        _id: order._id,
+        courseId: order.courseId,
+        courseName: order.courseName,
+        coursePrice: order.coursePrice,
+        status: order.status,
+        enrolledAt: order.enrolledAt,
+      },
+    });
   }
 );
 

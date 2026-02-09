@@ -135,7 +135,7 @@ export default function StartupTeamPage() {
         amount: amt,
         note: note.trim() || undefined,
       });
-      toast({ title: "Recorded", description: "Payout recorded. Send the amount via your preferred channel." });
+      toast({ title: "Paid", description: "Funds transferred to contributor's connected account via Stripe." });
       setSendOpen(false);
       setSelectedContributor(null);
       load();
@@ -334,10 +334,10 @@ export default function StartupTeamPage() {
       <Dialog open={sendOpen} onOpenChange={setSendOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Record salary payout</DialogTitle>
+            <DialogTitle>Pay contributor</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Recording that you paid <strong>{selectedContributor?.name}</strong>. Send the amount via your preferred channel.
+            Transfer funds to <strong>{selectedContributor?.name}</strong> via Stripe. Both you and the contributor must have connected bank accounts. Funds are pulled from your milestone funding.
           </p>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -359,7 +359,7 @@ export default function StartupTeamPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setSendOpen(false)}>Cancel</Button>
             <Button onClick={handleSendSalary} disabled={submitting} className="bg-green-600 hover:bg-green-700">
-              {submitting ? "Recording…" : "Record payout"}
+              {submitting ? "Processing…" : "Pay via Stripe"}
             </Button>
           </DialogFooter>
         </DialogContent>

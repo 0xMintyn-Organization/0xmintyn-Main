@@ -1,6 +1,8 @@
 import express from "express";
 import { 
   enrollInCourse, 
+  createPaymentIntent,
+  confirmEnroll,
   getUserEnrolledCourses, 
   checkEnrollment, 
   checkCourseAccess,
@@ -18,6 +20,8 @@ const router = express.Router();
 
 // Course enrollment routes
 router.post("/enroll/:courseId", updateAccessTokenMiddleware, isAthenticated, enrollInCourse);
+router.post("/create-payment-intent/:courseId", updateAccessTokenMiddleware, isAthenticated, createPaymentIntent);
+router.post("/confirm-enroll/:courseId", updateAccessTokenMiddleware, isAthenticated, confirmEnroll);
 router.get("/my-courses", updateAccessTokenMiddleware, isAthenticated, getUserEnrolledCourses);
 router.get("/check/:courseId", updateAccessTokenMiddleware, isAthenticated, checkEnrollment);
 router.get("/access/:courseId", updateAccessTokenMiddleware, isAthenticated, checkCourseAccess);

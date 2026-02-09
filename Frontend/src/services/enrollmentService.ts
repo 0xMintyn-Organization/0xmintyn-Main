@@ -2,9 +2,23 @@ import axiosInstance from "@/utils/axiosInstance";
 
 // Enrollment API service
 export const enrollmentService = {
-  // Enroll in a course
+  // Enroll in a course (free only)
   enrollInCourse: async (courseId: string) => {
     const response = await axiosInstance.post(`/enrollment/enroll/${courseId}`);
+    return response.data;
+  },
+
+  // Create PaymentIntent for paid course – returns clientSecret for Stripe Elements
+  createPaymentIntent: async (courseId: string) => {
+    const response = await axiosInstance.post(`/enrollment/create-payment-intent/${courseId}`);
+    return response.data;
+  },
+
+  // Confirm enrollment after successful payment
+  confirmEnroll: async (courseId: string, paymentIntentId: string) => {
+    const response = await axiosInstance.post(`/enrollment/confirm-enroll/${courseId}`, {
+      paymentIntentId,
+    });
     return response.data;
   },
 

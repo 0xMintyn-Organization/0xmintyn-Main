@@ -13,8 +13,10 @@ import {
   Star,
   Globe,
   MessageCircle,
-  Lock
+  Lock,
+  CreditCard
 } from "lucide-react";
+import { StripeConnectOnboarding } from "@/components/marketplace/StripeConnectOnboarding";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -23,13 +25,21 @@ function MyProfile() {
   const { user } = useSelector((state: any) => state.auth);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isInstructor = user?.role === "instructor";
 
   // Handle Auth0 success callback
   useEffect(() => {
     const authSuccess = searchParams.get('auth');
     if (authSuccess === 'success') {
       toast.success('🎉 Successfully logged in with social account!');
-      // Remove the auth parameter from URL
+      router.replace('/myprofile');
+      return;
+    }
+    const stripeReturn = searchParams.get('stripe');
+    if (stripeReturn === 'return') {
+      toast.success('Stripe onboarding completed. Your account is being verified.');
+      router.replace('/myprofile');
+    } else if (stripeReturn === 'refresh') {
       router.replace('/myprofile');
     }
   }, [searchParams, router]);
@@ -113,6 +123,34 @@ function MyProfile() {
                 <SecurityAuth />
               </CardContent>
             </Card>
+
+            {/* Receive payments (Stripe Connect) – instructors, startups, contributors */}
+            {(isInstructor || user?.marketplace_role === "startup" || user?.marketplace_role === "contributor") && (
+              <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300">
+                <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                        <CreditCard className="w-6 h-6 text-slate-700 dark:text-slate-300" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+                          Receive Payments
+                        </CardTitle>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Connect your bank account via Stripe to receive course sales, milestone funding, or salary
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <StripeConnectOnboarding
+                    label={isInstructor ? "Receive course sales" : user?.marketplace_role === "startup" ? "Receive milestone funding" : "Receive salary / milestone payments"}
+                  />
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

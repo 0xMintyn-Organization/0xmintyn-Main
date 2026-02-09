@@ -28,6 +28,7 @@ import startupProfileRouter from './routes/startupProfile.route';
 import contributorProfileRouter from './routes/contributorProfile.route';
 import milestoneRouter from './routes/milestone.route';
 import milestonePaymentRouter from './routes/milestonePayment.route';
+import stripeRouter from './routes/stripe.route';
 import { updateAccessTokenMiddleware } from './controllers/user.controller';
 import { getSolanaMilestoneState, initSolanaMilestone } from './controllers/milestone.controller';
 import { isAthenticated as isAuthenticated } from './utils/auth';
@@ -36,6 +37,7 @@ import contributorPayoutRouter from './routes/contributorPayout.route';
 import engagementRouter from './routes/engagement.route';
 import messengerRouter from './routes/messenger.route';
 import logger from './utils/logger';
+import { handleStripeWebhook } from './controllers/stripeWebhook.controller';
 require('dotenv').config();
 export const app = express();
 
@@ -45,6 +47,13 @@ app.use(requestIdMiddleware);
 
 // Advanced request logging (must be early)
 app.use(advancedRequestLogger);
+
+// Stripe webhook – MUST be before express.json() to receive raw body for signature verification
+app.post(
+  '/api/v1/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  handleStripeWebhook
+);
 
 // bodyparser - increase limits for large file uploads
 app.use(express.json({ limit: '100mb' }));
@@ -87,7 +96,8 @@ app.post('/api/v1/milestone/solana/init', updateAccessTokenMiddleware, isAuthent
 // Alternate path (use this if above returns 404)
 app.get('/api/v1/solana-milestone/state', updateAccessTokenMiddleware, isAuthenticated, getSolanaMilestoneState);
 
-// routes
+// routes – mount more specific paths first (stripe before generic /api/v1)
+app.use('/api/v1/stripe', stripeRouter);
 app.use('/api/v1', userRouter);
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/stream", streamRoutes);

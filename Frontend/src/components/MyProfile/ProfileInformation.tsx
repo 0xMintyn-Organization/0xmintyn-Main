@@ -89,7 +89,7 @@ function ProfileInformation({ isOwnProfile, userData }: ProfilePageProps) {
     if (imagePath.startsWith('http')) return imagePath;
     
     // Handle environment variable with trailing slash
-    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'https://localhost:8000';
+    let baseUrl = process.env.NEXT_PUBLIC_SERVER_URI?.replace('/api/v1', '') || 'http://localhost:8000';
     if (baseUrl.endsWith('/')) {
       baseUrl = baseUrl.slice(0, -1);
     }

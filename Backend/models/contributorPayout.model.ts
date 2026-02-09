@@ -10,6 +10,7 @@ export interface IContributorPayout extends Document {
   status: 'pending' | 'paid';
   note?: string;
   paidAt?: Date;
+  stripeTransferId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,6 +51,7 @@ const contributorPayoutSchema = new Schema<IContributorPayout>(
       type: Date,
       default: null,
     },
+    stripeTransferId: { type: String, required: false },
   },
   { timestamps: true }
 );

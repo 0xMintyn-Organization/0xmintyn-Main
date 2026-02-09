@@ -17,6 +17,8 @@ export interface IOrder extends Document {
         amount?: number,
         currency?: string
     },
+    stripePaymentIntentId?: string,
+    stripeChargeId?: string,
     enrolledAt?: Date,
     completedAt?: Date,
     completedLectures?: string[]
@@ -62,11 +64,10 @@ const orderSchema = new Schema<IOrder>({
         paymentStatus: String,
         transactionId: String,
         amount: Number,
-        currency: {
-            type: String,
-            default: 'USD'
-        }
+        currency: { type: String, default: 'USD' }
     },
+    stripePaymentIntentId: { type: String, required: false },
+    stripeChargeId: { type: String, required: false },
     enrolledAt: {
         type: Date,
         default: Date.now

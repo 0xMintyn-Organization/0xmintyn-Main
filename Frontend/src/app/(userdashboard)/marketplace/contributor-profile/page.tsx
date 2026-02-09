@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PaymentMethodSection } from "@/components/marketplace/PaymentMethodSection";
-import type { PaymentMethodStored } from "@/lib/marketplaceApi";
+import { StripeConnectOnboarding } from "@/components/marketplace/StripeConnectOnboarding";
 import { User, ImagePlus, Edit3, X, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -29,7 +28,6 @@ type Profile = {
   linkedIn?: string;
   website?: string;
   github?: string;
-  paymentMethod?: PaymentMethodStored;
 };
 
 export default function ContributorProfilePage() {
@@ -50,7 +48,6 @@ export default function ContributorProfilePage() {
   const [linkedIn, setLinkedIn] = useState("");
   const [website, setWebsite] = useState("");
   const [github, setGithub] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodStored | undefined>(undefined);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -82,7 +79,6 @@ export default function ContributorProfilePage() {
         setLinkedIn(p.linkedIn ?? "");
         setWebsite(p.website ?? "");
         setGithub(p.github ?? "");
-        setPaymentMethod(p.paymentMethod ?? undefined);
       } catch (e: unknown) {
         toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
       } finally {
@@ -133,14 +129,12 @@ export default function ContributorProfilePage() {
         linkedIn: linkedIn.trim() || undefined,
         website: website.trim() || undefined,
         github: github.trim() || undefined,
-        paymentMethod: paymentMethod?.methodType ? paymentMethod : undefined,
       });
       toast({ title: "Saved", description: "Contributor profile updated." });
       setEditing(false);
       const res = await marketplaceApi.contributorProfile.get();
       const next = (res.profile as Profile) || null;
       setProfile(next);
-      if (next?.paymentMethod) setPaymentMethod(next.paymentMethod);
     } catch (e: unknown) {
       toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
     }
@@ -318,12 +312,7 @@ export default function ContributorProfilePage() {
               )}
             </div>
 
-            <PaymentMethodSection
-              value={paymentMethod ?? profile?.paymentMethod}
-              editing={editing}
-              onChange={(next) => setPaymentMethod(next as PaymentMethodStored)}
-              label="Payment method (receive & send)"
-            />
+            <StripeConnectOnboarding label="Receive salary / milestone payments" />
 
             <div className="grid gap-6 sm:grid-cols-3">
               <div className="space-y-2">

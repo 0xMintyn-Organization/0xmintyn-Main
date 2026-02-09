@@ -5,6 +5,7 @@ import Link from "next/link";
 import { marketplaceApi } from "@/lib/marketplaceApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { DollarSign, Users, TrendingUp } from "lucide-react";
+import { WithdrawSection } from "@/components/marketplace/WithdrawSection";
 import { useToast } from "@/hooks/use-toast";
 
 type MilestonePayment = {
@@ -58,6 +59,8 @@ export default function StartupFundingPage() {
       <p className="text-muted-foreground mb-6">
         Funding received from admin for completed milestones; payouts you sent to contributors. Stripe can be added later.
       </p>
+
+      <WithdrawSection />
 
       {loading ? (
         <p className="text-muted-foreground">Loading…</p>

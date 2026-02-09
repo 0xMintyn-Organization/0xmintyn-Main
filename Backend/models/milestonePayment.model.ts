@@ -19,6 +19,7 @@ export interface IMilestonePayment extends Document {
     currency?: string;
     transactionId?: string;
   };
+  stripeTransferId?: string;
   paidAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -63,6 +64,7 @@ const milestonePaymentSchema = new Schema<IMilestonePayment>(
       currency: { type: String, default: 'USD' },
       transactionId: String,
     },
+    stripeTransferId: { type: String, required: false },
     paidAt: {
       type: Date,
       default: Date.now,

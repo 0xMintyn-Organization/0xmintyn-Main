@@ -82,6 +82,7 @@ import { useRouter } from "next/navigation";
 import Spinner from "@/components/Spinner";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { WithdrawSection } from "@/components/marketplace/WithdrawSection";
 
 // Types
 interface EarningsData {
@@ -254,11 +255,10 @@ function InstructorEarnings() {
   };
 
   const requestPayout = () => {
-    // Implement payout request functionality
-    toast({
-      title: "Payout Requested",
-      description: "Your payout request has been submitted for review.",
-    });
+    setActiveTab("payouts");
+    setTimeout(() => {
+      document.getElementById("withdraw-section")?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   };
 
   if (loading) {
@@ -723,6 +723,9 @@ function InstructorEarnings() {
 
             {/* Payouts Tab */}
             <TabsContent value="payouts" className="space-y-4">
+              <div id="withdraw-section">
+                <WithdrawSection />
+              </div>
               <Card>
                 <CardHeader>
                   <CardTitle>Payout History</CardTitle>
