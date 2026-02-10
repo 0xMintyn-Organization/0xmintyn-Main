@@ -6,6 +6,7 @@ import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/errorHandler";
 import { createCoursePaymentIntent, getPaymentIntent } from "../services/stripePayment.service";
 import { getAccountStatus } from "../services/stripeConnect.service";
+import { creditEqualUsd, hasCreditedFor, debitEqualUsd, getEqualUsdBalance, getCourseCompletionBonus, hasDebitedForCoursePurchase } from "../services/equalUsd.service";
 
 // Enroll in a course (free only – paid courses use createPaymentIntent + confirmEnroll)
 export const enrollInCourse = CatchAsyncError(
@@ -90,6 +91,7 @@ export const enrollInCourse = CatchAsyncError(
 export const createPaymentIntent = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     const { courseId } = req.params;
+    const { equalUsdToUse } = req.body as { equalUsdToUse?: number };
     const userId = req.user?._id;
 
     if (!userId) return next(new ErrorHandler("User not authenticated", 401));
@@ -127,7 +129,54 @@ export const createPaymentIntent = CatchAsyncError(
       return next(new ErrorHandler("You cannot purchase your own course", 400));
     }
 
-    const amountCents = Math.round(course.price * 100);
+    // EqualUSD discount: 1 EqualUSD = $1. Cap by course price and user balance.
+    const equalUsdAmount = Math.floor(Number(equalUsdToUse) || 0);
+    const maxByPrice = Math.floor(course.price);
+
+    const balance = equalUsdAmount > 0 ? await getEqualUsdBalance(userId) : 0;
+    const actualEqualUsd = Math.min(Math.max(0, equalUsdAmount), maxByPrice, balance);
+
+    const priceAfterDiscount = Math.max(0, course.price - actualEqualUsd);
+    const amountCents = Math.round(priceAfterDiscount * 100);
+
+    // Full EqualUSD payment – no Stripe needed
+    if (priceAfterDiscount < 0.01 && actualEqualUsd > 0) {
+      const debitResult = await debitEqualUsd(userId, actualEqualUsd, 'course_purchase_discount', {
+        referenceType: 'order',
+        referenceId: `equalusd-${courseId}-${userId}`,
+        description: `Course purchase (full EqualUSD): ${course.name}`,
+      });
+      if ('error' in debitResult) {
+        return next(new ErrorHandler(debitResult.error || 'Failed to apply EqualUSD', 400));
+      }
+      const orderData = {
+        courseId,
+        userId,
+        courseName: course.name,
+        coursePrice: course.price,
+        courseThumbnail: course.thumbnail,
+        instructorId: course.createdBy._id.toString(),
+        instructorName: `${(course.createdBy as any).firstName} ${(course.createdBy as any).lastName}`,
+        status: 'completed' as const,
+        payment_info: { paymentMethod: 'equalusd_only', paymentStatus: 'completed', amount: 0, currency: 'USD' },
+        equalUsdUsed: actualEqualUsd,
+        enrolledAt: new Date(),
+        completedAt: new Date(),
+      };
+      const order = await OrderModel.create(orderData);
+      return res.status(200).json({
+        success: true,
+        paidWithEqualUsdOnly: true,
+        order: { _id: order._id, courseId, courseName: course.name, coursePrice: course.price, status: 'completed', enrolledAt: order.enrolledAt },
+        equalUsdApplied: actualEqualUsd,
+        amountDue: 0,
+      });
+    }
+
+    if (amountCents < 50 && priceAfterDiscount > 0) {
+      return next(new ErrorHandler("Amount after EqualUSD discount is below Stripe minimum ($0.50). Use less EqualUSD.", 400));
+    }
+
     const result = await createCoursePaymentIntent(
       amountCents,
       instructor.stripeConnectAccountId,
@@ -135,6 +184,7 @@ export const createPaymentIntent = CatchAsyncError(
         courseId,
         userId: userId.toString(),
         courseName: course.name,
+        equalUsdToUse: actualEqualUsd,
       }
     );
 
@@ -146,6 +196,8 @@ export const createPaymentIntent = CatchAsyncError(
       success: true,
       clientSecret: result.clientSecret,
       paymentIntentId: result.paymentIntentId,
+      equalUsdApplied: actualEqualUsd,
+      amountDue: priceAfterDiscount,
     });
   }
 );
@@ -186,6 +238,24 @@ export const confirmEnroll = CatchAsyncError(
       return next(new ErrorHandler("Payment does not match this course or user", 400));
     }
 
+    const equalUsdUsed = Math.floor(Number(metadata.equalUsdToUse) || 0);
+
+    // Debit EqualUSD exactly once – idempotent by paymentIntentId (prevents double debit when confirmEnroll called twice)
+    if (equalUsdUsed > 0) {
+      const alreadyDebited = await hasDebitedForCoursePurchase(paymentIntentId);
+      if (!alreadyDebited) {
+        const debitResult = await debitEqualUsd(userId, equalUsdUsed, 'course_purchase_discount', {
+          referenceType: 'order',
+          referenceId: paymentIntentId,
+          description: `Course purchase: ${course.name}`,
+        });
+        if ('error' in debitResult) {
+          return next(new ErrorHandler(debitResult.error || 'Failed to apply EqualUSD discount', 400));
+        }
+      }
+    }
+
+    // Check existing order (from webhook or prior confirmEnroll) – return early if already enrolled
     const existingOrder = await OrderModel.findOne({
       courseId,
       userId,
@@ -206,6 +276,7 @@ export const confirmEnroll = CatchAsyncError(
       });
     }
 
+    const amountPaid = Math.max(0, course.price - equalUsdUsed);
     const orderData = {
       courseId,
       userId,
@@ -216,13 +287,14 @@ export const confirmEnroll = CatchAsyncError(
       instructorName: `${(course.createdBy as any).firstName} ${(course.createdBy as any).lastName}`,
       status: "completed" as const,
       payment_info: {
-        paymentMethod: "stripe",
+        paymentMethod: equalUsdUsed > 0 ? "stripe+equalusd" : "stripe",
         paymentStatus: "completed",
         transactionId: paymentIntentId,
-        amount: course.price,
+        amount: amountPaid,
         currency: "USD",
       },
       stripePaymentIntentId: paymentIntentId,
+      equalUsdUsed: equalUsdUsed > 0 ? equalUsdUsed : undefined,
       enrolledAt: new Date(),
       completedAt: new Date(),
     };
@@ -600,6 +672,27 @@ export const markLectureComplete = CatchAsyncError(
       if (!enrollment.completedLectures.includes(lectureId)) {
         enrollment.completedLectures.push(lectureId);
         await enrollment.save();
+      }
+
+      // Award EqualUSD when all lectures are completed (course completion bonus)
+      const totalLectures = course.courseData.flatMap((s) => s.videos).length;
+      const completedCount = enrollment.completedLectures?.length ?? 0;
+      if (totalLectures > 0 && completedCount >= totalLectures) {
+        const orderId = enrollment._id.toString();
+        const alreadyCredited = await hasCreditedFor('course_completion', orderId);
+        if (!alreadyCredited) {
+          const bonus = getCourseCompletionBonus();
+          if (bonus > 0) {
+            const result = await creditEqualUsd(userId, bonus, 'course_completion', {
+              referenceType: 'order',
+              referenceId: orderId,
+              description: `Course completed: ${course.name}`,
+            });
+            if ('error' in result) {
+              console.warn('[EqualUSD] Course completion bonus failed:', result.error);
+            }
+          }
+        }
       }
 
       res.status(200).json({

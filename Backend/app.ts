@@ -36,6 +36,7 @@ import applicationRouter from './routes/application.route';
 import contributorPayoutRouter from './routes/contributorPayout.route';
 import engagementRouter from './routes/engagement.route';
 import messengerRouter from './routes/messenger.route';
+import equalUsdRouter from './routes/equalUsd.route';
 import logger from './utils/logger';
 import { handleStripeWebhook } from './controllers/stripeWebhook.controller';
 require('dotenv').config();
@@ -124,6 +125,7 @@ app.use('/api/v1/application', applicationRouter);
 app.use('/api/v1/contributor-payout', contributorPayoutRouter);
 app.use('/api/v1/engagement', engagementRouter);
 app.use('/api/v1/messenger', messengerRouter);
+app.use('/api/v1/equalusd', equalUsdRouter);
 
 
 // testing api

@@ -19,6 +19,8 @@ export interface IOrder extends Document {
     },
     stripePaymentIntentId?: string,
     stripeChargeId?: string,
+    /** EqualUSD used as discount at purchase (1 EqualUSD = $1). */
+    equalUsdUsed?: number,
     enrolledAt?: Date,
     completedAt?: Date,
     completedLectures?: string[]
@@ -68,6 +70,7 @@ const orderSchema = new Schema<IOrder>({
     },
     stripePaymentIntentId: { type: String, required: false },
     stripeChargeId: { type: String, required: false },
+    equalUsdUsed: { type: Number, default: 0, min: 0 },
     enrolledAt: {
         type: Date,
         default: Date.now

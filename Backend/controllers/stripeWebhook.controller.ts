@@ -68,7 +68,7 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
           break;
         }
 
-        const { courseId, userId, courseName } = pi.metadata || {};
+        const { courseId, userId, courseName, equalUsdToUse } = pi.metadata || {};
         if (!courseId || !userId) {
           logger.warn(`Webhook payment_intent.succeeded: Missing metadata for ${pi.id}`);
           break;
@@ -80,6 +80,8 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
           break;
         }
 
+        const equalUsdUsed = Math.floor(Number(equalUsdToUse) || 0);
+        const amountPaid = (pi.amount ?? 0) / 100;
         const instructor = course.createdBy as { _id: { toString: () => string }; firstName?: string; lastName?: string };
         await OrderModel.create({
           courseId,
@@ -91,13 +93,14 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
           instructorName: `${instructor.firstName || ''} ${instructor.lastName || ''}`.trim(),
           status: 'completed',
           payment_info: {
-            paymentMethod: 'stripe',
+            paymentMethod: equalUsdUsed > 0 ? 'stripe+equalusd' : 'stripe',
             paymentStatus: 'completed',
             transactionId: pi.id,
-            amount: (pi.amount ?? 0) / 100,
+            amount: amountPaid,
             currency: 'USD',
           },
           stripePaymentIntentId: pi.id,
+          ...(equalUsdUsed > 0 && { equalUsdUsed }),
           enrolledAt: new Date(),
           completedAt: new Date(),
         });

@@ -4,6 +4,7 @@ import Vote from '../../models/governance/vote.model';
 import User from '../../models/user.mode';
 import { CatchAsyncError } from "../../middleware/catchAsyncError";
 import ErrorHandler from "../../utils/errorHandler";
+import { creditEqualUsd, hasCreditedFor, getProposalApprovedBonus } from '../../services/equalUsd.service';
 
 // Create a new proposal
 export const createProposal = CatchAsyncError(async (req: Request, res: Response) => {
@@ -360,12 +361,32 @@ export const updateProposalStatus = CatchAsyncError(async (req: Request, res: Re
       });
     }
 
+    const previousStatus = proposal.status;
     proposal.status = status;
     if (adminNotes) {
       proposal.adminNotes = adminNotes;
     }
 
     await proposal.save();
+
+    // Award EqualUSD to proposer when proposal is approved (Passed)
+    if (status === 'Passed' && previousStatus !== 'Passed') {
+      const proposalIdStr = proposal._id.toString();
+      const alreadyCredited = await hasCreditedFor('proposal_approved', proposalIdStr);
+      if (!alreadyCredited && proposal.proposerId) {
+        const bonus = getProposalApprovedBonus();
+        if (bonus > 0) {
+          const result = await creditEqualUsd(proposal.proposerId, bonus, 'proposal_approved', {
+            referenceType: 'proposal',
+            referenceId: proposalIdStr,
+            description: `Proposal approved: ${proposal.title}`,
+          });
+          if ('error' in result) {
+            console.warn('[EqualUSD] Proposal approval bonus failed:', result.error);
+          }
+        }
+      }
+    }
 
     res.status(200).json({
       success: true,

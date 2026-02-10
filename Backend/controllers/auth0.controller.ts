@@ -7,6 +7,7 @@ import UserModel from '../models/user.mode';
 import ErrorHandler from '../utils/errorHandler';
 import { accessTokenOptions, refreshTokenOptions } from '../utils/jwt';
 import { auth0Config } from '../config/auth0.config';
+import { grantRegistrationBonusIfEligible } from '../services/equalUsd.service';
 
 // Generate Auth0 authorization URL
 export const getAuth0LoginUrl = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
@@ -94,7 +95,7 @@ export const handleAuth0Callback = CatchAsyncError(async (req: Request, res: Res
                 marketplace_role: 'user',
                 roleProfileCompleted: false,
             });
-            
+            grantRegistrationBonusIfEligible(user._id).catch((e) => console.warn('[EqualUSD] Auth0 registration bonus', e));
             console.log(`✅ New user created via Auth0: ${user.email}`);
         } else {
             console.log(`✅ Existing user logged in via Auth0: ${user.email}`);

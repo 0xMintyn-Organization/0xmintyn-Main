@@ -6,8 +6,9 @@ import MobileSidebar from "../Sidebar/MobileSidebar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLogOutQuery } from "@/redux/features/auth/authApi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import equalUsdService from "@/services/equalUsdService";
 import { isStartupUser } from "@/lib/onboarding";
 import { getStartupViewMode, setStartupViewMode } from "@/lib/startupViewMode";
 
@@ -18,6 +19,17 @@ function Header() {
     const [logoutRequested, setLogoutRequested] = useState(false);
     const isStartup = user ? isStartupUser(user) : false;
     const viewingAsNormal = isStartup && getStartupViewMode() === "normal";
+    const [equalUsdBalance, setEqualUsdBalance] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (user) {
+            equalUsdService.getBalance()
+                .then((res) => res.success && typeof res.balance === "number" ? setEqualUsdBalance(res.balance) : setEqualUsdBalance(0))
+                .catch(() => setEqualUsdBalance(0));
+        } else {
+            setEqualUsdBalance(null);
+        }
+    }, [user]);
 
     const handleStartupMode = () => {
         setStartupViewMode("startup");
@@ -83,12 +95,14 @@ function Header() {
                     {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
                 </Button>
                 
-                <Button
-                    className="hidden lg:block bg-green-900 text-white hover:bg-green-700 font-semibold rounded-3xl px-3 text-xs"
-                    aria-label="Earning Balance"
-                >
-                    100 EQM
-                </Button>
+                {equalUsdBalance !== null && (
+                    <Button
+                        className="hidden lg:block bg-green-900 text-white hover:bg-green-700 font-semibold rounded-3xl px-3 text-xs"
+                        aria-label="EqualUSD Balance"
+                    >
+                        {equalUsdBalance} EqualUSD
+                    </Button>
+                )}
 
                 <Button
                     onClick={handleLogout}

@@ -174,194 +174,420 @@ async function generateCertificateImage(data: {
   const canvas = createCanvas(1400, 1000);
   const ctx = canvas.getContext('2d');
 
-  // Modern gradient background - matches your UI theme
-  const gradient = ctx.createRadialGradient(700, 500, 0, 700, 500, 800);
-  gradient.addColorStop(0, '#0f172a'); // Dark slate
-  gradient.addColorStop(0.3, '#1e293b'); // Slate
-  gradient.addColorStop(0.7, '#334155'); // Light slate
-  gradient.addColorStop(1, '#1e293b'); // Back to slate
-  ctx.fillStyle = gradient;
+  // Premium white base
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, 1400, 1000);
 
-  // Animated border with multiple layers
-  const borderGradient = ctx.createLinearGradient(0, 0, 1400, 1000);
-  borderGradient.addColorStop(0, '#3b82f6'); // Blue
-  borderGradient.addColorStop(0.25, '#8b5cf6'); // Purple
-  borderGradient.addColorStop(0.5, '#ec4899'); // Pink
-  borderGradient.addColorStop(0.75, '#f59e0b'); // Amber
-  borderGradient.addColorStop(1, '#10b981'); // Emerald
+  // Sophisticated mint geometric background pattern
+  ctx.save();
+  ctx.globalAlpha = 0.03;
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 1;
+  
+  // Create hexagonal pattern
+  for (let y = -50; y < 1050; y += 60) {
+    for (let x = -50; x < 1450; x += 52) {
+      const offsetX = (y / 60) % 2 === 0 ? 0 : 26;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i;
+        const hx = x + offsetX + Math.cos(angle) * 20;
+        const hy = y + Math.sin(angle) * 20;
+        if (i === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
 
-  // Outer border
-  ctx.strokeStyle = borderGradient;
+  // Stunning mint gradient overlay - left side
+  const leftGradient = ctx.createLinearGradient(0, 0, 500, 1000);
+  leftGradient.addColorStop(0, 'rgba(5, 150, 105, 0.08)');
+  leftGradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.04)');
+  leftGradient.addColorStop(1, 'rgba(5, 150, 105, 0.02)');
+  ctx.fillStyle = leftGradient;
+  ctx.fillRect(0, 0, 500, 1000);
+
+  // Right side gradient
+  const rightGradient = ctx.createLinearGradient(900, 0, 1400, 1000);
+  rightGradient.addColorStop(0, 'rgba(16, 185, 129, 0.02)');
+  rightGradient.addColorStop(0.5, 'rgba(5, 150, 105, 0.04)');
+  rightGradient.addColorStop(1, 'rgba(5, 150, 105, 0.08)');
+  ctx.fillStyle = rightGradient;
+  ctx.fillRect(900, 0, 500, 1000);
+
+  // Ultra-premium border system with shadows
+  ctx.shadowColor = 'rgba(5, 150, 105, 0.15)';
+  ctx.shadowBlur = 30;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 10;
+
+  // Outer golden ratio border
+  ctx.strokeStyle = '#059669';
   ctx.lineWidth = 12;
-  ctx.strokeRect(20, 20, 1360, 960);
-
-  // Middle border
-  ctx.strokeStyle = '#1e293b';
-  ctx.lineWidth = 8;
   ctx.strokeRect(40, 40, 1320, 920);
+  
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
 
-  // Inner border
-  ctx.strokeStyle = '#3b82f6';
-  ctx.lineWidth = 4;
+  // Elegant inner border
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 2;
   ctx.strokeRect(60, 60, 1280, 880);
 
-  // Decorative corner elements with modern design
-  ctx.strokeStyle = '#3b82f6';
-  ctx.lineWidth = 6;
-  
-  // Top-left corner - modern L shape
-  ctx.beginPath();
-  ctx.moveTo(60, 120);
-  ctx.lineTo(60, 60);
-  ctx.lineTo(120, 60);
-  ctx.stroke();
-  
-  // Top-right corner
-  ctx.beginPath();
-  ctx.moveTo(1340, 60);
-  ctx.lineTo(1340, 120);
-  ctx.lineTo(1280, 60);
-  ctx.stroke();
-  
-  // Bottom-left corner
-  ctx.beginPath();
-  ctx.moveTo(60, 940);
-  ctx.lineTo(60, 880);
-  ctx.lineTo(120, 940);
-  ctx.stroke();
-  
-  // Bottom-right corner
-  ctx.beginPath();
-  ctx.moveTo(1340, 940);
-  ctx.lineTo(1340, 880);
-  ctx.lineTo(1280, 940);
-  ctx.stroke();
+  // Decorative mint accent border
+  ctx.strokeStyle = '#34d399';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([10, 10]);
+  ctx.strokeRect(70, 70, 1260, 860);
+  ctx.setLineDash([]);
 
-  // Add geometric patterns
-  ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
-  for (let i = 0; i < 20; i++) {
-    const x = Math.random() * 1400;
-    const y = Math.random() * 1000;
-    const size = Math.random() * 4 + 2;
+  // Luxurious corner designs with Art Deco influence
+  const drawPremiumCorner = (x: number, y: number, rotation: number) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+
+    // Outer arc
+    ctx.strokeStyle = '#059669';
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.arc(0, 0, 50, 0, Math.PI / 2);
+    ctx.stroke();
+
+    // Middle arc
+    ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, 35, 0, Math.PI / 2);
+    ctx.stroke();
+
+    // Inner accent
+    ctx.strokeStyle = '#34d399';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, 0, 25, 0, Math.PI / 2);
+    ctx.stroke();
+
+    // Decorative lines
+    ctx.strokeStyle = '#059669';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(55, 0);
+    ctx.lineTo(80, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, 55);
+    ctx.lineTo(0, 80);
+    ctx.stroke();
+
+    // Mint diamonds
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.moveTo(90, 0);
+    ctx.lineTo(95, -5);
+    ctx.lineTo(100, 0);
+    ctx.lineTo(95, 5);
+    ctx.closePath();
     ctx.fill();
-  }
 
-  // Equalmint Logo with modern typography
-  ctx.fillStyle = '#3b82f6';
-  ctx.font = 'bold 64px "Inter", "Segoe UI", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('Equalmint', 700, 180);
+    ctx.beginPath();
+    ctx.moveTo(0, 90);
+    ctx.lineTo(-5, 95);
+    ctx.lineTo(0, 100);
+    ctx.lineTo(5, 95);
+    ctx.closePath();
+    ctx.fill();
 
-  // Add subtle glow effect
-  ctx.shadowColor = '#3b82f6';
-  ctx.shadowBlur = 20;
-  ctx.fillText('Equalmint', 700, 180);
-  ctx.shadowBlur = 0;
+    ctx.restore();
+  };
 
-  // Certificate title with elegant typography
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 48px "Playfair Display", "Times New Roman", serif';
-  ctx.fillText('Certificate of Completion', 700, 280);
+  drawPremiumCorner(60, 60, 0);
+  drawPremiumCorner(1340, 60, Math.PI / 2);
+  drawPremiumCorner(1340, 940, Math.PI);
+  drawPremiumCorner(60, 940, (Math.PI * 3) / 2);
 
-  // Decorative line with gradient
-  const lineGradient = ctx.createLinearGradient(400, 320, 1000, 320);
-  lineGradient.addColorStop(0, 'transparent');
-  lineGradient.addColorStop(0.2, '#3b82f6');
-  lineGradient.addColorStop(0.5, '#8b5cf6');
-  lineGradient.addColorStop(0.8, '#3b82f6');
-  lineGradient.addColorStop(1, 'transparent');
+  // Premium header with mint accent bar
+  ctx.fillStyle = '#059669';
+  ctx.fillRect(120, 140, 8, 80);
   
-  ctx.strokeStyle = lineGradient;
-  ctx.lineWidth = 3;
+  ctx.fillStyle = '#10b981';
+  ctx.fillRect(135, 140, 3, 80);
+
+  // Equalmint branding - sophisticated
+  ctx.fillStyle = '#047857';
+  ctx.font = 'bold 64px "Helvetica Neue", "Arial", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.letterSpacing = '2px';
+  ctx.fillText('EQUALMINT', 160, 190);
+
+  ctx.fillStyle = '#10b981';
+  ctx.font = '16px "Helvetica Neue", "Arial", sans-serif';
+  ctx.letterSpacing = '8px';
+  ctx.fillText('LEARNING PLATFORM', 160, 215);
+
+  // Verification badge - top right
+  ctx.save();
+  ctx.translate(1240, 160);
+  
+  // Outer circle with gradient
+  const badgeGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 60);
+  badgeGradient.addColorStop(0, '#10b981');
+  badgeGradient.addColorStop(1, '#059669');
+  ctx.fillStyle = badgeGradient;
   ctx.beginPath();
-  ctx.moveTo(400, 320);
-  ctx.lineTo(1000, 320);
-  ctx.stroke();
-
-  // "This certifies that" text
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = '28px "Inter", "Segoe UI", sans-serif';
-  ctx.fillText('This certifies that', 700, 400);
-
-  // Student name with emphasis
-  ctx.fillStyle = '#3b82f6';
-  ctx.font = 'bold 56px "Inter", "Segoe UI", sans-serif';
-  ctx.fillText(data.studentName, 700, 480);
-
-  // "has successfully completed" text
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = '28px "Inter", "Segoe UI", sans-serif';
-  ctx.fillText('has successfully completed the course', 700, 540);
-
-  // Course name with special styling
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 40px "Playfair Display", "Times New Roman", serif';
-  ctx.fillText(`"${data.courseName}"`, 700, 600);
-
-  // Add a decorative element
-  ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
-  ctx.beginPath();
-  ctx.arc(700, 650, 30, 0, Math.PI * 2);
+  ctx.arc(0, 0, 55, 0, Math.PI * 2);
   ctx.fill();
 
-  // Signature section with modern layout
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '24px "Inter", "Segoe UI", sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('Instructor Signature:', 200, 750);
-  ctx.textAlign = 'right';
-  ctx.fillText('Date of Completion:', 1200, 750);
-
-  // Instructor name
-  ctx.fillStyle = '#3b82f6';
-  ctx.font = 'bold 32px "Inter", "Segoe UI", sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText(data.instructorName, 200, 800);
-
-  // Completion date
-  ctx.fillStyle = '#3b82f6';
-  ctx.font = 'bold 32px "Inter", "Segoe UI", sans-serif';
-  ctx.textAlign = 'right';
-  ctx.fillText(data.completionDate, 1200, 800);
-
-  // Signature lines
-  ctx.strokeStyle = '#3b82f6';
-  ctx.lineWidth = 2;
+  // Inner white circle
+  ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.moveTo(200, 820);
-  ctx.lineTo(500, 820);
-  ctx.stroke();
-  
-  ctx.beginPath();
-  ctx.moveTo(900, 820);
-  ctx.lineTo(1200, 820);
-  ctx.stroke();
+  ctx.arc(0, 0, 45, 0, Math.PI * 2);
+  ctx.fill();
 
-  // Certificate ID with modern styling
-  ctx.fillStyle = '#64748b';
-  ctx.font = '18px "Inter", "Segoe UI", sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText(`Certificate ID: ${data.courseId.slice(-12).toUpperCase()}`, 100, 950);
-
-  // Equalmint footer with modern design
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#3b82f6';
-  ctx.font = 'bold 20px "Inter", "Segoe UI", sans-serif';
-  ctx.fillText('Powered by Equalmint', 1300, 950);
-
-  // Add verification badge
+  // Mint inner circle
   ctx.fillStyle = '#10b981';
   ctx.beginPath();
-  ctx.arc(1300, 100, 25, 0, Math.PI * 2);
+  ctx.arc(0, 0, 38, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Checkmark
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-15, 0);
+  ctx.lineTo(-5, 12);
+  ctx.lineTo(18, -15);
+  ctx.stroke();
+
+  // Badge text
+  ctx.fillStyle = '#047857';
+  ctx.font = 'bold 11px "Helvetica Neue", "Arial", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.letterSpacing = '1px';
+  ctx.fillText('VERIFIED', 0, 75);
+  
+  ctx.restore();
+
+  // Main title - museum quality
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#065f46';
+  ctx.font = 'bold 72px "Playfair Display", "Georgia", serif';
+  ctx.letterSpacing = '3px';
+  ctx.fillText('CERTIFICATE', 700, 340);
+
+  ctx.font = '42px "Playfair Display", "Georgia", serif';
+  ctx.fillStyle = '#047857';
+  ctx.letterSpacing = '12px';
+  ctx.fillText('OF COMPLETION', 700, 390);
+
+  // Elegant divider with center ornament
+  const dividerY = 425;
+  
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(300, dividerY);
+  ctx.lineTo(665, dividerY);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(735, dividerY);
+  ctx.lineTo(1100, dividerY);
+  ctx.stroke();
+
+  // Center ornament
+  ctx.fillStyle = '#10b981';
+  ctx.save();
+  ctx.translate(700, dividerY);
+  
+  // Diamond
+  ctx.rotate(Math.PI / 4);
+  ctx.fillRect(-8, -8, 16, 16);
+  ctx.restore();
+
+  // Small circles
+  ctx.beginPath();
+  ctx.arc(680, dividerY, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(720, dividerY, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // "This certifies that"
+  ctx.fillStyle = '#059669';
+  ctx.font = '24px "Helvetica Neue", "Arial", sans-serif';
+  ctx.letterSpacing = '2px';
+  ctx.fillText('THIS CERTIFIES THAT', 700, 490);
+
+  // Student name - hero element
+  ctx.shadowColor = 'rgba(5, 150, 105, 0.2)';
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetY = 5;
+  
+  ctx.fillStyle = '#047857';
+  ctx.font = 'bold 68px "Playfair Display", "Georgia", serif';
+  ctx.letterSpacing = '1px';
+  ctx.fillText(data.studentName, 700, 570);
+  
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  // Elegant underline for name
+  const nameWidth = ctx.measureText(data.studentName).width;
+  const underlineGradient = ctx.createLinearGradient(
+    700 - nameWidth / 2 - 40,
+    590,
+    700 + nameWidth / 2 + 40,
+    590
+  );
+  underlineGradient.addColorStop(0, 'rgba(16, 185, 129, 0)');
+  underlineGradient.addColorStop(0.2, 'rgba(16, 185, 129, 0.6)');
+  underlineGradient.addColorStop(0.5, 'rgba(5, 150, 105, 1)');
+  underlineGradient.addColorStop(0.8, 'rgba(16, 185, 129, 0.6)');
+  underlineGradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+  
+  ctx.strokeStyle = underlineGradient;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(700 - nameWidth / 2 - 40, 590);
+  ctx.lineTo(700 + nameWidth / 2 + 40, 590);
+  ctx.stroke();
+
+  // Completion text
+  ctx.fillStyle = '#059669';
+  ctx.font = '24px "Helvetica Neue", "Arial", sans-serif';
+  ctx.letterSpacing = '1px';
+  ctx.fillText('HAS SUCCESSFULLY COMPLETED', 700, 640);
+
+  // Course name - featured
+  ctx.fillStyle = '#065f46';
+  ctx.font = 'italic 46px "Playfair Display", "Georgia", serif';
+  ctx.letterSpacing = '0px';
+  ctx.fillText(`"${data.courseName}"`, 700, 710);
+
+  // Achievement ribbon visual
+  ctx.fillStyle = '#10b981';
+  ctx.globalAlpha = 0.15;
+  ctx.beginPath();
+  ctx.moveTo(550, 740);
+  ctx.lineTo(570, 760);
+  ctx.lineTo(550, 780);
+  ctx.closePath();
   ctx.fill();
   
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 20px "Inter", "Segoe UI", sans-serif';
+  ctx.beginPath();
+  ctx.moveTo(850, 740);
+  ctx.lineTo(830, 760);
+  ctx.lineTo(850, 780);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Date with icon
+  ctx.fillStyle = '#047857';
+  ctx.font = '22px "Helvetica Neue", "Arial", sans-serif';
+  ctx.letterSpacing = '1px';
+  ctx.fillText('AWARDED ON ' + data.completionDate.toUpperCase(), 700, 780);
+
+  // Signature section - luxury layout
+  const sigY = 870;
+  
+  // Left: Instructor signature
   ctx.textAlign = 'center';
-  ctx.fillText('✓', 1300, 110);
+  ctx.fillStyle = '#047857';
+  ctx.font = 'italic 38px "Playfair Display", "Georgia", serif';
+  ctx.letterSpacing = '0px';
+  ctx.fillText(data.instructorName, 350, sigY);
+  
+  // Signature line
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(220, sigY + 20);
+  ctx.lineTo(480, sigY + 20);
+  ctx.stroke();
+  
+  ctx.fillStyle = '#059669';
+  ctx.font = '16px "Helvetica Neue", "Arial", sans-serif';
+  ctx.letterSpacing = '2px';
+  ctx.fillText('COURSE INSTRUCTOR', 350, sigY + 48);
+
+  // Center: Mint seal
+  ctx.save();
+  ctx.translate(700, sigY - 15);
+  
+  // Seal outer ring
+  ctx.strokeStyle = '#059669';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(0, 0, 50, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  // Inner ring
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, 42, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Star shape
+  ctx.fillStyle = '#10b981';
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+    const x = Math.cos(angle) * 25;
+    const y = Math.sin(angle) * 25;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  ctx.fillStyle = '#059669';
+  ctx.font = 'bold 12px "Helvetica Neue", "Arial", sans-serif';
+  ctx.letterSpacing = '1px';
+  ctx.textAlign = 'center';
+  ctx.fillText('EQUALMINT', 0, 70);
+  
+  ctx.restore();
+
+  // Right: Date stamp
+  ctx.fillStyle = '#047857';
+  ctx.font = 'bold 32px "Helvetica Neue", "Arial", sans-serif';
+  ctx.letterSpacing = '1px';
+  ctx.fillText(data.completionDate, 1050, sigY);
+  
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(920, sigY + 20);
+  ctx.lineTo(1180, sigY + 20);
+  ctx.stroke();
+  
+  ctx.fillStyle = '#059669';
+  ctx.font = '16px "Helvetica Neue", "Arial", sans-serif';
+  ctx.letterSpacing = '2px';
+  ctx.fillText('DATE OF COMPLETION', 1050, sigY + 48);
+
+  // Footer - ultra clean
+  ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+  ctx.fillRect(80, 955, 1240, 2);
+
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#10b981';
+  ctx.font = '14px "Helvetica Neue", "Arial", sans-serif';
+  ctx.letterSpacing = '1px';
+  ctx.fillText(`CERTIFICATE ID: ${data.courseId.slice(-12).toUpperCase()}`, 80, 980);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#059669';
+  ctx.font = 'bold 14px "Helvetica Neue", "Arial", sans-serif';
+  ctx.fillText('EQUALMINT.COM/VERIFY', 1320, 980);
 
   return canvas.toBuffer('image/png');
 }

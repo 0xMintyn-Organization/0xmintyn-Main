@@ -13,6 +13,8 @@ import { accessTokenOptions, refreshTokenOptions, sendToken, clearCookieOptions 
 import { createLoginCode, consumeLoginCode } from '../utils/loginCodeStore';
 import sendEmail from '../utils/sendMail';
 import logger from '../utils/logger';
+import { grantRegistrationBonusIfEligible } from '../services/equalUsd.service';
+import { uploadUserAvatar, uploadUserBanner } from '../utils/cloudinary';
 
 // Register a user
 interface IRegistrationBody {
@@ -207,6 +209,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             }
 
             const user = await UserModel.create(userPayload);
+            grantRegistrationBonusIfEligible(user._id).catch((e) => logger.warn('EqualUSD registration bonus (direct)', e));
 
             res.status(201).json({
                 success: true,
@@ -303,8 +306,9 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             if (u.instructorBio) userToCreate.instructorBio = u.instructorBio;
             userToCreate.roleProfileCompleted = true;
 
+            let createdUser;
             try {
-                await UserModel.create(userToCreate);
+                createdUser = await UserModel.create(userToCreate);
             } catch (createError: any) {
                 // Handle MongoDB duplicate key error
                 if (createError.code === 11000) {
@@ -318,6 +322,10 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 }
                 // Re-throw if it's not a duplicate key error
                 throw createError;
+            }
+
+            if (createdUser?._id) {
+                grantRegistrationBonusIfEligible(createdUser._id).catch((e) => logger.warn('EqualUSD registration bonus', e));
             }
 
             res.status(200).json({
@@ -398,8 +406,9 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
             if (uLink.instructorBio) userDataLink.instructorBio = uLink.instructorBio;
             userDataLink.roleProfileCompleted = true;
 
+            let createdUserLink;
             try {
-                await UserModel.create(userDataLink);
+                createdUserLink = await UserModel.create(userDataLink);
             } catch (createError: any) {
                 // Handle MongoDB duplicate key error
                 if (createError.code === 11000) {
@@ -413,6 +422,10 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                 }
                 // Re-throw if it's not a duplicate key error
                 throw createError;
+            }
+
+            if (createdUserLink?._id) {
+                grantRegistrationBonusIfEligible(createdUserLink._id).catch((e) => logger.warn('EqualUSD registration bonus (link)', e));
             }
 
             res.status(200).json({
@@ -1112,6 +1125,7 @@ export const registrationUser = CatchAsyncError(async (req: Request, res: Respon
                     email,
                     avatar
                 });
+                grantRegistrationBonusIfEligible(newUser._id).catch((e) => logger.warn('EqualUSD registration bonus (social)', e));
                 sendToken(newUser, 200, res);
             }
             else {

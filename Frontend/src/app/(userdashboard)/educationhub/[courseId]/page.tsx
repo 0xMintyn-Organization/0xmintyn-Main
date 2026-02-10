@@ -179,7 +179,7 @@ export default function CoursePreviewPage() {
     try {
       setInstructorLoading(true);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}user/instructor-stats/${instructorId}`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}instructor-stats/${instructorId}`,
         { withCredentials: true }
       );
       
@@ -642,15 +642,6 @@ export default function CoursePreviewPage() {
                                                          "This instructor is passionate about sharing knowledge and helping students achieve their learning goals. With years of experience in their field, they bring practical insights and real-world examples to make learning engaging and effective."}
                                                     </p>
                                                 </div>
-                                                
-                                                {instructorData.stats?.totalRevenue && instructorData.stats.totalRevenue > 0 && (
-                                                    <div>
-                                                        <h3 className="text-lg font-semibold mb-2">Total Revenue</h3>
-                                                        <p className="text-2xl font-bold text-green-600">
-                                                            ${instructorData.stats.totalRevenue.toLocaleString()}
-                                                        </p>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </div>

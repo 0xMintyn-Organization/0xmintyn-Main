@@ -16,7 +16,7 @@ const PLATFORM_FEE_PERCENT = Number(process.env.STRIPE_CONNECT_PLATFORM_FEE_PERC
 export async function createCoursePaymentIntent(
   amountCents: number,
   instructorConnectAccountId: string,
-  metadata: { courseId: string; userId: string; courseName: string }
+  metadata: { courseId: string; userId: string; courseName: string; equalUsdToUse?: number }
 ): Promise<{ clientSecret: string; paymentIntentId: string } | { error: string }> {
   if (amountCents < 50) {
     return { error: 'Amount must be at least $0.50' };
@@ -40,6 +40,7 @@ export async function createCoursePaymentIntent(
         courseId: metadata.courseId,
         userId: metadata.userId,
         courseName: metadata.courseName || '',
+        ...(metadata.equalUsdToUse != null && metadata.equalUsdToUse > 0 && { equalUsdToUse: String(metadata.equalUsdToUse) }),
       },
     });
 

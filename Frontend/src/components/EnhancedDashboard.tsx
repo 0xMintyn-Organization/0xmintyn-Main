@@ -95,8 +95,7 @@ export default function EnhancedDashboard() {
   
   // Debug: Log user data to help troubleshoot
   useEffect(() => {
-    console.log("Dashboard - User data:", user);
-    console.log("Dashboard - User data:", user);
+
   }, [user]);
   const [loading, setLoading] = useState(true);
   const [platformStats, setPlatformStats] = useState([
@@ -292,91 +291,83 @@ export default function EnhancedDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-600 dark:text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-24">
+        <Loader2 className="w-10 h-10 animate-spin text-emerald-500 mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
       </div>
     );
   }
 
+  const statBgClasses = ["bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", "bg-blue-500/10 text-blue-600 dark:text-blue-400", "bg-amber-500/10 text-amber-600 dark:text-amber-400"];
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
-        <div className="w-full px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
-                {getGreeting()}, {user?.firstName || "User"}! 👋
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Welcome to Equalmint - Your learning and earning platform
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                onClick={() => router.push("/courses")}
-              >
-                <BookOpen className="w-4 h-4 mr-2" />
-                Browse Courses
-              </Button>
-            </div>
+      <div className="rounded-2xl bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-zinc-700/60 shadow-sm p-6 sm:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">
+              {getGreeting()}, {user?.firstName || "User"}! 👋
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Welcome to Equalmint — your learning and earning platform
+            </p>
           </div>
+          <Button
+            onClick={() => router.push("/educationhub")}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            Browse Courses
+          </Button>
         </div>
       </div>
 
-      <div className="w-full px-6 py-8">
-        {/* Platform Stats */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-4">
-            Platform Overview
-          </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            Discover top instructors and courses
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-12">
+      {/* Platform Stats */}
+      <div>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
+          Platform at a glance
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {platformStats.map((stat, index) => (
-            <Card key={index} className="hover:shadow-lg transition-all duration-200 relative">
-              <CardContent className="p-6">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <Card key={index} className="border-gray-200/60 dark:border-zinc-700/60 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       {stat.label}
                     </p>
-                    <div className="w-4 h-4 bg-gray-100 dark:bg-zinc-800 rounded flex items-center justify-center">
-                      <stat.icon className="w-3 h-3 text-gray-400" />
-                    </div>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white mt-1">
+                      {stat.value}
+                    </p>
+                    <p className={`text-xs font-medium mt-1 ${stat.color}`}>
+                      {stat.change} from last month
+                    </p>
                   </div>
-                  <p className="text-2xl font-bold text-zinc-900 dark:text-white">
-                    {stat.value}
-                  </p>
-                  <p className={`text-xs font-medium ${stat.color}`}>
-                    {stat.change} from last month
-                  </p>
+                  <div className={`p-3 rounded-xl ${statBgClasses[index] || statBgClasses[0]}`}>
+                    <stat.icon className="w-6 h-6" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+      </div>
 
-        {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="instructors">Top Instructors</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-          </TabsList>
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto lg:inline-flex bg-gray-100 dark:bg-zinc-800/50 p-1 rounded-xl">
+          <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-700 data-[state=active]:shadow-sm">Overview</TabsTrigger>
+          <TabsTrigger value="instructors" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-700 data-[state=active]:shadow-sm">Top Instructors</TabsTrigger>
+          <TabsTrigger value="courses" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-700 data-[state=active]:shadow-sm">My Courses</TabsTrigger>
+          <TabsTrigger value="activity" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-700 data-[state=active]:shadow-sm">Activity</TabsTrigger>
+        </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top Instructors Preview */}
-              <Card>
+              <Card className="border-gray-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden rounded-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Crown className="w-5 h-5 mr-2 text-yellow-600" />
@@ -441,7 +432,7 @@ export default function EnhancedDashboard() {
               </Card>
 
               {/* Trending Categories */}
-              <Card>
+              <Card className="border-gray-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden rounded-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
@@ -484,7 +475,7 @@ export default function EnhancedDashboard() {
             </div>
 
             {/* Quick Actions */}
-            <Card className="mt-8">
+            <Card className="border-gray-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Zap className="w-5 h-5 mr-2 text-yellow-600" />
@@ -498,10 +489,10 @@ export default function EnhancedDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <Button
                     variant="outline"
-                    className="h-auto p-4 flex flex-col items-center space-y-2"
-                    onClick={() => router.push("/courses")}
+                    className="h-auto p-4 flex flex-col items-center space-y-2 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-200"
+                    onClick={() => router.push("/educationhub")}
                   >
-                    <BookOpen className="w-6 h-6 text-blue-600" />
+                    <BookOpen className="w-6 h-6 text-emerald-600" />
                     <span className="font-medium">Browse Courses</span>
                     <span className="text-xs text-gray-600 dark:text-gray-400">Start Learning</span>
                   </Button>
@@ -530,7 +521,7 @@ export default function EnhancedDashboard() {
 
           {/* Top Instructors Tab */}
           <TabsContent value="instructors" className="space-y-6">
-            <Card>
+            <Card className="border-gray-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Crown className="w-5 h-5 mr-2 text-yellow-600" />
@@ -544,7 +535,7 @@ export default function EnhancedDashboard() {
                 {topInstructors.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {topInstructors.map((instructor) => (
-                      <div key={instructor.id} className="p-6 border border-gray-200 dark:border-zinc-700 rounded-lg hover:shadow-lg transition-all duration-200">
+                      <div key={instructor.id} className="p-6 border border-gray-200/60 dark:border-zinc-700/60 rounded-2xl hover:shadow-md hover:border-emerald-200/60 dark:hover:border-emerald-800/40 transition-all duration-200">
                         <div className="flex items-start space-x-4">
                           <Avatar className="w-16 h-16">
                             <AvatarImage src={instructor.avatar} alt={instructor.name} />
@@ -604,7 +595,7 @@ export default function EnhancedDashboard() {
 
           {/* My Courses Tab */}
           <TabsContent value="courses" className="space-y-6">
-            <Card>
+            <Card className="border-gray-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <BookOpen className="w-5 h-5 mr-2 text-blue-600" />
@@ -650,7 +641,7 @@ export default function EnhancedDashboard() {
                       const iconColor = isCompleted ? "text-purple-600" : isInProgress ? "text-blue-600" : "text-green-600";
 
                       return (
-                        <div key={enrollment.courseId} className="p-6 border border-gray-200 dark:border-zinc-700 rounded-lg hover:shadow-lg transition-all duration-200">
+                        <div key={enrollment.courseId} className="p-6 border border-gray-200/60 dark:border-zinc-700/60 rounded-2xl hover:shadow-md hover:border-emerald-200/60 dark:hover:border-emerald-800/40 transition-all duration-200">
                           <div className="flex items-start space-x-4">
                             <div className={`w-16 h-16 ${bgColor} rounded-lg flex items-center justify-center`}>
                               <CategoryIcon className={`w-8 h-8 ${iconColor}`} />
@@ -711,7 +702,7 @@ export default function EnhancedDashboard() {
 
           {/* Activity Tab */}
           <TabsContent value="activity" className="space-y-6">
-            <Card>
+            <Card className="border-gray-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Activity className="w-5 h-5 mr-2 text-green-600" />
@@ -748,7 +739,6 @@ export default function EnhancedDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
     </div>
   );
 }

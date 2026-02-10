@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import enrollmentService from "@/services/enrollmentService";
+import equalUsdService from "@/services/equalUsdService";
+import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 
 const stripePromise = loadStripe(
@@ -114,30 +116,54 @@ export function CoursePaymentCheckout({
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [equalUsdBalance, setEqualUsdBalance] = useState<number>(0);
+  const [equalUsdToUse, setEqualUsdToUse] = useState<number>(0);
+  const [amountDue, setAmountDue] = useState<number>(amount);
+  const [equalUsdApplied, setEqualUsdApplied] = useState<number>(0);
+  const [step, setStep] = useState<"amount" | "payment">("amount");
+  const { toast } = useToast();
+
+  const maxEqualUsd = Math.min(Math.floor(amount), equalUsdBalance);
 
   useEffect(() => {
     if (!open || !courseId) return;
     setClientSecret(null);
     setPaymentIntentId(null);
     setError(null);
+    setStep("amount");
+    setEqualUsdToUse(0);
+    setAmountDue(amount);
+    setEqualUsdApplied(0);
+    equalUsdService.getBalance().then((res) => {
+      if (res.success && typeof res.balance === "number") setEqualUsdBalance(res.balance);
+    }).catch(() => setEqualUsdBalance(0));
+  }, [open, courseId, amount]);
+
+  const handleApplyEqualUsd = () => {
+    if (!open || !courseId) return;
+    const toUse = Math.min(Math.max(0, equalUsdToUse), maxEqualUsd);
     setLoading(true);
-    enrollmentService
-      .createPaymentIntent(courseId)
+    setError(null);
+    enrollmentService.createPaymentIntent(courseId, toUse)
       .then((res) => {
+        if (res.success && res.paidWithEqualUsdOnly) {
+          handleSuccess("You have been enrolled using EqualUSD!");
+          return;
+        }
         if (res.success && res.clientSecret && res.paymentIntentId) {
           setClientSecret(res.clientSecret);
           setPaymentIntentId(res.paymentIntentId);
-        } else {
-          setError(res.message || "Could not create payment");
-        }
+          setEqualUsdApplied(res.equalUsdApplied ?? toUse);
+          setAmountDue(res.amountDue ?? Math.max(0, amount - toUse));
+          setStep("payment");
+        } else setError(res.message || "Could not create payment");
       })
-      .catch((err) => {
-        setError(err?.response?.data?.message || err?.message || "Failed to start payment");
-      })
+      .catch((err) => setError(err?.response?.data?.message || err?.message || "Failed to start payment"))
       .finally(() => setLoading(false));
-  }, [open, courseId]);
+  };
 
-  const handleSuccess = () => {
+  const handleSuccess = (message?: string) => {
+    if (message) toast({ title: "Success!", description: message });
     onOpenChange(false);
     onSuccess();
   };
@@ -165,19 +191,64 @@ export function CoursePaymentCheckout({
             {courseName} – ${amount.toFixed(2)}
           </DialogDescription>
         </DialogHeader>
-        {loading ? (
+        {step === "amount" ? (
+          <div className="space-y-4">
+            <div className="rounded-lg border p-4 space-y-2">
+              <p className="text-sm text-muted-foreground">Course price: ${amount.toFixed(2)}</p>
+              {equalUsdBalance > 0 && (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Your EqualUSD balance: <span className="font-medium text-foreground">{equalUsdBalance}</span> (1 EqualUSD = $1)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm">Use EqualUSD:</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={maxEqualUsd}
+                      value={equalUsdToUse || ""}
+                      onChange={(e) => setEqualUsdToUse(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      placeholder="0"
+                      className="w-20"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={() => setEqualUsdToUse(maxEqualUsd)}>
+                      Use max
+                    </Button>
+                  </div>
+                  {equalUsdToUse > 0 && (
+                    <p className="text-sm font-medium text-green-600 dark:text-green-500">
+                      Amount to pay: ${(Math.max(0, amount - equalUsdToUse)).toFixed(2)}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleCancel} className="flex-1">Cancel</Button>
+              <Button onClick={handleApplyEqualUsd} disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : equalUsdToUse > 0 ? `Pay $${(Math.max(0, amount - equalUsdToUse)).toFixed(2)}` : "Continue to payment"}
+              </Button>
+            </div>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : error ? (
           <div className="space-y-2">
             <p className="text-destructive">{error}</p>
-            <Button variant="outline" onClick={handleCancel}>
-              Close
-            </Button>
+            <Button variant="outline" onClick={() => { setError(null); setStep("amount"); }}>Back</Button>
+            <Button variant="outline" onClick={handleCancel}>Close</Button>
           </div>
         ) : clientSecret && paymentIntentId ? (
-          <Elements
+          <div className="space-y-4">
+            {equalUsdApplied > 0 && (
+              <p className="text-sm text-green-600 dark:text-green-500">
+                {equalUsdApplied} EqualUSD applied. Pay ${amountDue.toFixed(2)} via card.
+              </p>
+            )}
+            <Elements
             stripe={stripePromise}
             options={{
               clientSecret,
@@ -187,10 +258,11 @@ export function CoursePaymentCheckout({
             <CheckoutForm
               courseId={courseId}
               paymentIntentId={paymentIntentId}
-              onSuccess={handleSuccess}
-              onCancel={handleCancel}
+              onSuccess={() => handleSuccess()}
+              onCancel={() => setStep("amount")}
             />
           </Elements>
+          </div>
         ) : null}
       </DialogContent>
     </Dialog>

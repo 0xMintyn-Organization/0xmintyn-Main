@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Search, ShoppingCart, Heart, Bell, User, Moon, Sun, LogOut } from 'lucide-react';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import equalUsdService from '@/services/equalUsdService';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +21,18 @@ import {
 export default function DynamicHeader() {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
-  
+  const [equalUsdBalance, setEqualUsdBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      equalUsdService.getBalance()
+        .then((res) => res.success && typeof res.balance === "number" ? setEqualUsdBalance(res.balance) : setEqualUsdBalance(0))
+        .catch(() => setEqualUsdBalance(0));
+    } else {
+      setEqualUsdBalance(null);
+    }
+  }, [user]);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -64,13 +76,15 @@ export default function DynamicHeader() {
               {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
             </Button>
 
-            {/* EQM Balance */}
-            <Button
-              className="hidden lg:block bg-green-900 text-white hover:bg-green-700 font-semibold rounded-3xl px-3 text-xs"
-              aria-label="Earning Balance"
-            >
-              1000 EQM
-            </Button>
+            {/* EqualUSD Balance */}
+            {equalUsdBalance !== null && (
+              <Button
+                className="hidden lg:block bg-green-900 text-white hover:bg-green-700 font-semibold rounded-3xl px-3 text-xs"
+                aria-label="EqualUSD Balance"
+              >
+                {equalUsdBalance} EqualUSD
+              </Button>
+            )}
 
             {/* User Menu */}
             <DropdownMenu>

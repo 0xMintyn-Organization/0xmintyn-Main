@@ -9,8 +9,11 @@ export const enrollmentService = {
   },
 
   // Create PaymentIntent for paid course – returns clientSecret for Stripe Elements
-  createPaymentIntent: async (courseId: string) => {
-    const response = await axiosInstance.post(`/enrollment/create-payment-intent/${courseId}`);
+  // equalUsdToUse: optional EqualUSD to apply as discount (1 EqualUSD = $1)
+  createPaymentIntent: async (courseId: string, equalUsdToUse?: number) => {
+    const response = await axiosInstance.post(`/enrollment/create-payment-intent/${courseId}`, {
+      ...(equalUsdToUse != null && equalUsdToUse > 0 && { equalUsdToUse }),
+    });
     return response.data;
   },
 

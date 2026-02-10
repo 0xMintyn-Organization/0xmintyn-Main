@@ -47,6 +47,8 @@ export interface IUser extends Document {
     stripeConnectStatus?: 'pending' | 'active';
     /** False when user was created via Auth0 and has not yet chosen role/marketplace (Startup/Contributor/Student/Instructor). Default true for backward compatibility. */
     roleProfileCompleted?: boolean;
+    /** Platform points. 1 EqualUSD = $1 USD. Used for course discounts, earned via registration, course completion, proposal approval. */
+    equalUsdBalance?: number;
     avatar: string;
     banner: string;
     bio: string;
@@ -136,6 +138,7 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     stripeConnectAccountId: { type: String, required: false, trim: true },
     stripeConnectStatus: { type: String, enum: ['pending', 'active'], default: 'pending' },
     roleProfileCompleted: { type: Boolean, default: true },
+    equalUsdBalance: { type: Number, default: 0, min: 0 },
     isVerified: {
         type: Boolean,
         default: false,
