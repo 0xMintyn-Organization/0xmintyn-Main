@@ -13,7 +13,7 @@ import {
 } from '../services/stripeConnect.service';
 import { getConnectBalance, createPayout, getPayoutWithDestination } from '../services/stripePayout.service';
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://app.equalmint.com';
 
 /** Determine userType from user's role and marketplace_role. */
 function getUserConnectType(user: { role?: string; marketplace_role?: string }): ConnectAccountType | null {

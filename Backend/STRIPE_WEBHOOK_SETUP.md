@@ -2,7 +2,7 @@
 
 ## Local development (localhost)
 
-**Webhook URL for local:** `http://localhost:8000/api/v1/stripe/webhook`
+**Webhook URL for local:** `https://api.equalmint.com/api/v1/stripe/webhook`
 
 1. Start your backend: `npm run dev` (or `node server.ts`)
 2. Install [Stripe CLI](https://stripe.com/docs/stripe-cli)

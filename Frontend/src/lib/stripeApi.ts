@@ -5,7 +5,7 @@
 
 const getBase = () =>
   (process.env.NEXT_PUBLIC_SERVER_URI || "").replace(/\/+$/, "") ||
-  "http://localhost:8000/api/v1";
+  "https://api.equalmint.com/api/v1";
 
 async function fetchApi<T>(
   path: string,

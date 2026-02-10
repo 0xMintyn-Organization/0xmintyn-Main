@@ -88,7 +88,7 @@ Valid transitions are enforced in the backend; invalid transitions return 400.
 
 **File:** `Frontend/src/lib/marketplaceApi.ts`
 
-- **Base URL:** `NEXT_PUBLIC_SERVER_URI` or `http://localhost:8000/api/v1`
+- **Base URL:** `NEXT_PUBLIC_SERVER_URI` or `https://api.equalmint.com/api/v1`
 - **milestones:**
   - `list()` → GET `/milestone`
   - `create(body)` → POST `/milestone` — body: `{ title, description?, amount }`

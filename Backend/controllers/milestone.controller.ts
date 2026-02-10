@@ -83,6 +83,11 @@ export const createMilestone = CatchAsyncError(async (req: Request, res: Respons
   if (!user) return next(new ErrorHandler('User not found', 404));
   if (user.marketplace_role !== 'startup') return next(new ErrorHandler('Only startups can create milestones', 403));
 
+  // Startup must have Stripe Connect active before creating milestones
+  if (!user.stripeConnectAccountId || user.stripeConnectStatus !== 'active') {
+    return next(new ErrorHandler('Connect your Stripe account and complete onboarding before creating milestones.', 400));
+  }
+
   const { title, description, amount } = req.body as { title?: string; description?: string; amount?: number };
   if (!title || typeof title !== 'string' || !title.trim()) return next(new ErrorHandler('Title is required', 400));
   const numAmount = amount != null ? Number(amount) : 0;

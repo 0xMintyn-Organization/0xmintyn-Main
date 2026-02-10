@@ -14,6 +14,11 @@ export const createApplication = CatchAsyncError(async (req: Request, res: Respo
   if (!user) return next(new ErrorHandler('User not found', 404));
   if (user.marketplace_role !== 'contributor') return next(new ErrorHandler('Only contributors can apply to startups', 403));
 
+  // Contributor must have Stripe Connect active before applying to startups
+  if (!user.stripeConnectAccountId || user.stripeConnectStatus !== 'active') {
+    return next(new ErrorHandler('Connect your Stripe account and complete onboarding before applying to startups.', 400));
+  }
+
   const { startupId, coverMessage, cvUrl, monthlySalary } = req.body as {
     startupId?: string;
     coverMessage?: string;
