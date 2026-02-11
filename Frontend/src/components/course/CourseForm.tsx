@@ -307,9 +307,10 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
           router.push(`/instructor/courses/${courseId}`);
         }
       } else {
+        const errorMsg = data?.error || data?.message || `Failed to ${mode} course`;
         toast({
           title: "Error",
-          description: data.message || `Failed to ${mode} course`,
+          description: errorMsg,
           variant: "destructive",
         });
       }

@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Target, Loader2 } from "lucide-react";
 import { marketplaceApi } from "@/lib/marketplaceApi";
+import { stripeApi } from "@/lib/stripeApi";
+import { StripeConnectOnboarding } from "@/components/marketplace/StripeConnectOnboarding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,12 +32,20 @@ const STATUS_COLORS: Record<string, string> = {
 export default function StartupMilestonesPage() {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stripeOk, setStripeOk] = useState<boolean | null>(null);
   const [creating, setCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const { toast } = useToast();
+
+  useEffect(() => {
+    stripeApi
+      .getStatus()
+      .then((res) => setStripeOk(res.connected && res.chargesEnabled && res.payoutsEnabled))
+      .catch(() => setStripeOk(false));
+  }, []);
 
   const load = async () => {
     try {
@@ -82,8 +93,40 @@ export default function StartupMilestonesPage() {
     }
   };
 
-  if (loading) {
-    return <p className="text-muted-foreground">Loading milestones…</p>;
+  if (loading || stripeOk === null) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!stripeOk) {
+    return (
+      <div className="w-full">
+        <div className="max-w-lg mx-auto">
+          <div className="bg-card rounded-xl border border-border p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                <Target className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">Connect your bank account to create milestones</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  You must complete Stripe onboarding before you can create milestones. This ensures you can receive funding when admin approves completed work.
+                </p>
+              </div>
+            </div>
+            <div className="border-t border-border pt-6">
+              <StripeConnectOnboarding label="Receive milestone funding" className="text-base" />
+            </div>
+            <p className="mt-6 text-xs text-muted-foreground">
+              After connecting, refresh this page to create milestones.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -64,6 +64,7 @@ export const ErrorMiddleware = (err: any, req: Request, res: Response, next: Nex
     res.status(err.statusCode).json({
         success: false,
         error: err.message,
+        message: err.message,
         ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
 }; 

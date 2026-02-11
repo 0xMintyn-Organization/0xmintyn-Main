@@ -18,6 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { marketplaceApi } from "@/lib/marketplaceApi";
+import { stripeApi } from "@/lib/stripeApi";
+import { StripeConnectOnboarding } from "@/components/marketplace/StripeConnectOnboarding";
 import { uploadFileToBackend } from "@/lib/uploadFileToBackend";
 import {
   Send,
@@ -99,8 +101,21 @@ export default function MarketplaceStartupDetailPage() {
   const [monthlySalary, setMonthlySalary] = useState<string>("");
   const [uploadingCv, setUploadingCv] = useState(false);
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
+  const [stripeApplyStatus, setStripeApplyStatus] = useState<{ connected: boolean; chargesEnabled: boolean; payoutsEnabled: boolean } | null | "loading">(null);
   const cvInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (applyDialogOpen && marketplaceRole === "contributor") {
+      setStripeApplyStatus("loading");
+      stripeApi
+        .getStatus()
+        .then((res) => setStripeApplyStatus(res))
+        .catch(() => setStripeApplyStatus(null));
+    } else {
+      setStripeApplyStatus(null);
+    }
+  }, [applyDialogOpen, marketplaceRole]);
 
   useEffect(() => {
     if (!id) return;
@@ -279,59 +294,80 @@ export default function MarketplaceStartupDetailPage() {
                         <DialogHeader>
                           <DialogTitle>Apply to {displayName}</DialogTitle>
                           <DialogDescription>
-                            Add a cover message and upload your CV. The startup will review your application.
+                            {stripeApplyStatus === "loading" ? (
+                              "Checking payment setup…"
+                            ) : stripeApplyStatus && !(stripeApplyStatus.connected && stripeApplyStatus.chargesEnabled && stripeApplyStatus.payoutsEnabled) ? (
+                              "Connect your bank account to receive salary when hired. You must complete Stripe onboarding before applying."
+                            ) : (
+                              "Add a cover message and upload your CV. The startup will review your application."
+                            )}
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-2">
-                          <div className="space-y-2">
-                            <Label htmlFor="cover">Cover message</Label>
-                            <Input
-                              id="cover"
-                              placeholder="Introduce yourself and why you want to work with this startup"
-                              value={coverMessage}
-                              onChange={(e) => setCoverMessage(e.target.value)}
-                            />
+                        {stripeApplyStatus === "loading" ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="monthlySalary">Expected monthly salary (optional)</Label>
-                            <Input
-                              id="monthlySalary"
-                              type="number"
-                              min={0}
-                              step={1}
-                              placeholder="e.g. 5000"
-                              value={monthlySalary}
-                              onChange={(e) => setMonthlySalary(e.target.value)}
-                            />
+                        ) : stripeApplyStatus && !(stripeApplyStatus.connected && stripeApplyStatus.chargesEnabled && stripeApplyStatus.payoutsEnabled) ? (
+                          <div className="py-4">
+                            <StripeConnectOnboarding label="Receive salary when hired" />
+                            <p className="mt-4 text-xs text-muted-foreground">
+                              After connecting, close this dialog and click Apply again to submit your application.
+                            </p>
                           </div>
-                          <div className="space-y-2">
-                            <Label>CV / Resume – PDF only (recommended)</Label>
-                            <input
-                              ref={cvInputRef}
-                              type="file"
-                              accept=".pdf,application/pdf"
-                              onChange={handleCvChange}
-                              className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-green-600 file:text-white file:text-sm file:font-medium file:cursor-pointer hover:file:bg-green-700"
-                            />
-                            {uploadingCv && <p className="text-xs text-muted-foreground">Uploading…</p>}
-                            {cvUrl && <p className="text-xs text-green-600 dark:text-green-400">CV attached.</p>}
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button variant="outline" onClick={() => setApplyDialogOpen(false)}>
-                            Cancel
-                          </Button>
-                          <Button onClick={handleApply} disabled={applying}>
-                            {applying ? (
-                              <>
-                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                Sending…
-                              </>
-                            ) : (
-                              "Send application"
-                            )}
-                          </Button>
-                        </DialogFooter>
+                        ) : (
+                          <>
+                            <div className="grid gap-4 py-2">
+                              <div className="space-y-2">
+                                <Label htmlFor="cover">Cover message</Label>
+                                <Input
+                                  id="cover"
+                                  placeholder="Introduce yourself and why you want to work with this startup"
+                                  value={coverMessage}
+                                  onChange={(e) => setCoverMessage(e.target.value)}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="monthlySalary">Expected monthly salary (optional)</Label>
+                                <Input
+                                  id="monthlySalary"
+                                  type="number"
+                                  min={0}
+                                  step={1}
+                                  placeholder="e.g. 5000"
+                                  value={monthlySalary}
+                                  onChange={(e) => setMonthlySalary(e.target.value)}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>CV / Resume – PDF only (recommended)</Label>
+                                <input
+                                  ref={cvInputRef}
+                                  type="file"
+                                  accept=".pdf,application/pdf"
+                                  onChange={handleCvChange}
+                                  className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-green-600 file:text-white file:text-sm file:font-medium file:cursor-pointer hover:file:bg-green-700"
+                                />
+                                {uploadingCv && <p className="text-xs text-muted-foreground">Uploading…</p>}
+                                {cvUrl && <p className="text-xs text-green-600 dark:text-green-400">CV attached.</p>}
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setApplyDialogOpen(false)}>
+                                Cancel
+                              </Button>
+                              <Button onClick={handleApply} disabled={applying}>
+                                {applying ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                    Sending…
+                                  </>
+                                ) : (
+                                  "Send application"
+                                )}
+                              </Button>
+                            </DialogFooter>
+                          </>
+                        )}
                       </DialogContent>
                     </Dialog>
                   </>

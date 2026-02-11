@@ -105,14 +105,26 @@ export default function CourseInfoForm({
   };
 
   const addTag = () => {
-    const trimmed = tagInput.trim();
-    if (trimmed && !courseData.tags.includes(trimmed)) {
-      setCourseData((prev: CourseData) => ({
+    const raw = tagInput.trim();
+    if (!raw) return;
+
+    const parts = raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (parts.length === 0) return;
+
+    setCourseData((prev: CourseData) => {
+      const existing = new Set(prev.tags);
+      const newTags = parts.filter((p) => !existing.has(p));
+      if (newTags.length === 0) return prev;
+      return {
         ...prev,
-        tags: [...prev.tags, trimmed]
-      }));
-      setTagInput("");
-    }
+        tags: [...prev.tags, ...newTags]
+      };
+    });
+    setTagInput("");
   };
 
   const removeTag = (tagToRemove: string) => {
@@ -296,7 +308,7 @@ export default function CourseInfoForm({
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-            placeholder="Add tag and press Enter"
+            placeholder="Add tags (comma-separated or one at a time) and press Enter"
             className={errors.tags ? 'border-red-500' : ''}
           />
           <Button onClick={addTag}>Add</Button>
