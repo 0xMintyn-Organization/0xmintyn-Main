@@ -44,7 +44,7 @@ export const ErrorMiddleware = (err: any, req: Request, res: Response, next: Nex
     // Multer file size limit (e.g. course thumbnail)
     if (err.code === 'LIMIT_FILE_SIZE') {
         err.statusCode = 413;
-        err.message = 'Image too large. Please use an image under 50MB for the thumbnail.';
+        err.message = 'File too large. Maximum size is 50MB.';
     }
 
     // Log error details

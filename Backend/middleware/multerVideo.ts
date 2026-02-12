@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { MAX_FILE_UPLOAD_BYTES } from "../config/uploadLimits";
 
 // ✅ Ensure uploads/videos exists
 const videoDir = path.join(__dirname, "../uploads/videos");
@@ -33,7 +34,7 @@ const videoUpload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 1024 * 1024 * 1024 * 10 , // 10GB limit
+    fileSize: MAX_FILE_UPLOAD_BYTES, // 50MB (see config/uploadLimits.ts)
   },
 });
 

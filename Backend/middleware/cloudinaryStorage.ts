@@ -1,5 +1,6 @@
 import multer from 'multer';
 import { uploadToCloudinary, FileCategory } from '../utils/cloudinary';
+import { MAX_FILE_UPLOAD_BYTES } from '../config/uploadLimits';
 import logger from '../utils/logger';
 
 /**
@@ -17,7 +18,7 @@ export const cloudinaryStorage = (options: {
   return multer({
     storage,
     limits: {
-      fileSize: 100 * 1024 * 1024, // 100MB limit
+      fileSize: MAX_FILE_UPLOAD_BYTES, // 50MB (see config/uploadLimits.ts)
     },
     fileFilter: (req, file, cb) => {
       // FIRST: Check if file extension is a compressed/archive format - allow immediately (for product files)
