@@ -1,5 +1,8 @@
 import multer from "multer";
 
+// Thumbnail size limit: 50MB (also set reverse proxy e.g. Nginx client_max_body_size to at least 51m)
+export const COURSE_THUMBNAIL_MAX_BYTES = 50 * 1024 * 1024;
+
 // Use memory storage - files will be uploaded to Cloudinary
 // This prevents disk storage and allows direct Cloudinary upload
 const storage = multer.memoryStorage();
@@ -31,11 +34,19 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: any) => {
     }
 };
 
-// Multer configuration
+// Multer configuration (general uploads, 100MB)
 const upload = multer({
     storage,
     limits: { fileSize: 1000 * 1024 * 1024 }, // Limit file size to 100MB
     fileFilter
 });
 
+// Course thumbnail only: 50MB max (ensure reverse proxy client_max_body_size allows it)
+const uploadCourseThumbnail = multer({
+    storage,
+    limits: { fileSize: COURSE_THUMBNAIL_MAX_BYTES },
+    fileFilter
+});
+
 export default upload;
+export { uploadCourseThumbnail };

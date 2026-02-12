@@ -1,7 +1,7 @@
 import express from "express";
 import { createCourse, getAllCourses, getCourseById, getPurchasedCourseById, updateCourse, deleteCourse, getInstructorCourses, createTempProfessionalCourse, getAdminCourses, updateCourseStatus, deleteCourseAdmin } from "../controllers/course.controller";
 import { isAthenticated } from "../utils/auth";
-import upload from "../middleware/multerConfig";
+import { uploadCourseThumbnail } from "../middleware/multerConfig";
 import { updateAccessTokenMiddleware } from "../controllers/user.controller";
 import { requireInstructorOrAdmin, requireAdmin } from "../middleware/roleAuth";
 
@@ -13,7 +13,7 @@ router.post(
   updateAccessTokenMiddleware,
   isAthenticated,
   requireInstructorOrAdmin,
-  upload.single("thumbnail"),
+  uploadCourseThumbnail.single("thumbnail"),
   createCourse
 );
 
@@ -25,7 +25,7 @@ router.get("/enrolled-course/:id", isAthenticated, getPurchasedCourseById);
 
 // Instructor course management (Instructor/Admin only)
 router.get("/instructor/my-courses", updateAccessTokenMiddleware, isAthenticated, requireInstructorOrAdmin, getInstructorCourses);
-router.put("/:id", updateAccessTokenMiddleware, isAthenticated, requireInstructorOrAdmin, upload.single("thumbnail"), updateCourse);
+router.put("/:id", updateAccessTokenMiddleware, isAthenticated, requireInstructorOrAdmin, uploadCourseThumbnail.single("thumbnail"), updateCourse);
 router.delete("/:id", updateAccessTokenMiddleware, isAthenticated, requireInstructorOrAdmin, deleteCourse);
 
 // Temporary API to create professional course (for testing)

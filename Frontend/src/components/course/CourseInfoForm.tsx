@@ -52,6 +52,10 @@ export default function CourseInfoForm({
     if (errors[field]) setErrors((prev: any) => ({ ...prev, [field]: "" }));
   };
 
+  // Max thumbnail size: 50MB (must match backend COURSE_THUMBNAIL_MAX_BYTES)
+  const THUMBNAIL_MAX_MB = 50;
+  const THUMBNAIL_MAX_BYTES = THUMBNAIL_MAX_MB * 1024 * 1024;
+
   const handleFileUpload = async (
   e: React.ChangeEvent<HTMLInputElement>,
   field: "thumbnail"
@@ -64,8 +68,14 @@ export default function CourseInfoForm({
     return;
   }
 
+  if (field === "thumbnail" && file.size > THUMBNAIL_MAX_BYTES) {
+    setErrors((prev:any) => ({ ...prev, thumbnail: `Image must be ${THUMBNAIL_MAX_MB}MB or smaller` }));
+    return;
+  }
+
   // Thumbnail only local preview
   if (field === "thumbnail") {
+    setErrors((prev:any) => ({ ...prev, thumbnail: "" }));
     setCourseData((prev:any) => ({
       ...prev,
       thumbnail: file,
@@ -251,6 +261,7 @@ export default function CourseInfoForm({
             </label>
           )}
         </div>
+        <p className="text-muted-foreground text-xs mt-1">Max size: 50MB. Use JPEG or PNG for best results.</p>
         {errors.thumbnail && <p className="text-red-500 text-sm mt-1">{errors.thumbnail}</p>}
       </div>
 

@@ -255,6 +255,19 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
       return;
     }
 
+    const THUMBNAIL_MAX_MB = 50;
+    const THUMBNAIL_MAX_BYTES = THUMBNAIL_MAX_MB * 1024 * 1024;
+    if (courseData.thumbnail && courseData.thumbnail.size > THUMBNAIL_MAX_BYTES) {
+      toast({
+        title: "Image too large",
+        description: `Thumbnail must be ${THUMBNAIL_MAX_MB}MB or smaller. Please choose a smaller image.`,
+        variant: "destructive",
+      });
+      setCurrentTab(1);
+      setErrors((prev) => ({ ...prev, thumbnail: `Image must be ${THUMBNAIL_MAX_MB}MB or smaller` }));
+      return;
+    }
+
     try {
       const formData = new FormData();
 
@@ -293,7 +306,13 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
         credentials: "include",
       });
 
-      const data = await res.json();
+      let data: { success?: boolean; error?: string; message?: string } = {};
+      try {
+        const text = await res.text();
+        if (text) data = JSON.parse(text);
+      } catch {
+        // Proxy or server may return non-JSON (e.g. 413 HTML page)
+      }
 
       if (res.ok) {
         toast({
@@ -307,12 +326,19 @@ export default function CourseForm({ mode, courseId, initialData }: CourseFormPr
           router.push(`/instructor/courses/${courseId}`);
         }
       } else {
-        const errorMsg = data?.error || data?.message || `Failed to ${mode} course`;
+        const is413 = res.status === 413;
+        const errorMsg = is413
+          ? "Image too large. Please use a thumbnail image under 50MB."
+          : (data?.error || data?.message || `Failed to ${mode} course`);
         toast({
-          title: "Error",
+          title: is413 ? "Image too large" : "Error",
           description: errorMsg,
           variant: "destructive",
         });
+        if (is413) {
+          setCurrentTab(1);
+          setErrors((prev) => ({ ...prev, thumbnail: "Image must be 50MB or smaller" }));
+        }
       }
     } catch (error) {
       console.error("Course Operation Error:", error);
