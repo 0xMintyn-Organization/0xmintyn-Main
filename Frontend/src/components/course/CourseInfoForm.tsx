@@ -213,12 +213,28 @@ export default function CourseInfoForm({
                 fill
                 className="object-cover rounded-lg"
               />
-              <button
-                onClick={() => handleInputChange('thumbnail', null)}
-                className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="absolute top-2 right-2 flex gap-2">
+                <label className="cursor-pointer bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white px-2 py-1 rounded-md text-sm shadow hover:bg-gray-100 dark:hover:bg-zinc-600">
+                  Change
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(e, "thumbnail")}
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCourseData((prev: any) => ({ ...prev, thumbnail: null, thumbnailPreview: "" }));
+                    if (errors.thumbnail) setErrors((prev: any) => ({ ...prev, thumbnail: "" }));
+                  }}
+                  className="bg-red-600 text-white p-1 rounded-full hover:bg-red-700"
+                  title="Remove thumbnail"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ) : (
             <label htmlFor="thumbnail" className="cursor-pointer">

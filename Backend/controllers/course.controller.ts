@@ -200,6 +200,7 @@ export const updateCourse = CatchAsyncError(
       tags,
       benefits,
       prerequisites,
+      demoUrl,
       courseData,
     } = req.body;
 
@@ -244,6 +245,7 @@ export const updateCourse = CatchAsyncError(
     if (parsedTags) course.tags = parsedTags;
     if (parsedBenefits) course.benefits = parsedBenefits;
     if (parsedPrerequisites) course.prerequisites = parsedPrerequisites;
+    if (demoUrl !== undefined) course.demoUrl = demoUrl;
     if (parsedCourseData) course.courseData = parsedCourseData;
 
     // Handle thumbnail update if provided
