@@ -12,6 +12,8 @@
     "dev:https": "cross-env HOST=127.0.0.1 USE_HTTPS=true ts-node-dev --respawn --transpile-only server.ts",
     "certs": "node scripts/gen-cert.js",
     "start": "cross-env NODE_ENV=production HOST=127.0.0.1 ts-node --transpile-only server.ts",
+    "bulk-enroll": "ts-node --transpile-only scripts/bulkUserEnrollment.ts",
+    "round-robin": "ts-node --transpile-only scripts/bulkUserRoundRobin.ts",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false"
   },
   "author": "raja naveed",
