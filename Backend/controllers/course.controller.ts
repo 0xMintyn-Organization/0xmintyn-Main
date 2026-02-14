@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { CourseModel } from "../models/course.model";
 import UserModel from "../models/user.mode";
+import OrderModel from "../models/order.model";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/errorHandler";
 import { isValidYouTubeUrl, validateCourseData } from "../utils/youtubeValidator";
@@ -97,26 +98,38 @@ export const getAllCourses = CatchAsyncError(
     const courses = await CourseModel.find()
       .sort({ createdAt: -1 })
       .select(
-        "name description thumbnail categories level price estimatedPrice averageRating totalReviews createdBy"
+        "name description thumbnail categories level price estimatedPrice averageRating totalReviews createdBy _id"
       )
       .populate("createdBy", "username avatar");
 
+    // Get enrolled student count for each course
+    const coursesWithEnrollment = await Promise.all(
+      courses.map(async (course) => {
+        const enrolledCount = await OrderModel.countDocuments({
+          courseId: course._id,
+          status: { $in: ['pending', 'completed'] }
+        });
+        return { course, enrolledCount };
+      })
+    );
+
     // Transform to match frontend expectations
-    const formattedCourses = courses.map((course) => ({
+    const formattedCourses = coursesWithEnrollment.map(({ course, enrolledCount }) => ({
       id: course._id,
       title: course.name,
       description: course.description,
       imagePath: course.thumbnail,
-      imageAltText: `${course.name} course image`,  // Optional
+      imageAltText: `${course.name} course image`,
       category: course.categories,
       price: course.price,
       originalPrice: course.estimatedPrice,
       rating: course.averageRating,
-      students: course.totalReviews, // or actual enrollment if stored
+      students: enrolledCount, // ✅ Actual enrolled students
+      enrolledCount: enrolledCount, // ✅ Also include as enrolledCount
       level: course.level,
       instructor: course.createdBy?.username || "Unknown Instructor",
       authorAvatar: course.createdBy?.avatar || null,
-      duration: "5 hours", // You can replace this with dynamic value if you store real durations
+      duration: "5 hours",
     }));
 
     res.status(200).json({
@@ -138,8 +151,16 @@ export const getCourseById = CatchAsyncError(
       return next(new ErrorHandler("Course not found", 404));
     }
 
+    // Get enrolled student count
+    const enrolledCount = await OrderModel.countDocuments({
+      courseId: courseId,
+      status: { $in: ['pending', 'completed'] }
+    });
+
     // Safe clone
     const courseObj = course.toObject();
+    courseObj.enrolledCount = enrolledCount; // ✅ Add enrolled count
+    courseObj.students = enrolledCount; // ✅ Also add as students field
 
     // Remove 'videoUrl', 'links', 'suggestion', 'questions' from courseData.videos
     if (Array.isArray(courseObj.courseData)) {
@@ -327,10 +348,24 @@ export const getInstructorCourses = CatchAsyncError(
       .sort({ createdAt: -1 })
       .populate("createdBy", "username avatar");
 
+    // Add enrolled count for each course
+    const coursesWithEnrollment = await Promise.all(
+      courses.map(async (course) => {
+        const enrolledCount = await OrderModel.countDocuments({
+          courseId: course._id,
+          status: { $in: ['pending', 'completed'] }
+        });
+        const courseObj = course.toObject();
+        courseObj.enrolledCount = enrolledCount;
+        courseObj.students = enrolledCount;
+        return courseObj;
+      })
+    );
+
     res.status(200).json({
       success: true,
       message: "Instructor courses fetched successfully",
-      courses,
+      courses: coursesWithEnrollment,
     });
   }
 );
@@ -585,15 +620,23 @@ export const getAdminCourses = CatchAsyncError(async (req: Request, res: Respons
       .skip(skip)
       .limit(limit);
 
-    // Add default values for missing fields
-    const coursesWithDefaults = courses.map(course => ({
-      ...course.toObject(),
-      enrolledStudents: course.enrolledStudents || 0,
-      totalRevenue: course.totalRevenue || 0,
-      rating: course.averageRating || 0,
-      reviews: course.totalReviews || 0,
-      status: course.status || 'active'
-    }));
+    // Add enrolled count for each course from OrderModel
+    const coursesWithEnrollment = await Promise.all(
+      courses.map(async (course) => {
+        const enrolledCount = await OrderModel.countDocuments({
+          courseId: course._id,
+          status: { $in: ['pending', 'completed'] }
+        });
+        return {
+          ...course.toObject(),
+          enrolledStudents: enrolledCount,
+          totalRevenue: course.totalRevenue || 0,
+          rating: course.averageRating || 0,
+          reviews: course.totalReviews || 0,
+          status: course.status || 'active'
+        };
+      })
+    );
 
     // Get total count for pagination
     const totalCourses = await CourseModel.countDocuments(filter);
@@ -603,8 +646,18 @@ export const getAdminCourses = CatchAsyncError(async (req: Request, res: Respons
     const categories = await CourseModel.distinct('categories');
     const levels = await CourseModel.distinct('level');
 
+    // Get total enrolled students across all courses
+    const allCourseIds = await CourseModel.find(filter).select('_id');
+    const totalEnrolledStudents = await OrderModel.countDocuments({
+      courseId: { $in: allCourseIds.map(c => c._id) },
+      status: { $in: ['pending', 'completed'] }
+    });
+
     // Calculate statistics
     const stats = await CourseModel.aggregate([
+      {
+        $match: filter
+      },
       {
         $group: {
           _id: null,
@@ -616,7 +669,6 @@ export const getAdminCourses = CatchAsyncError(async (req: Request, res: Respons
             $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
           },
           totalRevenue: { $sum: '$price' },
-          totalStudents: { $sum: '$enrolledStudents' },
           averageRating: { $avg: '$averageRating' }
         }
       }
@@ -627,13 +679,14 @@ export const getAdminCourses = CatchAsyncError(async (req: Request, res: Respons
       activeCourses: 0,
       pendingCourses: 0,
       totalRevenue: 0,
-      totalStudents: 0,
+      totalStudents: totalEnrolledStudents,
       averageRating: 0
     };
+    courseStats.totalStudents = totalEnrolledStudents; // Override with actual enrollment count
 
     res.status(200).json({
       success: true,
-      courses: coursesWithDefaults,
+      courses: coursesWithEnrollment,
       stats: courseStats,
       categories,
       levels,
