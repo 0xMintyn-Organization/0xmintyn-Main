@@ -324,53 +324,76 @@ export default function MarketplaceContributorsPage() {
             </Link>
           </div>
         ) : (
-          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {contributors.map((c) => (
               <li key={c._id}>
                 <Link href={`/marketplace/contributors/${c._id}`} className="block h-full group">
-                  <article className="h-full rounded-lg shadow-md bg-card dark:bg-zinc-800 border border-border overflow-hidden hover:shadow-xl transition-all duration-300">
-                    <div className="relative h-48 bg-gradient-to-br from-green-500/10 via-muted/50 to-muted overflow-hidden">
+                  <article className="h-full rounded-xl shadow-lg bg-card dark:bg-zinc-800 border border-border overflow-hidden hover:shadow-2xl hover:border-green-500/50 transition-all duration-300">
+                    <div className="relative aspect-[4/3] bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-blue-500/10 overflow-hidden">
                       {c.image ? (
-                        <img src={c.image} alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <img 
+                          src={c.image} 
+                          alt={displayName(c)} 
+                          className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500" 
+                        />
                       ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Users className="w-14 h-14 text-muted-foreground/60" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-green-500/5 to-blue-500/5">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center">
+                              <Users className="w-10 h-10 text-green-600/60 dark:text-green-400/60" />
+                            </div>
+                          </div>
                         </div>
                       )}
                       {marketplaceRole === "startup" && hiredContributorIds.has(getContributorUserId(c) ?? "") && (
-                        <span className="absolute top-2 right-2">
-                          <Badge className="bg-green-600 text-white gap-1 shadow-md">
+                        <span className="absolute top-3 right-3 z-10">
+                          <Badge className="bg-green-600 text-white gap-1 shadow-lg hover:bg-green-700">
                             <BadgeCheck className="w-3.5 h-3.5" />
                             Hired
                           </Badge>
                         </span>
                       )}
                       {c.headline && (
-                        <span className="absolute bottom-2 left-2 right-2 rounded bg-black/60 backdrop-blur px-2 py-1 text-xs font-medium text-white line-clamp-1">
-                          {c.headline}
-                        </span>
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-3 pt-8">
+                          <span className="text-sm font-medium text-white line-clamp-2">
+                            {c.headline}
+                          </span>
+                        </div>
                       )}
                     </div>
-                    <div className="p-4 space-y-3">
-                      <h2 className="font-semibold text-lg text-foreground line-clamp-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                    <div className="p-5 space-y-3">
+                      <h2 className="font-semibold text-xl text-foreground line-clamp-1 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                         {displayName(c)}
                       </h2>
-                      {c.headline && !c.image && (
-                        <p className="text-sm text-muted-foreground line-clamp-1">{c.headline}</p>
-                      )}
                       {Array.isArray(c.skills) && c.skills.length > 0 && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {c.skills.slice(0, 3).join(", ")}
-                          {c.skills.length > 3 ? "…" : ""}
-                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {c.skills.slice(0, 4).map((skill, idx) => (
+                            <span key={idx} className="inline-flex items-center px-2 py-1 rounded-md bg-green-500/10 text-green-700 dark:text-green-400 text-xs font-medium">
+                              {skill}
+                            </span>
+                          ))}
+                          {c.skills.length > 4 && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium">
+                              +{c.skills.length - 4} more
+                            </span>
+                          )}
+                        </div>
                       )}
                       {c.availability && (
-                        <p className="text-xs text-muted-foreground">{c.availability}</p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                          {c.availability}
+                        </p>
                       )}
-                      <p className="flex items-center gap-1.5 text-sm font-medium text-green-600 dark:text-green-400 pt-1">
-                        View details
-                        <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                      </p>
+                      {c.location && (
+                        <p className="text-sm text-muted-foreground">{c.location}</p>
+                      )}
+                      <div className="pt-2">
+                        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 dark:text-green-400 group-hover:gap-2 transition-all">
+                          View profile
+                          <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </div>
                     </div>
                   </article>
                 </Link>
