@@ -333,7 +333,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Redirect to marketing website (equalmint.com) after logout.
     // Append ?logged_out=1 so the website can show logged-out state immediately.
-    const base = (process.env.NEXT_PUBLIC_MARKETING_URL || 'https://equalmint.com').replace(/\?.*$/, '');
+    const base = (process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000').replace(/\?.*$/, '');
     const sep = base.includes('?') ? '&' : '?';
     window.location.href = `${base}${sep}logged_out=1`;
   };

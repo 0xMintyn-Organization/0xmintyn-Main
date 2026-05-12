@@ -28,7 +28,7 @@ This script creates **500 test users** and automatically enrolls them in **5 spe
   ```
   DIRECT_REGISTER_AUTH_USER=admin_equalmint
   DIRECT_REGISTER_AUTH_PASSWORD=equalmint$$804
-  SERVER_URL=https://api.equalmint.com (or http://localhost:8000)
+  SERVER_URL=http://localhost:8000 (or http://localhost:8000)
   DB_URI=mongodb+srv://...
   ```
 

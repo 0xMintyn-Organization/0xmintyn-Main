@@ -257,7 +257,7 @@ db.orders.countDocuments({ userId: ObjectId("507f1f77bcf86cd799439011") })
 
 Located in `Backend/.env`:
 ```
-SERVER_URL=https://api.equalmint.com
+SERVER_URL=http://localhost:8000
 DB_URI=mongodb+srv://...
 DIRECT_REGISTER_AUTH_USER=admin_equalmint
 DIRECT_REGISTER_AUTH_PASSWORD=equalmint$$804

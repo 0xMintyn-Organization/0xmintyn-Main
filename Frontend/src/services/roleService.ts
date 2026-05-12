@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_SERVER_URI || "").replace(/\/+$/, "") || "https://api.equalmint.com/api/v1";
+const API_BASE_URL = (process.env.NEXT_PUBLIC_SERVER_URI || "").replace(/\/+$/, "") || "http://localhost:8000/api/v1";
 
 // Role management API service
 export const roleService = {

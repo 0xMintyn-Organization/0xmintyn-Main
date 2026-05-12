@@ -7,7 +7,7 @@ import UserModel from '../models/user.mode';
 
 dotenv.config();
 
-const API_BASE_URL = 'https://api.equalmint.com/api/v1';
+const API_BASE_URL = 'http://localhost:8000/api/v1';
 const AUTH_USER = process.env.DIRECT_REGISTER_AUTH_USER || 'admin_equalmint';
 const AUTH_PASSWORD = process.env.DIRECT_REGISTER_AUTH_PASSWORD || 'equalmint$$804';
 
@@ -147,7 +147,7 @@ async function createUserWithCourse(index: number): Promise<{ success: boolean; 
     const courseId = COURSE_IDS[courseIndex];
 
     const response = await axios.post(
-      `https://api.equalmint.com/api/v1/register-direct`,
+      `http://localhost:8000/api/v1/register-direct`,
       {
         firstName,
         lastName,
@@ -212,7 +212,7 @@ async function main() {
     console.log(`   User 7 → Course 2 ... and so on\n`);
 
     console.log(`🎯 Target: ${TOTAL_USERS} users (100 per course)\n`);
-    console.log(`📍 API: https://api.equalmint.com/api/v1/register-direct`);
+    console.log(`📍 API: http://localhost:8000/api/v1/register-direct`);
     console.log(`💾 Database: Creating Order records for money management & analytics\n`);
     console.log(`${'='.repeat(70)}\n`);
 

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Centralized API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URI || 'https://api.equalmint.com/api/v1/';
+const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URI || 'http://localhost:8000/api/v1/';
 
 // Create axios instance with default configuration
 const api = axios.create({

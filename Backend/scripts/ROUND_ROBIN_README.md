@@ -40,7 +40,7 @@ npm run round-robin
 
 ## 🎯 Live API
 ```
-https://api.equalmint.com/api/v1/register-direct
+http://localhost:8000/api/v1/register-direct
 ```
 ✅ Script hits the **live API** (not local)
 
@@ -60,7 +60,7 @@ https://api.equalmint.com/api/v1/register-direct
 
 🎯 Target: 500 users (100 per course)
 
-📍 API: https://api.equalmint.com/api/v1/user/register-direct
+📍 API: http://localhost:8000/api/v1/user/register-direct
 
 ======================================================================
 
